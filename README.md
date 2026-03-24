@@ -36,18 +36,11 @@ npm run seed:reset    # Delete + re-seed
 
 ## Regenerate Screenshots
 
-Start the dev server, then run the screenshot script:
+Start the dev server, then run the screenshot script in another terminal:
 
 ```bash
 npm run dev
-# In another terminal:
 npm run screenshots
-```
-
-By default it connects to `http://localhost:3000`. Override with `BASE_URL`:
-
-```bash
-BASE_URL=http://localhost:3001 npm run screenshots
 ```
 
 ## Production
