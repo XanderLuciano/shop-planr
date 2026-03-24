@@ -1,0 +1,72 @@
+import { ref, readonly } from 'vue'
+import type { StepNote } from '~/server/types/domain'
+
+const notes = ref<StepNote[]>([])
+const loading = ref(false)
+const error = ref<string | null>(null)
+
+export function useNotes() {
+  async function createNote(input: {
+    jobId: string
+    pathId: string
+    stepId: string
+    serialIds: string[]
+    text: string
+    userId: string
+  }): Promise<StepNote> {
+    loading.value = true
+    error.value = null
+    try {
+      const note = await $fetch<StepNote>('/api/notes', {
+        method: 'POST',
+        body: input
+      })
+      notes.value = [note, ...notes.value]
+      return note
+    } catch (e: any) {
+      error.value = e?.data?.message ?? e?.message ?? 'Failed to create note'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchNotesForSerial(serialId: string): Promise<StepNote[]> {
+    loading.value = true
+    error.value = null
+    try {
+      const result = await $fetch<StepNote[]>(`/api/notes/serial/${serialId}`)
+      notes.value = result
+      return result
+    } catch (e: any) {
+      error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch notes'
+      return []
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function fetchNotesForStep(stepId: string): Promise<StepNote[]> {
+    loading.value = true
+    error.value = null
+    try {
+      const result = await $fetch<StepNote[]>(`/api/notes/step/${stepId}`)
+      notes.value = result
+      return result
+    } catch (e: any) {
+      error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch notes'
+      return []
+    } finally {
+      loading.value = false
+    }
+  }
+
+  return {
+    notes: readonly(notes),
+    loading: readonly(loading),
+    error: readonly(error),
+    createNote,
+    fetchNotesForSerial,
+    fetchNotesForStep
+  }
+}

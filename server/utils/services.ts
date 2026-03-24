@@ -1,0 +1,132 @@
+import { createAuditService } from '../services/auditService'
+import { createUserService } from '../services/userService'
+import { createJobService } from '../services/jobService'
+import { createPathService } from '../services/pathService'
+import { createSerialService } from '../services/serialService'
+import { createCertService } from '../services/certService'
+import { createTemplateService } from '../services/templateService'
+import { createNoteService } from '../services/noteService'
+import { createSettingsService } from '../services/settingsService'
+import { createBomService } from '../services/bomService'
+import { createJiraService } from '../services/jiraService'
+import { createLifecycleService } from '../services/lifecycleService'
+import { createLibraryService } from '../services/libraryService'
+import { createSequentialSnGenerator } from '../utils/idGenerator'
+import type { AuditService } from '../services/auditService'
+import type { UserService } from '../services/userService'
+import type { JobService } from '../services/jobService'
+import type { PathService } from '../services/pathService'
+import type { SerialService } from '../services/serialService'
+import type { CertService } from '../services/certService'
+import type { TemplateService } from '../services/templateService'
+import type { NoteService } from '../services/noteService'
+import type { SettingsService } from '../services/settingsService'
+import type { BomService } from '../services/bomService'
+import type { JiraService } from '../services/jiraService'
+import type { LifecycleService } from '../services/lifecycleService'
+import type { LibraryService } from '../services/libraryService'
+
+export interface ServiceSet {
+  auditService: AuditService
+  userService: UserService
+  jobService: JobService
+  pathService: PathService
+  serialService: SerialService
+  certService: CertService
+  templateService: TemplateService
+  noteService: NoteService
+  settingsService: SettingsService
+  bomService: BomService
+  jiraService: JiraService
+  lifecycleService: LifecycleService
+  libraryService: LibraryService
+}
+
+let services: ServiceSet | null = null
+
+export function getServices(): ServiceSet {
+  if (!services) {
+    const repos = getRepositories()
+    const config = useRuntimeConfig()
+
+    // Services with no service dependencies
+    const auditService = createAuditService({ audit: repos.audit })
+    const userService = createUserService({ users: repos.users })
+    const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, serials: repos.serials })
+    const pathService = createPathService({ paths: repos.paths, serials: repos.serials, users: repos.users })
+    const templateService = createTemplateService({ templates: repos.templates, paths: repos.paths })
+
+    // Lifecycle service depends on auditService
+    const lifecycleService = createLifecycleService({
+      serials: repos.serials,
+      paths: repos.paths,
+      jobs: repos.jobs,
+      snStepStatuses: repos.snStepStatuses,
+      snStepOverrides: repos.snStepOverrides,
+    }, auditService)
+
+    // Library service
+    const libraryService = createLibraryService({ library: repos.library })
+
+    // BOM service with version support and audit
+    const bomService = createBomService(
+      { bom: repos.bom, serials: repos.serials, bomVersions: repos.bomVersions },
+      auditService
+    )
+
+    // SN generator backed by the counters table
+    const db = repos._db
+    const snGenerator = createSequentialSnGenerator({
+      getCounter: () => {
+        const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('sn') as { value: number } | undefined
+        return row?.value ?? 0
+      },
+      setCounter: (v: number) => {
+        db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('sn', v)
+      }
+    })
+
+    // Services that depend on auditService (and optionally lifecycleService)
+    const serialService = createSerialService(
+      { serials: repos.serials, paths: repos.paths, certs: repos.certs, jobs: repos.jobs },
+      auditService,
+      snGenerator,
+      lifecycleService
+    )
+    const certService = createCertService({ certs: repos.certs }, auditService)
+    const noteService = createNoteService({ notes: repos.notes }, auditService)
+
+    // Settings service depends on runtimeConfig
+    const settingsService = createSettingsService({ settings: repos.settings }, {
+      jiraBaseUrl: config.jiraBaseUrl,
+      jiraProjectKey: config.jiraProjectKey,
+      jiraUsername: config.jiraUsername,
+      jiraApiToken: config.jiraApiToken
+    })
+
+    // Jira service depends on settingsService and jobService
+    const jiraService = createJiraService({ jobs: repos.jobs }, settingsService, jobService, {
+      pathService,
+      noteService,
+      certService,
+      serialService
+    })
+
+    services = {
+      auditService,
+      userService,
+      jobService,
+      pathService,
+      serialService,
+      certService,
+      templateService,
+      noteService,
+      settingsService,
+      bomService,
+      jiraService,
+      lifecycleService,
+      libraryService,
+    }
+  }
+  return services
+}

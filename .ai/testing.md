@@ -1,0 +1,114 @@
+# Testing Strategy — SHOP_ERP
+
+> Property-based tests, integration tests, unit tests, and seed data.
+
+## Test Stack
+
+- Vitest 3.2 (test runner)
+- `happy-dom` (DOM environment)
+- `fast-check` (property-based testing, planned)
+- Isolated temp SQLite databases for integration tests
+
+## Commands
+
+| Command | What it does |
+|---------|-------------|
+| `npm run test` | `vitest run` — single pass, all tests |
+| `npm run test:watch` | `vitest` — watch mode |
+| `npx vitest run tests/properties` | Property tests only |
+| `npx vitest run tests/unit` | Unit tests only |
+| `npx vitest run tests/integration` | Integration tests only |
+
+## Test File Organization
+
+```
+tests/
+  unit/
+    services/           → jobService, pathService, serialService, etc. (10 files)
+    utils/              → serialization, validation, idGenerator, errors, progressBar, services (6 files)
+    composables/        → useBarcode, useViewFilters (2 files)
+    repositories/sqlite/ → migrations (1 file)
+  properties/
+    jobPartCount.property.test.ts        → CP-1: Job part count invariant
+    serialUniqueness.property.test.ts    → CP-2: SN uniqueness
+    stepAdvancement.property.test.ts     → CP-3: Sequential advancement
+    countConservation.property.test.ts   → CP-4: Step count conservation
+    roundTrip.property.test.ts           → CP-5: Serialization round-trip (32 sub-tests)
+    auditTrail.property.test.ts          → CP-6: Audit immutability (2 sub-tests)
+    progressBar.property.test.ts         → CP-7: Progress accuracy (2 sub-tests)
+    templateIndependence.property.test.ts → CP-8: Template independence (2 sub-tests)
+    batchIdempotence.property.test.ts    → CP-10: Cert batch idempotence
+    inputValidation.property.test.ts     → CP-11: Invalid input rejection (4 sub-tests)
+    malformedJson.property.test.ts       → CP-12: Malformed JSON errors (8 sub-tests)
+  integration/
+    helpers.ts                           → createTestContext() with all services
+    jobLifecycle.test.ts                 → Full job lifecycle (6 tests)
+    templateApplication.test.ts          → Template apply + independence (4 tests)
+    certTraceability.test.ts             → Cert attach + audit trail (5 tests)
+    progressTracking.test.ts             → Progress percentages + >100% (4 tests)
+    operatorView.test.ts                 → Current/coming/backlog (4 tests)
+    noteAndDefect.test.ts                → Step notes per-step/per-serial (4 tests)
+```
+
+Optional property tests (skipped for MVP):
+- CP-9: BOM Roll-Up Consistency (`bomRollUp.property.test.ts`)
+- CP-13: Jira Ticket Filtering (`jiraFiltering.property.test.ts`)
+
+## Property Test Pattern
+
+Each property test uses `fast-check` with minimum 100 iterations:
+
+```typescript
+import fc from 'fast-check'
+describe('Property N: Title', () => {
+  it('should hold for all valid inputs', () => {
+    fc.assert(
+      fc.property(arbitraryDomainObject(), (obj) => {
+        // exercise system, assert property
+      }),
+      { numRuns: 100 }
+    )
+  })
+})
+```
+
+## Integration Test Isolation
+
+Each test creates a fresh temp SQLite database:
+
+```typescript
+export function createTestDb() {
+  const dir = mkdtempSync(join(tmpdir(), 'shop-erp-test-'))
+  const dbPath = join(dir, 'test.db')
+  const repos = createRepositories({ type: 'sqlite', dbPath })
+  return { repos, dbPath, cleanup: () => unlinkSync(dbPath) }
+}
+```
+
+No shared state between tests.
+
+## Seed Data
+
+- All seed data uses `SAMPLE-` prefix
+- `npm run seed` — idempotent (skips if SAMPLE- data exists)
+- `npm run seed:reset` — deletes SAMPLE- records, then re-seeds
+- Creates: 3 templates, 3-4 jobs with paths/serials at various stages, certs, notes
+- Example jobs: `SAMPLE-Launch Lock Body`, `SAMPLE-Bracket Assembly`, `SAMPLE-Control Board Rev C`
+
+## 13 Correctness Properties
+
+| # | Property | Validates |
+|---|----------|-----------|
+| 1 | Job Part Count Invariant | Req 1.4, 7.5 |
+| 2 | Serial Number Uniqueness | Req 4.1, 4.2 |
+| 3 | Sequential Step Advancement | Req 3.1, 3.2, 3.3 |
+| 4 | Process Step Count Conservation | Req 3.4, 2.4, 7.4 |
+| 5 | Domain Object Round-Trip Serialization | Req 12.1, 12.2, 12.3, 12.5 |
+| 6 | Audit Trail Immutability + Completeness | Req 5.4, 13.1–13.5 |
+| 7 | Progress Bar Accuracy | Req 1.3, 1.5, 7.1, 7.6 |
+| 8 | Template Route Independence | Req 8.2, 8.3, 8.4 |
+| 9 | BOM Roll-Up Consistency | Req 11.2, 11.3, 11.5 |
+| 10 | Batch Cert Application Idempotence | Req 5.3, 5.6 |
+| 11 | Invalid Input Rejection | Req 1.6, 2.6, 4.6, 5.5 |
+| 12 | Malformed JSON Error Reporting | Req 12.4 |
+| 13 | Jira Ticket Filtering | Req 9.1, 9.5 |

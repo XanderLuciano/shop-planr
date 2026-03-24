@@ -1,0 +1,33 @@
+// https://nuxt.com/docs/api/configuration/nuxt-config
+export default defineNuxtConfig({
+  modules: [
+    '@nuxt/eslint',
+    '@nuxt/ui'
+  ],
+
+  devtools: {
+    enabled: true
+  },
+
+  css: ['~/assets/css/main.css'],
+
+  runtimeConfig: {
+    dbType: process.env.DB_TYPE || 'sqlite',
+    dbPath: process.env.DB_PATH || './data/shop_erp.db',
+    jiraBaseUrl: process.env.JIRA_BASE_URL || '',
+    jiraProjectKey: process.env.JIRA_PROJECT_KEY || 'PI',
+    jiraUsername: process.env.JIRA_USERNAME || '',
+    jiraApiToken: process.env.JIRA_API_TOKEN || ''
+  },
+
+  compatibilityDate: '2025-01-15',
+
+  eslint: {
+    config: {
+      stylistic: {
+        commaDangle: 'never',
+        braceStyle: '1tbs'
+      }
+    }
+  }
+})

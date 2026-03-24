@@ -1,0 +1,10 @@
+node_modules
+.nuxt
+.output
+.DS_Store
+*.tar.gz
+coverage
+data/
+.env
+*.swp
+.vscode

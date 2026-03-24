@@ -1,0 +1,119 @@
+/**
+ * Integration test helpers.
+ *
+ * Provides isolated in-memory SQLite databases and fully-wired service instances
+ * for end-to-end integration testing through the service layer.
+ */
+import Database from 'better-sqlite3'
+import { resolve } from 'path'
+import { runMigrations } from '../../server/repositories/sqlite/index'
+import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
+import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
+import { SQLiteSerialRepository } from '../../server/repositories/sqlite/serialRepository'
+import { SQLiteCertRepository } from '../../server/repositories/sqlite/certRepository'
+import { SQLiteAuditRepository } from '../../server/repositories/sqlite/auditRepository'
+import { SQLiteTemplateRepository } from '../../server/repositories/sqlite/templateRepository'
+import { SQLiteBomRepository } from '../../server/repositories/sqlite/bomRepository'
+import { SQLiteNoteRepository } from '../../server/repositories/sqlite/noteRepository'
+import { SQLiteSnStepStatusRepository } from '../../server/repositories/sqlite/snStepStatusRepository'
+import { SQLiteSnStepOverrideRepository } from '../../server/repositories/sqlite/snStepOverrideRepository'
+import { SQLiteBomVersionRepository } from '../../server/repositories/sqlite/bomVersionRepository'
+import { SQLiteLibraryRepository } from '../../server/repositories/sqlite/libraryRepository'
+import { createJobService } from '../../server/services/jobService'
+import { createPathService } from '../../server/services/pathService'
+import { createSerialService } from '../../server/services/serialService'
+import { createCertService } from '../../server/services/certService'
+import { createAuditService } from '../../server/services/auditService'
+import { createTemplateService } from '../../server/services/templateService'
+import { createBomService } from '../../server/services/bomService'
+import { createNoteService } from '../../server/services/noteService'
+import { createLifecycleService } from '../../server/services/lifecycleService'
+import { createLibraryService } from '../../server/services/libraryService'
+import { createSequentialSnGenerator } from '../../server/utils/idGenerator'
+
+const MIGRATIONS_DIR = resolve(__dirname, '../../server/repositories/sqlite/migrations')
+
+export function createTestDb() {
+  const db = new Database(':memory:')
+  db.pragma('journal_mode = WAL')
+  db.pragma('foreign_keys = ON')
+  runMigrations(db, MIGRATIONS_DIR)
+  return db
+}
+
+export function createTestContext() {
+  const db = createTestDb()
+
+  const repos = {
+    jobs: new SQLiteJobRepository(db),
+    paths: new SQLitePathRepository(db),
+    serials: new SQLiteSerialRepository(db),
+    certs: new SQLiteCertRepository(db),
+    audit: new SQLiteAuditRepository(db),
+    templates: new SQLiteTemplateRepository(db),
+    bom: new SQLiteBomRepository(db),
+    notes: new SQLiteNoteRepository(db),
+    snStepStatuses: new SQLiteSnStepStatusRepository(db),
+    snStepOverrides: new SQLiteSnStepOverrideRepository(db),
+    bomVersions: new SQLiteBomVersionRepository(db),
+    library: new SQLiteLibraryRepository(db),
+  }
+
+  const snGenerator = createSequentialSnGenerator({
+    getCounter: () => {
+      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('sn') as { value: number } | undefined
+      return row?.value ?? 0
+    },
+    setCounter: (v: number) => {
+      db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('sn', v)
+    }
+  })
+
+  const auditService = createAuditService({ audit: repos.audit })
+
+  const lifecycleService = createLifecycleService(
+    {
+      serials: repos.serials,
+      paths: repos.paths,
+      jobs: repos.jobs,
+      snStepStatuses: repos.snStepStatuses,
+      snStepOverrides: repos.snStepOverrides,
+    },
+    auditService
+  )
+
+  const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, serials: repos.serials })
+  const pathService = createPathService({ paths: repos.paths, serials: repos.serials })
+  const serialService = createSerialService(
+    { serials: repos.serials, paths: repos.paths, certs: repos.certs, jobs: repos.jobs },
+    auditService,
+    snGenerator,
+    lifecycleService
+  )
+  const certService = createCertService({ certs: repos.certs }, auditService)
+  const templateService = createTemplateService({ templates: repos.templates, paths: repos.paths })
+  const bomService = createBomService(
+    { bom: repos.bom, serials: repos.serials, bomVersions: repos.bomVersions },
+    auditService
+  )
+  const noteService = createNoteService({ notes: repos.notes }, auditService)
+  const libraryService = createLibraryService({ library: repos.library })
+
+  return {
+    db,
+    repos,
+    jobService,
+    pathService,
+    serialService,
+    certService,
+    auditService,
+    templateService,
+    bomService,
+    noteService,
+    lifecycleService,
+    libraryService,
+    cleanup: () => db.close()
+  }
+}
+
+export type TestContext = ReturnType<typeof createTestContext>
