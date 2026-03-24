@@ -85,6 +85,7 @@ tests/
 | Deploy | `./deploy.sh` | Build + docker save + rsync to server |
 | Seed | `npm run seed` | Idempotent SAMPLE- data creation |
 | Seed reset | `npm run seed:reset` | Delete SAMPLE- data + re-seed |
+| Screenshots | `npm run screenshots` | Puppeteer captures 9 pages → `docs/screenshots/` |
 
 ## Key Entry Points
 
