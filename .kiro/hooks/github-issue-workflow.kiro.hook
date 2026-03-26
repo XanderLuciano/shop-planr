@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Start Issue Workflow",
+  "description": "Fetches open GitHub issues from xanderluciano/shop-planr, lets you pick one, creates a git branch following the repo's git workflow steering, and kicks off a design-first spec for the selected issue.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Run the following workflow step by step:\n\n1. Use the GitHub MCP to list all open issues from the repo xanderluciano/shop-planr. Present them in a numbered table (number, title, short description) and ask the user which issue they want to work on. Wait for their response before continuing.\n\n2. Once the user picks an issue, use the GitHub MCP to get the full issue details (body, labels, comments) for that issue number.\n\n3. Determine the appropriate branch name based on the issue:\n   - Bug fixes: fix/<short-description>\n   - Feature requests: feat/<short-description>\n   - Cleanup/refactoring: chore/<short-description>\n   Follow the git workflow rules in .kiro/steering/git-workflow.md — never commit directly to main.\n\n4. Check the current branch with `git branch --show-current`. If not on main, switch to main first. Then create the new branch with `git checkout -b <branch-name>`.\n\n5. Verify we are on the new branch with `git branch --show-current`.\n\n6. Using the full issue details (title, body, images, comments), kick off a new design-first spec for this issue. The spec should capture the requirements from the GitHub issue as its starting point."
+  }
+}

@@ -25,7 +25,7 @@
 | `bom_contributing_jobs` | Jobs feeding a BOM entry | bom_entry_id, job_id |
 | `users` | Kiosk-mode user profiles | id, name, department, active |
 | `audit_entries` | Append-only action log | id, action, user_id, timestamp, serial_id, etc. |
-| `settings` | Singleton app config | id='app_settings', jira_connection (JSON), jira_field_mappings (JSON) |
+| `settings` | Singleton app config | id='app_settings', jira_connection (JSON), jira_field_mappings (JSON), page_toggles (JSON) |
 | `step_notes` | Defect/note records | id, step_id, serial_ids (JSON), text, created_by |
 | `_migrations` | Migration tracking | version, name, applied_at, checksum |
 | `counters` | SN sequential counter | (planned in migration 002) |
@@ -39,7 +39,7 @@
 
 ## Domain Types (planned: `server/types/domain.ts`)
 
-Core interfaces: `Job`, `Path`, `ProcessStep`, `SerialNumber`, `Certificate`, `CertAttachment`, `TemplateRoute`, `TemplateStep`, `BOM`, `BomEntry`, `AuditEntry`, `ShopUser`, `StepNote`, `AppSettings`, `JiraConnectionSettings`, `JiraFieldMapping`, `FilterState`
+Core interfaces: `Job`, `Path`, `ProcessStep`, `SerialNumber`, `Certificate`, `CertAttachment`, `TemplateRoute`, `TemplateStep`, `BOM`, `BomEntry`, `AuditEntry`, `ShopUser`, `StepNote`, `AppSettings`, `JiraConnectionSettings`, `JiraFieldMapping`, `PageToggles`, `FilterState`
 
 API input types (planned: `server/types/api.ts`): `CreateJobInput`, `UpdateJobInput`, `CreatePathInput`, `BatchCreateSerialsInput`, `AdvanceSerialInput`, `AttachCertInput`, `CreateCertInput`, `BatchAttachCertInput`, `CreateTemplateInput`, `ApplyTemplateInput`, `CreateBomInput`, `LinkJiraInput`, `PushToJiraInput`
 
@@ -57,6 +57,7 @@ These columns store `JSON.stringify()` output as TEXT:
 - `jobs.jira_labels` — `string[]`
 - `settings.jira_connection` — `JiraConnectionSettings`
 - `settings.jira_field_mappings` — `JiraFieldMapping[]`
+- `settings.page_toggles` — `PageToggles` (9 boolean keys: jobs, serials, parts, queue, templates, bom, certs, jira, audit)
 - `step_notes.serial_ids` — `string[]`
 - `audit_entries.metadata` — `Record<string, string>`
 

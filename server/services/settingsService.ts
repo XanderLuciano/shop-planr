@@ -1,5 +1,6 @@
 import type { SettingsRepository } from '../repositories/interfaces/settingsRepository'
-import type { AppSettings, JiraConnectionSettings, JiraFieldMapping } from '../types/domain'
+import type { AppSettings, JiraConnectionSettings, JiraFieldMapping, PageToggles } from '../types/domain'
+import { DEFAULT_PAGE_TOGGLES, mergePageToggles } from '../utils/pageToggles'
 
 export interface SettingsRuntimeConfig {
   jiraBaseUrl: string
@@ -32,6 +33,7 @@ function buildDefaultSettings(runtimeConfig: SettingsRuntimeConfig): AppSettings
     id: 'app_settings',
     jiraConnection: buildDefaultJiraConnection(runtimeConfig),
     jiraFieldMappings: [...DEFAULT_FIELD_MAPPINGS],
+    pageToggles: { ...DEFAULT_PAGE_TOGGLES },
     updatedAt: new Date().toISOString()
   }
 }
@@ -52,6 +54,7 @@ export function createSettingsService(
     updateSettings(input: {
       jiraConnection?: Partial<JiraConnectionSettings>
       jiraFieldMappings?: JiraFieldMapping[]
+      pageToggles?: Partial<PageToggles>
     }): AppSettings {
       const current = repos.settings.get() ?? buildDefaultSettings(runtimeConfig)
 
@@ -66,6 +69,10 @@ export function createSettingsService(
 
       if (input.jiraFieldMappings) {
         updated.jiraFieldMappings = input.jiraFieldMappings
+      }
+
+      if (input.pageToggles) {
+        updated.pageToggles = mergePageToggles(current.pageToggles, input.pageToggles)
       }
 
       return repos.settings.upsert(updated)

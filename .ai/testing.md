@@ -26,7 +26,8 @@ tests/
   unit/
     services/           → jobService, pathService, serialService, etc. (10 files)
     utils/              → serialization, validation, idGenerator, errors, progressBar, services (6 files)
-    composables/        → useBarcode, useViewFilters (2 files)
+    composables/        → useBarcode, useViewFilters, useJobForm, workQueueSearch (4 files)
+    components/         → SerialCreationPanel, serialNoteAdd (2 files)
     repositories/sqlite/ → migrations (1 file)
   properties/
     jobPartCount.property.test.ts        → CP-1: Job part count invariant
@@ -40,6 +41,9 @@ tests/
     batchIdempotence.property.test.ts    → CP-10: Cert batch idempotence
     inputValidation.property.test.ts     → CP-11: Invalid input rejection (4 sub-tests)
     malformedJson.property.test.ts       → CP-12: Malformed JSON errors (8 sub-tests)
+    pageToggleMerge.property.test.ts     → P5-8: mergePageToggles + isPageEnabled (4 properties)
+    pageToggleRouteAccess.property.test.ts → P1,3: Route access + always-visible invariant (5 tests)
+    pageToggleSidebar.property.test.ts   → P2,4: Sidebar filtering consistency + bounds (2 tests)
   integration/
     helpers.ts                           → createTestContext() with all services
     jobLifecycle.test.ts                 → Full job lifecycle (6 tests)
