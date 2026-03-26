@@ -7,7 +7,7 @@
 
 Shop Planr (package name: `shop-erp`) is a job routing and ERP application for machine shops. It tracks production orders (Jobs) through multi-path routing of parts across sequential Process Steps, with serial number management, certificate traceability, progress visualization, and optional Jira integration. Built as a full-stack Nuxt 4 app with SQLite persistence.
 
-**Status**: All features implemented. Job lifecycle management added (scrap, force-complete, flexible advancement, step overrides, waivers, BOM versioning, process/location libraries). Dedicated job creation/edit pages. Serial detail page Routing tab reorganized into SectionCard sections. First-step serial creation panel (SerialCreationPanel) for operator work queue. Operator view redesigned: monolithic operator.vue split into Parts View (/parts), Step View (/parts/step/[stepId]), and Operator Work Queue (/queue). Inline note creation on serial detail page. Step overflow UX: StepTracker uses flex-wrap instead of horizontal scroll, compact step cards, condensed serial counts. 90 property-based tests (53 correctness properties), 51 integration tests, 666 tests passing across 109 files. Full frontend with lifecycle dialogs, configuration panels, and audit filters.
+**Status**: All features implemented. Job lifecycle management added (scrap, force-complete, flexible advancement, step overrides, waivers, BOM versioning, process/location libraries). Dedicated job creation/edit pages. Serial detail page Routing tab reorganized into SectionCard sections. First-step serial creation panel (SerialCreationPanel) for operator work queue. Operator view redesigned: monolithic operator.vue split into Parts View (/parts), Step View (/parts/step/[stepId]), and Operator Work Queue (/queue). Inline note creation on serial detail page. Step overflow UX: StepTracker uses flex-wrap instead of horizontal scroll, compact step cards, condensed serial counts. Nav page toggles: Settings → Page Visibility tab to hide/show sidebar pages, with route middleware guard and reactive sidebar filtering. 98 property-based tests (61 correctness properties), 51 integration tests, 677 tests passing across 112 files. Full frontend with lifecycle dialogs, configuration panels, and audit filters.
 
 ## Tech Stack
 
@@ -32,8 +32,8 @@ app/
   app.config.ts          → UI color config (primary: violet, neutral: neutral)
   pages/
     index.vue            → Placeholder homepage (to become dashboard)
-  components/            → 40+ components: SectionCard (reusable card wrapper), lifecycle dialogs (ScrapDialog, ForceCompleteDialog, AdvanceToStepDropdown), config panels (StepConfigPanel, AdvancementModeSelector, LibraryManager), job form (JobCreationForm), serial creation (SerialCreationPanel — first-step batch creation + advancement), utility (BonusBadge, PathDeleteButton, CertDetailView, TemplateEditor, etc.)
-  composables/           → 22+ composables: useJobForm, useLifecycle, useLibrary, useBomVersions, useAudit (with filters), usePartsView, useStepView, useOperatorWorkQueue + existing ones
+  components/            → 40+ components: SectionCard (reusable card wrapper), lifecycle dialogs (ScrapDialog, ForceCompleteDialog, AdvanceToStepDropdown), config panels (StepConfigPanel, AdvancementModeSelector, LibraryManager), job form (JobCreationForm), serial creation (SerialCreationPanel — first-step batch creation + advancement), page visibility (PageVisibilitySettings — toggle switches for nav pages), utility (BonusBadge, PathDeleteButton, CertDetailView, TemplateEditor, etc.)
+  composables/           → 22+ composables: useJobForm, useLifecycle, useLibrary, useBomVersions, useAudit (with filters), usePartsView, useStepView, useOperatorWorkQueue, useSettings (extended with pageToggles) + existing ones
   assets/css/
     main.css             → Tailwind imports + custom violet #8750FF scale + green scale
 server/
@@ -41,7 +41,7 @@ server/
   services/              → 12 service modules (business logic layer)
   repositories/
     interfaces/          → 14 repository interfaces + barrel export
-    sqlite/              → 14 SQLite implementations + migration system (4 migrations)
+    sqlite/              → 14 SQLite implementations + migration system (5 migrations)
     factory.ts           → createRepositories(config) — returns RepositorySet
     types.ts             → Re-exports RepositorySet type
   utils/
@@ -51,6 +51,7 @@ server/
     validation.ts        → assertPositive, assertNonEmpty, assertNonEmptyArray, assertOneOf, etc.
     db.ts                → getRepositories() singleton — lazy-inits from runtimeConfig
     services.ts          → getServices() singleton — wires all 12 services together
+    pageToggles.ts       → DEFAULT_PAGE_TOGGLES, ROUTE_TOGGLE_MAP, mergePageToggles(), isPageEnabled() — auto-imported by Nitro
   types/
     domain.ts            → 26+ domain types (Job, Path, ProcessStep, SerialNumber, SnStepStatus, SnStepOverride, BomVersion, ProcessLibraryEntry, LocationLibraryEntry, etc.)
     api.ts               → 25+ API input types (ScrapSerialInput, ForceCompleteInput, AdvanceToStepInput, EditBomInput, etc.)
@@ -175,7 +176,7 @@ Core entities and relationships:
 - **ProcessLibraryEntry** / **LocationLibraryEntry** → reusable process name and location libraries
 - **ShopUser** → simple kiosk-mode identity (no passwords)
 - **StepNote** → defect/note on serial(s) at a process step
-- **AppSettings** → singleton: Jira connection + field mappings (5 default PI project mappings)
+- **AppSettings** → singleton: Jira connection + field mappings + page toggles (5 default PI project mappings, 9 page visibility toggles)
 
 ## Sub-Maps (`.ai/` folder)
 

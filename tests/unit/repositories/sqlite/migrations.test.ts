@@ -280,7 +280,7 @@ describe('SQLite migration system', () => {
       const db = initDatabase(dbPath)
 
       const applied = db.prepare('SELECT version, name FROM _migrations ORDER BY version').all() as any[]
-      expect(applied).toHaveLength(4)
+      expect(applied).toHaveLength(5)
       expect(applied[0].version).toBe(1)
       expect(applied[0].name).toBe('initial_schema')
       expect(applied[1].version).toBe(2)
@@ -289,6 +289,8 @@ describe('SQLite migration system', () => {
       expect(applied[2].name).toBe('add_step_assignment')
       expect(applied[3].version).toBe(4)
       expect(applied[3].name).toBe('lifecycle_management')
+      expect(applied[4].version).toBe(5)
+      expect(applied[4].name).toBe('add_page_toggles')
 
       db.close()
     })
