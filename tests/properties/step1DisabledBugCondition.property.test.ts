@@ -172,7 +172,7 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
    * (all serials advanced past it), lookupStep should return a non-null
    * result with partCount: 0.
    *
-   * This WILL FAIL on unfixed code because the buggy logic returns null
+   * This validates the fixed behavior; unfixed code would return null
    * when serials.length === 0.
    *
    * **Validates: Requirements 2.1, 2.2**
@@ -241,12 +241,12 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
    * (no serials advanced to it yet), lookupStep should return a non-null
    * result with partCount: 0.
    *
-   * This WILL FAIL on unfixed code because the buggy logic returns null
+   * This validates the fixed behavior; unfixed code would return null
    * when serials.length === 0.
    *
    * **Validates: Requirements 2.4, 2.5**
    */
-  it('Property 2: Non-first step with zero serials returns valid response (EXPECTED TO FAIL)', () => {
+  it('Property 2: Non-first step with zero serials returns valid response', () => {
     fc.assert(
       fc.property(multiStepConfigArb, (config) => {
         ctx = createTestContext()
@@ -299,12 +299,12 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
    * aggregateAllWork should include that step in the response so it
    * remains navigable from the Parts View.
    *
-   * This WILL FAIL on unfixed code because the buggy logic skips steps
+   * This validates the fixed behavior; unfixed code would skip steps
    * with serials.length === 0.
    *
    * **Validates: Requirements 2.3**
    */
-  it('Property 3: Parts View includes first step even with zero serials (EXPECTED TO FAIL)', () => {
+  it('Property 3: Parts View includes first step even with zero serials', () => {
     fc.assert(
       fc.property(jobPathConfigArb, (config) => {
         ctx = createTestContext()
