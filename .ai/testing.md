@@ -13,7 +13,7 @@
 
 | Command | What it does |
 |---------|-------------|
-| `npm run test` | `vitest run` — single pass, all tests |
+| `npm run test` | `vitest run` — single pass, all tests (689 tests, 114 files) |
 | `npm run test:watch` | `vitest` — watch mode |
 | `npx vitest run tests/properties` | Property tests only |
 | `npx vitest run tests/unit` | Unit tests only |

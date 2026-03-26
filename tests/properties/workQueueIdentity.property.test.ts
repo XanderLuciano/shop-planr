@@ -6,10 +6,21 @@
  *
  * **Validates: Requirements 6.3, 6.4**
  */
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import fc from 'fast-check'
 
 const STORAGE_KEY = 'shop_erp_operator_id'
+
+// happy-dom's localStorage is broken without a --localstorage-file path.
+// Stub it with a simple in-memory implementation.
+const store: Record<string, string> = {}
+const localStorageMock = {
+  getItem: (key: string) => store[key] ?? null,
+  setItem: (key: string, value: string) => { store[key] = value },
+  removeItem: (key: string) => { delete store[key] },
+  clear: () => { Object.keys(store).forEach(k => delete store[k]) },
+}
+vi.stubGlobal('localStorage', localStorageMock)
 
 /**
  * We test the localStorage round-trip logic directly rather than importing

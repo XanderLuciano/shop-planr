@@ -141,7 +141,7 @@ const defaultConnection: JiraConnectionSettings = {
 }
 
 onMounted(async () => {
-  await Promise.all([fetchSettings(), loadAllUsers()])
+  await loadAllUsers()
 })
 </script>
 
