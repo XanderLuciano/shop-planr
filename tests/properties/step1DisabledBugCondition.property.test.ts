@@ -172,7 +172,7 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
    * (all serials advanced past it), lookupStep should return a non-null
    * result with partCount: 0.
    *
-   * This would fail on unfixed code because the buggy logic returns null
+   * This validates the fixed behavior; unfixed code would return null
    * when serials.length === 0.
    *
    * **Validates: Requirements 2.1, 2.2**
@@ -241,7 +241,7 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
    * (no serials advanced to it yet), lookupStep should return a non-null
    * result with partCount: 0.
    *
-   * This would fail on unfixed code because the buggy logic returns null
+   * This validates the fixed behavior; unfixed code would return null
    * when serials.length === 0.
    *
    * **Validates: Requirements 2.4, 2.5**
@@ -299,7 +299,7 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
    * aggregateAllWork should include that step in the response so it
    * remains navigable from the Parts View.
    *
-   * This would fail on unfixed code because the buggy logic skips steps
+   * This validates the fixed behavior; unfixed code would skip steps
    * with serials.length === 0.
    *
    * **Validates: Requirements 2.3**
