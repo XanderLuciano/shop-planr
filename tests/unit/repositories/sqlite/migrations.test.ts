@@ -209,6 +209,22 @@ describe('SQLite migration system', () => {
       db.close()
     })
 
+    it('applies 005_add_page_toggles.sql successfully', () => {
+      const db = initDatabase(dbPath)
+
+      const columns = db.prepare('PRAGMA table_info(settings)').all() as {
+        name: string; type: string; notnull: number; dflt_value: string | null
+      }[]
+      const col = columns.find(c => c.name === 'page_toggles')
+
+      expect(col).toBeDefined()
+      expect(col!.type).toBe('TEXT')
+      expect(col!.notnull).toBe(1)
+      expect(col!.dflt_value).toBe("'{}'")
+
+      db.close()
+    })
+
     it('creates all expected indexes', () => {
       const db = initDatabase(dbPath)
 

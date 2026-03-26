@@ -94,6 +94,42 @@ describe('SettingsService', () => {
       expect(mappings[3].shopErpField).toBe('priority')
       expect(mappings[4].shopErpField).toBe('labels')
     })
+
+    it('returns all 9 pageToggles defaulted to true when no DB settings', () => {
+      const settings = service.getSettings()
+      const toggles = settings.pageToggles
+
+      expect(Object.keys(toggles).sort()).toEqual(
+        ['audit', 'bom', 'certs', 'jira', 'jobs', 'parts', 'queue', 'serials', 'templates']
+      )
+      expect(Object.values(toggles).every(v => v === true)).toBe(true)
+    })
+
+    it('returns pageToggles from DB settings', () => {
+      const dbSettings: AppSettings = {
+        id: 'app_settings',
+        jiraConnection: {
+          baseUrl: '',
+          projectKey: 'PI',
+          username: '',
+          apiToken: '',
+          enabled: false,
+          pushEnabled: false
+        },
+        jiraFieldMappings: [],
+        pageToggles: { jobs: false, serials: false, parts: true, queue: true, templates: true, bom: false, certs: true, jira: true, audit: false },
+        updatedAt: '2024-01-01T00:00:00.000Z'
+      }
+      settingsRepo.upsert(dbSettings)
+
+      const settings = service.getSettings()
+      expect(settings.pageToggles.jobs).toBe(false)
+      expect(settings.pageToggles.serials).toBe(false)
+      expect(settings.pageToggles.parts).toBe(true)
+      expect(settings.pageToggles.bom).toBe(false)
+      expect(settings.pageToggles.audit).toBe(false)
+      expect(settings.pageToggles.jira).toBe(true)
+    })
   })
 
   describe('updateSettings', () => {
