@@ -34,6 +34,10 @@ app/
     index.vue            → Placeholder homepage (to become dashboard)
   components/            → 40+ components: SectionCard (reusable card wrapper), lifecycle dialogs (ScrapDialog, ForceCompleteDialog, AdvanceToStepDropdown), config panels (StepConfigPanel, AdvancementModeSelector, LibraryManager), job form (JobCreationForm), serial creation (SerialCreationPanel — first-step batch creation + advancement), page visibility (PageVisibilitySettings — toggle switches for nav pages), utility (BonusBadge, PathDeleteButton, CertDetailView, TemplateEditor, etc.)
   composables/           → 22+ composables: useJobForm, useLifecycle, useLibrary, useBomVersions, useAudit (with filters), usePartsView, useStepView, useOperatorWorkQueue, useSettings (extended with pageToggles) + existing ones
+  middleware/
+    pageGuard.global.ts  → Global route middleware: blocks navigation to disabled pages, redirects to /
+  utils/
+    pageToggles.ts       → Re-exports DEFAULT_PAGE_TOGGLES, ROUTE_TOGGLE_MAP, isPageEnabled() for client-side auto-import
   assets/css/
     main.css             → Tailwind imports + custom violet #8750FF scale + green scale
 server/
@@ -63,10 +67,10 @@ tests/
   unit/
     utils/               → 4 test files (errors, idGenerator, serialization, validation, services)
     services/            → 10 test files (one per service)
-    composables/         → 3 test files (useBarcode, useViewFilters, useJobForm)
-    components/          → 1 test file (SerialCreationPanel)
+    composables/         → 4 test files (useBarcode, useViewFilters, useJobForm, workQueueSearch)
+    components/          → 2 test files (SerialCreationPanel, serialNoteAdd)
     repositories/sqlite/ → 1 test file (migrations)
-  properties/            → 48 property-based test files (85 properties)
+  properties/            → 51 property-based test files (93 properties)
   integration/           → 15 files: helpers + 14 end-to-end lifecycle tests (51 tests)
 ```
 
@@ -77,7 +81,7 @@ tests/
 | Dev server | `npm run dev` | Nuxt dev with HMR |
 | Build | `npm run build` | Production build to `.output/` |
 | Preview | `npm run preview` | Preview production build locally |
-| Test | `npm run test` | `vitest run` — 666 tests, 109 files |
+| Test | `npm run test` | `vitest run` — 677 tests, 112 files |
 | Test watch | `npm run test:watch` | `vitest` in watch mode |
 | Lint | `npm run lint` | ESLint with Nuxt config |
 | Typecheck | `npm run typecheck` | `nuxt typecheck` |
@@ -126,7 +130,7 @@ Dependencies flow left-to-right only. All business logic lives in services. See 
 | `/api/audit/**` | `auditService` | Immutable audit trail |
 | `/api/jira/**` | `jiraService` | Jira read/push integration (tickets, link, push, comment) |
 | `/api/bom/**` | `bomService` | Bill of materials roll-ups + edit + version history |
-| `/api/settings/**` | `settingsService` | Jira config + field mappings |
+| `/api/settings/**` | `settingsService` | Jira config + field mappings + page toggles |
 | `/api/notes/**` | `noteService` | Process step notes/defects |
 | `/api/users/**` | `userService` | Simple kiosk-mode user profiles |
 | `/api/operator/**` | (aggregates job/path/serial) | Workstation view data |
@@ -153,7 +157,7 @@ Dependencies flow left-to-right only. All business logic lives in services. See 
 | BOM | `app/pages/bom.vue` | Bill of materials roll-ups + edit + version history |
 | Jira | `app/pages/jira.vue` | Jira ticket dashboard (conditional) |
 | Audit | `app/pages/audit.vue` | Audit trail viewer with filters (action type, user, serial, job, date range) |
-| Settings | `app/pages/settings.vue` | Users, Jira connection, field mappings, process/location libraries |
+| Settings | `app/pages/settings.vue` | Users, Jira connection, field mappings, process/location libraries, page visibility toggles |
 | Serial browser | `app/pages/serials/index.vue` | Searchable/filterable serial number list |
 | Part detail | `app/pages/serials/[id].vue` | Tabbed part view: routing (SectionCard sections: routing, certificates, notes, advance process; lifecycle features, deferred steps, overrides, certs) + sibling serials |
 
