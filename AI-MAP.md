@@ -70,7 +70,7 @@ tests/
     composables/         → 4 test files (useBarcode, useViewFilters, useJobForm, workQueueSearch)
     components/          → 2 test files (SerialCreationPanel, serialNoteAdd)
     repositories/sqlite/ → 1 test file (migrations)
-  properties/            → 53 property-based test files (98 properties)
+  properties/            → property-based tests (fast-check properties; see tests/properties for full list)
   integration/           → 15 files: helpers + 14 end-to-end lifecycle tests (51 tests)
 ```
 
