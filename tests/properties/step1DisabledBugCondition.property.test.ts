@@ -177,7 +177,7 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
    *
    * **Validates: Requirements 2.1, 2.2**
    */
-  it('Property 1: First step with zero serials returns valid response (EXPECTED TO FAIL)', () => {
+  it('Property 1: First step with zero serials returns valid response', () => {
     fc.assert(
       fc.property(jobPathConfigArb, (config) => {
         ctx = createTestContext()
