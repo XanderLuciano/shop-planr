@@ -3,7 +3,7 @@ import type { JiraTicket } from '~/server/services/jiraService'
 import type { TemplateRoute } from '~/server/types/domain'
 
 const { tickets, loading, error, fromCache, fetchTickets, linkTicket, refreshTickets } = useJira()
-const { settings, fetchSettings } = useSettings()
+const { settings } = useSettings()
 const { templates, fetchTemplates } = useTemplates()
 const { jobs, fetchJobs } = useJobs()
 
@@ -75,7 +75,6 @@ async function confirmLink() {
 }
 
 onMounted(async () => {
-  await fetchSettings()
   if (jiraEnabled.value) {
     await Promise.all([fetchTickets(), fetchTemplates(), fetchJobs()])
   }

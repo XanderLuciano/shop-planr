@@ -9,7 +9,7 @@ const { getJob, updateJob } = useJobs()
 const { getPath: fetchPathDetail } = usePaths()
 const { templates, fetchTemplates, applyTemplate } = useTemplates()
 const { fetchNotesForStep } = useNotes()
-const { settings, fetchSettings } = useSettings()
+const { settings } = useSettings()
 const { pushDescriptionTable, pushCommentSummary } = useJira()
 
 // Active users for step assignment dropdowns
@@ -272,7 +272,6 @@ onMounted(() => {
   loadJob()
   loadActiveUsers()
   fetchTemplates()
-  fetchSettings()
 })
 </script>
 
