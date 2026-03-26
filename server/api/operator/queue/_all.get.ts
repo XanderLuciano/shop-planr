@@ -15,7 +15,7 @@ export default defineEventHandler(async () => {
 
         for (const step of path.steps) {
           const serials = serialService.listSerialsByStepIndex(path.id, step.order)
-          if (serials.length === 0) continue
+          if (serials.length === 0 && step.order !== 0) continue
 
           const key = `${job.id}|${path.id}|${step.order}`
           const isFinalStep = step.order === totalSteps - 1

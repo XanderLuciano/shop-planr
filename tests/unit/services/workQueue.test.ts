@@ -28,7 +28,7 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
       const totalSteps = path.steps.length
       for (const step of path.steps) {
         const serials = serialService.listSerialsByStepIndex(path.id, step.order)
-        if (serials.length === 0) continue
+        if (serials.length === 0 && step.order !== 0) continue
         const key = `${job.id}|${path.id}|${step.order}`
         const isFinalStep = step.order === totalSteps - 1
         const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
@@ -49,7 +49,7 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
 
 /**
  * Replicate GET /api/operator/step/[stepId] lookup logic.
- * Returns null when the step is not found or has zero active serials (maps to 404).
+ * Returns null only when the step ID does not exist in the database (maps to 404).
  */
 function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
   const { jobService, pathService, serialService, noteService } = ctx
@@ -62,17 +62,27 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
       for (const step of path.steps) {
         if (step.id !== stepId) continue
         const serials = serialService.listSerialsByStepIndex(path.id, step.order)
-        if (serials.length === 0) return null
         const isFinalStep = step.order === totalSteps - 1
+        const prevStep = step.order > 0 ? path.steps[step.order - 1] : undefined
         const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
+
+        let previousStepWipCount: number | undefined
+        if (step.order > 0 && serials.length === 0) {
+          const prevSerials = serialService.listSerialsByStepIndex(path.id, step.order - 1)
+          previousStepWipCount = prevSerials.length
+        }
+
         return {
           job: {
             jobId: job.id, jobName: job.name, pathId: path.id, pathName: path.name,
             stepId: step.id, stepName: step.name, stepOrder: step.order, stepLocation: step.location,
             totalSteps, serialIds: serials.map(s => s.id), partCount: serials.length,
+            previousStepId: prevStep?.id, previousStepName: prevStep?.name,
+            nextStepId: nextStep?.id,
             nextStepName: nextStep?.name, nextStepLocation: nextStep?.location, isFinalStep,
           },
           notes: noteService.getNotesForStep(stepId),
+          ...(previousStepWipCount !== undefined && { previousStepWipCount }),
         }
       }
     }
@@ -149,12 +159,12 @@ describe('Work Queue API Endpoint Unit Tests', () => {
   })
 
   describe('GET /api/operator/queue/_all — All-Work Endpoint', () => {
-    it('returns empty jobs array and totalParts 0 when no active serials exist', () => {
+    it('returns first step with zero serials in jobs array when no active serials exist', () => {
       ctx = createTestContext()
 
       // Create a job with a path but no serials
       const job = ctx.jobService.createJob({ name: 'Empty Job', goalQuantity: 5 })
-      ctx.pathService.createPath({
+      const path = ctx.pathService.createPath({
         jobId: job.id,
         name: 'Main Route',
         goalQuantity: 5,
@@ -163,7 +173,11 @@ describe('Work Queue API Endpoint Unit Tests', () => {
 
       const response = aggregateAllWork(ctx)
 
-      expect(response.jobs).toEqual([])
+      // First step (order 0) should appear even with zero serials
+      expect(response.jobs).toHaveLength(1)
+      expect(response.jobs[0].stepName).toBe('Milling')
+      expect(response.jobs[0].stepOrder).toBe(0)
+      expect(response.jobs[0].partCount).toBe(0)
       expect(response.totalParts).toBe(0)
       expect(response.operatorId).toBe('_all')
     })
@@ -190,7 +204,7 @@ describe('Work Queue API Endpoint Unit Tests', () => {
       expect(result).toBeNull()
     })
 
-    it('returns null (404) for a step that exists but has zero active serials', () => {
+    it('returns valid response with partCount 0 for a step that exists but has zero active serials', () => {
       ctx = createTestContext()
 
       const job = ctx.jobService.createJob({ name: 'Test Job', goalQuantity: 2 })
@@ -214,7 +228,12 @@ describe('Work Queue API Endpoint Unit Tests', () => {
 
       const step0Id = path.steps[0].id
       const result = lookupStep(ctx, step0Id)
-      expect(result).toBeNull()
+      // Fixed behavior: valid step with zero serials returns a response with partCount: 0
+      expect(result).not.toBeNull()
+      expect(result!.job.partCount).toBe(0)
+      expect(result!.job.serialIds).toEqual([])
+      expect(result!.job.stepOrder).toBe(0)
+      expect(result!.job.stepName).toBe('Receiving')
     })
   })
 

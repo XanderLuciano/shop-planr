@@ -7,7 +7,7 @@
 
 Shop Planr (package name: `shop-erp`) is a job routing and ERP application for machine shops. It tracks production orders (Jobs) through multi-path routing of parts across sequential Process Steps, with serial number management, certificate traceability, progress visualization, and optional Jira integration. Built as a full-stack Nuxt 4 app with SQLite persistence.
 
-**Status**: All features implemented. Job lifecycle management added (scrap, force-complete, flexible advancement, step overrides, waivers, BOM versioning, process/location libraries). Dedicated job creation/edit pages. Serial detail page Routing tab reorganized into SectionCard sections. First-step serial creation panel (SerialCreationPanel) for operator work queue. Operator view redesigned: monolithic operator.vue split into Parts View (/parts), Step View (/parts/step/[stepId]), and Operator Work Queue (/queue). Inline note creation on serial detail page. Step overflow UX: StepTracker uses flex-wrap instead of horizontal scroll, compact step cards, condensed serial counts. 90 property-based tests (53 correctness properties), 51 integration tests, 666 tests passing across 109 files. Full frontend with lifecycle dialogs, configuration panels, and audit filters.
+**Status**: All features implemented. Job lifecycle management added (scrap, force-complete, flexible advancement, step overrides, waivers, BOM versioning, process/location libraries). Dedicated job creation/edit pages. Serial detail page Routing tab reorganized into SectionCard sections. First-step serial creation panel (SerialCreationPanel) for operator work queue. Operator view redesigned: monolithic operator.vue split into Parts View (/parts), Step View (/parts/step/[stepId]), and Operator Work Queue (/queue). Inline note creation on serial detail page. Step overflow UX: StepTracker uses flex-wrap instead of horizontal scroll, compact step cards, condensed serial counts. Step 1 disabled-after-advance bugfix: zero-serial steps return 200 with partCount:0 instead of 404; first steps always visible in Parts View; prev/next step navigation; deduplicated step headers. 95 property-based tests (58 correctness properties), 51 integration tests, 671 tests passing across 111 files. Full frontend with lifecycle dialogs, configuration panels, and audit filters.
 
 ## Tech Stack
 
@@ -65,7 +65,7 @@ tests/
     composables/         → 3 test files (useBarcode, useViewFilters, useJobForm)
     components/          → 1 test file (SerialCreationPanel)
     repositories/sqlite/ → 1 test file (migrations)
-  properties/            → 48 property-based test files (85 properties)
+  properties/            → 50 property-based test files (90 properties)
   integration/           → 15 files: helpers + 14 end-to-end lifecycle tests (51 tests)
 ```
 
@@ -76,7 +76,7 @@ tests/
 | Dev server | `npm run dev` | Nuxt dev with HMR |
 | Build | `npm run build` | Production build to `.output/` |
 | Preview | `npm run preview` | Preview production build locally |
-| Test | `npm run test` | `vitest run` — 666 tests, 109 files |
+| Test | `npm run test` | `vitest run` — 671 tests, 111 files |
 | Test watch | `npm run test:watch` | `vitest` in watch mode |
 | Lint | `npm run lint` | ESLint with Nuxt config |
 | Typecheck | `npm run typecheck` | `nuxt typecheck` |

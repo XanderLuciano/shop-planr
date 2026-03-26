@@ -1,23 +1,22 @@
 /**
- * Property 4: Step Endpoint Correctness
+ * Preservation Property Tests — Step 1 Disabled After Advance
  *
- * For any valid step ID that has active serials, the step endpoint should return
- * a WorkQueueJob with: the correct stepId, stepOrder, stepName, and stepLocation
- * matching the process step; the correct jobId, jobName, pathId, and pathName
- * matching the parent path and job; serialIds containing exactly the IDs of all
- * active serials at that step; and partCount equal to the length of serialIds.
+ * These tests verify baseline behavior that MUST be preserved after the fix.
+ * They run against the UNFIXED lookupStep logic and MUST PASS on current code.
  *
- * **Validates: Requirements 2.3, 3.1, 3.5**
+ * Property 4: Steps with active serials return correct WorkQueueJob data
+ * Property 5: Invalid (non-existent) step IDs return null (404)
+ *
+ * **Validates: Requirements 3.1, 3.2, 3.4**
  */
 import { describe, it, afterEach, expect } from 'vitest'
 import fc from 'fast-check'
 import { createTestContext, type TestContext } from '../integration/helpers'
 import type { WorkQueueJob, StepViewResponse } from '../../server/types/computed'
 
-/**
- * Replicate the step endpoint lookup logic from
- * server/api/operator/step/[stepId].get.ts as a pure function.
- */
+// ---------------------------------------------------------------------------
+// Replicated UNFIXED logic from server/api/operator/step/[stepId].get.ts
+// ---------------------------------------------------------------------------
 function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
   const { jobService, pathService, serialService, noteService } = ctx
   const jobs = jobService.listJobs()
@@ -32,16 +31,10 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
         if (step.id !== stepId) continue
 
         const serials = serialService.listSerialsByStepIndex(path.id, step.order)
+        if (serials.length === 0) return null // BUG: returns null for zero serials
 
         const isFinalStep = step.order === totalSteps - 1
-        const prevStep = step.order > 0 ? path.steps[step.order - 1] : undefined
         const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
-
-        let previousStepWipCount: number | undefined
-        if (step.order > 0 && serials.length === 0) {
-          const prevSerials = serialService.listSerialsByStepIndex(path.id, step.order - 1)
-          previousStepWipCount = prevSerials.length
-        }
 
         const foundJob: WorkQueueJob = {
           jobId: job.id,
@@ -55,28 +48,25 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
           totalSteps,
           serialIds: serials.map(s => s.id),
           partCount: serials.length,
-          previousStepId: prevStep?.id,
-          previousStepName: prevStep?.name,
-          nextStepId: nextStep?.id,
           nextStepName: nextStep?.name,
           nextStepLocation: nextStep?.location,
           isFinalStep,
         }
 
         const notes = noteService.getNotesForStep(stepId)
-        return {
-          job: foundJob,
-          notes,
-          ...(previousStepWipCount !== undefined && { previousStepWipCount }),
-        }
+        return { job: foundJob, notes }
       }
     }
   }
 
-  return null // step not found → 404
+  return null
 }
 
-/** Arbitrary for a single job with one path, random steps, and random serials */
+// ---------------------------------------------------------------------------
+// Arbitraries — same pattern as stepEndpoint.property.test.ts
+// ---------------------------------------------------------------------------
+
+/** Arbitrary for a single job with one path, random steps, and random serials with advancements */
 const jobPathConfigArb = fc.record({
   jobName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
   pathName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
@@ -93,14 +83,20 @@ const jobPathConfigArb = fc.record({
     }),
     { minLength: 0, maxLength: 8 },
   ),
-  /** Index of the step to query (clamped to stepCount at runtime) */
   targetStepIndex: fc.integer({ min: 0, max: 4 }),
 })
 
-/** Generate 1-3 job/path configs; we'll pick one step from the first config */
+/** Generate 1-3 job/path configs */
 const scenarioArb = fc.array(jobPathConfigArb, { minLength: 1, maxLength: 3 })
 
-describe('Property 4: Step Endpoint Correctness', () => {
+/** Arbitrary for random non-existent step IDs */
+const fakeStepIdArb = fc.stringMatching(/^step_[A-Za-z0-9]{8,12}$/)
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+describe('Preservation — Step 1 Disabled After Advance', () => {
   let ctx: TestContext
 
   afterEach(() => {
@@ -110,13 +106,21 @@ describe('Property 4: Step Endpoint Correctness', () => {
     }
   })
 
-  it('returns correct WorkQueueJob for any step with active serials', () => {
+  /**
+   * Property 4: Preservation — Steps With Active Serials Unchanged
+   *
+   * For any valid step that has active serials (serials.length > 0),
+   * the unfixed lookupStep returns a non-null result with correct metadata.
+   * This behavior MUST be preserved after the fix.
+   *
+   * **Validates: Requirements 3.2, 3.4**
+   */
+  it('Property 4: Active serial steps return correct WorkQueueJob (MUST PASS)', () => {
     fc.assert(
       fc.property(scenarioArb, (configs) => {
         ctx = createTestContext()
         const { jobService, pathService, serialService } = ctx
 
-        // Track created step IDs and serial positions
         interface StepRecord {
           stepId: string
           stepOrder: number
@@ -156,7 +160,6 @@ describe('Property 4: Step Endpoint Correctness', () => {
             steps,
           })
 
-          // Record step metadata
           for (const step of path.steps) {
             allStepRecords.push({
               stepId: step.id,
@@ -171,7 +174,6 @@ describe('Property 4: Step Endpoint Correctness', () => {
             })
           }
 
-          // Create serials
           const serials = serialService.batchCreateSerials(
             { jobId: job.id, pathId: path.id, quantity: config.serialCount },
             'user_test',
@@ -196,7 +198,7 @@ describe('Property 4: Step Endpoint Correctness', () => {
               try {
                 serialService.advanceSerial(serial.id, 'user_test')
                 if (tracked.currentStepIndex === config.stepCount - 1) {
-                  tracked.currentStepIndex = -1 // completed
+                  tracked.currentStepIndex = -1
                 } else {
                   tracked.currentStepIndex += 1
                 }
@@ -207,7 +209,7 @@ describe('Property 4: Step Endpoint Correctness', () => {
           }
         }
 
-        // Find steps that have active serials
+        // Find steps that have active serials (serials.length > 0)
         const stepsWithActiveSerials = allStepRecords.filter((rec) => {
           return allTrackedSerials.some(
             s => s.pathId === rec.pathId && s.currentStepIndex === rec.stepOrder,
@@ -217,31 +219,21 @@ describe('Property 4: Step Endpoint Correctness', () => {
         // If no steps have active serials, skip this iteration
         if (stepsWithActiveSerials.length === 0) return
 
-        // Pick a target step from the first config (clamped)
+        // Pick a target step (clamped)
         const targetIdx = configs[0].targetStepIndex % stepsWithActiveSerials.length
         const targetStep = stepsWithActiveSerials[targetIdx]
 
-        // Call the replicated lookup
+        // Call the unfixed lookupStep
         const result = lookupStep(ctx, targetStep.stepId)
 
-        // The step has active serials, so result must not be null
+        // Step has active serials → result must be non-null
         expect(result, `Expected non-null result for step ${targetStep.stepId}`).not.toBeNull()
         const { job } = result!
 
-        // Verify step fields
-        expect(job.stepId).toBe(targetStep.stepId)
-        expect(job.stepOrder).toBe(targetStep.stepOrder)
-        expect(job.stepName).toBe(targetStep.stepName)
-        expect(job.stepLocation).toBe(targetStep.stepLocation)
+        // Verify partCount > 0
+        expect(job.partCount).toBeGreaterThan(0)
 
-        // Verify parent path and job fields
-        expect(job.jobId).toBe(targetStep.jobId)
-        expect(job.jobName).toBe(targetStep.jobName)
-        expect(job.pathId).toBe(targetStep.pathId)
-        expect(job.pathName).toBe(targetStep.pathName)
-        expect(job.totalSteps).toBe(targetStep.totalSteps)
-
-        // Verify serialIds contains exactly the active serials at this step
+        // Verify serialIds matches expected serials at this step
         const expectedSerialIds = allTrackedSerials
           .filter(s => s.pathId === targetStep.pathId && s.currentStepIndex === targetStep.stepOrder)
           .map(s => s.id)
@@ -251,6 +243,17 @@ describe('Property 4: Step Endpoint Correctness', () => {
 
         // Verify partCount equals serialIds length
         expect(job.partCount).toBe(job.serialIds.length)
+
+        // Verify all metadata fields
+        expect(job.stepId).toBe(targetStep.stepId)
+        expect(job.stepOrder).toBe(targetStep.stepOrder)
+        expect(job.stepName).toBe(targetStep.stepName)
+        expect(job.stepLocation).toBe(targetStep.stepLocation)
+        expect(job.jobId).toBe(targetStep.jobId)
+        expect(job.jobName).toBe(targetStep.jobName)
+        expect(job.pathId).toBe(targetStep.pathId)
+        expect(job.pathName).toBe(targetStep.pathName)
+        expect(job.totalSteps).toBe(targetStep.totalSteps)
 
         // Verify isFinalStep and next step info
         const isFinalStep = targetStep.stepOrder === targetStep.totalSteps - 1
@@ -264,6 +267,62 @@ describe('Property 4: Step Endpoint Correctness', () => {
         ctx.cleanup()
         ctx = null as any
       }),
+      { numRuns: 100 },
+    )
+  })
+
+  /**
+   * Property 5: Preservation — Invalid Step IDs Still 404
+   *
+   * For any step ID that does not correspond to any existing process step
+   * in the database, lookupStep returns null (404). This behavior MUST
+   * be preserved after the fix.
+   *
+   * **Validates: Requirements 3.1**
+   */
+  it('Property 5: Invalid step IDs return null (MUST PASS)', () => {
+    fc.assert(
+      fc.property(
+        jobPathConfigArb,
+        fakeStepIdArb,
+        (config, fakeStepId) => {
+          ctx = createTestContext()
+          const { jobService, pathService, serialService } = ctx
+
+          // Create at least one job/path so the DB isn't empty
+          const job = jobService.createJob({
+            name: config.jobName,
+            goalQuantity: Math.max(config.serialCount, 1),
+          })
+
+          const steps = Array.from({ length: config.stepCount }, (_, i) => ({
+            name: `Step-${i}`,
+            location: config.stepLocations[i],
+          }))
+
+          const path = pathService.createPath({
+            jobId: job.id,
+            name: config.pathName,
+            goalQuantity: Math.max(config.serialCount, 1),
+            steps,
+          })
+
+          // Create serials so the DB has real data
+          serialService.batchCreateSerials(
+            { jobId: job.id, pathId: path.id, quantity: config.serialCount },
+            'user_test',
+          )
+
+          // Call lookupStep with a fake step ID that doesn't exist
+          const result = lookupStep(ctx, fakeStepId)
+
+          // Invalid step ID → must return null (404)
+          expect(result, `Fake step ID "${fakeStepId}" should return null`).toBeNull()
+
+          ctx.cleanup()
+          ctx = null as any
+        },
+      ),
       { numRuns: 100 },
     )
   })
