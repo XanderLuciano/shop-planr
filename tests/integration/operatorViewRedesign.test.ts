@@ -39,7 +39,7 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
       const totalSteps = path.steps.length
       for (const step of path.steps) {
         const serials = serialService.listSerialsByStepIndex(path.id, step.order)
-        if (serials.length === 0) continue
+        if (serials.length === 0 && step.order !== 0) continue
         const key = `${job.id}|${path.id}|${step.order}`
         const isFinalStep = step.order === totalSteps - 1
         const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
@@ -80,9 +80,16 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
       for (const step of path.steps) {
         if (step.id !== stepId) continue
         const serials = serialService.listSerialsByStepIndex(path.id, step.order)
-        if (serials.length === 0) return null
         const isFinalStep = step.order === totalSteps - 1
+        const prevStep = step.order > 0 ? path.steps[step.order - 1] : undefined
         const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
+
+        let previousStepWipCount: number | undefined
+        if (step.order > 0 && serials.length === 0) {
+          const prevSerials = serialService.listSerialsByStepIndex(path.id, step.order - 1)
+          previousStepWipCount = prevSerials.length
+        }
+
         const foundJob: WorkQueueJob = {
           jobId: job.id,
           jobName: job.name,
@@ -95,12 +102,19 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
           totalSteps,
           serialIds: serials.map(s => s.id),
           partCount: serials.length,
+          previousStepId: prevStep?.id,
+          previousStepName: prevStep?.name,
+          nextStepId: nextStep?.id,
           nextStepName: nextStep?.name,
           nextStepLocation: nextStep?.location,
           isFinalStep,
         }
         const notes = noteService.getNotesForStep(stepId)
-        return { job: foundJob, notes }
+        return {
+          job: foundJob,
+          notes,
+          ...(previousStepWipCount !== undefined && { previousStepWipCount }),
+        }
       }
     }
   }
@@ -330,7 +344,7 @@ describe('Operator View Redesign Integration', () => {
     // Notes should be empty (none created)
     expect(notes).toHaveLength(0)
 
-    // Step with no active serials returns null (404)
+    // Step with no active serials returns valid response with partCount: 0 (fixed behavior)
     // Advance all 3 grinding serials to Final QC, then to completion
     for (let i = 0; i < 3; i++) {
       serialService.advanceSerial(serials[i].id, 'op1') // → Final QC
@@ -339,7 +353,11 @@ describe('Operator View Redesign Integration', () => {
       serialService.advanceSerial(serials[i].id, 'op1') // → completed
     }
     const emptyResult = lookupStep(ctx, grindingStep.id)
-    expect(emptyResult).toBeNull()
+    // Fixed: valid step with zero serials returns response with partCount: 0
+    expect(emptyResult).not.toBeNull()
+    expect(emptyResult!.job.partCount).toBe(0)
+    expect(emptyResult!.job.serialIds).toEqual([])
+    expect(emptyResult!.previousStepWipCount).toBeDefined()
   })
 
   // ---- 3. Grouped work queue (Validates: Req 4.2, 4.3, 4.4) ----
@@ -474,9 +492,11 @@ describe('Operator View Redesign Integration', () => {
     serialService.advanceSerial(serials[2].id, 'op1')
     serialService.advanceSerial(serials[3].id, 'op1')
 
-    // Prep step should now return null (no active parts → 404)
+    // Prep step should now return valid response with partCount: 0 (fixed behavior)
     const emptyPrep = lookupStep(ctx, prepStep.id)
-    expect(emptyPrep).toBeNull()
+    expect(emptyPrep).not.toBeNull()
+    expect(emptyPrep!.job.partCount).toBe(0)
+    expect(emptyPrep!.job.serialIds).toEqual([])
 
     // Assembly should now have all 4
     const fullAssembly = lookupStep(ctx, assemblyStep.id)

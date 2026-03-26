@@ -11,6 +11,7 @@ export default defineEventHandler(async (event) => {
     const jobs = jobService.listJobs()
 
     let foundJob: WorkQueueJob | null = null
+    let previousStepWipCount: number | undefined
 
     for (const job of jobs) {
       if (foundJob) break
@@ -24,12 +25,16 @@ export default defineEventHandler(async (event) => {
           if (step.id !== stepId) continue
 
           const serials = serialService.listSerialsByStepIndex(path.id, step.order)
-          if (serials.length === 0) {
-            throw new NotFoundError('No active parts at this step')
-          }
 
           const isFinalStep = step.order === totalSteps - 1
+          const prevStep = step.order > 0 ? path.steps[step.order - 1] : undefined
           const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
+
+          // For non-first steps with zero serials, look up previous step's WIP count
+          if (step.order > 0 && serials.length === 0) {
+            const prevSerials = serialService.listSerialsByStepIndex(path.id, step.order - 1)
+            previousStepWipCount = prevSerials.length
+          }
 
           foundJob = {
             jobId: job.id,
@@ -43,6 +48,9 @@ export default defineEventHandler(async (event) => {
             totalSteps,
             serialIds: serials.map(s => s.id),
             partCount: serials.length,
+            previousStepId: prevStep?.id,
+            previousStepName: prevStep?.name,
+            nextStepId: nextStep?.id,
             nextStepName: nextStep?.name,
             nextStepLocation: nextStep?.location,
             isFinalStep,
@@ -53,7 +61,7 @@ export default defineEventHandler(async (event) => {
     }
 
     if (!foundJob) {
-      throw new NotFoundError('ProcessStep not found')
+      throw new NotFoundError('ProcessStep', stepId)
     }
 
     const notes = noteService.getNotesForStep(stepId)
@@ -61,6 +69,7 @@ export default defineEventHandler(async (event) => {
     const response: StepViewResponse = {
       job: foundJob,
       notes,
+      ...(previousStepWipCount !== undefined && { previousStepWipCount }),
     }
 
     return response

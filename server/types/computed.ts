@@ -107,6 +107,9 @@ export interface WorkQueueJob {
   totalSteps: number
   serialIds: string[]
   partCount: number
+  previousStepId?: string
+  previousStepName?: string
+  nextStepId?: string
   nextStepName?: string
   nextStepLocation?: string
   isFinalStep: boolean
@@ -137,6 +140,7 @@ export interface WorkQueueGroupedResponse {
 export interface StepViewResponse {
   job: WorkQueueJob
   notes: StepNote[]
+  previousStepWipCount?: number
 }
 
 // ---- Advancement Result ----

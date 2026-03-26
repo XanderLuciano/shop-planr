@@ -98,18 +98,6 @@ onMounted(() => { selectAll() })
 
 <template>
   <div class="space-y-4">
-    <!-- Header -->
-    <div class="flex items-center justify-between">
-      <div>
-        <div class="text-sm font-semibold text-(--ui-text-highlighted)">{{ job.stepName }}</div>
-        <div class="text-xs text-(--ui-text-muted)">
-          {{ job.jobName }} · {{ job.pathName }}
-          <span v-if="job.stepLocation"> · 📍 {{ job.stepLocation }}</span>
-        </div>
-      </div>
-      <UButton size="xs" variant="ghost" icon="i-lucide-x" aria-label="Close panel" @click="emit('cancel')" />
-    </div>
-
     <!-- Destination info -->
     <div class="text-xs px-2 py-1.5 rounded-md bg-(--ui-bg-elevated)/50 border border-(--ui-border)">
       <span class="text-(--ui-text-muted)">Advancing to:</span>

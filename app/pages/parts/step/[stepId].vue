@@ -10,6 +10,7 @@ const {
   loading,
   error,
   notFound,
+  previousStepWipCount,
   fetchStep,
 } = useStepView(stepId)
 
@@ -27,9 +28,6 @@ const { advanceBatch } = useWorkQueue()
 
 const advanceLoading = ref(false)
 const toast = useToast()
-
-// Track whether all parts were advanced (empty state)
-const allAdvanced = ref(false)
 
 // Operator dropdown items
 const operatorMenuItems = computed<DropdownMenuItem[][]>(() => {
@@ -70,11 +68,6 @@ async function handleAdvance(payload: { serialIds: string[], note?: string }) {
 
     // Refresh step data
     await fetchStep()
-
-    // If no parts remain after refresh, show empty state
-    if (!job.value || job.value.partCount === 0) {
-      allAdvanced.value = true
-    }
   } catch (e: any) {
     toast.add({
       title: 'Advancement failed',
@@ -160,32 +153,18 @@ onMounted(async () => {
       />
     </div>
 
-    <!-- All parts advanced empty state -->
-    <div
-      v-else-if="allAdvanced || (job && job.partCount === 0)"
-      class="text-center py-12"
-    >
-      <UIcon name="i-lucide-check-circle" class="size-8 mx-auto mb-2 text-(--ui-success)" />
-      <p class="text-sm text-(--ui-text-highlighted) font-medium mb-1">All parts advanced</p>
-      <p class="text-xs text-(--ui-text-muted) mb-4">
-        No parts remain at this step.
-      </p>
-      <UButton
-        to="/parts"
-        size="sm"
-        variant="soft"
-        label="Back to Parts"
-        icon="i-lucide-arrow-left"
-      />
-    </div>
-
     <!-- Step content -->
     <template v-else-if="job">
       <!-- Step header -->
       <div class="space-y-2">
         <div class="flex items-center justify-between">
           <div>
-            <h1 class="text-lg font-bold text-(--ui-text-highlighted)">{{ job.stepName }}</h1>
+            <div class="flex items-center gap-2">
+              <h1 class="text-lg font-bold text-(--ui-text-highlighted)">{{ job.stepName }}</h1>
+              <span class="text-xs text-(--ui-text-muted) bg-(--ui-bg-elevated) px-1.5 py-0.5 rounded">
+                Step {{ job.stepOrder + 1 }} of {{ job.totalSteps }}
+              </span>
+            </div>
             <p class="text-sm text-(--ui-text-muted)">
               {{ job.jobName }} · {{ job.pathName }}
               <span v-if="job.stepLocation"> · 📍 {{ job.stepLocation }}</span>
@@ -219,6 +198,26 @@ onMounted(async () => {
             />
           </div>
         </div>
+
+        <!-- Prev / Next step navigation -->
+        <div class="flex items-center justify-between">
+          <UButton
+            size="xs"
+            variant="ghost"
+            icon="i-lucide-arrow-left"
+            label="Prev"
+            :disabled="job.stepOrder === 0"
+            :to="job.previousStepId ? `/parts/step/${job.previousStepId}` : undefined"
+          />
+          <UButton
+            size="xs"
+            variant="ghost"
+            trailing-icon="i-lucide-arrow-right"
+            label="Next"
+            :disabled="job.isFinalStep"
+            :to="job.nextStepId ? `/parts/step/${job.nextStepId}` : undefined"
+          />
+        </div>
       </div>
 
       <!-- No operator warning -->
@@ -230,7 +229,7 @@ onMounted(async () => {
         <p>Select an operator to advance parts or create serials.</p>
       </div>
 
-      <!-- First step: serial creation panel -->
+      <!-- First step (always shows SerialCreationPanel, even with 0 serials) -->
       <SerialCreationPanel
         v-else-if="job.stepOrder === 0"
         :job="job"
@@ -240,7 +239,28 @@ onMounted(async () => {
         @created="handleCreated"
       />
 
-      <!-- Other steps: advancement panel -->
+      <!-- Non-first step with zero serials: waiting for prior step -->
+      <div
+        v-else-if="job.partCount === 0"
+        class="text-center py-12"
+      >
+        <UIcon name="i-lucide-clock" class="size-8 mx-auto mb-2 text-(--ui-text-muted)" />
+        <p class="text-sm text-(--ui-text-highlighted) font-medium mb-1">Waiting for the previous step</p>
+        <p class="text-xs text-(--ui-text-muted) mb-4">
+          The prior step "{{ job.previousStepName }}" currently has
+          {{ previousStepWipCount ?? 0 }} serial number{{ (previousStepWipCount ?? 0) !== 1 ? 's' : '' }} in progress.
+          Parts will appear here once they are advanced from the previous step.
+        </p>
+        <UButton
+          to="/parts"
+          size="sm"
+          variant="soft"
+          label="Back to Parts"
+          icon="i-lucide-arrow-left"
+        />
+      </div>
+
+      <!-- Non-first step with active serials: advancement panel -->
       <ProcessAdvancementPanel
         v-else
         :job="job"
