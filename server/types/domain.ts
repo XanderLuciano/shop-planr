@@ -185,12 +185,27 @@ export interface StepNote {
   jiraCommentId?: string
 }
 
+// ---- Page Toggles ----
+
+export interface PageToggles {
+  jobs: boolean
+  serials: boolean
+  parts: boolean
+  queue: boolean
+  templates: boolean
+  bom: boolean
+  certs: boolean
+  jira: boolean
+  audit: boolean
+}
+
 // ---- Settings ----
 
 export interface AppSettings {
   id: string
   jiraConnection: JiraConnectionSettings
   jiraFieldMappings: JiraFieldMapping[]
+  pageToggles: PageToggles
   updatedAt: string
 }
 

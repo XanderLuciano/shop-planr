@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ShopUser, JiraConnectionSettings, JiraFieldMapping } from '~/server/types/domain'
+import type { ShopUser, JiraConnectionSettings, JiraFieldMapping, PageToggles } from '~/server/types/domain'
 
 const { settings, loading, fetchSettings, updateSettings } = useSettings()
 const { users, fetchUsers } = useUsers()
@@ -11,6 +11,7 @@ const tabs = [
   { label: 'Jira Connection', value: 'jira', icon: 'i-lucide-plug' },
   { label: 'Field Mappings', value: 'mappings', icon: 'i-lucide-columns-3' },
   { label: 'Process Library', value: 'libraries', icon: 'i-lucide-library' },
+  { label: 'Page Visibility', value: 'pages', icon: 'i-lucide-eye' },
 ]
 
 // User management state
@@ -108,6 +109,23 @@ async function onSaveMappings(mappings: JiraFieldMapping[]) {
     settingsSuccess.value = 'Field mappings saved'
   } catch (e: any) {
     settingsError.value = e?.data?.message ?? e?.message ?? 'Failed to save mappings'
+  } finally {
+    settingsSaving.value = false
+  }
+}
+
+async function onSaveToggles(toggles: PageToggles) {
+  const previousToggles = settings.value?.pageToggles ?? DEFAULT_PAGE_TOGGLES
+  settingsError.value = ''
+  settingsSuccess.value = ''
+  settingsSaving.value = true
+  try {
+    await updateSettings({ pageToggles: toggles })
+    settingsSuccess.value = 'Page visibility saved'
+  } catch (e: any) {
+    settingsError.value = e?.data?.message ?? e?.message ?? 'Failed to save page visibility'
+    // Revert toggles on failure — re-fetch settings to restore previous state
+    await fetchSettings()
   } finally {
     settingsSaving.value = false
   }
@@ -334,6 +352,32 @@ onMounted(async () => {
         <div class="p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50">
           <LibraryManager />
         </div>
+      </div>
+
+      <!-- Page Visibility tab -->
+      <div
+        v-if="activeTab === 'pages'"
+        class="space-y-3"
+      >
+        <span class="text-sm font-medium text-(--ui-text-highlighted)">Page Visibility</span>
+        <div class="p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50">
+          <PageVisibilitySettings
+            :toggles="settings?.pageToggles ?? DEFAULT_PAGE_TOGGLES"
+            @update="onSaveToggles"
+          />
+        </div>
+        <p
+          v-if="settingsError"
+          class="text-xs text-red-500"
+        >
+          {{ settingsError }}
+        </p>
+        <p
+          v-if="settingsSuccess"
+          class="text-xs text-green-600"
+        >
+          {{ settingsSuccess }}
+        </p>
       </div>
     </template>
   </div>

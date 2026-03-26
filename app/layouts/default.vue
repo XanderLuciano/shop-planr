@@ -15,6 +15,13 @@ const navItems: NavigationMenuItem[] = [
   { label: 'Settings', icon: 'i-lucide-settings', to: '/settings' }
 ]
 
+const { settings } = useSettings()
+
+const filteredNavItems = computed(() => {
+  const toggles = settings.value?.pageToggles ?? DEFAULT_PAGE_TOGGLES
+  return navItems.filter(item => isPageEnabled(toggles, item.to as string))
+})
+
 const { handleScan } = useBarcode()
 
 function onScanned(result: ScanResult) {
@@ -44,7 +51,7 @@ function onScanned(result: ScanResult) {
       </template>
 
       <UNavigationMenu
-        :items="navItems"
+        :items="filteredNavItems"
         orientation="vertical"
       />
 

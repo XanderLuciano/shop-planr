@@ -70,6 +70,7 @@ describe('SettingsService', () => {
           pushEnabled: true
         },
         jiraFieldMappings: [],
+        pageToggles: { jobs: true, serials: true, parts: true, queue: true, templates: true, bom: true, certs: true, jira: true, audit: true },
         updatedAt: '2024-01-01T00:00:00.000Z'
       }
       settingsRepo.upsert(dbSettings)
@@ -92,6 +93,42 @@ describe('SettingsService', () => {
       expect(mappings[2].shopErpField).toBe('epicLink')
       expect(mappings[3].shopErpField).toBe('priority')
       expect(mappings[4].shopErpField).toBe('labels')
+    })
+
+    it('returns all 9 pageToggles defaulted to true when no DB settings', () => {
+      const settings = service.getSettings()
+      const toggles = settings.pageToggles
+
+      expect(Object.keys(toggles).sort()).toEqual(
+        ['audit', 'bom', 'certs', 'jira', 'jobs', 'parts', 'queue', 'serials', 'templates']
+      )
+      expect(Object.values(toggles).every(v => v === true)).toBe(true)
+    })
+
+    it('returns pageToggles from DB settings', () => {
+      const dbSettings: AppSettings = {
+        id: 'app_settings',
+        jiraConnection: {
+          baseUrl: '',
+          projectKey: 'PI',
+          username: '',
+          apiToken: '',
+          enabled: false,
+          pushEnabled: false
+        },
+        jiraFieldMappings: [],
+        pageToggles: { jobs: false, serials: false, parts: true, queue: true, templates: true, bom: false, certs: true, jira: true, audit: false },
+        updatedAt: '2024-01-01T00:00:00.000Z'
+      }
+      settingsRepo.upsert(dbSettings)
+
+      const settings = service.getSettings()
+      expect(settings.pageToggles.jobs).toBe(false)
+      expect(settings.pageToggles.serials).toBe(false)
+      expect(settings.pageToggles.parts).toBe(true)
+      expect(settings.pageToggles.bom).toBe(false)
+      expect(settings.pageToggles.audit).toBe(false)
+      expect(settings.pageToggles.jira).toBe(true)
     })
   })
 
@@ -142,6 +179,86 @@ describe('SettingsService', () => {
       expect(updated.jiraConnection.baseUrl).toBe('https://first.jira.com')
       expect(updated.jiraConnection.enabled).toBe(true)
       expect(updated.jiraConnection.pushEnabled).toBe(true)
+    })
+
+    describe('pageToggles', () => {
+      it('partial merge preserves existing toggle values', () => {
+        // First: disable jobs and jira
+        service.updateSettings({
+          pageToggles: { jobs: false, jira: false }
+        })
+
+        // Second: disable only serials — jobs and jira should stay false
+        const updated = service.updateSettings({
+          pageToggles: { serials: false }
+        })
+
+        expect(updated.pageToggles.jobs).toBe(false)
+        expect(updated.pageToggles.jira).toBe(false)
+        expect(updated.pageToggles.serials).toBe(false)
+        // Untouched keys remain true (defaults)
+        expect(updated.pageToggles.parts).toBe(true)
+        expect(updated.pageToggles.queue).toBe(true)
+        expect(updated.pageToggles.templates).toBe(true)
+        expect(updated.pageToggles.bom).toBe(true)
+        expect(updated.pageToggles.certs).toBe(true)
+        expect(updated.pageToggles.audit).toBe(true)
+      })
+
+      it('unknown keys are ignored during merge', () => {
+        const updated = service.updateSettings({
+          pageToggles: { jobs: false, foo: false, dashboard: false } as any
+        })
+
+        expect(updated.pageToggles.jobs).toBe(false)
+        // Unknown keys should not appear
+        expect((updated.pageToggles as any).foo).toBeUndefined()
+        expect((updated.pageToggles as any).dashboard).toBeUndefined()
+        // All valid keys still present
+        expect(Object.keys(updated.pageToggles).sort()).toEqual(
+          ['audit', 'bom', 'certs', 'jira', 'jobs', 'parts', 'queue', 'serials', 'templates']
+        )
+      })
+
+      it('non-boolean values are rejected and ignored', () => {
+        const updated = service.updateSettings({
+          pageToggles: { jobs: 'no', serials: 0, parts: null, queue: false } as any
+        })
+
+        // Only the valid boolean (queue: false) should be applied
+        expect(updated.pageToggles.queue).toBe(false)
+        // Non-boolean values should be ignored — keys keep defaults
+        expect(updated.pageToggles.jobs).toBe(true)
+        expect(updated.pageToggles.serials).toBe(true)
+        expect(updated.pageToggles.parts).toBe(true)
+      })
+
+      it('idempotent update produces same toggle values', () => {
+        vi.useFakeTimers()
+        vi.setSystemTime(new Date('2024-01-01T00:00:00.000Z'))
+
+        // Set initial state
+        service.updateSettings({
+          pageToggles: { jobs: false, audit: false }
+        })
+
+        const before = service.getSettings()
+
+        // Advance time so updatedAt differs
+        vi.setSystemTime(new Date('2024-01-01T00:01:00.000Z'))
+
+        // Apply the same toggles again
+        const after = service.updateSettings({
+          pageToggles: { jobs: false, audit: false }
+        })
+
+        // Toggle values should be identical
+        expect(after.pageToggles).toEqual(before.pageToggles)
+        // updatedAt should differ (proves the update ran)
+        expect(after.updatedAt).not.toBe(before.updatedAt)
+
+        vi.useRealTimers()
+      })
     })
   })
 
