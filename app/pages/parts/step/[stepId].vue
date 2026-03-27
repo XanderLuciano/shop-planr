@@ -3,6 +3,8 @@ import type { DropdownMenuItem } from '@nuxt/ui'
 
 const route = useRoute()
 const stepId = route.params.stepId as string
+const fromQuery = route.query.from as string | undefined
+const backNav = computed(() => resolveBackNavigation(fromQuery))
 
 const {
   job,
@@ -90,7 +92,7 @@ async function handleCreated(count: number) {
 }
 
 function handleCancel() {
-  navigateTo('/parts')
+  navigateTo(backNav.value.to)
 }
 
 onMounted(async () => {
@@ -103,11 +105,11 @@ onMounted(async () => {
   <div class="p-4 space-y-4 max-w-5xl">
     <!-- Back link -->
     <NuxtLink
-      to="/parts"
+      :to="backNav.to"
       class="inline-flex items-center gap-1 text-sm text-(--ui-text-muted) hover:text-(--ui-text-highlighted) transition-colors"
     >
       <UIcon name="i-lucide-arrow-left" class="size-4" />
-      Back to Parts
+      {{ backNav.label }}
     </NuxtLink>
 
     <!-- Loading state -->
@@ -130,10 +132,10 @@ onMounted(async () => {
         This step doesn't exist or has no active parts.
       </p>
       <UButton
-        to="/parts"
+        :to="backNav.to"
         size="sm"
         variant="soft"
-        label="Back to Parts"
+        :label="backNav.label"
         icon="i-lucide-arrow-left"
       />
     </div>
@@ -207,7 +209,7 @@ onMounted(async () => {
             icon="i-lucide-arrow-left"
             label="Prev"
             :disabled="job.stepOrder === 0"
-            :to="job.previousStepId ? `/parts/step/${job.previousStepId}` : undefined"
+            :to="job.previousStepId ? `/parts/step/${job.previousStepId}${fromQuery ? `?from=${encodeURIComponent(fromQuery)}` : ''}` : undefined"
           />
           <UButton
             size="xs"
@@ -215,7 +217,7 @@ onMounted(async () => {
             trailing-icon="i-lucide-arrow-right"
             label="Next"
             :disabled="job.isFinalStep"
-            :to="job.nextStepId ? `/parts/step/${job.nextStepId}` : undefined"
+            :to="job.nextStepId ? `/parts/step/${job.nextStepId}${fromQuery ? `?from=${encodeURIComponent(fromQuery)}` : ''}` : undefined"
           />
         </div>
       </div>
@@ -252,10 +254,10 @@ onMounted(async () => {
           Parts will appear here once they are advanced from the previous step.
         </p>
         <UButton
-          to="/parts"
+          :to="backNav.to"
           size="sm"
           variant="soft"
-          label="Back to Parts"
+          :label="backNav.label"
           icon="i-lucide-arrow-left"
         />
       </div>

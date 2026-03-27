@@ -75,8 +75,8 @@ const jiraPushAvailable = computed(() =>
 )
 
 function onStepClick(pathId: string, payload: { stepId: string, stepName: string, stepOrder: number }) {
-  // Navigate to step view for this step (advancement)
-  navigateTo(`/parts/step/${encodeURIComponent(payload.stepId)}`)
+  // Navigate to step view for this step (advancement), passing referrer context
+  navigateTo(`/parts/step/${encodeURIComponent(payload.stepId)}?from=${encodeURIComponent(`/jobs/${jobId}`)}`)
 }
 
 function onStepConfigure(pathId: string, payload: { stepId: string }) {
