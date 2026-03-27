@@ -35,6 +35,11 @@ export const ROUTE_TOGGLE_MAP: Record<string, keyof PageToggles> = {
 /** The set of valid toggle keys. */
 export const VALID_TOGGLE_KEYS: ReadonlySet<string> = new Set<string>(Object.keys(DEFAULT_PAGE_TOGGLES))
 
+/** Sub-route prefixes that bypass their parent's toggle and are always accessible. */
+export const ALWAYS_ENABLED_ROUTES: readonly string[] = Object.freeze([
+  '/parts/step',
+])
+
 /**
  * Merge a partial update into the current page toggles.
  *
@@ -71,6 +76,12 @@ export function isPageEnabled(
 ): boolean {
   if (routePath === '/' || routePath === '/settings') {
     return true
+  }
+
+  for (const prefix of ALWAYS_ENABLED_ROUTES) {
+    if (routePath === prefix || routePath.startsWith(prefix + '/')) {
+      return true
+    }
   }
 
   for (const [basePath, toggleKey] of Object.entries(ROUTE_TOGGLE_MAP)) {

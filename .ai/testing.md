@@ -13,7 +13,7 @@
 
 | Command | What it does |
 |---------|-------------|
-| `npm run test` | `vitest run` — single pass, all tests (689 tests, 114 files) |
+| `npm run test` | `vitest run` — single pass, all tests (708 tests, 120 files) |
 | `npm run test:watch` | `vitest` — watch mode |
 | `npx vitest run tests/properties` | Property tests only |
 | `npx vitest run tests/unit` | Unit tests only |
@@ -44,6 +44,10 @@ tests/
     pageToggleMerge.property.test.ts     → P5-8: mergePageToggles + isPageEnabled (4 properties)
     pageToggleRouteAccess.property.test.ts → P1,3: Route access + always-visible invariant (5 tests)
     pageToggleSidebar.property.test.ts   → P2,4: Sidebar filtering consistency + bounds (2 tests)
+    stepViewAlwaysEnabled.property.test.ts → Step view routes always enabled regardless of parts toggle (2 tests)
+    partsToggleRespected.property.test.ts → Non-step /parts routes respect parts toggle (2 tests)
+    otherTogglesUnaffected.property.test.ts → Other toggle-mapped routes unaffected by always-enabled fix (2 tests)
+    dashboardSettingsAlwaysEnabled.property.test.ts → Dashboard + Settings always enabled (2 tests)
   integration/
     helpers.ts                           → createTestContext() with all services
     jobLifecycle.test.ts                 → Full job lifecycle (6 tests)
