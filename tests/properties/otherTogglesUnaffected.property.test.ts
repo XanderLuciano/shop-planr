@@ -12,20 +12,7 @@ import {
   isPageEnabled,
   ROUTE_TOGGLE_MAP,
 } from '~/server/utils/pageToggles'
-import type { PageToggles } from '~/server/types/domain'
-
-/** Arbitrary that produces a full PageToggles object with random booleans. */
-const arbPageToggles: fc.Arbitrary<PageToggles> = fc.record({
-  jobs: fc.boolean(),
-  serials: fc.boolean(),
-  parts: fc.boolean(),
-  queue: fc.boolean(),
-  templates: fc.boolean(),
-  bom: fc.boolean(),
-  certs: fc.boolean(),
-  jira: fc.boolean(),
-  audit: fc.boolean(),
-})
+import { arbPageToggles } from './arbitraries/pageToggles'
 
 /** Non-/parts entries from ROUTE_TOGGLE_MAP as [basePath, toggleKey] tuples. */
 const NON_PARTS_ENTRIES = Object.entries(ROUTE_TOGGLE_MAP).filter(

@@ -9,23 +9,10 @@
 import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
 import { isPageEnabled } from '~/server/utils/pageToggles'
-import type { PageToggles } from '~/server/types/domain'
+import { arbPageToggles } from './arbitraries/pageToggles'
 
-/** Arbitrary that produces a full PageToggles object with random booleans. */
-const arbPageToggles: fc.Arbitrary<PageToggles> = fc.record({
-  jobs: fc.boolean(),
-  serials: fc.boolean(),
-  parts: fc.boolean(),
-  queue: fc.boolean(),
-  templates: fc.boolean(),
-  bom: fc.boolean(),
-  certs: fc.boolean(),
-  jira: fc.boolean(),
-  audit: fc.boolean(),
-})
-
-/** Arbitrary that produces a random step ID string. */
-const arbStepId: fc.Arbitrary<string> = fc.stringMatching(/^[a-z0-9_-]{1,20}$/)
+/** Arbitrary that produces a random step ID string (any non-empty URL path segment). */
+const arbStepId: fc.Arbitrary<string> = fc.webSegment().filter((s) => s.length > 0)
 
 describe('Property 1: Step view routes are always enabled', () => {
   /**
@@ -52,6 +39,20 @@ describe('Property 1: Step view routes are always enabled', () => {
     fc.assert(
       fc.property(arbPageToggles, (toggles) => {
         expect(isPageEnabled(toggles, '/parts/step')).toBe(true)
+      }),
+      { numRuns: 200 },
+    )
+  })
+
+  /**
+   * **Validates: Requirements 1.2, 4.3**
+   *
+   * The trailing-slash variant `/parts/step/` is always enabled.
+   */
+  it('`/parts/step/` trailing slash always returns true', () => {
+    fc.assert(
+      fc.property(arbPageToggles, (toggles) => {
+        expect(isPageEnabled(toggles, '/parts/step/')).toBe(true)
       }),
       { numRuns: 200 },
     )

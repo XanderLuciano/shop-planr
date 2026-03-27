@@ -36,9 +36,9 @@ export const ROUTE_TOGGLE_MAP: Record<string, keyof PageToggles> = {
 export const VALID_TOGGLE_KEYS: ReadonlySet<string> = new Set<string>(Object.keys(DEFAULT_PAGE_TOGGLES))
 
 /** Sub-route prefixes that bypass their parent's toggle and are always accessible. */
-export const ALWAYS_ENABLED_ROUTES: readonly string[] = [
+export const ALWAYS_ENABLED_ROUTES: readonly string[] = Object.freeze([
   '/parts/step',
-]
+])
 
 /**
  * Merge a partial update into the current page toggles.

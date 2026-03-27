@@ -4,7 +4,7 @@
 
 When a user navigates from the Job detail page (`/jobs/:id`) to a step view (`/parts/step/:stepId`), the global route middleware `pageGuard.global.ts` incorrectly redirects to the Dashboard (`/`). The root cause is that the `isPageEnabled()` function in the page-toggle system matches `/parts/step/:stepId` against the `/parts` toggle key. If the "parts" page is toggled off in Settings → Page Visibility, any step URL is blocked — even when the user arrived from an enabled page like Jobs. Additionally, the step view route (`/parts/step/:stepId`) is conceptually a shared detail route used by multiple entry points (Jobs, Parts, Work Queue), not exclusively a child of the Parts page.
 
-The fix introduces a dedicated route prefix for step views in the `ROUTE_TOGGLE_MAP` so that step detail pages are never gated by the "parts" list toggle. Step views should always be accessible regardless of the "parts" toggle state, since they serve as the universal advancement/creation UI reachable from Jobs, Parts, and Work Queue.
+The fix introduces an `ALWAYS_ENABLED_ROUTES` prefix list and checks it before `ROUTE_TOGGLE_MAP` so that step detail pages are never gated by the "parts" list toggle. Step views should always be accessible regardless of the "parts" toggle state, since they serve as the universal advancement/creation UI reachable from Jobs, Parts, and Work Queue.
 
 ## Main Algorithm/Workflow
 
