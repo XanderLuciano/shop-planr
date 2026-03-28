@@ -1,48 +1,48 @@
-import type { SerialRepository } from '../repositories/interfaces/serialRepository'
+import type { PartRepository } from '../repositories/interfaces/partRepository'
 import type { PathRepository } from '../repositories/interfaces/pathRepository'
 import type { JobRepository } from '../repositories/interfaces/jobRepository'
-import type { SnStepStatusRepository } from '../repositories/interfaces/snStepStatusRepository'
-import type { SnStepOverrideRepository } from '../repositories/interfaces/snStepOverrideRepository'
+import type { PartStepStatusRepository } from '../repositories/interfaces/partStepStatusRepository'
+import type { PartStepOverrideRepository } from '../repositories/interfaces/partStepOverrideRepository'
 import type { AuditService } from './auditService'
-import type { SnStepStatus, SnStepOverride, SerialNumber, ProcessStep } from '../types/domain'
-import type { ScrapSerialInput, AdvanceToStepInput, ForceCompleteInput, WaiveStepInput } from '../types/api'
+import type { PartStepStatus, PartStepOverride, Part, ProcessStep } from '../types/domain'
+import type { ScrapPartInput, AdvanceToStepInput, ForceCompleteInput, WaiveStepInput } from '../types/api'
 import type { AdvancementResult } from '../types/computed'
 import { generateId } from '../utils/idGenerator'
 import { NotFoundError, ValidationError } from '../utils/errors'
 
 export function createLifecycleService(repos: {
-  serials: SerialRepository
+  parts: PartRepository
   paths: PathRepository
   jobs: JobRepository
-  snStepStatuses: SnStepStatusRepository
-  snStepOverrides: SnStepOverrideRepository
+  partStepStatuses: PartStepStatusRepository
+  partStepOverrides: PartStepOverrideRepository
 }, auditService: AuditService) {
   /**
-   * Creates sn_step_statuses rows for all steps in the path.
+   * Creates part_step_statuses rows for all steps in the path.
    * First step gets 'in_progress', rest get 'pending'.
    */
-  function initializeStepStatuses(serialId: string, pathId: string): void {
+  function initializeStepStatuses(partId: string, pathId: string): void {
     const path = repos.paths.getById(pathId)
     if (!path) throw new NotFoundError('Path', pathId)
 
     const now = new Date().toISOString()
-    const statuses: SnStepStatus[] = path.steps.map((step, index) => ({
-      id: generateId('snss'),
-      serialId,
+    const statuses: PartStepStatus[] = path.steps.map((step, index) => ({
+      id: generateId('pss'),
+      partId,
       stepId: step.id,
       stepIndex: index,
       status: index === 0 ? 'in_progress' : 'pending',
       updatedAt: now,
     }))
 
-    repos.snStepStatuses.createBatch(statuses)
+    repos.partStepStatuses.createBatch(statuses)
   }
 
   /**
-   * Returns all step statuses for a serial, ordered by step index.
+   * Returns all step statuses for a part, ordered by step index.
    */
-  function getStepStatuses(serialId: string): SnStepStatus[] {
-    return repos.snStepStatuses.listBySerialId(serialId)
+  function getStepStatuses(partId: string): PartStepStatus[] {
+    return repos.partStepStatuses.listByPartId(partId)
   }
 
   /**
@@ -50,15 +50,15 @@ export function createLifecycleService(repos: {
    * A step blocks completion if it's required (not optional and no active override)
    * and its status is not 'completed' or 'waived'.
    */
-  function canComplete(serialId: string): { canComplete: boolean; blockers: string[] } {
-    const serial = repos.serials.getById(serialId)
-    if (!serial) throw new NotFoundError('Serial', serialId)
+  function canComplete(partId: string): { canComplete: boolean; blockers: string[] } {
+    const part = repos.parts.getById(partId)
+    if (!part) throw new NotFoundError('Part', partId)
 
-    const path = repos.paths.getById(serial.pathId)
-    if (!path) throw new NotFoundError('Path', serial.pathId)
+    const path = repos.paths.getById(part.pathId)
+    if (!path) throw new NotFoundError('Path', part.pathId)
 
-    const stepStatuses = repos.snStepStatuses.listBySerialId(serialId)
-    const activeOverrides = repos.snStepOverrides.listActiveBySerialId(serialId)
+    const stepStatuses = repos.partStepStatuses.listByPartId(partId)
+    const activeOverrides = repos.partStepOverrides.listActiveByPartId(partId)
     const overriddenStepIds = new Set(activeOverrides.map(o => o.stepId))
 
     const blockers: string[] = []
@@ -67,7 +67,7 @@ export function createLifecycleService(repos: {
       // Skip optional steps — they never block completion
       if (step.optional) continue
 
-      // Skip steps with an active override — treated as optional for this SN
+      // Skip steps with an active override — treated as optional for this part
       if (overriddenStepIds.has(step.id)) continue
 
       // Find the status for this step
@@ -90,15 +90,15 @@ export function createLifecycleService(repos: {
     getStepStatuses,
     canComplete,
 
-    scrapSerial(serialId: string, input: ScrapSerialInput): SerialNumber {
-      const serial = repos.serials.getById(serialId)
-      if (!serial) throw new NotFoundError('Serial', serialId)
+    scrapPart(partId: string, input: ScrapPartInput): Part {
+      const part = repos.parts.getById(partId)
+      if (!part) throw new NotFoundError('Part', partId)
 
-      if (serial.status === 'scrapped') {
-        throw new ValidationError('Serial is already scrapped')
+      if (part.status === 'scrapped') {
+        throw new ValidationError('Part is already scrapped')
       }
-      if (serial.status === 'completed') {
-        throw new ValidationError('Cannot scrap a completed serial')
+      if (part.status === 'completed') {
+        throw new ValidationError('Cannot scrap a completed part')
       }
 
       if (!input.reason) {
@@ -109,14 +109,14 @@ export function createLifecycleService(repos: {
       }
 
       // Determine the current step ID from the path
-      const path = repos.paths.getById(serial.pathId)
-      if (!path) throw new NotFoundError('Path', serial.pathId)
+      const path = repos.paths.getById(part.pathId)
+      if (!path) throw new NotFoundError('Path', part.pathId)
 
-      const currentStep = path.steps[serial.currentStepIndex]
+      const currentStep = path.steps[part.currentStepIndex]
       const scrapStepId = currentStep ? currentStep.id : undefined
 
       const now = new Date().toISOString()
-      const updated = repos.serials.update(serialId, {
+      const updated = repos.parts.update(partId, {
         status: 'scrapped',
         scrapReason: input.reason,
         scrapExplanation: input.explanation,
@@ -127,9 +127,9 @@ export function createLifecycleService(repos: {
 
       auditService.recordScrap({
         userId: input.userId,
-        serialId,
-        jobId: serial.jobId,
-        pathId: serial.pathId,
+        partId,
+        jobId: part.jobId,
+        pathId: part.pathId,
         stepId: scrapStepId || '',
         metadata: {
           reason: input.reason,
@@ -140,23 +140,23 @@ export function createLifecycleService(repos: {
       return updated
     },
 
-    advanceToStep(serialId: string, input: AdvanceToStepInput): AdvancementResult {
-      const serial = repos.serials.getById(serialId)
-      if (!serial) throw new NotFoundError('Serial', serialId)
+    advanceToStep(partId: string, input: AdvanceToStepInput): AdvancementResult {
+      const part = repos.parts.getById(partId)
+      if (!part) throw new NotFoundError('Part', partId)
 
-      // 1. Validate serial is in_progress
-      if (serial.status === 'scrapped') {
-        throw new ValidationError('Cannot advance a scrapped serial')
+      // 1. Validate part is in_progress
+      if (part.status === 'scrapped') {
+        throw new ValidationError('Cannot advance a scrapped part')
       }
-      if (serial.status === 'completed') {
-        throw new ValidationError('Cannot advance a completed serial')
+      if (part.status === 'completed') {
+        throw new ValidationError('Cannot advance a completed part')
       }
 
-      const path = repos.paths.getById(serial.pathId)
-      if (!path) throw new NotFoundError('Path', serial.pathId)
+      const path = repos.paths.getById(part.pathId)
+      if (!path) throw new NotFoundError('Path', part.pathId)
 
       const { targetStepIndex, userId } = input
-      const currentStepIndex = serial.currentStepIndex
+      const currentStepIndex = part.currentStepIndex
       const totalSteps = path.steps.length
 
       // 2. Validate forward-only
@@ -187,8 +187,8 @@ export function createLifecycleService(repos: {
         }
       }
 
-      // Get active overrides for this serial
-      const activeOverrides = repos.snStepOverrides.listActiveBySerialId(serialId)
+      // Get active overrides for this part
+      const activeOverrides = repos.partStepOverrides.listActiveByPartId(partId)
       const overriddenStepIds = new Set(activeOverrides.map(o => o.stepId))
 
       // 4. For per_step mode, check dependency types of intermediate steps
@@ -198,7 +198,7 @@ export function createLifecycleService(repos: {
 
         if (step.dependencyType === 'physical' && !isEffectivelyOptional) {
           // Check if the step has already been completed
-          const stepStatus = repos.snStepStatuses.getBySerialAndStep(serialId, step.id)
+          const stepStatus = repos.partStepStatuses.getByPartAndStep(partId, step.id)
           if (!stepStatus || stepStatus.status !== 'completed') {
             throw new ValidationError(`Cannot skip step with physical dependency`)
           }
@@ -213,8 +213,8 @@ export function createLifecycleService(repos: {
         const isEffectivelyOptional = step.optional || overriddenStepIds.has(step.id)
         const classification: 'skipped' | 'deferred' = isEffectivelyOptional ? 'skipped' : 'deferred'
 
-        // Update sn_step_statuses for bypassed step
-        repos.snStepStatuses.updateBySerialAndStep(serialId, step.id, {
+        // Update part_step_statuses for bypassed step
+        repos.partStepStatuses.updateByPartAndStep(partId, step.id, {
           status: classification,
           updatedAt: now,
         })
@@ -229,17 +229,17 @@ export function createLifecycleService(repos: {
         if (classification === 'skipped') {
           auditService.recordStepSkipped({
             userId,
-            serialId,
-            jobId: serial.jobId,
-            pathId: serial.pathId,
+            partId,
+            jobId: part.jobId,
+            pathId: part.pathId,
             stepId: step.id,
           })
         } else {
           auditService.recordStepDeferred({
             userId,
-            serialId,
-            jobId: serial.jobId,
-            pathId: serial.pathId,
+            partId,
+            jobId: part.jobId,
+            pathId: part.pathId,
             stepId: step.id,
           })
         }
@@ -248,7 +248,7 @@ export function createLifecycleService(repos: {
       // 6. Update origin step (current) → completed
       const originStep = path.steps[currentStepIndex]
       if (originStep) {
-        repos.snStepStatuses.updateBySerialAndStep(serialId, originStep.id, {
+        repos.partStepStatuses.updateByPartAndStep(partId, originStep.id, {
           status: 'completed',
           updatedAt: now,
         })
@@ -256,69 +256,69 @@ export function createLifecycleService(repos: {
 
       // 7. Check if this is completion (target past last step)
       if (targetStepIndex === totalSteps) {
-        // Completion — set serial status to 'completed', currentStepIndex to -1
-        const updatedSerial = repos.serials.update(serialId, {
+        // Completion — set part status to 'completed', currentStepIndex to -1
+        const updatedPart = repos.parts.update(partId, {
           status: 'completed',
           currentStepIndex: -1,
           updatedAt: now,
         })
 
         // Record advancement audit
-        auditService.recordSerialAdvancement({
+        auditService.recordPartAdvancement({
           userId,
-          serialId,
-          jobId: serial.jobId,
-          pathId: serial.pathId,
+          partId,
+          jobId: part.jobId,
+          pathId: part.pathId,
           fromStepId: originStep?.id || '',
           toStepId: '',
         })
 
-        return { serial: updatedSerial, bypassed: bypassedResult }
+        return { serial: updatedPart, bypassed: bypassedResult }
       }
 
       // 8. Update destination step → in_progress
       const destinationStep = path.steps[targetStepIndex]
-      repos.snStepStatuses.updateBySerialAndStep(serialId, destinationStep.id, {
+      repos.partStepStatuses.updateByPartAndStep(partId, destinationStep.id, {
         status: 'in_progress',
         updatedAt: now,
       })
 
-      // Update serial currentStepIndex
-      const updatedSerial = repos.serials.update(serialId, {
+      // Update part currentStepIndex
+      const updatedPart = repos.parts.update(partId, {
         currentStepIndex: targetStepIndex,
         updatedAt: now,
       })
 
       // Record advancement audit
-      auditService.recordSerialAdvancement({
+      auditService.recordPartAdvancement({
         userId,
-        serialId,
-        jobId: serial.jobId,
-        pathId: serial.pathId,
+        partId,
+        jobId: part.jobId,
+        pathId: part.pathId,
         fromStepId: originStep?.id || '',
         toStepId: destinationStep.id,
       })
 
-      return { serial: updatedSerial, bypassed: bypassedResult }
+      return { serial: updatedPart, bypassed: bypassedResult }
     },
 
-    forceComplete(serialId: string, input: ForceCompleteInput): SerialNumber {
-      const serial = repos.serials.getById(serialId)
-      if (!serial) throw new NotFoundError('Serial', serialId)
+    forceComplete(partId: string, input: ForceCompleteInput): Part {
+      const part = repos.parts.getById(partId)
+      if (!part) throw new NotFoundError('Part', partId)
 
-      if (serial.status === 'scrapped') {
-        throw new ValidationError('Cannot force-complete a scrapped serial')
+      if (part.status === 'scrapped') {
+        throw new ValidationError('Cannot force-complete a scrapped part')
       }
-      if (serial.status === 'completed') {
-        throw new ValidationError('Serial is already completed')
+      if (part.status === 'completed') {
+        throw new ValidationError('Part is already completed')
       }
 
-      const path = repos.paths.getById(serial.pathId)
-      if (!path) throw new NotFoundError('Path', serial.pathId)
+      const path = repos.paths.getById(part.pathId)
+      if (!path) throw new NotFoundError('Path', part.pathId)
 
       // Collect incomplete required step IDs
-      const stepStatuses = repos.snStepStatuses.listBySerialId(serialId)
-      const activeOverrides = repos.snStepOverrides.listActiveBySerialId(serialId)
+      const stepStatuses = repos.partStepStatuses.listByPartId(partId)
+      const activeOverrides = repos.partStepOverrides.listActiveByPartId(partId)
       const overriddenStepIds = new Set(activeOverrides.map(o => o.stepId))
 
       const incompleteStepIds: string[] = []
@@ -334,11 +334,11 @@ export function createLifecycleService(repos: {
 
       // If no incomplete required steps, reject — use normal completion
       if (incompleteStepIds.length === 0) {
-        throw new ValidationError('Serial has no incomplete required steps — use normal completion')
+        throw new ValidationError('Part has no incomplete required steps — use normal completion')
       }
 
       const now = new Date().toISOString()
-      const updated = repos.serials.update(serialId, {
+      const updated = repos.parts.update(partId, {
         status: 'completed',
         currentStepIndex: -1,
         forceCompleted: true,
@@ -350,9 +350,9 @@ export function createLifecycleService(repos: {
 
       auditService.recordForceComplete({
         userId: input.userId,
-        serialId,
-        jobId: serial.jobId,
-        pathId: serial.pathId,
+        partId,
+        jobId: part.jobId,
+        pathId: part.pathId,
         metadata: {
           reason: input.reason,
           incompleteStepIds,
@@ -362,52 +362,52 @@ export function createLifecycleService(repos: {
       return updated
     },
 
-    completeDeferredStep(serialId: string, stepId: string, userId: string): SnStepStatus {
-      const serial = repos.serials.getById(serialId)
-      if (!serial) throw new NotFoundError('Serial', serialId)
+    completeDeferredStep(partId: string, stepId: string, userId: string): PartStepStatus {
+      const part = repos.parts.getById(partId)
+      if (!part) throw new NotFoundError('Part', partId)
 
-      const stepStatus = repos.snStepStatuses.getBySerialAndStep(serialId, stepId)
-      if (!stepStatus) throw new NotFoundError('SnStepStatus', `${serialId}/${stepId}`)
+      const stepStatus = repos.partStepStatuses.getByPartAndStep(partId, stepId)
+      if (!stepStatus) throw new NotFoundError('PartStepStatus', `${partId}/${stepId}`)
 
       if (stepStatus.status !== 'deferred') {
         throw new ValidationError('Can only complete deferred steps — step status is: ' + stepStatus.status)
       }
 
       const now = new Date().toISOString()
-      const updated = repos.snStepStatuses.updateBySerialAndStep(serialId, stepId, {
+      const updated = repos.partStepStatuses.updateByPartAndStep(partId, stepId, {
         status: 'completed',
         updatedAt: now,
       })
 
       auditService.recordDeferredStepCompleted({
         userId,
-        serialId,
-        jobId: serial.jobId,
-        pathId: serial.pathId,
+        partId,
+        jobId: part.jobId,
+        pathId: part.pathId,
         stepId,
       })
 
       return updated
     },
 
-    waiveStep(serialId: string, stepId: string, input: WaiveStepInput): SnStepStatus {
-      const serial = repos.serials.getById(serialId)
-      if (!serial) throw new NotFoundError('Serial', serialId)
+    waiveStep(partId: string, stepId: string, input: WaiveStepInput): PartStepStatus {
+      const part = repos.parts.getById(partId)
+      if (!part) throw new NotFoundError('Part', partId)
 
       if (!input.reason || !input.approverId) {
         throw new ValidationError('Waiver requires a reason and approver identity')
       }
 
-      const stepStatus = repos.snStepStatuses.getBySerialAndStep(serialId, stepId)
-      if (!stepStatus) throw new NotFoundError('SnStepStatus', `${serialId}/${stepId}`)
+      const stepStatus = repos.partStepStatuses.getByPartAndStep(partId, stepId)
+      if (!stepStatus) throw new NotFoundError('PartStepStatus', `${partId}/${stepId}`)
 
       if (stepStatus.status !== 'deferred') {
         throw new ValidationError('Can only waive deferred required steps')
       }
 
       // Verify the step is required (not optional)
-      const path = repos.paths.getById(serial.pathId)
-      if (!path) throw new NotFoundError('Path', serial.pathId)
+      const path = repos.paths.getById(part.pathId)
+      if (!path) throw new NotFoundError('Path', part.pathId)
       const step = path.steps.find(s => s.id === stepId)
       if (!step) throw new NotFoundError('ProcessStep', stepId)
       if (step.optional) {
@@ -415,16 +415,16 @@ export function createLifecycleService(repos: {
       }
 
       const now = new Date().toISOString()
-      const updated = repos.snStepStatuses.updateBySerialAndStep(serialId, stepId, {
+      const updated = repos.partStepStatuses.updateByPartAndStep(partId, stepId, {
         status: 'waived',
         updatedAt: now,
       })
 
       auditService.recordStepWaived({
         userId: input.approverId,
-        serialId,
-        jobId: serial.jobId,
-        pathId: serial.pathId,
+        partId,
+        jobId: part.jobId,
+        pathId: part.pathId,
         stepId,
         metadata: {
           reason: input.reason,
@@ -435,29 +435,29 @@ export function createLifecycleService(repos: {
       return updated
     },
 
-    createStepOverride(serialIds: string[], stepId: string, reason: string, userId: string): SnStepOverride[] {
-      const overrides: SnStepOverride[] = []
+    createStepOverride(partIds: string[], stepId: string, reason: string, userId: string): PartStepOverride[] {
+      const overrides: PartStepOverride[] = []
       const now = new Date().toISOString()
 
-      for (const serialId of serialIds) {
-        const serial = repos.serials.getById(serialId)
-        if (!serial) throw new NotFoundError('Serial', serialId)
+      for (const partId of partIds) {
+        const part = repos.parts.getById(partId)
+        if (!part) throw new NotFoundError('Part', partId)
 
-        // Check if step is already completed for this serial
-        const stepStatus = repos.snStepStatuses.getBySerialAndStep(serialId, stepId)
+        // Check if step is already completed for this part
+        const stepStatus = repos.partStepStatuses.getByPartAndStep(partId, stepId)
         if (stepStatus && stepStatus.status === 'completed') {
           throw new ValidationError('Cannot override a step that has already been completed')
         }
 
         // Check if override already exists
-        const existing = repos.snStepOverrides.getBySerialAndStep(serialId, stepId)
+        const existing = repos.partStepOverrides.getByPartAndStep(partId, stepId)
         if (existing && existing.active) {
           continue // already overridden, skip
         }
 
-        const override: SnStepOverride = {
-          id: generateId('snso'),
-          serialId,
+        const override: PartStepOverride = {
+          id: generateId('pso'),
+          partId,
           stepId,
           active: true,
           reason,
@@ -465,14 +465,14 @@ export function createLifecycleService(repos: {
           createdAt: now,
         }
 
-        const created = repos.snStepOverrides.create(override)
+        const created = repos.partStepOverrides.create(override)
         overrides.push(created)
 
         auditService.recordStepOverrideCreated({
           userId,
-          serialId,
-          jobId: serial.jobId,
-          pathId: serial.pathId,
+          partId,
+          jobId: part.jobId,
+          pathId: part.pathId,
           stepId,
           metadata: { reason },
         })
@@ -481,17 +481,17 @@ export function createLifecycleService(repos: {
       return overrides
     },
 
-    reverseStepOverride(serialId: string, stepId: string, userId: string): void {
-      const serial = repos.serials.getById(serialId)
-      if (!serial) throw new NotFoundError('Serial', serialId)
+    reverseStepOverride(partId: string, stepId: string, userId: string): void {
+      const part = repos.parts.getById(partId)
+      if (!part) throw new NotFoundError('Part', partId)
 
-      const override = repos.snStepOverrides.getBySerialAndStep(serialId, stepId)
+      const override = repos.partStepOverrides.getByPartAndStep(partId, stepId)
       if (!override || !override.active) {
         throw new ValidationError('No active override found for this step')
       }
 
       // Check if step has already been skipped
-      const stepStatus = repos.snStepStatuses.getBySerialAndStep(serialId, stepId)
+      const stepStatus = repos.partStepStatuses.getByPartAndStep(partId, stepId)
       if (stepStatus && stepStatus.status === 'skipped') {
         throw new ValidationError('Cannot reverse override — step has already been skipped')
       }
@@ -499,16 +499,23 @@ export function createLifecycleService(repos: {
         throw new ValidationError('Cannot reverse override — step has already been completed')
       }
 
-      repos.snStepOverrides.update(override.id, { active: false })
+      repos.partStepOverrides.update(override.id, { active: false })
 
       auditService.recordStepOverrideReversed({
         userId,
-        serialId,
-        jobId: serial.jobId,
-        pathId: serial.pathId,
+        partId,
+        jobId: part.jobId,
+        pathId: part.pathId,
         stepId,
       })
     },
+
+    // ---- Backward-compatible aliases (deprecated) ----
+
+    /** @deprecated Use `scrapPart` instead. */
+    get scrapSerial() { return this.scrapPart },
+    /** @deprecated Use `advanceToStep` with partId instead. */
+    // advanceToStep already uses partId param name
   }
 }
 

@@ -5,7 +5,7 @@
  * for display in the frontend. They are not persisted directly.
  */
 
-import type { SerialNumber, SnStepStatusValue, StepNote } from './domain'
+import type { Part, PartStepStatusValue, StepNote } from './domain'
 
 // ---- Job Progress ----
 
@@ -13,11 +13,11 @@ export interface JobProgress {
   jobId: string
   jobName: string
   goalQuantity: number
-  totalSerials: number
-  completedSerials: number
-  inProgressSerials: number
-  scrappedSerials: number
-  producedQuantity: number         // total SNs created (including scrapped)
+  totalParts: number
+  completedParts: number
+  inProgressParts: number
+  scrappedParts: number
+  producedQuantity: number         // total parts created (including scrapped)
   orderedQuantity: number          // same as goalQuantity
   /** completedCount / (goalQuantity - scrappedCount) * 100 */
   progressPercent: number
@@ -30,7 +30,7 @@ export interface StepDistribution {
   stepName: string
   stepOrder: number
   location?: string
-  serialCount: number
+  partCount: number
   completedCount: number
   isBottleneck: boolean
 }
@@ -65,7 +65,7 @@ export interface OperatorStepView {
 }
 
 export interface OperatorPartInfo {
-  serialId: string
+  partId: string
   jobId: string
   jobName: string
   pathId: string
@@ -75,9 +75,9 @@ export interface OperatorPartInfo {
   nextStepLocation?: string
 }
 
-// ---- Enriched Serial ----
+// ---- Enriched Part (formerly Enriched Serial) ----
 
-export interface EnrichedSerial {
+export interface EnrichedPart {
   id: string
   jobId: string
   jobName: string
@@ -92,6 +92,9 @@ export interface EnrichedSerial {
   createdAt: string
 }
 
+/** @deprecated Use `EnrichedPart` instead. Backward-compatible alias. */
+export type EnrichedSerial = EnrichedPart
+
 // ---- Work Queue ----
 
 /** A job in the operator's work queue, with parts grouped at the current step */
@@ -105,7 +108,7 @@ export interface WorkQueueJob {
   stepOrder: number
   stepLocation?: string
   totalSteps: number
-  serialIds: string[]
+  partIds: string[]
   partCount: number
   previousStepId?: string
   previousStepName?: string
@@ -146,18 +149,21 @@ export interface StepViewResponse {
 // ---- Advancement Result ----
 
 export interface AdvancementResult {
-  serial: SerialNumber
+  serial: Part
   bypassed: { stepId: string; stepName: string; classification: 'skipped' | 'deferred' }[]
 }
 
-// ---- SN Step Status View ----
+// ---- Part Step Status View (formerly SN Step Status View) ----
 
-export interface SnStepStatusView {
+export interface PartStepStatusView {
   stepId: string
   stepName: string
   stepOrder: number
-  status: SnStepStatusValue
+  status: PartStepStatusValue
   optional: boolean
   dependencyType: 'physical' | 'preferred' | 'completion_gate'
   hasOverride: boolean
 }
+
+/** @deprecated Use `PartStepStatusView` instead. Backward-compatible alias. */
+export type SnStepStatusView = PartStepStatusView

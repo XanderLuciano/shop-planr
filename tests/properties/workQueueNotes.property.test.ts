@@ -14,16 +14,16 @@ import { resolve } from 'path'
 import { runMigrations } from '~/server/repositories/sqlite/index'
 import { SQLiteJobRepository } from '~/server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '~/server/repositories/sqlite/pathRepository'
-import { SQLiteSerialRepository } from '~/server/repositories/sqlite/serialRepository'
+import { SQLitePartRepository } from '~/server/repositories/sqlite/partRepository'
 import { SQLiteCertRepository } from '~/server/repositories/sqlite/certRepository'
 import { SQLiteAuditRepository } from '~/server/repositories/sqlite/auditRepository'
 import { SQLiteNoteRepository } from '~/server/repositories/sqlite/noteRepository'
 import { createJobService } from '~/server/services/jobService'
 import { createPathService } from '~/server/services/pathService'
-import { createSerialService } from '~/server/services/serialService'
+import { createPartService } from '~/server/services/partService'
 import { createAuditService } from '~/server/services/auditService'
 import { createNoteService } from '~/server/services/noteService'
-import { createSequentialSnGenerator } from '~/server/utils/idGenerator'
+import { createSequentialPartIdGenerator } from '~/server/utils/idGenerator'
 
 const migrationsDir = resolve(__dirname, '../../server/repositories/sqlite/migrations')
 
@@ -39,33 +39,33 @@ function setupServices(db: Database.default.Database) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
-    serials: new SQLiteSerialRepository(db),
+    parts: new SQLitePartRepository(db),
     certs: new SQLiteCertRepository(db),
     audit: new SQLiteAuditRepository(db),
     notes: new SQLiteNoteRepository(db),
   }
 
-  const snGenerator = createSequentialSnGenerator({
+  const partIdGenerator = createSequentialPartIdGenerator({
     getCounter: () => {
-      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('sn') as { value: number } | undefined
+      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
       return row?.value ?? 0
     },
     setCounter: (v: number) => {
-      db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('sn', v)
+      db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
     },
   })
 
   const auditService = createAuditService({ audit: repos.audit })
-  const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, serials: repos.serials })
-  const pathService = createPathService({ paths: repos.paths, serials: repos.serials })
-  const serialService = createSerialService(
-    { serials: repos.serials, paths: repos.paths, certs: repos.certs },
+  const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts })
+  const pathService = createPathService({ paths: repos.paths, parts: repos.parts })
+  const partService = createPartService(
+    { parts: repos.parts, paths: repos.paths, certs: repos.certs },
     auditService,
-    snGenerator,
+    partIdGenerator,
   )
   const noteService = createNoteService({ notes: repos.notes }, auditService)
 
-  return { jobService, pathService, serialService, noteService }
+  return { jobService, pathService, partService, noteService }
 }
 
 const MAX_NOTE_LENGTH = 1000
@@ -136,9 +136,9 @@ describe('Property 7: Note length validation', () => {
 /**
  * Property 6: Note creation on advancement with non-empty text
  *
- * For any non-empty note text (≤ 1000 chars) and any non-empty set of serial IDs,
+ * For any non-empty note text (≤ 1000 chars) and any non-empty set of part IDs,
  * when advancement is performed with a note, a StepNote record should be created
- * with serialIds matching the advanced serials and text matching the provided note.
+ * with partIds matching the advanced parts and text matching the provided note.
  * When note text is empty or absent, no StepNote should be created.
  *
  * **Validates: Requirements 5.2, 5.3**
@@ -153,34 +153,34 @@ describe('Property 6: Note creation on advancement with non-empty text', () => {
     }
   })
 
-  it('non-empty note creates a StepNote with matching serialIds and text', () => {
+  it('non-empty note creates a StepNote with matching partIds and text', () => {
     fc.assert(
       fc.property(
         fc.string({ minLength: 1, maxLength: 200 }).filter(s => s.trim().length > 0),
         fc.integer({ min: 1, max: 5 }),
-        (noteText, serialCount) => {
+        (noteText, partCount) => {
           db = createTestDb()
-          const { jobService, pathService, serialService, noteService } = setupServices(db)
+          const { jobService, pathService, partService, noteService } = setupServices(db)
 
-          const job = jobService.createJob({ name: 'TestJob', goalQuantity: serialCount })
+          const job = jobService.createJob({ name: 'TestJob', goalQuantity: partCount })
           const path = pathService.createPath({
             jobId: job.id,
             name: 'TestPath',
-            goalQuantity: serialCount,
+            goalQuantity: partCount,
             steps: [{ name: 'Step 0' }, { name: 'Step 1' }],
           })
 
-          const serials = serialService.batchCreateSerials(
-            { jobId: job.id, pathId: path.id, quantity: serialCount },
+          const parts = partService.batchCreateParts(
+            { jobId: job.id, pathId: path.id, quantity: partCount },
             'user_test',
           )
 
-          const serialIds = serials.map(s => s.id)
+          const partIds = parts.map(s => s.id)
           const stepId = path.steps[0]!.id
 
-          // Advance serials
-          for (const id of serialIds) {
-            serialService.advanceSerial(id, 'user_test')
+          // Advance parts
+          for (const id of partIds) {
+            partService.advancePart(id, 'user_test')
           }
 
           // Create note (simulating what advanceBatch does)
@@ -188,13 +188,13 @@ describe('Property 6: Note creation on advancement with non-empty text', () => {
             jobId: job.id,
             pathId: path.id,
             stepId,
-            serialIds,
+            partIds,
             text: noteText,
             userId: 'user_test',
           })
 
           expect(created.text).toBe(noteText.trim())
-          expect(created.serialIds).toEqual(serialIds)
+          expect(created.partIds).toEqual(partIds)
           expect(created.stepId).toBe(stepId)
           expect(created.jobId).toBe(job.id)
 
@@ -217,7 +217,7 @@ describe('Property 6: Note creation on advancement with non-empty text', () => {
         fc.nat({ max: 20 }).map(n => ' '.repeat(n)),
         (noteText) => {
           db = createTestDb()
-          const { jobService, pathService, serialService, noteService } = setupServices(db)
+          const { jobService, pathService, partService, noteService } = setupServices(db)
 
           const job = jobService.createJob({ name: 'TestJob', goalQuantity: 2 })
           const path = pathService.createPath({
@@ -227,17 +227,17 @@ describe('Property 6: Note creation on advancement with non-empty text', () => {
             steps: [{ name: 'Step 0' }, { name: 'Step 1' }],
           })
 
-          const serials = serialService.batchCreateSerials(
+          const parts = partService.batchCreateParts(
             { jobId: job.id, pathId: path.id, quantity: 2 },
             'user_test',
           )
 
-          const serialIds = serials.map(s => s.id)
+          const partIds = parts.map(s => s.id)
           const stepId = path.steps[0]!.id
 
-          // Advance serials
-          for (const id of serialIds) {
-            serialService.advanceSerial(id, 'user_test')
+          // Advance parts
+          for (const id of partIds) {
+            partService.advancePart(id, 'user_test')
           }
 
           // Simulate advanceBatch logic: skip note creation for empty text
@@ -247,7 +247,7 @@ describe('Property 6: Note creation on advancement with non-empty text', () => {
               jobId: job.id,
               pathId: path.id,
               stepId,
-              serialIds,
+              partIds,
               text: trimmed,
               userId: 'user_test',
             })

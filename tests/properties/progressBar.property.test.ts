@@ -14,14 +14,14 @@ import { resolve } from 'path'
 import { runMigrations } from '../../server/repositories/sqlite/index'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
-import { SQLiteSerialRepository } from '../../server/repositories/sqlite/serialRepository'
+import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
 import { SQLiteCertRepository } from '../../server/repositories/sqlite/certRepository'
 import { SQLiteAuditRepository } from '../../server/repositories/sqlite/auditRepository'
 import { createJobService } from '../../server/services/jobService'
 import { createPathService } from '../../server/services/pathService'
-import { createSerialService } from '../../server/services/serialService'
+import { createPartService } from '../../server/services/partService'
 import { createAuditService } from '../../server/services/auditService'
-import { createSequentialSnGenerator } from '../../server/utils/idGenerator'
+import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
 
 function createTestDb() {
   const db = new Database(':memory:')
@@ -36,31 +36,31 @@ function setupServices(db: Database.default.Database) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
-    serials: new SQLiteSerialRepository(db),
+    parts: new SQLitePartRepository(db),
     certs: new SQLiteCertRepository(db),
     audit: new SQLiteAuditRepository(db)
   }
 
-  const snGenerator = createSequentialSnGenerator({
+  const partIdGenerator = createSequentialPartIdGenerator({
     getCounter: () => {
-      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('sn') as { value: number } | undefined
+      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
       return row?.value ?? 0
     },
     setCounter: (v: number) => {
-      db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('sn', v)
+      db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
     }
   })
 
   const auditService = createAuditService({ audit: repos.audit })
-  const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, serials: repos.serials })
-  const pathService = createPathService({ paths: repos.paths, serials: repos.serials })
-  const serialService = createSerialService(
-    { serials: repos.serials, paths: repos.paths, certs: repos.certs },
+  const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts })
+  const pathService = createPathService({ paths: repos.paths, parts: repos.parts })
+  const partService = createPartService(
+    { parts: repos.parts, paths: repos.paths, certs: repos.certs },
     auditService,
-    snGenerator
+    partIdGenerator
   )
 
-  return { jobService, pathService, serialService }
+  return { jobService, pathService, partService }
 }
 
 describe('Property 7: Progress Bar Accuracy', () => {
@@ -75,13 +75,13 @@ describe('Property 7: Progress Bar Accuracy', () => {
       fc.property(
         fc.record({
           goalQuantity: fc.integer({ min: 1, max: 100 }),
-          snQuantity: fc.integer({ min: 1, max: 50 }),
-          // How many serials to advance to completion (single-step path for simplicity)
+          partQuantity: fc.integer({ min: 1, max: 50 }),
+          // How many parts to advance to completion (single-step path for simplicity)
           completionCount: fc.integer({ min: 0, max: 50 })
         }),
-        ({ goalQuantity, snQuantity, completionCount }) => {
+        ({ goalQuantity, partQuantity, completionCount }) => {
           db = createTestDb()
-          const { jobService, pathService, serialService } = setupServices(db)
+          const { jobService, pathService, partService } = setupServices(db)
 
           const job = jobService.createJob({ name: 'Progress Test', goalQuantity })
 
@@ -89,20 +89,20 @@ describe('Property 7: Progress Bar Accuracy', () => {
           const path = pathService.createPath({
             jobId: job.id,
             name: 'Route',
-            goalQuantity: snQuantity,
+            goalQuantity: partQuantity,
             steps: [{ name: 'Only Step' }]
           })
 
-          const serials = serialService.batchCreateSerials(
-            { jobId: job.id, pathId: path.id, quantity: snQuantity },
+          const parts = partService.batchCreateParts(
+            { jobId: job.id, pathId: path.id, quantity: partQuantity },
             'user_test'
           )
 
-          // Complete some serials (advance past the single step)
-          const toComplete = Math.min(completionCount, serials.length)
+          // Complete some parts (advance past the single step)
+          const toComplete = Math.min(completionCount, parts.length)
           for (let i = 0; i < toComplete; i++) {
             try {
-              serialService.advanceSerial(serials[i].id, 'user_test')
+              partService.advancePart(parts[i].id, 'user_test')
             } catch {
               // Already completed
             }
@@ -113,7 +113,7 @@ describe('Property 7: Progress Bar Accuracy', () => {
           const expectedPercent = (toComplete / goalQuantity) * 100
 
           expect(progress.progressPercent).toBeCloseTo(expectedPercent, 10)
-          expect(progress.completedSerials).toBe(toComplete)
+          expect(progress.completedParts).toBe(toComplete)
           expect(progress.goalQuantity).toBe(goalQuantity)
 
           // Can exceed 100% when completed > goal
@@ -135,30 +135,30 @@ describe('Property 7: Progress Bar Accuracy', () => {
         fc.record({
           initialGoal: fc.integer({ min: 1, max: 50 }),
           newGoal: fc.integer({ min: 1, max: 50 }),
-          snQuantity: fc.integer({ min: 1, max: 20 }),
+          partQuantity: fc.integer({ min: 1, max: 20 }),
           completionCount: fc.integer({ min: 0, max: 20 })
         }),
-        ({ initialGoal, newGoal, snQuantity, completionCount }) => {
+        ({ initialGoal, newGoal, partQuantity, completionCount }) => {
           db = createTestDb()
-          const { jobService, pathService, serialService } = setupServices(db)
+          const { jobService, pathService, partService } = setupServices(db)
 
           const job = jobService.createJob({ name: 'Goal Change Test', goalQuantity: initialGoal })
           const path = pathService.createPath({
             jobId: job.id,
             name: 'Route',
-            goalQuantity: snQuantity,
+            goalQuantity: partQuantity,
             steps: [{ name: 'Only Step' }]
           })
 
-          const serials = serialService.batchCreateSerials(
-            { jobId: job.id, pathId: path.id, quantity: snQuantity },
+          const parts = partService.batchCreateParts(
+            { jobId: job.id, pathId: path.id, quantity: partQuantity },
             'user_test'
           )
 
-          const toComplete = Math.min(completionCount, serials.length)
+          const toComplete = Math.min(completionCount, parts.length)
           for (let i = 0; i < toComplete; i++) {
             try {
-              serialService.advanceSerial(serials[i].id, 'user_test')
+              partService.advancePart(parts[i].id, 'user_test')
             } catch {
               break
             }

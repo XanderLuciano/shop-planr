@@ -1,7 +1,7 @@
 /**
  * Integration: Flexible Advancement
  *
- * Create job with flexible path → advance serial skipping steps →
+ * Create job with flexible path → advance part skipping steps →
  * verify skip/defer classification → verify deferred blocks normal completion →
  * complete deferred step → verify normal completion succeeds.
  * Validates: Requirements 5.1, 5.2, 5.3, 6.3, 11.2, 11.3, 11.5, 11.7
@@ -16,7 +16,7 @@ describe('Flexible Advancement Integration', () => {
 
   it('full flexible flow: advance skipping → classify → deferred blocks → complete deferred → complete', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService, lifecycleService } = ctx
+    const { jobService, pathService, partService, lifecycleService } = ctx
 
     // 1. Create job
     const job = jobService.createJob({ name: 'Flexible Job', goalQuantity: 5 })
@@ -41,14 +41,14 @@ describe('Flexible Advancement Integration', () => {
     const updatedPath = ctx.repos.paths.update(path.id, { advancementMode: 'flexible' })
     expect(updatedPath.advancementMode).toBe('flexible')
 
-    // 3. Create serial
-    const [serial] = serialService.batchCreateSerials(
+    // 3. Create part
+    const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
       'operator1'
     )
 
     // 4. Advance from step 0 to step 3, skipping steps 1 and 2
-    const result = lifecycleService.advanceToStep(serial.id, {
+    const result = lifecycleService.advanceToStep(part.id, {
       targetStepIndex: 3,
       userId: 'operator1',
     })
@@ -65,25 +65,24 @@ describe('Flexible Advancement Integration', () => {
     expect(step2Bypass).toBeDefined()
     expect(step2Bypass!.classification).toBe('deferred')  // required → deferred
 
-    // 6. Verify serial is now at step 3
+    // 6. Verify part is now at step 3
     expect(result.serial.currentStepIndex).toBe(3)
 
     // 7. Verify deferred step blocks normal completion via canComplete
-    const completionCheck = lifecycleService.canComplete(serial.id)
+    const completionCheck = lifecycleService.canComplete(part.id)
     expect(completionCheck.canComplete).toBe(false)
     expect(completionCheck.blockers).toContain(path.steps[2].id) // Weld is a blocker
 
     // 8. Complete the deferred step (Weld)
     const completedDeferred = lifecycleService.completeDeferredStep(
-      serial.id,
+      part.id,
       path.steps[2].id,
       'operator1'
     )
     expect(completedDeferred.status).toBe('completed')
 
-    // 9. Now canComplete should return true (Inspect still needs to be done via advancement)
-    // Advance from step 3 (Inspect) to completion
-    const finalResult = lifecycleService.advanceToStep(serial.id, {
+    // 9. Advance from step 3 (Inspect) to completion
+    const finalResult = lifecycleService.advanceToStep(part.id, {
       targetStepIndex: 4, // past last step = completion
       userId: 'operator1',
     })
@@ -93,7 +92,7 @@ describe('Flexible Advancement Integration', () => {
 
   it('strict mode rejects non-sequential advancement', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService, lifecycleService } = ctx
+    const { jobService, pathService, partService, lifecycleService } = ctx
 
     const job = jobService.createJob({ name: 'Strict Job', goalQuantity: 1 })
     const path = pathService.createPath({
@@ -104,21 +103,21 @@ describe('Flexible Advancement Integration', () => {
     })
     // Path defaults to strict mode
 
-    const [serial] = serialService.batchCreateSerials(
+    const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
       'user1'
     )
 
     // Trying to skip from step 0 to step 2 in strict mode → should fail
     expect(() =>
-      lifecycleService.advanceToStep(serial.id, {
+      lifecycleService.advanceToStep(part.id, {
         targetStepIndex: 2,
         userId: 'user1',
       })
     ).toThrow(/strict/)
 
     // Sequential advance (0 → 1) should work
-    const result = lifecycleService.advanceToStep(serial.id, {
+    const result = lifecycleService.advanceToStep(part.id, {
       targetStepIndex: 1,
       userId: 'user1',
     })
@@ -127,7 +126,7 @@ describe('Flexible Advancement Integration', () => {
 
   it('physical dependency blocks advancement even in flexible mode', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService, lifecycleService } = ctx
+    const { jobService, pathService, partService, lifecycleService } = ctx
 
     const job = jobService.createJob({ name: 'Physical Dep Job', goalQuantity: 1 })
     const path = pathService.createPath({
@@ -143,14 +142,14 @@ describe('Flexible Advancement Integration', () => {
     // Set path to flexible mode
     ctx.repos.paths.update(path.id, { advancementMode: 'flexible' })
 
-    const [serial] = serialService.batchCreateSerials(
+    const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
       'user1'
     )
 
     // Trying to skip past physical dependency → should fail
     expect(() =>
-      lifecycleService.advanceToStep(serial.id, {
+      lifecycleService.advanceToStep(part.id, {
         targetStepIndex: 2,
         userId: 'user1',
       })
@@ -159,7 +158,7 @@ describe('Flexible Advancement Integration', () => {
 
   it('backward advancement is rejected', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService, lifecycleService } = ctx
+    const { jobService, pathService, partService, lifecycleService } = ctx
 
     const job = jobService.createJob({ name: 'Backward Test', goalQuantity: 1 })
     const path = pathService.createPath({
@@ -170,17 +169,17 @@ describe('Flexible Advancement Integration', () => {
     })
     ctx.repos.paths.update(path.id, { advancementMode: 'flexible' })
 
-    const [serial] = serialService.batchCreateSerials(
+    const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
       'user1'
     )
 
     // Advance to step 2
-    lifecycleService.advanceToStep(serial.id, { targetStepIndex: 2, userId: 'user1' })
+    lifecycleService.advanceToStep(part.id, { targetStepIndex: 2, userId: 'user1' })
 
     // Try to go back to step 1 → should fail
     expect(() =>
-      lifecycleService.advanceToStep(serial.id, { targetStepIndex: 1, userId: 'user1' })
+      lifecycleService.advanceToStep(part.id, { targetStepIndex: 1, userId: 'user1' })
     ).toThrow(/before/)
   })
 })

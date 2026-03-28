@@ -16,7 +16,8 @@ export type DomainType
   = | 'Job'
     | 'Path'
     | 'ProcessStep'
-    | 'SerialNumber'
+    | 'Part'
+    | 'SerialNumber' // @deprecated backward-compatible alias for 'Part'
     | 'Certificate'
     | 'CertAttachment'
     | 'TemplateRoute'
@@ -155,14 +156,19 @@ const validators: Record<DomainType, (obj: Record<string, unknown>) => void> = {
     optionalString(obj, 'location', 'ProcessStep')
   },
 
+  Part(obj) {
+    requireString(obj, 'id', 'Part')
+    requireString(obj, 'jobId', 'Part')
+    requireString(obj, 'pathId', 'Part')
+    requireNumber(obj, 'currentStepIndex', 'Part')
+    requireString(obj, 'createdAt', 'Part')
+    requireString(obj, 'updatedAt', 'Part')
+    optionalArray(obj, 'certIds', 'Part')
+  },
+
+  /** @deprecated Use 'Part' instead. Backward-compatible alias. */
   SerialNumber(obj) {
-    requireString(obj, 'id', 'SerialNumber')
-    requireString(obj, 'jobId', 'SerialNumber')
-    requireString(obj, 'pathId', 'SerialNumber')
-    requireNumber(obj, 'currentStepIndex', 'SerialNumber')
-    requireString(obj, 'createdAt', 'SerialNumber')
-    requireString(obj, 'updatedAt', 'SerialNumber')
-    optionalArray(obj, 'certIds', 'SerialNumber')
+    validators.Part(obj)
   },
 
   Certificate(obj) {
@@ -216,7 +222,7 @@ const validators: Record<DomainType, (obj: Record<string, unknown>) => void> = {
     requireString(obj, 'action', 'AuditEntry')
     requireString(obj, 'userId', 'AuditEntry')
     requireString(obj, 'timestamp', 'AuditEntry')
-    optionalString(obj, 'serialId', 'AuditEntry')
+    optionalString(obj, 'partId', 'AuditEntry')
     optionalString(obj, 'certId', 'AuditEntry')
     optionalString(obj, 'jobId', 'AuditEntry')
     optionalString(obj, 'pathId', 'AuditEntry')
@@ -239,7 +245,7 @@ const validators: Record<DomainType, (obj: Record<string, unknown>) => void> = {
     requireString(obj, 'jobId', 'StepNote')
     requireString(obj, 'pathId', 'StepNote')
     requireString(obj, 'stepId', 'StepNote')
-    requireArray(obj, 'serialIds', 'StepNote')
+    requireArray(obj, 'partIds', 'StepNote')
     requireString(obj, 'text', 'StepNote')
     requireString(obj, 'createdBy', 'StepNote')
     requireString(obj, 'createdAt', 'StepNote')

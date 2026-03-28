@@ -25,7 +25,7 @@ function aggregateGroupedWork(
   ctx: TestContext,
   userService: ReturnType<typeof createUserService>,
 ): WorkQueueGroupedResponse {
-  const { jobService, pathService, serialService } = ctx
+  const { jobService, pathService, partService } = ctx
   const jobs = jobService.listJobs()
 
   const entries: { job: WorkQueueJob; assignedTo: string | undefined }[] = []
@@ -37,7 +37,7 @@ function aggregateGroupedWork(
       const totalSteps = path.steps.length
 
       for (const step of path.steps) {
-        const serials = serialService.listSerialsByStepIndex(path.id, step.order)
+        const serials = partService.listPartsByStepIndex(path.id, step.order)
         if (serials.length === 0) continue
 
         const isFinalStep = step.order === totalSteps - 1
@@ -55,7 +55,7 @@ function aggregateGroupedWork(
             stepOrder: step.order,
             stepLocation: step.location,
             totalSteps,
-            serialIds: serials.map(s => s.id),
+            partIds: serials.map(s => s.id),
             partCount: serials.length,
             nextStepName: nextStep?.name,
             nextStepLocation: nextStep?.location,
@@ -110,7 +110,7 @@ const jobPathConfigArb = fc.record({
   jobName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
   pathName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
   stepCount: fc.integer({ min: 1, max: 4 }),
-  serialCount: fc.integer({ min: 1, max: 5 }),
+  partCount: fc.integer({ min: 1, max: 5 }),
   stepLocations: fc.array(
     fc.option(fc.string({ minLength: 1, maxLength: 15 }).filter(s => s.trim().length > 0), { nil: undefined }),
     { minLength: 4, maxLength: 4 },
@@ -151,7 +151,7 @@ describe('Property 6: Assignee Grouping Correctness', () => {
     fc.assert(
       fc.property(scenarioArb, (scenario) => {
         ctx = createTestContext()
-        const { jobService, pathService, serialService, db } = ctx
+        const { jobService, pathService, partService, db } = ctx
 
         // Create userService from the same DB
         const userRepo = new SQLiteUserRepository(db)
@@ -172,7 +172,7 @@ describe('Property 6: Assignee Grouping Correctness', () => {
         for (const config of scenario.configs) {
           const job = jobService.createJob({
             name: config.jobName,
-            goalQuantity: config.serialCount,
+            goalQuantity: config.partCount,
           })
 
           const steps = Array.from({ length: config.stepCount }, (_, i) => ({
@@ -183,13 +183,13 @@ describe('Property 6: Assignee Grouping Correctness', () => {
           const path = pathService.createPath({
             jobId: job.id,
             name: config.pathName,
-            goalQuantity: config.serialCount,
+            goalQuantity: config.partCount,
             steps,
           })
 
-          // Create serials (all start at step 0)
-          serialService.batchCreateSerials(
-            { jobId: job.id, pathId: path.id, quantity: config.serialCount },
+          // Create parts (all start at step 0)
+          partService.batchCreateParts(
+            { jobId: job.id, pathId: path.id, quantity: config.partCount },
             'user_test',
           )
 

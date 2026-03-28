@@ -5,7 +5,7 @@
  * to verify the bug is resolved. All three tests should PASS on
  * fixed code — passing confirms the fix works.
  *
- * Bug: When a valid process step has zero active serials, the API incorrectly
+ * Bug: When a valid process step has zero active parts, the API incorrectly
  * returns null/404 instead of a valid response with partCount: 0.
  *
  * **Validates: Requirements 2.1, 2.3, 2.4**
@@ -19,7 +19,7 @@ import type { WorkQueueJob, StepViewResponse, WorkQueueResponse } from '../../se
 // Replicated FIXED logic from server/api/operator/step/[stepId].get.ts
 // ---------------------------------------------------------------------------
 function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
-  const { jobService, pathService, serialService, noteService } = ctx
+  const { jobService, pathService, partService, noteService } = ctx
   const jobs = jobService.listJobs()
 
   for (const job of jobs) {
@@ -31,15 +31,15 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
       for (const step of path.steps) {
         if (step.id !== stepId) continue
 
-        const serials = serialService.listSerialsByStepIndex(path.id, step.order)
+        const parts = partService.listPartsByStepIndex(path.id, step.order)
         const isFinalStep = step.order === totalSteps - 1
         const prevStep = step.order > 0 ? path.steps[step.order - 1] : undefined
         const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
 
         let previousStepWipCount: number | undefined
-        if (step.order > 0 && serials.length === 0) {
-          const prevSerials = serialService.listSerialsByStepIndex(path.id, step.order - 1)
-          previousStepWipCount = prevSerials.length
+        if (step.order > 0 && parts.length === 0) {
+          const prevParts = partService.listPartsByStepIndex(path.id, step.order - 1)
+          previousStepWipCount = prevParts.length
         }
 
         const foundJob: WorkQueueJob = {
@@ -52,8 +52,8 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
           stepOrder: step.order,
           stepLocation: step.location,
           totalSteps,
-          serialIds: serials.map(s => s.id),
-          partCount: serials.length,
+          partIds: parts.map(s => s.id),
+          partCount: parts.length,
           previousStepId: prevStep?.id,
           previousStepName: prevStep?.name,
           nextStepId: nextStep?.id,
@@ -79,7 +79,7 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
 // Replicated FIXED logic from server/api/operator/queue/_all.get.ts
 // ---------------------------------------------------------------------------
 function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
-  const { jobService, pathService, serialService } = ctx
+  const { jobService, pathService, partService } = ctx
   const jobs = jobService.listJobs()
   const groupMap = new Map<string, WorkQueueJob>()
 
@@ -90,8 +90,8 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
       const totalSteps = path.steps.length
 
       for (const step of path.steps) {
-        const serials = serialService.listSerialsByStepIndex(path.id, step.order)
-        if (serials.length === 0 && step.order !== 0) continue // FIXED: only skip non-first steps with zero serials
+        const parts = partService.listPartsByStepIndex(path.id, step.order)
+        if (parts.length === 0 && step.order !== 0) continue // FIXED: only skip non-first steps with zero parts
 
         const key = `${job.id}|${path.id}|${step.order}`
         const isFinalStep = step.order === totalSteps - 1
@@ -107,8 +107,8 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
           stepOrder: step.order,
           stepLocation: step.location,
           totalSteps,
-          serialIds: serials.map(s => s.id),
-          partCount: serials.length,
+          partIds: parts.map(s => s.id),
+          partCount: parts.length,
           nextStepName: nextStep?.name,
           nextStepLocation: nextStep?.location,
           isFinalStep,
@@ -127,12 +127,12 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
 // Arbitraries — same pattern as stepEndpoint.property.test.ts
 // ---------------------------------------------------------------------------
 
-/** Arbitrary for a single job with one path, random steps, and random serials */
+/** Arbitrary for a single job with one path, random steps, and random parts */
 const jobPathConfigArb = fc.record({
   jobName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
   pathName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
   stepCount: fc.integer({ min: 1, max: 5 }),
-  serialCount: fc.integer({ min: 1, max: 8 }),
+  partCount: fc.integer({ min: 1, max: 8 }),
   stepLocations: fc.array(
     fc.option(fc.string({ minLength: 1, maxLength: 15 }).filter(s => s.trim().length > 0), { nil: undefined }),
     { minLength: 5, maxLength: 5 },
@@ -144,7 +144,7 @@ const multiStepConfigArb = fc.record({
   jobName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
   pathName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
   stepCount: fc.integer({ min: 2, max: 5 }),
-  serialCount: fc.integer({ min: 1, max: 8 }),
+  partCount: fc.integer({ min: 1, max: 8 }),
   stepLocations: fc.array(
     fc.option(fc.string({ minLength: 1, maxLength: 15 }).filter(s => s.trim().length > 0), { nil: undefined }),
     { minLength: 5, maxLength: 5 },
@@ -168,25 +168,25 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
   /**
    * Property 1: Bug Condition — First Step Always Accessible
    *
-   * For any valid first step (step_order = 0) with zero active serials
-   * (all serials advanced past it), lookupStep should return a non-null
+   * For any valid first step (step_order = 0) with zero active parts
+   * (all parts advanced past it), lookupStep should return a non-null
    * result with partCount: 0.
    *
    * This validates the fixed behavior; unfixed code would return null
-   * when serials.length === 0.
+   * when parts.length === 0.
    *
    * **Validates: Requirements 2.1, 2.2**
    */
-  it('Property 1: First step with zero serials returns valid response', () => {
+  it('Property 1: First step with zero parts returns valid response', () => {
     fc.assert(
       fc.property(jobPathConfigArb, (config) => {
         ctx = createTestContext()
-        const { jobService, pathService, serialService } = ctx
+        const { jobService, pathService, partService } = ctx
 
         // Create job + path
         const job = jobService.createJob({
           name: config.jobName,
-          goalQuantity: config.serialCount,
+          goalQuantity: config.partCount,
         })
 
         const steps = Array.from({ length: config.stepCount }, (_, i) => ({
@@ -197,35 +197,35 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
         const path = pathService.createPath({
           jobId: job.id,
           name: config.pathName,
-          goalQuantity: config.serialCount,
+          goalQuantity: config.partCount,
           steps,
         })
 
-        // Create serials (they start at step 0)
-        const serials = serialService.batchCreateSerials(
-          { jobId: job.id, pathId: path.id, quantity: config.serialCount },
+        // Create parts (they start at step 0)
+        const parts = partService.batchCreateParts(
+          { jobId: job.id, pathId: path.id, quantity: config.partCount },
           'user_test',
         )
 
-        // Advance ALL serials past step 0
-        // For single-step paths, advancing completes the serial
+        // Advance ALL parts past step 0
+        // For single-step paths, advancing completes the part
         // For multi-step paths, advancing moves to step 1
-        for (const serial of serials) {
+        for (const part of parts) {
           try {
-            serialService.advanceSerial(serial.id, 'user_test')
+            partService.advancePart(part.id, 'user_test')
           } catch {
             // ignore if already completed
           }
         }
 
-        // Now step 0 has zero serials — query it
+        // Now step 0 has zero parts — query it
         const step0Id = path.steps[0].id
         const result = lookupStep(ctx, step0Id)
 
         // ASSERT: first step should always be accessible with partCount: 0
-        expect(result, `First step ${step0Id} should return non-null even with 0 serials`).not.toBeNull()
+        expect(result, `First step ${step0Id} should return non-null even with 0 parts`).not.toBeNull()
         expect(result!.job.partCount).toBe(0)
-        expect(result!.job.serialIds).toEqual([])
+        expect(result!.job.partIds).toEqual([])
 
         ctx.cleanup()
         ctx = null as any
@@ -237,25 +237,25 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
   /**
    * Property 2: Bug Condition — Non-First Step Returns WIP Context
    *
-   * For any valid non-first step (step_order > 0) with zero active serials
-   * (no serials advanced to it yet), lookupStep should return a non-null
+   * For any valid non-first step (step_order > 0) with zero active parts
+   * (no parts advanced to it yet), lookupStep should return a non-null
    * result with partCount: 0.
    *
    * This validates the fixed behavior; unfixed code would return null
-   * when serials.length === 0.
+   * when parts.length === 0.
    *
    * **Validates: Requirements 2.4, 2.5**
    */
-  it('Property 2: Non-first step with zero serials returns valid response', () => {
+  it('Property 2: Non-first step with zero parts returns valid response', () => {
     fc.assert(
       fc.property(multiStepConfigArb, (config) => {
         ctx = createTestContext()
-        const { jobService, pathService, serialService } = ctx
+        const { jobService, pathService, partService } = ctx
 
         // Create job + path with 2+ steps
         const job = jobService.createJob({
           name: config.jobName,
-          goalQuantity: config.serialCount,
+          goalQuantity: config.partCount,
         })
 
         const steps = Array.from({ length: config.stepCount }, (_, i) => ({
@@ -266,24 +266,24 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
         const path = pathService.createPath({
           jobId: job.id,
           name: config.pathName,
-          goalQuantity: config.serialCount,
+          goalQuantity: config.partCount,
           steps,
         })
 
-        // Create serials at step 0 — do NOT advance any
-        serialService.batchCreateSerials(
-          { jobId: job.id, pathId: path.id, quantity: config.serialCount },
+        // Create parts at step 0 — do NOT advance any
+        partService.batchCreateParts(
+          { jobId: job.id, pathId: path.id, quantity: config.partCount },
           'user_test',
         )
 
-        // Step 1 has zero serials (none advanced from step 0 yet)
+        // Step 1 has zero parts (none advanced from step 0 yet)
         const step1Id = path.steps[1].id
         const result = lookupStep(ctx, step1Id)
 
         // ASSERT: non-first step should return valid response with partCount: 0
-        expect(result, `Step 1 (${step1Id}) should return non-null even with 0 serials`).not.toBeNull()
+        expect(result, `Step 1 (${step1Id}) should return non-null even with 0 parts`).not.toBeNull()
         expect(result!.job.partCount).toBe(0)
-        expect(result!.job.serialIds).toEqual([])
+        expect(result!.job.partIds).toEqual([])
 
         ctx.cleanup()
         ctx = null as any
@@ -295,25 +295,25 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
   /**
    * Property 3: Bug Condition — First Step Included in Parts View
    *
-   * For any valid first step (step_order = 0) with zero active serials,
+   * For any valid first step (step_order = 0) with zero active parts,
    * aggregateAllWork should include that step in the response so it
    * remains navigable from the Parts View.
    *
    * This validates the fixed behavior; unfixed code would skip steps
-   * with serials.length === 0.
+   * with parts.length === 0.
    *
    * **Validates: Requirements 2.3**
    */
-  it('Property 3: Parts View includes first step even with zero serials', () => {
+  it('Property 3: Parts View includes first step even with zero parts', () => {
     fc.assert(
       fc.property(jobPathConfigArb, (config) => {
         ctx = createTestContext()
-        const { jobService, pathService, serialService } = ctx
+        const { jobService, pathService, partService } = ctx
 
         // Create job + path
         const job = jobService.createJob({
           name: config.jobName,
-          goalQuantity: config.serialCount,
+          goalQuantity: config.partCount,
         })
 
         const steps = Array.from({ length: config.stepCount }, (_, i) => ({
@@ -324,20 +324,20 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
         const path = pathService.createPath({
           jobId: job.id,
           name: config.pathName,
-          goalQuantity: config.serialCount,
+          goalQuantity: config.partCount,
           steps,
         })
 
-        // Create serials
-        const serials = serialService.batchCreateSerials(
-          { jobId: job.id, pathId: path.id, quantity: config.serialCount },
+        // Create parts
+        const parts = partService.batchCreateParts(
+          { jobId: job.id, pathId: path.id, quantity: config.partCount },
           'user_test',
         )
 
-        // Advance ALL serials past step 0
-        for (const serial of serials) {
+        // Advance ALL parts past step 0
+        for (const part of parts) {
           try {
-            serialService.advanceSerial(serial.id, 'user_test')
+            partService.advancePart(part.id, 'user_test')
           } catch {
             // ignore if already completed
           }
@@ -350,7 +350,7 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
         const step0Id = path.steps[0].id
         const step0InResponse = response.jobs.some(j => j.stepId === step0Id)
 
-        expect(step0InResponse, `Step 0 (${step0Id}) should be included in Parts View even with 0 serials`).toBe(true)
+        expect(step0InResponse, `Step 0 (${step0Id}) should be included in Parts View even with 0 parts`).toBe(true)
 
         ctx.cleanup()
         ctx = null as any

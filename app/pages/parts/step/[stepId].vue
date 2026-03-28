@@ -47,13 +47,13 @@ const operatorMenuItems = computed<DropdownMenuItem[][]>(() => {
   ]
 })
 
-async function handleAdvance(payload: { serialIds: string[], note?: string }) {
+async function handleAdvance(payload: { partIds: string[], note?: string }) {
   if (!job.value || !operatorId.value) return
 
   advanceLoading.value = true
   try {
     const result = await advanceBatch({
-      serialIds: payload.serialIds,
+      partIds: payload.partIds,
       userId: operatorId.value,
       jobId: job.value.jobId,
       pathId: job.value.pathId,
@@ -83,11 +83,11 @@ async function handleAdvance(payload: { serialIds: string[], note?: string }) {
 
 async function handleCreated(count: number) {
   toast.add({
-    title: 'Serials created',
-    description: `${count} serial number${count !== 1 ? 's' : ''} created`,
+    title: 'Parts created',
+    description: `${count} part${count !== 1 ? 's' : ''} created`,
     color: 'success',
   })
-  // Refresh step data to pick up newly created serials
+  // Refresh step data to pick up newly created parts
   await fetchStep()
 }
 
@@ -228,11 +228,11 @@ onMounted(async () => {
         class="text-sm text-(--ui-text-muted) py-8 text-center"
       >
         <UIcon name="i-lucide-hard-hat" class="size-8 mb-2 opacity-50" />
-        <p>Select an operator to advance parts or create serials.</p>
+        <p>Select an operator to advance parts or create new parts.</p>
       </div>
 
-      <!-- First step (always shows SerialCreationPanel, even with 0 serials) -->
-      <SerialCreationPanel
+      <!-- First step (always shows PartCreationPanel, even with 0 parts) -->
+      <PartCreationPanel
         v-else-if="job.stepOrder === 0"
         :job="job"
         :loading="advanceLoading"
@@ -241,7 +241,7 @@ onMounted(async () => {
         @created="handleCreated"
       />
 
-      <!-- Non-first step with zero serials: waiting for prior step -->
+      <!-- Non-first step with zero parts: waiting for prior step -->
       <div
         v-else-if="job.partCount === 0"
         class="text-center py-12"
@@ -250,7 +250,7 @@ onMounted(async () => {
         <p class="text-sm text-(--ui-text-highlighted) font-medium mb-1">Waiting for the previous step</p>
         <p class="text-xs text-(--ui-text-muted) mb-4">
           The prior step "{{ job.previousStepName }}" currently has
-          {{ previousStepWipCount ?? 0 }} serial number{{ (previousStepWipCount ?? 0) !== 1 ? 's' : '' }} in progress.
+          {{ previousStepWipCount ?? 0 }} part{{ (previousStepWipCount ?? 0) !== 1 ? 's' : '' }} in progress.
           Parts will appear here once they are advanced from the previous step.
         </p>
         <UButton
@@ -262,7 +262,7 @@ onMounted(async () => {
         />
       </div>
 
-      <!-- Non-first step with active serials: advancement panel -->
+      <!-- Non-first step with active parts: advancement panel -->
       <ProcessAdvancementPanel
         v-else
         :job="job"

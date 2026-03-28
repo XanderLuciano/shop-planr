@@ -1,14 +1,14 @@
 /**
  * Property 16: Completion Gate Deferred Behavior
  *
- * For any step with 'completion_gate' dependency, verify serial can advance
+ * For any step with 'completion_gate' dependency, verify part can advance
  * past it (deferred) but normal completion is blocked until resolved.
  *
  * **Validates: Requirements 6.7, 12.4**
  */
 import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
-import type { SnStepStatusValue } from '../../server/types/domain'
+import type { PartStepStatusValue } from '../../server/types/domain'
 
 interface StepConfig {
   id: string
@@ -18,7 +18,7 @@ interface StepConfig {
 
 interface StepStatusRecord {
   stepId: string
-  status: SnStepStatusValue
+  status: PartStepStatusValue
 }
 
 /**
@@ -51,7 +51,7 @@ function canComplete(
  */
 function canBypassStep(
   step: StepConfig,
-  stepStatus: SnStepStatusValue | undefined,
+  stepStatus: PartStepStatusValue | undefined,
 ): boolean {
   // Physical dependencies cannot be bypassed unless already completed
   if (step.dependencyType === 'physical') {
@@ -77,7 +77,7 @@ describe('Property 16: Completion Gate Deferred Behavior', () => {
           }))
 
           // Gate step is pending (not yet completed)
-          const gateStatus: SnStepStatusValue = 'pending'
+          const gateStatus: PartStepStatusValue = 'pending'
 
           // Completion_gate can be bypassed
           expect(canBypassStep(steps[gateStepIndex], gateStatus)).toBe(true)

@@ -1,5 +1,5 @@
 import type { PathRepository } from '../repositories/interfaces/pathRepository'
-import type { SerialRepository } from '../repositories/interfaces/serialRepository'
+import type { PartRepository } from '../repositories/interfaces/partRepository'
 import type { UserRepository } from '../repositories/interfaces/userRepository'
 import type { Path, ProcessStep } from '../types/domain'
 import type { CreatePathInput, UpdatePathInput } from '../types/api'
@@ -10,7 +10,7 @@ import { NotFoundError, ValidationError } from '../utils/errors'
 
 export function createPathService(repos: {
   paths: PathRepository
-  serials: SerialRepository
+  parts: PartRepository
   users?: UserRepository
 }) {
   return {
@@ -93,9 +93,9 @@ export function createPathService(repos: {
         throw new NotFoundError('Path', id)
       }
 
-      const serials = repos.serials.listByPathId(id)
-      if (serials.length > 0) {
-        throw new ValidationError('Cannot delete path with serial numbers attached')
+      const parts = repos.parts.listByPathId(id)
+      if (parts.length > 0) {
+        throw new ValidationError('Cannot delete path with parts attached')
       }
 
       return repos.paths.delete(id)
@@ -108,35 +108,35 @@ export function createPathService(repos: {
       }
 
       const distribution: StepDistribution[] = path.steps.map((step) => {
-        const serialsAtStep = repos.serials.listByStepIndex(pathId, step.order)
+        const partsAtStep = repos.parts.listByStepIndex(pathId, step.order)
         return {
           stepId: step.id,
           stepName: step.name,
           stepOrder: step.order,
           location: step.location,
-          serialCount: serialsAtStep.length,
+          partCount: partsAtStep.length,
           completedCount: 0,
           isBottleneck: false
         }
       })
 
-      // Count completed serials (stepIndex = -1) and distribute to each step's completedCount
-      const completedSerials = repos.serials.listByStepIndex(pathId, -1)
-      const completedCount = completedSerials.length
+      // Count completed parts (stepIndex = -1) and distribute to each step's completedCount
+      const completedParts = repos.parts.listByStepIndex(pathId, -1)
+      const completedCount = completedParts.length
       for (const entry of distribution) {
         entry.completedCount = completedCount
       }
 
-      // Determine bottleneck: step with highest serialCount
+      // Determine bottleneck: step with highest partCount
       let maxCount = 0
       for (const entry of distribution) {
-        if (entry.serialCount > maxCount) {
-          maxCount = entry.serialCount
+        if (entry.partCount > maxCount) {
+          maxCount = entry.partCount
         }
       }
       if (maxCount > 0) {
         for (const entry of distribution) {
-          if (entry.serialCount === maxCount) {
+          if (entry.partCount === maxCount) {
             entry.isBottleneck = true
           }
         }

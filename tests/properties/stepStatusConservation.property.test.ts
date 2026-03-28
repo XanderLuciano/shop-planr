@@ -1,14 +1,14 @@
 /**
  * Property 2: Step Status Conservation
  *
- * For any serial, verify total step status count equals total process steps
+ * For any part, verify total step status count equals total process steps
  * in path after any operation. No step status is lost or duplicated.
  *
  * **Validates: Requirements 11.1**
  */
 import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
-import type { SnStepStatusValue } from '../../server/types/domain'
+import type { PartStepStatusValue } from '../../server/types/domain'
 
 interface StepConfig {
   id: string
@@ -20,7 +20,7 @@ interface StepConfig {
 
 interface StepStatusRecord {
   stepId: string
-  status: SnStepStatusValue
+  status: PartStepStatusValue
 }
 
 /**
@@ -131,7 +131,7 @@ describe('Property 2: Step Status Conservation', () => {
           expect(stepIds.size).toBe(totalSteps)
 
           // Every status is a valid value
-          const validStatuses: SnStepStatusValue[] = ['pending', 'in_progress', 'completed', 'skipped', 'deferred', 'waived']
+          const validStatuses: PartStepStatusValue[] = ['pending', 'in_progress', 'completed', 'skipped', 'deferred', 'waived']
           for (const s of afterAdvance) {
             expect(validStatuses).toContain(s.status)
           }

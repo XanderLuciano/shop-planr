@@ -1,15 +1,15 @@
 /**
- * Unit tests for serial note add pure logic.
+ * Unit tests for part note add pure logic.
  *
  * Tests extracted pure functions that mirror the component's internal logic,
- * following the same pattern as SerialCreationPanel.test.ts — no Vue
+ * following the same pattern as PartCreationPanel.test.ts — no Vue
  * component mounting, no @vue/test-utils.
  *
- * Feature: serial-number-notes-add
+ * Feature: part-notes-add
  */
 import { describe, it, expect } from 'vitest'
 
-// ---- Pure logic functions extracted from serials/[id].vue ----
+// ---- Pure logic functions extracted from parts-browser/[id].vue ----
 
 /** Toggles form visibility. Returns new showNoteForm state after clicking "Add Note". */
 export function toggleFormOpen(): boolean {
@@ -67,7 +67,7 @@ export function extractErrorMessage(e: any): string {
 
 // ---- Tests ----
 
-describe('serialNoteAdd — pure logic', () => {
+describe('partNoteAdd — pure logic', () => {
   // 1. Form toggle: clicking "Add Note" shows the form; clicking "Cancel" hides it (Req 2.1, 2.2)
   describe('form toggle', () => {
     it('toggleFormOpen returns true (form becomes visible)', () => {

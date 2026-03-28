@@ -1,13 +1,13 @@
 import { ref, readonly } from 'vue'
-import type { SerialNumber, Job, Path } from '~/server/types/domain'
+import type { Part, Job, Path } from '~/server/types/domain'
 import type { StepDistribution } from '~/server/types/computed'
 
-export function usePartDetail(serialId: string) {
-  const serial = ref<SerialNumber | null>(null)
+export function usePartDetail(partId: string) {
+  const part = ref<Part | null>(null)
   const job = ref<Job | null>(null)
   const path = ref<(Path & { distribution: StepDistribution[] }) | null>(null)
   const distribution = ref<StepDistribution[]>([])
-  const siblingSerials = ref<SerialNumber[]>([])
+  const siblingParts = ref<Part[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -15,14 +15,14 @@ export function usePartDetail(serialId: string) {
     loading.value = true
     error.value = null
     try {
-      // Fetch serial first to get jobId and pathId
-      const serialData = await $fetch<SerialNumber>(`/api/serials/${encodeURIComponent(serialId)}`)
-      serial.value = serialData
+      // Fetch part first to get jobId and pathId
+      const partData = await $fetch<Part>(`/api/parts/${encodeURIComponent(partId)}`)
+      part.value = partData
 
       // Fetch job and path+distribution in parallel
       const [jobData, pathData] = await Promise.all([
-        $fetch<Job>(`/api/jobs/${encodeURIComponent(serialData.jobId)}`),
-        $fetch<Path & { distribution: StepDistribution[] }>(`/api/paths/${encodeURIComponent(serialData.pathId)}`),
+        $fetch<Job>(`/api/jobs/${encodeURIComponent(partData.jobId)}`),
+        $fetch<Path & { distribution: StepDistribution[] }>(`/api/paths/${encodeURIComponent(partData.pathId)}`),
       ])
 
       job.value = jobData
@@ -36,12 +36,12 @@ export function usePartDetail(serialId: string) {
   }
 
   async function fetchSiblings(): Promise<void> {
-    if (!serial.value) return
+    if (!part.value) return
     try {
-      // Fetch all enriched serials and filter by pathId client-side
-      const all = await $fetch<any[]>('/api/serials')
-      siblingSerials.value = all.filter(
-        (s: any) => s.jobId === serial.value!.jobId && s.pathId === serial.value!.pathId,
+      // Fetch all enriched parts and filter by pathId client-side
+      const all = await $fetch<any[]>('/api/parts')
+      siblingParts.value = all.filter(
+        (s: any) => s.jobId === part.value!.jobId && s.pathId === part.value!.pathId,
       )
     } catch (e: any) {
       // Non-critical — don't overwrite main error
@@ -50,13 +50,13 @@ export function usePartDetail(serialId: string) {
   }
 
   async function refreshAfterAdvance(): Promise<void> {
-    if (!serial.value) return
+    if (!part.value) return
     try {
-      const [serialData, pathData] = await Promise.all([
-        $fetch<SerialNumber>(`/api/serials/${encodeURIComponent(serialId)}`),
-        $fetch<Path & { distribution: StepDistribution[] }>(`/api/paths/${encodeURIComponent(serial.value.pathId)}`),
+      const [partData, pathData] = await Promise.all([
+        $fetch<Part>(`/api/parts/${encodeURIComponent(partId)}`),
+        $fetch<Path & { distribution: StepDistribution[] }>(`/api/paths/${encodeURIComponent(part.value.pathId)}`),
       ])
-      serial.value = serialData
+      part.value = partData
       path.value = pathData
       distribution.value = pathData.distribution
     } catch (e: any) {
@@ -65,11 +65,11 @@ export function usePartDetail(serialId: string) {
   }
 
   return {
-    serial: readonly(serial),
+    part: readonly(part),
     job: readonly(job),
     path: readonly(path),
     distribution: readonly(distribution),
-    siblingSerials: readonly(siblingSerials),
+    siblingParts: readonly(siblingParts),
     loading: readonly(loading),
     error: readonly(error),
     fetchDetail,

@@ -2,7 +2,7 @@ import type { WorkQueueJob, OperatorGroup, WorkQueueGroupedResponse } from '../.
 
 export default defineEventHandler(async () => {
   try {
-    const { jobService, pathService, serialService, userService } = getServices()
+    const { jobService, pathService, partService, userService } = getServices()
     const jobs = jobService.listJobs()
 
     // Build WorkQueueJob entries keyed by "jobId|pathId|stepOrder"
@@ -15,8 +15,8 @@ export default defineEventHandler(async () => {
         const totalSteps = path.steps.length
 
         for (const step of path.steps) {
-          const serials = serialService.listSerialsByStepIndex(path.id, step.order)
-          if (serials.length === 0) continue
+          const parts = partService.listPartsByStepIndex(path.id, step.order)
+          if (parts.length === 0) continue
 
           const isFinalStep = step.order === totalSteps - 1
           const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
@@ -33,8 +33,8 @@ export default defineEventHandler(async () => {
               stepOrder: step.order,
               stepLocation: step.location,
               totalSteps,
-              serialIds: serials.map(s => s.id),
-              partCount: serials.length,
+              partIds: parts.map(s => s.id),
+              partCount: parts.length,
               nextStepName: nextStep?.name,
               nextStepLocation: nextStep?.location,
               isFinalStep,

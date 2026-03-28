@@ -19,55 +19,55 @@ function createInMemoryAuditRepo() {
   return {
     create: (entry: AuditEntry) => { entries.push(entry); return entry },
     list: () => [...entries],
-    listBySerialId: (serialId: string) => entries.filter(e => e.serialId === serialId),
+    listByPartId: (partId: string) => entries.filter(e => e.partId === partId),
     listByJobId: (jobId: string) => entries.filter(e => e.jobId === jobId),
     getEntries: () => entries,
   }
 }
 
 const arbUserId = fc.string({ minLength: 1, maxLength: 10 }).map(s => `user_${s}`)
-const arbSerialId = fc.string({ minLength: 1, maxLength: 10 }).map(s => `sn_${s}`)
+const arbPartId = fc.string({ minLength: 1, maxLength: 10 }).map(s => `part_${s}`)
 const arbJobId = fc.string({ minLength: 1, maxLength: 10 }).map(s => `job_${s}`)
 const arbPathId = fc.string({ minLength: 1, maxLength: 10 }).map(s => `path_${s}`)
 const arbStepId = fc.string({ minLength: 1, maxLength: 10 }).map(s => `step_${s}`)
 
 describe('Property 10: Audit Trail Completeness for Lifecycle Actions', () => {
-  it('scrap operation creates exactly one serial_scrapped audit entry', () => {
+  it('scrap operation creates exactly one part_scrapped audit entry', () => {
     fc.assert(
-      fc.property(arbUserId, arbSerialId, arbJobId, arbPathId, arbStepId, (userId, serialId, jobId, pathId, stepId) => {
+      fc.property(arbUserId, arbPartId, arbJobId, arbPathId, arbStepId, (userId, partId, jobId, pathId, stepId) => {
         const repo = createInMemoryAuditRepo()
         const auditService = createAuditService({ audit: repo })
 
         auditService.recordScrap({
-          userId, serialId, jobId, pathId, stepId,
+          userId, partId, jobId, pathId, stepId,
           metadata: { reason: 'damaged' },
         })
 
         const entries = repo.getEntries()
-        const scrapEntries = entries.filter(e => e.action === 'serial_scrapped')
+        const scrapEntries = entries.filter(e => e.action === 'part_scrapped')
         expect(scrapEntries).toHaveLength(1)
-        expect(scrapEntries[0]!.serialId).toBe(serialId)
+        expect(scrapEntries[0]!.partId).toBe(partId)
         expect(scrapEntries[0]!.userId).toBe(userId)
       }),
       { numRuns: 100 },
     )
   })
 
-  it('force-complete creates exactly one serial_force_completed audit entry', () => {
+  it('force-complete creates exactly one part_force_completed audit entry', () => {
     fc.assert(
-      fc.property(arbUserId, arbSerialId, arbJobId, arbPathId, (userId, serialId, jobId, pathId) => {
+      fc.property(arbUserId, arbPartId, arbJobId, arbPathId, (userId, partId, jobId, pathId) => {
         const repo = createInMemoryAuditRepo()
         const auditService = createAuditService({ audit: repo })
 
         auditService.recordForceComplete({
-          userId, serialId, jobId, pathId,
+          userId, partId, jobId, pathId,
           metadata: { reason: 'urgent', incompleteStepIds: ['step_1'] },
         })
 
         const entries = repo.getEntries()
-        const fcEntries = entries.filter(e => e.action === 'serial_force_completed')
+        const fcEntries = entries.filter(e => e.action === 'part_force_completed')
         expect(fcEntries).toHaveLength(1)
-        expect(fcEntries[0]!.serialId).toBe(serialId)
+        expect(fcEntries[0]!.partId).toBe(partId)
       }),
       { numRuns: 100 },
     )
@@ -75,42 +75,42 @@ describe('Property 10: Audit Trail Completeness for Lifecycle Actions', () => {
 
   it('each lifecycle action type produces exactly one audit entry of the correct type', () => {
     fc.assert(
-      fc.property(arbUserId, arbSerialId, arbJobId, arbPathId, arbStepId, (userId, serialId, jobId, pathId, stepId) => {
+      fc.property(arbUserId, arbPartId, arbJobId, arbPathId, arbStepId, (userId, partId, jobId, pathId, stepId) => {
         const repo = createInMemoryAuditRepo()
         const auditService = createAuditService({ audit: repo })
 
         // Perform each lifecycle operation
         const operations: { fn: () => void; expectedAction: AuditAction }[] = [
           {
-            fn: () => auditService.recordScrap({ userId, serialId, jobId, pathId, stepId, metadata: { reason: 'damaged' } }),
-            expectedAction: 'serial_scrapped',
+            fn: () => auditService.recordScrap({ userId, partId, jobId, pathId, stepId, metadata: { reason: 'damaged' } }),
+            expectedAction: 'part_scrapped',
           },
           {
-            fn: () => auditService.recordForceComplete({ userId, serialId, jobId, pathId, metadata: { incompleteStepIds: [] } }),
-            expectedAction: 'serial_force_completed',
+            fn: () => auditService.recordForceComplete({ userId, partId, jobId, pathId, metadata: { incompleteStepIds: [] } }),
+            expectedAction: 'part_force_completed',
           },
           {
-            fn: () => auditService.recordStepOverrideCreated({ userId, serialId, jobId, pathId, stepId, metadata: { reason: 'fast-track' } }),
+            fn: () => auditService.recordStepOverrideCreated({ userId, partId, jobId, pathId, stepId, metadata: { reason: 'fast-track' } }),
             expectedAction: 'step_override_created',
           },
           {
-            fn: () => auditService.recordStepOverrideReversed({ userId, serialId, jobId, pathId, stepId }),
+            fn: () => auditService.recordStepOverrideReversed({ userId, partId, jobId, pathId, stepId }),
             expectedAction: 'step_override_reversed',
           },
           {
-            fn: () => auditService.recordStepDeferred({ userId, serialId, jobId, pathId, stepId }),
+            fn: () => auditService.recordStepDeferred({ userId, partId, jobId, pathId, stepId }),
             expectedAction: 'step_deferred',
           },
           {
-            fn: () => auditService.recordStepSkipped({ userId, serialId, jobId, pathId, stepId }),
+            fn: () => auditService.recordStepSkipped({ userId, partId, jobId, pathId, stepId }),
             expectedAction: 'step_skipped',
           },
           {
-            fn: () => auditService.recordDeferredStepCompleted({ userId, serialId, jobId, pathId, stepId }),
+            fn: () => auditService.recordDeferredStepCompleted({ userId, partId, jobId, pathId, stepId }),
             expectedAction: 'deferred_step_completed',
           },
           {
-            fn: () => auditService.recordStepWaived({ userId, serialId, jobId, pathId, stepId, metadata: { reason: 'waiver', approverId: userId } }),
+            fn: () => auditService.recordStepWaived({ userId, partId, jobId, pathId, stepId, metadata: { reason: 'waiver', approverId: userId } }),
             expectedAction: 'step_waived',
           },
           {

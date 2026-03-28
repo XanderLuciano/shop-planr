@@ -41,15 +41,15 @@ const props = defineProps<{
         <div class="flex-1 h-5 bg-(--ui-bg-accented) rounded overflow-hidden flex">
           <!-- Completed portion (green) -->
           <div
-            v-if="job.goalQuantity > 0 && job.completedSerials > 0"
+            v-if="job.goalQuantity > 0 && job.completedParts > 0"
             class="h-full bg-green-500 transition-all"
-            :style="{ width: Math.min((job.completedSerials / job.goalQuantity) * 100, 100) + '%' }"
+            :style="{ width: Math.min((job.completedParts / job.goalQuantity) * 100, 100) + '%' }"
           />
           <!-- In-progress portion (blue) -->
           <div
-            v-if="job.goalQuantity > 0 && job.inProgressSerials > 0"
+            v-if="job.goalQuantity > 0 && job.inProgressParts > 0"
             class="h-full bg-blue-500 transition-all"
-            :style="{ width: Math.min((job.inProgressSerials / job.goalQuantity) * 100, 100 - Math.min((job.completedSerials / job.goalQuantity) * 100, 100)) + '%' }"
+            :style="{ width: Math.min((job.inProgressParts / job.goalQuantity) * 100, 100 - Math.min((job.completedParts / job.goalQuantity) * 100, 100)) + '%' }"
           />
         </div>
 

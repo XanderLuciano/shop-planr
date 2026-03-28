@@ -19,7 +19,7 @@ const emit = defineEmits<{
 const pages: PageItem[] = [
   { key: null, label: 'Dashboard', icon: 'i-lucide-layout-dashboard', alwaysOn: true },
   { key: 'jobs', label: 'Jobs', icon: 'i-lucide-briefcase', alwaysOn: false },
-  { key: 'serials', label: 'Serials', icon: 'i-lucide-hash', alwaysOn: false },
+  { key: 'partsBrowser', label: 'Parts Browser', icon: 'i-lucide-hash', alwaysOn: false },
   { key: 'parts', label: 'Parts', icon: 'i-lucide-wrench', alwaysOn: false },
   { key: 'queue', label: 'Work Queue', icon: 'i-lucide-hard-hat', alwaysOn: false },
   { key: 'templates', label: 'Templates', icon: 'i-lucide-copy', alwaysOn: false },

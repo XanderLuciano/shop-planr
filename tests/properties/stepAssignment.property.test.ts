@@ -10,7 +10,7 @@ import { resolve } from 'path'
 import { runMigrations } from '../../server/repositories/sqlite/index'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
-import { SQLiteSerialRepository } from '../../server/repositories/sqlite/serialRepository'
+import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
 import { SQLiteUserRepository } from '../../server/repositories/sqlite/userRepository'
 import { createPathService } from '../../server/services/pathService'
 import { generateId } from '../../server/utils/idGenerator'
@@ -29,10 +29,10 @@ function createTestDb() {
 function setupServices(db: Database.default.Database) {
   const repos = {
     paths: new SQLitePathRepository(db),
-    serials: new SQLiteSerialRepository(db),
+    parts: new SQLitePartRepository(db),
     users: new SQLiteUserRepository(db),
   }
-  const pathService = createPathService({ paths: repos.paths, serials: repos.serials, users: repos.users })
+  const pathService = createPathService({ paths: repos.paths, parts: repos.parts, users: repos.users })
   return { repos, pathService }
 }
 

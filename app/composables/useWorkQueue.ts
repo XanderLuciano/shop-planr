@@ -38,26 +38,26 @@ export function useWorkQueue() {
   }
 
   async function advanceBatch(params: {
-    serialIds: string[]
+    partIds: string[]
     userId: string
     jobId: string
     pathId: string
     stepId: string
     note?: string
   }): Promise<{ advanced: number, nextStepName?: string }> {
-    const { serialIds, userId, jobId, pathId, stepId, note } = params
+    const { partIds, userId, jobId, pathId, stepId, note } = params
 
     // Validate quantity against available parts
     const job = queue.value?.jobs.find(
       j => j.jobId === jobId && j.pathId === pathId && j.stepId === stepId,
     )
-    if (job && serialIds.length > job.partCount) {
-      throw new Error(`Cannot advance ${serialIds.length} parts — only ${job.partCount} available`)
+    if (job && partIds.length > job.partCount) {
+      throw new Error(`Cannot advance ${partIds.length} parts — only ${job.partCount} available`)
     }
 
     let lastResult: any = null
-    for (const serialId of serialIds) {
-      lastResult = await $fetch(`/api/serials/${encodeURIComponent(serialId)}/advance`, {
+    for (const partId of partIds) {
+      lastResult = await $fetch(`/api/parts/${encodeURIComponent(partId)}/advance`, {
         method: 'POST',
         body: { userId },
       })
@@ -75,7 +75,7 @@ export function useWorkQueue() {
           jobId,
           pathId,
           stepId,
-          serialIds,
+          partIds,
           text: trimmedNote,
           userId,
         },
@@ -86,7 +86,7 @@ export function useWorkQueue() {
     await fetchQueue(userId)
 
     return {
-      advanced: serialIds.length,
+      advanced: partIds.length,
       nextStepName: job?.isFinalStep ? undefined : job?.nextStepName,
     }
   }

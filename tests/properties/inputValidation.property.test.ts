@@ -1,7 +1,7 @@
 /**
  * Property 11: Invalid Input Rejection
  *
- * goalQuantity ≤ 0, zero steps, SN on stepless path, and non-existent cert attachment
+ * goalQuantity ≤ 0, zero steps, part on stepless path, and non-existent cert attachment
  * all reject with descriptive errors and unchanged state.
  *
  * **Validates: Requirements 1.6, 2.6, 4.6, 5.5**
@@ -13,15 +13,15 @@ import { resolve } from 'path'
 import { runMigrations } from '../../server/repositories/sqlite/index'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
-import { SQLiteSerialRepository } from '../../server/repositories/sqlite/serialRepository'
+import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
 import { SQLiteCertRepository } from '../../server/repositories/sqlite/certRepository'
 import { SQLiteAuditRepository } from '../../server/repositories/sqlite/auditRepository'
 import { createJobService } from '../../server/services/jobService'
 import { createPathService } from '../../server/services/pathService'
-import { createSerialService } from '../../server/services/serialService'
+import { createPartService } from '../../server/services/partService'
 import { createCertService } from '../../server/services/certService'
 import { createAuditService } from '../../server/services/auditService'
-import { createSequentialSnGenerator } from '../../server/utils/idGenerator'
+import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
 import { ValidationError, NotFoundError } from '../../server/utils/errors'
 
 function createTestDb() {
@@ -37,32 +37,32 @@ function setupServices(db: InstanceType<typeof Database>) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
-    serials: new SQLiteSerialRepository(db),
+    parts: new SQLitePartRepository(db),
     certs: new SQLiteCertRepository(db),
     audit: new SQLiteAuditRepository(db)
   }
 
-  const snGenerator = createSequentialSnGenerator({
+  const partIdGenerator = createSequentialPartIdGenerator({
     getCounter: () => {
-      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('sn') as { value: number } | undefined
+      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
       return row?.value ?? 0
     },
     setCounter: (v: number) => {
-      db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('sn', v)
+      db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
     }
   })
 
   const auditService = createAuditService({ audit: repos.audit })
-  const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, serials: repos.serials })
-  const pathService = createPathService({ paths: repos.paths, serials: repos.serials })
-  const serialService = createSerialService(
-    { serials: repos.serials, paths: repos.paths, certs: repos.certs },
+  const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts })
+  const pathService = createPathService({ paths: repos.paths, parts: repos.parts })
+  const partService = createPartService(
+    { parts: repos.parts, paths: repos.paths, certs: repos.certs },
     auditService,
-    snGenerator
+    partIdGenerator
   )
   const certService = createCertService({ certs: repos.certs }, auditService)
 
-  return { jobService, pathService, serialService, certService, repos }
+  return { jobService, pathService, partService, certService, repos }
 }
 
 describe('Property 11: Invalid Input Rejection', () => {
@@ -128,13 +128,13 @@ describe('Property 11: Invalid Input Rejection', () => {
     )
   })
 
-  it('creating serials on a stepless path throws ValidationError', () => {
+  it('creating parts on a stepless path throws ValidationError', () => {
     fc.assert(
       fc.property(
         fc.integer({ min: 1, max: 20 }),
         (quantity) => {
           db = createTestDb()
-          const { jobService, pathService, serialService, repos } = setupServices(db)
+          const { jobService, pathService, partService, repos } = setupServices(db)
 
           const job = jobService.createJob({ name: 'Test Job', goalQuantity: 50 })
 
@@ -148,25 +148,25 @@ describe('Property 11: Invalid Input Rejection', () => {
 
           // Remove steps by updating with a single step, then directly clear steps in DB
           // Actually, the service won't allow zero steps via updatePath either.
-          // Instead, we test that batchCreateSerials validates path.steps is non-empty.
-          // The path was created with steps, so serials can be created.
+          // Instead, we test that batchCreateParts validates path.steps is non-empty.
+          // The path was created with steps, so parts can be created.
           // The real test: create a path that somehow has no steps — but the service prevents that.
-          // So we test the validation at the serial service level by mocking a path with no steps.
+          // So we test the validation at the part service level by mocking a path with no steps.
           // Since we can't create a stepless path through the service, we verify the validation
-          // exists by checking that the serial service calls assertNonEmptyArray on path.steps.
+          // exists by checking that the part service calls assertNonEmptyArray on path.steps.
 
-          // The most realistic test: try to create serials with a non-existent pathId
-          const serialsBefore = repos.serials.listByJobId(job.id).length
+          // The most realistic test: try to create parts with a non-existent pathId
+          const partsBefore = repos.parts.listByJobId(job.id).length
 
           expect(() => {
-            serialService.batchCreateSerials(
+            partService.batchCreateParts(
               { jobId: job.id, pathId: 'nonexistent_path', quantity },
               'user_test'
             )
           }).toThrow(NotFoundError)
 
           // State unchanged
-          expect(repos.serials.listByJobId(job.id).length).toBe(serialsBefore)
+          expect(repos.parts.listByJobId(job.id).length).toBe(partsBefore)
 
           db.close()
           db = null as any
@@ -180,19 +180,19 @@ describe('Property 11: Invalid Input Rejection', () => {
     fc.assert(
       fc.property(
         fc.integer({ min: 1, max: 5 }),
-        (serialCount) => {
+        (partCount) => {
           db = createTestDb()
-          const { jobService, pathService, serialService, certService, repos } = setupServices(db)
+          const { jobService, pathService, partService, certService, repos } = setupServices(db)
 
-          const job = jobService.createJob({ name: 'Cert Test Job', goalQuantity: serialCount })
+          const job = jobService.createJob({ name: 'Cert Test Job', goalQuantity: partCount })
           const path = pathService.createPath({
             jobId: job.id,
             name: 'Main Path',
-            goalQuantity: serialCount,
+            goalQuantity: partCount,
             steps: [{ name: 'OP1' }]
           })
-          const serials = serialService.batchCreateSerials(
-            { jobId: job.id, pathId: path.id, quantity: serialCount },
+          const parts = partService.batchCreateParts(
+            { jobId: job.id, pathId: path.id, quantity: partCount },
             'user_test'
           )
 
@@ -202,7 +202,7 @@ describe('Property 11: Invalid Input Rejection', () => {
           expect(() => {
             certService.batchAttachCert({
               certId: 'nonexistent_cert_id',
-              serialIds: serials.map(s => s.id),
+              partIds: parts.map(s => s.id),
               userId: 'user_test'
             })
           }).toThrow(NotFoundError)
@@ -211,8 +211,8 @@ describe('Property 11: Invalid Input Rejection', () => {
           expect(repos.audit.list().length).toBe(auditBefore)
 
           // No cert attachments created
-          for (const serial of serials) {
-            expect(certService.getCertsForSerial(serial.id).length).toBe(0)
+          for (const part of parts) {
+            expect(certService.getCertsForPart(part.id).length).toBe(0)
           }
 
           db.close()

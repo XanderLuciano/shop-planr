@@ -1,5 +1,5 @@
 interface PartInfo {
-  serialId: string
+  partId: string
   jobId: string
   jobName: string
   pathId: string
@@ -11,7 +11,7 @@ interface PartInfo {
 export default defineEventHandler(async (event) => {
   try {
     const stepName = getRouterParam(event, 'stepName')!
-    const { jobService, pathService, serialService } = getServices()
+    const { jobService, pathService, partService } = getServices()
     const jobs = jobService.listJobs()
 
     const currentParts: PartInfo[] = []
@@ -34,11 +34,11 @@ export default defineEventHandler(async (event) => {
         stepIdSet.add(step.id)
 
         // Current parts at this step
-        const atStep = serialService.listSerialsByStepIndex(path.id, stepIndex)
+        const atStep = partService.listPartsByStepIndex(path.id, stepIndex)
         for (const sn of atStep) {
           const nextStep = path.steps[stepIndex + 1]
           currentParts.push({
-            serialId: sn.id,
+            partId: sn.id,
             jobId: job.id,
             jobName: job.name,
             pathId: path.id,
@@ -50,10 +50,10 @@ export default defineEventHandler(async (event) => {
 
         // Coming soon (one step before)
         if (stepIndex > 0) {
-          const upstream = serialService.listSerialsByStepIndex(path.id, stepIndex - 1)
+          const upstream = partService.listPartsByStepIndex(path.id, stepIndex - 1)
           for (const sn of upstream) {
             comingSoon.push({
-              serialId: sn.id,
+              partId: sn.id,
               jobId: job.id,
               jobName: job.name,
               pathId: path.id,
@@ -64,10 +64,10 @@ export default defineEventHandler(async (event) => {
 
         // Backlog (two+ steps before)
         for (let i = 0; i < stepIndex - 1; i++) {
-          const far = serialService.listSerialsByStepIndex(path.id, i)
+          const far = partService.listPartsByStepIndex(path.id, i)
           for (const sn of far) {
             backlog.push({
-              serialId: sn.id,
+              partId: sn.id,
               jobId: job.id,
               jobName: job.name,
               pathId: path.id,

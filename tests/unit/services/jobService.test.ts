@@ -3,8 +3,8 @@ import { createJobService } from '../../../server/services/jobService'
 import { NotFoundError, ValidationError } from '../../../server/utils/errors'
 import type { JobRepository } from '../../../server/repositories/interfaces/jobRepository'
 import type { PathRepository } from '../../../server/repositories/interfaces/pathRepository'
-import type { SerialRepository } from '../../../server/repositories/interfaces/serialRepository'
-import type { Job, SerialNumber } from '../../../server/types/domain'
+import type { PartRepository } from '../../../server/repositories/interfaces/partRepository'
+import type { Job, Part } from '../../../server/types/domain'
 
 function createMockJobRepo(): JobRepository {
   const store = new Map<string, Job>()
@@ -32,34 +32,34 @@ function createMockPathRepo(): PathRepository {
   } as unknown as PathRepository
 }
 
-function createMockSerialRepo(serials: SerialNumber[] = []): SerialRepository {
+function createMockPartRepo(parts: Part[] = []): PartRepository {
   return {
     create: vi.fn(),
     createBatch: vi.fn(),
     getById: vi.fn(),
     getByIdentifier: vi.fn(),
     listByPathId: vi.fn(),
-    listByJobId: vi.fn(() => serials),
+    listByJobId: vi.fn(() => parts),
     listByStepIndex: vi.fn(),
     update: vi.fn(),
-    countByJobId: vi.fn((jobId: string) => serials.filter(s => s.jobId === jobId).length),
-    countCompletedByJobId: vi.fn((jobId: string) => serials.filter(s => s.jobId === jobId && s.currentStepIndex === -1).length),
-    countScrappedByJobId: vi.fn((jobId: string) => serials.filter(s => s.jobId === jobId && s.status === 'scrapped').length),
-    listAll: vi.fn(() => serials),
+    countByJobId: vi.fn((jobId: string) => parts.filter(s => s.jobId === jobId).length),
+    countCompletedByJobId: vi.fn((jobId: string) => parts.filter(s => s.jobId === jobId && s.currentStepIndex === -1).length),
+    countScrappedByJobId: vi.fn((jobId: string) => parts.filter(s => s.jobId === jobId && s.status === 'scrapped').length),
+    listAll: vi.fn(() => parts),
   }
 }
 
 describe('JobService', () => {
   let jobRepo: JobRepository
   let pathRepo: PathRepository
-  let serialRepo: SerialRepository
+  let partRepo: PartRepository
   let service: ReturnType<typeof createJobService>
 
   beforeEach(() => {
     jobRepo = createMockJobRepo()
     pathRepo = createMockPathRepo()
-    serialRepo = createMockSerialRepo()
-    service = createJobService({ jobs: jobRepo, paths: pathRepo, serials: serialRepo })
+    partRepo = createMockPartRepo()
+    service = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepo })
   })
 
   describe('createJob', () => {
@@ -169,49 +169,49 @@ describe('JobService', () => {
   })
 
   describe('computeJobProgress', () => {
-    it('computes progress for a job with no serials', () => {
+    it('computes progress for a job with no parts', () => {
       const job = service.createJob({ name: 'Empty Job', goalQuantity: 10 })
       const progress = service.computeJobProgress(job.id)
       expect(progress.jobId).toBe(job.id)
       expect(progress.jobName).toBe('Empty Job')
       expect(progress.goalQuantity).toBe(10)
-      expect(progress.totalSerials).toBe(0)
-      expect(progress.completedSerials).toBe(0)
-      expect(progress.inProgressSerials).toBe(0)
+      expect(progress.totalParts).toBe(0)
+      expect(progress.completedParts).toBe(0)
+      expect(progress.inProgressParts).toBe(0)
       expect(progress.progressPercent).toBe(0)
     })
 
-    it('computes progress with completed and in-progress serials', () => {
+    it('computes progress with completed and in-progress parts', () => {
       const job = service.createJob({ name: 'Active Job', goalQuantity: 10 })
 
-      // Rebuild service with serials that reference this job
-      const serials: SerialNumber[] = [
-        { id: 'sn1', jobId: job.id, pathId: 'p1', currentStepIndex: 0, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'sn2', jobId: job.id, pathId: 'p1', currentStepIndex: 1, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'sn3', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'sn4', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'sn5', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' }
+      // Rebuild service with parts that reference this job
+      const parts: Part[] = [
+        { id: 'p1', jobId: job.id, pathId: 'p1', currentStepIndex: 0, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p2', jobId: job.id, pathId: 'p1', currentStepIndex: 1, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p3', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p4', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p5', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' }
       ]
-      const serialRepoWithData = createMockSerialRepo(serials)
-      const svc = createJobService({ jobs: jobRepo, paths: pathRepo, serials: serialRepoWithData })
+      const partRepoWithData = createMockPartRepo(parts)
+      const svc = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepoWithData })
 
       const progress = svc.computeJobProgress(job.id)
-      expect(progress.totalSerials).toBe(5)
-      expect(progress.completedSerials).toBe(3)
-      expect(progress.inProgressSerials).toBe(2)
+      expect(progress.totalParts).toBe(5)
+      expect(progress.completedParts).toBe(3)
+      expect(progress.inProgressParts).toBe(2)
       expect(progress.progressPercent).toBe(30) // 3/10 * 100
     })
 
     it('allows progress to exceed 100%', () => {
       const job = service.createJob({ name: 'Over Job', goalQuantity: 2 })
 
-      const serials: SerialNumber[] = [
-        { id: 'sn1', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'sn2', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'sn3', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' }
+      const parts: Part[] = [
+        { id: 'p1', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p2', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p3', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' }
       ]
-      const serialRepoWithData = createMockSerialRepo(serials)
-      const svc = createJobService({ jobs: jobRepo, paths: pathRepo, serials: serialRepoWithData })
+      const partRepoWithData = createMockPartRepo(parts)
+      const svc = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepoWithData })
 
       const progress = svc.computeJobProgress(job.id)
       expect(progress.progressPercent).toBe(150) // 3/2 * 100
@@ -223,21 +223,21 @@ describe('JobService', () => {
   })
 
   describe('getJobPartCount', () => {
-    it('returns 0 when no serials exist', () => {
+    it('returns 0 when no parts exist', () => {
       const job = service.createJob({ name: 'Empty', goalQuantity: 5 })
       expect(service.getJobPartCount(job.id)).toBe(0)
     })
 
-    it('returns total serial count across all paths', () => {
+    it('returns total part count across all paths', () => {
       const job = service.createJob({ name: 'Parts Job', goalQuantity: 10 })
 
-      const serials: SerialNumber[] = [
-        { id: 'sn1', jobId: job.id, pathId: 'p1', currentStepIndex: 0, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'sn2', jobId: job.id, pathId: 'p2', currentStepIndex: 1, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'sn3', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' }
+      const parts: Part[] = [
+        { id: 'p1', jobId: job.id, pathId: 'p1', currentStepIndex: 0, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p2', jobId: job.id, pathId: 'p2', currentStepIndex: 1, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p3', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' }
       ]
-      const serialRepoWithData = createMockSerialRepo(serials)
-      const svc = createJobService({ jobs: jobRepo, paths: pathRepo, serials: serialRepoWithData })
+      const partRepoWithData = createMockPartRepo(parts)
+      const svc = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepoWithData })
 
       expect(svc.getJobPartCount(job.id)).toBe(3)
     })

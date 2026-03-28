@@ -12,7 +12,7 @@ interface CertRow {
 
 interface AttachmentRow {
   id: number
-  serial_id: string
+  part_id: string
   cert_id: string
   step_id: string
   attached_at: string
@@ -32,7 +32,7 @@ function certRowToDomain(row: CertRow): Certificate {
 function attachmentRowToDomain(row: AttachmentRow): CertAttachment {
   return {
     id: String(row.id),
-    serialId: row.serial_id,
+    partId: row.part_id,
     certId: row.cert_id,
     stepId: row.step_id,
     attachedAt: row.attached_at,
@@ -65,18 +65,18 @@ export class SQLiteCertRepository implements CertRepository {
     return rows.map(certRowToDomain)
   }
 
-  attachToSerial(attachment: CertAttachment): CertAttachment {
+  attachToPart(attachment: CertAttachment): CertAttachment {
     const result = this.db.prepare(`
-      INSERT INTO cert_attachments (serial_id, cert_id, step_id, attached_at, attached_by)
+      INSERT INTO cert_attachments (part_id, cert_id, step_id, attached_at, attached_by)
       VALUES (?, ?, ?, ?, ?)
-    `).run(attachment.serialId, attachment.certId, attachment.stepId, attachment.attachedAt, attachment.attachedBy)
+    `).run(attachment.partId, attachment.certId, attachment.stepId, attachment.attachedAt, attachment.attachedBy)
     return { ...attachment, id: String(result.lastInsertRowid) }
   }
 
-  getAttachmentsForSerial(serialId: string): CertAttachment[] {
+  getAttachmentsForPart(partId: string): CertAttachment[] {
     const rows = this.db.prepare(
-      'SELECT * FROM cert_attachments WHERE serial_id = ? ORDER BY attached_at ASC'
-    ).all(serialId) as AttachmentRow[]
+      'SELECT * FROM cert_attachments WHERE part_id = ? ORDER BY attached_at ASC'
+    ).all(partId) as AttachmentRow[]
     return rows.map(attachmentRowToDomain)
   }
 
@@ -87,22 +87,32 @@ export class SQLiteCertRepository implements CertRepository {
     return rows.map(attachmentRowToDomain)
   }
 
+  /** @deprecated Use `attachToPart` instead. Backward-compatible alias. */
+  attachToSerial(attachment: CertAttachment): CertAttachment {
+    return this.attachToPart(attachment)
+  }
+
+  /** @deprecated Use `getAttachmentsForPart` instead. Backward-compatible alias. */
+  getAttachmentsForSerial(serialId: string): CertAttachment[] {
+    return this.getAttachmentsForPart(serialId)
+  }
+
   batchAttach(attachments: CertAttachment[]): CertAttachment[] {
     const insert = this.db.prepare(`
-      INSERT OR IGNORE INTO cert_attachments (serial_id, cert_id, step_id, attached_at, attached_by)
+      INSERT OR IGNORE INTO cert_attachments (part_id, cert_id, step_id, attached_at, attached_by)
       VALUES (?, ?, ?, ?, ?)
     `)
     const results: CertAttachment[] = []
     this.db.transaction(() => {
       for (const attachment of attachments) {
-        const result = insert.run(attachment.serialId, attachment.certId, attachment.stepId, attachment.attachedAt, attachment.attachedBy)
+        const result = insert.run(attachment.partId, attachment.certId, attachment.stepId, attachment.attachedAt, attachment.attachedBy)
         if (result.changes > 0) {
           results.push({ ...attachment, id: String(result.lastInsertRowid) })
         } else {
           // Already existed (UNIQUE constraint), fetch existing
           const existing = this.db.prepare(
-            'SELECT * FROM cert_attachments WHERE serial_id = ? AND cert_id = ? AND step_id = ?'
-          ).get(attachment.serialId, attachment.certId, attachment.stepId) as AttachmentRow
+            'SELECT * FROM cert_attachments WHERE part_id = ? AND cert_id = ? AND step_id = ?'
+          ).get(attachment.partId, attachment.certId, attachment.stepId) as AttachmentRow
           results.push(attachmentRowToDomain(existing))
         }
       }

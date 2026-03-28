@@ -1,10 +1,10 @@
 <script setup lang="ts">
-type ScanResult = { value: string, type: 'serial' | 'certificate' | 'unknown' }
+type ScanResult = { value: string, type: 'part' | 'certificate' | 'unknown' }
 
 const props = withDefaults(defineProps<{
   placeholder?: string
 }>(), {
-  placeholder: 'Scan or type SN / Cert...'
+  placeholder: 'Scan or type Part / Cert...'
 })
 
 const emit = defineEmits<{

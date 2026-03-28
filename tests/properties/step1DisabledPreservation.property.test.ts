@@ -4,7 +4,7 @@
  * These tests verify baseline behavior that MUST be preserved after the fix.
  * They run against the UNFIXED lookupStep logic and MUST PASS on current code.
  *
- * Property 4: Steps with active serials return correct WorkQueueJob data
+ * Property 4: Steps with active parts return correct WorkQueueJob data
  * Property 5: Invalid (non-existent) step IDs return null (404)
  *
  * **Validates: Requirements 3.1, 3.2, 3.4**
@@ -18,7 +18,7 @@ import type { WorkQueueJob, StepViewResponse } from '../../server/types/computed
 // Replicated UNFIXED logic from server/api/operator/step/[stepId].get.ts
 // ---------------------------------------------------------------------------
 function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
-  const { jobService, pathService, serialService, noteService } = ctx
+  const { jobService, pathService, partService, noteService } = ctx
   const jobs = jobService.listJobs()
 
   for (const job of jobs) {
@@ -30,8 +30,8 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
       for (const step of path.steps) {
         if (step.id !== stepId) continue
 
-        const serials = serialService.listSerialsByStepIndex(path.id, step.order)
-        if (serials.length === 0) return null // BUG: returns null for zero serials
+        const parts = partService.listPartsByStepIndex(path.id, step.order)
+        if (parts.length === 0) return null // BUG: returns null for zero parts
 
         const isFinalStep = step.order === totalSteps - 1
         const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
@@ -46,8 +46,8 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
           stepOrder: step.order,
           stepLocation: step.location,
           totalSteps,
-          serialIds: serials.map(s => s.id),
-          partCount: serials.length,
+          partIds: parts.map(s => s.id),
+          partCount: parts.length,
           nextStepName: nextStep?.name,
           nextStepLocation: nextStep?.location,
           isFinalStep,
@@ -66,19 +66,19 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
 // Arbitraries — same pattern as stepEndpoint.property.test.ts
 // ---------------------------------------------------------------------------
 
-/** Arbitrary for a single job with one path, random steps, and random serials with advancements */
+/** Arbitrary for a single job with one path, random steps, and random parts with advancements */
 const jobPathConfigArb = fc.record({
   jobName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
   pathName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
   stepCount: fc.integer({ min: 1, max: 5 }),
-  serialCount: fc.integer({ min: 1, max: 8 }),
+  partCount: fc.integer({ min: 1, max: 8 }),
   stepLocations: fc.array(
     fc.option(fc.string({ minLength: 1, maxLength: 15 }).filter(s => s.trim().length > 0), { nil: undefined }),
     { minLength: 5, maxLength: 5 },
   ),
   advancementSpecs: fc.array(
     fc.record({
-      serialIndex: fc.integer({ min: 0, max: 7 }),
+      partIndex: fc.integer({ min: 0, max: 7 }),
       advanceTimes: fc.integer({ min: 0, max: 4 }),
     }),
     { minLength: 0, maxLength: 8 },
@@ -107,19 +107,19 @@ describe('Preservation — Step 1 Disabled After Advance', () => {
   })
 
   /**
-   * Property 4: Preservation — Steps With Active Serials Unchanged
+   * Property 4: Preservation — Steps With Active Parts Unchanged
    *
-   * For any valid step that has active serials (serials.length > 0),
+   * For any valid step that has active parts (parts.length > 0),
    * the unfixed lookupStep returns a non-null result with correct metadata.
    * This behavior MUST be preserved after the fix.
    *
    * **Validates: Requirements 3.2, 3.4**
    */
-  it('Property 4: Active serial steps return correct WorkQueueJob (MUST PASS)', () => {
+  it('Property 4: Active part steps return correct WorkQueueJob (MUST PASS)', () => {
     fc.assert(
       fc.property(scenarioArb, (configs) => {
         ctx = createTestContext()
-        const { jobService, pathService, serialService } = ctx
+        const { jobService, pathService, partService } = ctx
 
         interface StepRecord {
           stepId: string
@@ -133,19 +133,19 @@ describe('Preservation — Step 1 Disabled After Advance', () => {
           totalSteps: number
         }
 
-        interface TrackedSerial {
+        interface TrackedPart {
           id: string
           pathId: string
           currentStepIndex: number // -1 = completed
         }
 
         const allStepRecords: StepRecord[] = []
-        const allTrackedSerials: TrackedSerial[] = []
+        const allTrackedParts: TrackedPart[] = []
 
         for (const config of configs) {
           const job = jobService.createJob({
             name: config.jobName,
-            goalQuantity: Math.max(config.serialCount, 1),
+            goalQuantity: Math.max(config.partCount, 1),
           })
 
           const steps = Array.from({ length: config.stepCount }, (_, i) => ({
@@ -156,7 +156,7 @@ describe('Preservation — Step 1 Disabled After Advance', () => {
           const path = pathService.createPath({
             jobId: job.id,
             name: config.pathName,
-            goalQuantity: Math.max(config.serialCount, 1),
+            goalQuantity: Math.max(config.partCount, 1),
             steps,
           })
 
@@ -174,13 +174,13 @@ describe('Preservation — Step 1 Disabled After Advance', () => {
             })
           }
 
-          const serials = serialService.batchCreateSerials(
-            { jobId: job.id, pathId: path.id, quantity: config.serialCount },
+          const parts = partService.batchCreateParts(
+            { jobId: job.id, pathId: path.id, quantity: config.partCount },
             'user_test',
           )
 
-          for (const s of serials) {
-            allTrackedSerials.push({
+          for (const s of parts) {
+            allTrackedParts.push({
               id: s.id,
               pathId: path.id,
               currentStepIndex: 0,
@@ -189,14 +189,14 @@ describe('Preservation — Step 1 Disabled After Advance', () => {
 
           // Apply advancements
           for (const spec of config.advancementSpecs) {
-            if (spec.serialIndex >= serials.length) continue
-            const serial = serials[spec.serialIndex]
-            const tracked = allTrackedSerials.find(t => t.id === serial.id)!
+            if (spec.partIndex >= parts.length) continue
+            const part = parts[spec.partIndex]
+            const tracked = allTrackedParts.find(t => t.id === part.id)!
 
             for (let i = 0; i < spec.advanceTimes; i++) {
               if (tracked.currentStepIndex === -1) break
               try {
-                serialService.advanceSerial(serial.id, 'user_test')
+                partService.advancePart(part.id, 'user_test')
                 if (tracked.currentStepIndex === config.stepCount - 1) {
                   tracked.currentStepIndex = -1
                 } else {
@@ -209,40 +209,40 @@ describe('Preservation — Step 1 Disabled After Advance', () => {
           }
         }
 
-        // Find steps that have active serials (serials.length > 0)
-        const stepsWithActiveSerials = allStepRecords.filter((rec) => {
-          return allTrackedSerials.some(
+        // Find steps that have active parts (parts.length > 0)
+        const stepsWithActiveParts = allStepRecords.filter((rec) => {
+          return allTrackedParts.some(
             s => s.pathId === rec.pathId && s.currentStepIndex === rec.stepOrder,
           )
         })
 
-        // If no steps have active serials, skip this iteration
-        if (stepsWithActiveSerials.length === 0) return
+        // If no steps have active parts, skip this iteration
+        if (stepsWithActiveParts.length === 0) return
 
         // Pick a target step (clamped)
-        const targetIdx = configs[0].targetStepIndex % stepsWithActiveSerials.length
-        const targetStep = stepsWithActiveSerials[targetIdx]
+        const targetIdx = configs[0].targetStepIndex % stepsWithActiveParts.length
+        const targetStep = stepsWithActiveParts[targetIdx]
 
         // Call the unfixed lookupStep
         const result = lookupStep(ctx, targetStep.stepId)
 
-        // Step has active serials → result must be non-null
+        // Step has active parts → result must be non-null
         expect(result, `Expected non-null result for step ${targetStep.stepId}`).not.toBeNull()
         const { job } = result!
 
         // Verify partCount > 0
         expect(job.partCount).toBeGreaterThan(0)
 
-        // Verify serialIds matches expected serials at this step
-        const expectedSerialIds = allTrackedSerials
+        // Verify partIds matches expected parts at this step
+        const expectedPartIds = allTrackedParts
           .filter(s => s.pathId === targetStep.pathId && s.currentStepIndex === targetStep.stepOrder)
           .map(s => s.id)
 
-        expect(job.serialIds.length).toBe(expectedSerialIds.length)
-        expect(new Set(job.serialIds)).toEqual(new Set(expectedSerialIds))
+        expect(job.partIds.length).toBe(expectedPartIds.length)
+        expect(new Set(job.partIds)).toEqual(new Set(expectedPartIds))
 
-        // Verify partCount equals serialIds length
-        expect(job.partCount).toBe(job.serialIds.length)
+        // Verify partCount equals partIds length
+        expect(job.partCount).toBe(job.partIds.length)
 
         // Verify all metadata fields
         expect(job.stepId).toBe(targetStep.stepId)
@@ -287,12 +287,12 @@ describe('Preservation — Step 1 Disabled After Advance', () => {
         fakeStepIdArb,
         (config, fakeStepId) => {
           ctx = createTestContext()
-          const { jobService, pathService, serialService } = ctx
+          const { jobService, pathService, partService } = ctx
 
           // Create at least one job/path so the DB isn't empty
           const job = jobService.createJob({
             name: config.jobName,
-            goalQuantity: Math.max(config.serialCount, 1),
+            goalQuantity: Math.max(config.partCount, 1),
           })
 
           const steps = Array.from({ length: config.stepCount }, (_, i) => ({
@@ -303,13 +303,13 @@ describe('Preservation — Step 1 Disabled After Advance', () => {
           const path = pathService.createPath({
             jobId: job.id,
             name: config.pathName,
-            goalQuantity: Math.max(config.serialCount, 1),
+            goalQuantity: Math.max(config.partCount, 1),
             steps,
           })
 
-          // Create serials so the DB has real data
-          serialService.batchCreateSerials(
-            { jobId: job.id, pathId: path.id, quantity: config.serialCount },
+          // Create parts so the DB has real data
+          partService.batchCreateParts(
+            { jobId: job.id, pathId: path.id, quantity: config.partCount },
             'user_test',
           )
 

@@ -1,7 +1,7 @@
 /**
  * Property 15: Backward and Duplicate Advancement Rejection
  *
- * For any serial at step N, verify advancing to M <= N is rejected.
+ * For any part at step N, verify advancing to M <= N is rejected.
  * Advancement is forward-only.
  *
  * **Validates: Requirements 5.7, 5.8**
@@ -29,7 +29,7 @@ function validateAdvancementDirection(
 }
 
 describe('Property 15: Backward and Duplicate Advancement Rejection', () => {
-  it('advancing to M <= N is always rejected for any serial at step N', () => {
+  it('advancing to M <= N is always rejected for any part at step N', () => {
     fc.assert(
       fc.property(
         // totalSteps: 1..20

@@ -1,76 +1,76 @@
 import { ref, readonly } from 'vue'
-import type { SerialNumber, SnStepStatus, SnStepOverride } from '~/server/types/domain'
-import type { AdvancementResult, SnStepStatusView } from '~/server/types/computed'
+import type { Part, PartStepStatus, PartStepOverride } from '~/server/types/domain'
+import type { AdvancementResult, PartStepStatusView } from '~/server/types/computed'
 
 export function useLifecycle() {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  async function scrapSerial(serialId: string, input: {
+  async function scrapPart(partId: string, input: {
     reason: string
     explanation?: string
     userId: string
-  }): Promise<SerialNumber> {
+  }): Promise<Part> {
     loading.value = true
     error.value = null
     try {
-      return await $fetch<SerialNumber>(`/api/serials/${encodeURIComponent(serialId)}/scrap`, {
+      return await $fetch<Part>(`/api/parts/${encodeURIComponent(partId)}/scrap`, {
         method: 'POST',
         body: input,
       })
     } catch (e: any) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to scrap serial'
+      error.value = e?.data?.message ?? e?.message ?? 'Failed to scrap part'
       throw e
     } finally {
       loading.value = false
     }
   }
 
-  async function forceComplete(serialId: string, input: {
+  async function forceComplete(partId: string, input: {
     reason?: string
     userId: string
-  }): Promise<SerialNumber> {
+  }): Promise<Part> {
     loading.value = true
     error.value = null
     try {
-      return await $fetch<SerialNumber>(`/api/serials/${encodeURIComponent(serialId)}/force-complete`, {
+      return await $fetch<Part>(`/api/parts/${encodeURIComponent(partId)}/force-complete`, {
         method: 'POST',
         body: input,
       })
     } catch (e: any) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to force complete serial'
+      error.value = e?.data?.message ?? e?.message ?? 'Failed to force complete part'
       throw e
     } finally {
       loading.value = false
     }
   }
 
-  async function advanceToStep(serialId: string, input: {
+  async function advanceToStep(partId: string, input: {
     targetStepIndex: number
     userId: string
   }): Promise<AdvancementResult> {
     loading.value = true
     error.value = null
     try {
-      return await $fetch<AdvancementResult>(`/api/serials/${encodeURIComponent(serialId)}/advance-to`, {
+      return await $fetch<AdvancementResult>(`/api/parts/${encodeURIComponent(partId)}/advance-to`, {
         method: 'POST',
         body: input,
       })
     } catch (e: any) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to advance serial'
+      error.value = e?.data?.message ?? e?.message ?? 'Failed to advance part'
       throw e
     } finally {
       loading.value = false
     }
   }
 
-  async function completeDeferredStep(serialId: string, stepId: string, input: {
+  async function completeDeferredStep(partId: string, stepId: string, input: {
     userId: string
-  }): Promise<SnStepStatus> {
+  }): Promise<PartStepStatus> {
     loading.value = true
     error.value = null
     try {
-      return await $fetch<SnStepStatus>(`/api/serials/${encodeURIComponent(serialId)}/complete-deferred/${encodeURIComponent(stepId)}`, {
+      return await $fetch<PartStepStatus>(`/api/parts/${encodeURIComponent(partId)}/complete-deferred/${encodeURIComponent(stepId)}`, {
         method: 'POST',
         body: input,
       })
@@ -82,14 +82,14 @@ export function useLifecycle() {
     }
   }
 
-  async function waiveStep(serialId: string, stepId: string, input: {
+  async function waiveStep(partId: string, stepId: string, input: {
     reason: string
     approverId: string
-  }): Promise<SnStepStatus> {
+  }): Promise<PartStepStatus> {
     loading.value = true
     error.value = null
     try {
-      return await $fetch<SnStepStatus>(`/api/serials/${encodeURIComponent(serialId)}/waive-step/${encodeURIComponent(stepId)}`, {
+      return await $fetch<PartStepStatus>(`/api/parts/${encodeURIComponent(partId)}/waive-step/${encodeURIComponent(stepId)}`, {
         method: 'POST',
         body: input,
       })
@@ -101,16 +101,16 @@ export function useLifecycle() {
     }
   }
 
-  async function createStepOverride(serialId: string, input: {
-    serialIds: string[]
+  async function createStepOverride(partId: string, input: {
+    partIds: string[]
     stepId: string
     reason: string
     userId: string
-  }): Promise<SnStepOverride[]> {
+  }): Promise<PartStepOverride[]> {
     loading.value = true
     error.value = null
     try {
-      return await $fetch<SnStepOverride[]>(`/api/serials/${encodeURIComponent(serialId)}/overrides`, {
+      return await $fetch<PartStepOverride[]>(`/api/parts/${encodeURIComponent(partId)}/overrides`, {
         method: 'POST',
         body: input,
       })
@@ -122,11 +122,11 @@ export function useLifecycle() {
     }
   }
 
-  async function reverseStepOverride(serialId: string, stepId: string): Promise<void> {
+  async function reverseStepOverride(partId: string, stepId: string): Promise<void> {
     loading.value = true
     error.value = null
     try {
-      await $fetch(`/api/serials/${encodeURIComponent(serialId)}/overrides/${encodeURIComponent(stepId)}`, {
+      await $fetch(`/api/parts/${encodeURIComponent(partId)}/overrides/${encodeURIComponent(stepId)}`, {
         method: 'DELETE',
       })
     } catch (e: any) {
@@ -137,11 +137,11 @@ export function useLifecycle() {
     }
   }
 
-  async function getStepStatuses(serialId: string): Promise<SnStepStatusView[]> {
+  async function getStepStatuses(partId: string): Promise<PartStepStatusView[]> {
     loading.value = true
     error.value = null
     try {
-      return await $fetch<SnStepStatusView[]>(`/api/serials/${encodeURIComponent(serialId)}/step-statuses`)
+      return await $fetch<PartStepStatusView[]>(`/api/parts/${encodeURIComponent(partId)}/step-statuses`)
     } catch (e: any) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch step statuses'
       throw e
@@ -150,11 +150,11 @@ export function useLifecycle() {
     }
   }
 
-  async function canComplete(serialId: string): Promise<{ canComplete: boolean, blockers: string[] }> {
+  async function canComplete(partId: string): Promise<{ canComplete: boolean, blockers: string[] }> {
     loading.value = true
     error.value = null
     try {
-      return await $fetch<{ canComplete: boolean, blockers: string[] }>(`/api/serials/${encodeURIComponent(serialId)}/can-complete`)
+      return await $fetch<{ canComplete: boolean, blockers: string[] }>(`/api/parts/${encodeURIComponent(partId)}/can-complete`)
     } catch (e: any) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to check completion status'
       throw e
@@ -166,7 +166,7 @@ export function useLifecycle() {
   return {
     loading: readonly(loading),
     error: readonly(error),
-    scrapSerial,
+    scrapPart,
     forceComplete,
     advanceToStep,
     completeDeferredStep,

@@ -30,7 +30,7 @@ const workQueueJobArb: fc.Arbitrary<WorkQueueJob> = fc.record({
   stepOrder: fc.integer({ min: 0, max: 10 }),
   stepLocation: fc.option(fc.string({ minLength: 1, maxLength: 15 }), { nil: undefined }),
   totalSteps: fc.integer({ min: 1, max: 10 }),
-  serialIds: fc.array(fc.uuid(), { minLength: 0, maxLength: 10 }),
+  partIds: fc.array(fc.uuid(), { minLength: 0, maxLength: 10 }),
   partCount: fc.integer({ min: 0, max: 100 }),
   nextStepName: fc.option(fc.string({ minLength: 1, maxLength: 15 }), { nil: undefined }),
   nextStepLocation: fc.option(fc.string({ minLength: 1, maxLength: 15 }), { nil: undefined }),

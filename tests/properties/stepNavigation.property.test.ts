@@ -72,7 +72,7 @@ describe('Property 6: Step navigation URL round-trip', () => {
             stepName: 'Target Step',
             stepOrder: 0,
             totalSteps: 3,
-            serialIds: ['SN-001'],
+            partIds: ['part_001'],
             partCount: 1,
             isFinalStep: false,
           }
@@ -88,7 +88,7 @@ describe('Property 6: Step navigation URL round-trip', () => {
               stepName: 'Other Step',
               stepOrder: 1,
               totalSteps: 3,
-              serialIds: ['SN-002'],
+              partIds: ['part_002'],
               partCount: 1,
               isFinalStep: false,
             }))
@@ -125,7 +125,7 @@ describe('Property 6: Step navigation URL round-trip', () => {
               stepName: 'Step',
               stepOrder: 0,
               totalSteps: 1,
-              serialIds: ['SN-001'],
+              partIds: ['part_001'],
               partCount: 1,
               isFinalStep: true,
             }))

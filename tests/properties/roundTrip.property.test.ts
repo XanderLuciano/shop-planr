@@ -11,7 +11,7 @@ import { describe, it } from 'vitest'
 import fc from 'fast-check'
 import { serialize, deserialize, prettyPrint } from '../../server/utils/serialization'
 import type {
-  Job, Path, ProcessStep, SerialNumber, Certificate,
+  Job, Path, ProcessStep, Part, Certificate,
   CertAttachment, TemplateRoute, TemplateStep, BOM, BomEntry,
   AuditEntry, ShopUser, StepNote, AppSettings, JiraConnectionSettings,
   JiraFieldMapping
@@ -59,7 +59,7 @@ const arbPath = (): fc.Arbitrary<Path> =>
     updatedAt: arbIsoDate()
   })
 
-const arbSerialNumber = (): fc.Arbitrary<SerialNumber> =>
+const arbPart = (): fc.Arbitrary<Part> =>
   fc.record({
     id: arbId(),
     jobId: arbId(),
@@ -79,7 +79,7 @@ const arbCertificate = (): fc.Arbitrary<Certificate> =>
 
 const arbCertAttachment = (): fc.Arbitrary<CertAttachment> =>
   fc.record({
-    serialId: arbId(),
+    partId: arbId(),
     certId: arbId(),
     stepId: arbId(),
     attachedAt: arbIsoDate(),
@@ -123,14 +123,14 @@ const arbAuditEntry = (): fc.Arbitrary<AuditEntry> =>
     id: arbId(),
     action: fc.constantFrom(
       'cert_attached' as const,
-      'serial_created' as const,
-      'serial_advanced' as const,
-      'serial_completed' as const,
+      'part_created' as const,
+      'part_advanced' as const,
+      'part_completed' as const,
       'note_created' as const
     ),
     userId: arbId(),
     timestamp: arbIsoDate(),
-    serialId: fc.option(arbId(), { nil: undefined }),
+    partId: fc.option(arbId(), { nil: undefined }),
     certId: fc.option(arbId(), { nil: undefined }),
     jobId: fc.option(arbId(), { nil: undefined }),
     pathId: fc.option(arbId(), { nil: undefined }),
@@ -155,7 +155,7 @@ const arbStepNote = (): fc.Arbitrary<StepNote> =>
     jobId: arbId(),
     pathId: arbId(),
     stepId: arbId(),
-    serialIds: fc.array(arbId(), { minLength: 1, maxLength: 5 }),
+    partIds: fc.array(arbId(), { minLength: 1, maxLength: 5 }),
     text: fc.string({ minLength: 1, maxLength: 200 }),
     createdBy: arbId(),
     createdAt: arbIsoDate(),
@@ -204,7 +204,7 @@ describe('Property 5: Domain Object Round-Trip Serialization', () => {
 'Job', arb: arbJob, domainType: 'Job' },
     { typeName: 'Path', arb: arbPath, domainType: 'Path' },
     { typeName: 'ProcessStep', arb: arbProcessStep, domainType: 'ProcessStep' },
-    { typeName: 'SerialNumber', arb: arbSerialNumber, domainType: 'SerialNumber' },
+    { typeName: 'Part', arb: arbPart, domainType: 'Part' },
     { typeName: 'Certificate', arb: arbCertificate, domainType: 'Certificate' },
     { typeName: 'CertAttachment', arb: arbCertAttachment, domainType: 'CertAttachment' },
     { typeName: 'TemplateRoute', arb: arbTemplateRoute, domainType: 'TemplateRoute' },

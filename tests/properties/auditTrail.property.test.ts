@@ -1,7 +1,7 @@
 /**
  * Property 6: Audit Trail Immutability and Completeness
  *
- * Exactly one audit entry is created per cert attachment, SN creation batch, and SN advancement.
+ * Exactly one audit entry is created per cert attachment, part creation batch, and part advancement.
  * Total audit count matches operation count.
  *
  * **Validates: Requirements 5.4, 13.1, 13.2, 13.3, 13.4, 13.5**
@@ -13,15 +13,15 @@ import { resolve } from 'path'
 import { runMigrations } from '../../server/repositories/sqlite/index'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
-import { SQLiteSerialRepository } from '../../server/repositories/sqlite/serialRepository'
+import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
 import { SQLiteCertRepository } from '../../server/repositories/sqlite/certRepository'
 import { SQLiteAuditRepository } from '../../server/repositories/sqlite/auditRepository'
 import { createJobService } from '../../server/services/jobService'
 import { createPathService } from '../../server/services/pathService'
-import { createSerialService } from '../../server/services/serialService'
+import { createPartService } from '../../server/services/partService'
 import { createCertService } from '../../server/services/certService'
 import { createAuditService } from '../../server/services/auditService'
-import { createSequentialSnGenerator } from '../../server/utils/idGenerator'
+import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
 
 function createTestDb() {
   const db = new Database(':memory:')
@@ -36,32 +36,32 @@ function setupServices(db: Database.default.Database) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
-    serials: new SQLiteSerialRepository(db),
+    parts: new SQLitePartRepository(db),
     certs: new SQLiteCertRepository(db),
     audit: new SQLiteAuditRepository(db)
   }
 
-  const snGenerator = createSequentialSnGenerator({
+  const partIdGenerator = createSequentialPartIdGenerator({
     getCounter: () => {
-      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('sn') as { value: number } | undefined
+      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
       return row?.value ?? 0
     },
     setCounter: (v: number) => {
-      db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('sn', v)
+      db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
     }
   })
 
   const auditService = createAuditService({ audit: repos.audit })
-  const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, serials: repos.serials })
-  const pathService = createPathService({ paths: repos.paths, serials: repos.serials })
-  const serialService = createSerialService(
-    { serials: repos.serials, paths: repos.paths, certs: repos.certs },
+  const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts })
+  const pathService = createPathService({ paths: repos.paths, parts: repos.parts })
+  const partService = createPartService(
+    { parts: repos.parts, paths: repos.paths, certs: repos.certs },
     auditService,
-    snGenerator
+    partIdGenerator
   )
   const certService = createCertService({ certs: repos.certs }, auditService)
 
-  return { jobService, pathService, serialService, certService, auditService, repos }
+  return { jobService, pathService, partService, certService, auditService, repos }
 }
 
 describe('Property 6: Audit Trail Immutability and Completeness', () => {
@@ -71,25 +71,25 @@ describe('Property 6: Audit Trail Immutability and Completeness', () => {
     if (db) db.close()
   })
 
-  it('exactly one audit entry per SN creation batch, advancement, and cert attachment', () => {
+  it('exactly one audit entry per part creation batch, advancement, and cert attachment', () => {
     fc.assert(
       fc.property(
         fc.record({
           stepCount: fc.integer({ min: 2, max: 5 }),
-          snQuantity: fc.integer({ min: 1, max: 10 }),
+          partQuantity: fc.integer({ min: 1, max: 10 }),
           advanceCount: fc.integer({ min: 0, max: 8 }),
           certAttachCount: fc.integer({ min: 0, max: 5 })
         }),
-        ({ stepCount, snQuantity, advanceCount, certAttachCount }) => {
+        ({ stepCount, partQuantity, advanceCount, certAttachCount }) => {
           db = createTestDb()
-          const { jobService, pathService, serialService, certService, auditService } = setupServices(db)
+          const { jobService, pathService, partService, certService, auditService } = setupServices(db)
 
           const job = jobService.createJob({ name: 'Audit Test Job', goalQuantity: 100 })
           const steps = Array.from({ length: stepCount }, (_, i) => ({ name: `Step ${i}` }))
           const path = pathService.createPath({
             jobId: job.id,
             name: 'Route',
-            goalQuantity: snQuantity,
+            goalQuantity: partQuantity,
             steps
           })
 
@@ -99,21 +99,21 @@ describe('Property 6: Audit Trail Immutability and Completeness', () => {
           let expectedCompletionAudits = 0
           let expectedCertAudits = 0
 
-          // 1. Batch create serials — one audit entry per batch
-          const serials = serialService.batchCreateSerials(
-            { jobId: job.id, pathId: path.id, quantity: snQuantity },
+          // 1. Batch create parts — one audit entry per batch
+          const parts = partService.batchCreateParts(
+            { jobId: job.id, pathId: path.id, quantity: partQuantity },
             'user_test'
           )
           expectedCreationAudits = 1
 
-          // 2. Advance some serials — one audit entry per successful advancement
-          const advanceable = Math.min(advanceCount, serials.length)
+          // 2. Advance some parts — one audit entry per successful advancement
+          const advanceable = Math.min(advanceCount, parts.length)
           for (let i = 0; i < advanceable; i++) {
             try {
-              const serial = serialService.getSerial(serials[i].id)
-              if (serial.currentStepIndex === -1) continue
-              serialService.advanceSerial(serials[i].id, 'user_test')
-              const updated = serialService.getSerial(serials[i].id)
+              const part = partService.getPart(parts[i].id)
+              if (part.currentStepIndex === -1) continue
+              partService.advancePart(parts[i].id, 'user_test')
+              const updated = partService.getPart(parts[i].id)
               if (updated.currentStepIndex === -1) {
                 expectedCompletionAudits++
               } else {
@@ -125,16 +125,16 @@ describe('Property 6: Audit Trail Immutability and Completeness', () => {
           }
 
           // 3. Attach certs — one audit entry per attachment
-          const attachCount = Math.min(certAttachCount, serials.length)
+          const attachCount = Math.min(certAttachCount, parts.length)
           if (attachCount > 0) {
             const cert = certService.createCert({ type: 'material', name: 'Test Cert' })
             for (let i = 0; i < attachCount; i++) {
-              const serial = serialService.getSerial(serials[i].id)
-              const stepIdx = serial.currentStepIndex === -1 ? stepCount - 1 : serial.currentStepIndex
+              const part = partService.getPart(parts[i].id)
+              const stepIdx = part.currentStepIndex === -1 ? stepCount - 1 : part.currentStepIndex
               const stepId = path.steps[stepIdx].id
-              certService.attachCertToSerial({
+              certService.attachCertToPart({
                 certId: cert.id,
-                serialId: serials[i].id,
+                partId: parts[i].id,
                 stepId,
                 userId: 'user_test',
                 jobId: job.id,
@@ -150,9 +150,9 @@ describe('Property 6: Audit Trail Immutability and Completeness', () => {
           expect(allAudits.length).toBe(expectedTotal)
 
           // Verify counts by action type
-          const creationAudits = allAudits.filter(a => a.action === 'serial_created')
-          const advancementAudits = allAudits.filter(a => a.action === 'serial_advanced')
-          const completionAudits = allAudits.filter(a => a.action === 'serial_completed')
+          const creationAudits = allAudits.filter(a => a.action === 'part_created')
+          const advancementAudits = allAudits.filter(a => a.action === 'part_advanced')
+          const completionAudits = allAudits.filter(a => a.action === 'part_completed')
           const certAudits = allAudits.filter(a => a.action === 'cert_attached')
 
           expect(creationAudits.length).toBe(expectedCreationAudits)
@@ -168,7 +168,7 @@ describe('Property 6: Audit Trail Immutability and Completeness', () => {
     )
   })
 
-  it('audit entries for a serial are returned in chronological order', () => {
+  it('audit entries for a part are returned in chronological order', () => {
     fc.assert(
       fc.property(
         fc.record({
@@ -177,7 +177,7 @@ describe('Property 6: Audit Trail Immutability and Completeness', () => {
         }),
         ({ stepCount, advanceTimes }) => {
           db = createTestDb()
-          const { jobService, pathService, serialService, auditService } = setupServices(db)
+          const { jobService, pathService, partService, auditService } = setupServices(db)
 
           const job = jobService.createJob({ name: 'Chrono Test', goalQuantity: 10 })
           const steps = Array.from({ length: stepCount }, (_, i) => ({ name: `Step ${i}` }))
@@ -188,7 +188,7 @@ describe('Property 6: Audit Trail Immutability and Completeness', () => {
             steps
           })
 
-          const [serial] = serialService.batchCreateSerials(
+          const [part] = partService.batchCreateParts(
             { jobId: job.id, pathId: path.id, quantity: 1 },
             'user_test'
           )
@@ -196,14 +196,14 @@ describe('Property 6: Audit Trail Immutability and Completeness', () => {
           const times = Math.min(advanceTimes, stepCount)
           for (let i = 0; i < times; i++) {
             try {
-              serialService.advanceSerial(serial.id, 'user_test')
+              partService.advancePart(part.id, 'user_test')
             } catch {
               break
             }
           }
 
-          // Audit trail for this serial should be in chronological order
-          const trail = auditService.getSerialAuditTrail(serial.id)
+          // Audit trail for this part should be in chronological order
+          const trail = auditService.getPartAuditTrail(part.id)
           for (let i = 1; i < trail.length; i++) {
             expect(trail[i].timestamp >= trail[i - 1].timestamp).toBe(true)
           }

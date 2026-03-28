@@ -2,7 +2,7 @@
 import type { Certificate } from '~/server/types/domain'
 
 const props = defineProps<{
-  serialId: string
+  partId: string
   stepId: string
 }>()
 
@@ -47,7 +47,7 @@ async function handleAttach() {
       method: 'POST',
       body: {
         certId: selectedCertId.value,
-        serialIds: [props.serialId],
+        partIds: [props.partId],
         userId: operatorId.value,
       },
     })

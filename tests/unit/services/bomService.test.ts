@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createBomService } from '../../../server/services/bomService'
 import { NotFoundError, ValidationError } from '../../../server/utils/errors'
 import type { BomRepository } from '../../../server/repositories/interfaces/bomRepository'
-import type { SerialRepository } from '../../../server/repositories/interfaces/serialRepository'
+import type { PartRepository } from '../../../server/repositories/interfaces/partRepository'
 import type { BOM } from '../../../server/types/domain'
 
 function createMockBomRepo(): BomRepository {
@@ -21,7 +21,7 @@ function createMockBomRepo(): BomRepository {
   }
 }
 
-function createMockSerialRepo(counts: Record<string, { total: number, completed: number }> = {}): SerialRepository {
+function createMockPartRepo(counts: Record<string, { total: number, completed: number }> = {}): PartRepository {
   return {
     create: vi.fn(),
     createBatch: vi.fn(),
@@ -32,19 +32,21 @@ function createMockSerialRepo(counts: Record<string, { total: number, completed:
     listByStepIndex: vi.fn(),
     update: vi.fn(),
     countByJobId: vi.fn((jobId: string) => counts[jobId]?.total ?? 0),
-    countCompletedByJobId: vi.fn((jobId: string) => counts[jobId]?.completed ?? 0)
+    countCompletedByJobId: vi.fn((jobId: string) => counts[jobId]?.completed ?? 0),
+    countScrappedByJobId: vi.fn(() => 0),
+    listAll: vi.fn(() => [])
   }
 }
 
 describe('BomService', () => {
   let bomRepo: BomRepository
-  let serialRepo: SerialRepository
+  let partRepo: PartRepository
   let service: ReturnType<typeof createBomService>
 
   beforeEach(() => {
     bomRepo = createMockBomRepo()
-    serialRepo = createMockSerialRepo()
-    service = createBomService({ bom: bomRepo, serials: serialRepo })
+    partRepo = createMockPartRepo()
+    service = createBomService({ bom: bomRepo, parts: partRepo })
   })
 
   describe('createBom', () => {
@@ -182,8 +184,8 @@ describe('BomService', () => {
         job_a: { total: 10, completed: 6 },
         job_b: { total: 8, completed: 3 }
       }
-      serialRepo = createMockSerialRepo(counts)
-      service = createBomService({ bom: bomRepo, serials: serialRepo })
+      partRepo = createMockPartRepo(counts)
+      service = createBomService({ bom: bomRepo, parts: partRepo })
 
       const bom = service.createBom({
         name: 'Assembly',
@@ -208,8 +210,8 @@ describe('BomService', () => {
       const counts: Record<string, { total: number, completed: number }> = {
         job_a: { total: 15, completed: 15 }
       }
-      serialRepo = createMockSerialRepo(counts)
-      service = createBomService({ bom: bomRepo, serials: serialRepo })
+      partRepo = createMockPartRepo(counts)
+      service = createBomService({ bom: bomRepo, parts: partRepo })
 
       const bom = service.createBom({
         name: 'Over-produced',
@@ -230,8 +232,8 @@ describe('BomService', () => {
         job_a: { total: 5, completed: 3 },
         job_b: { total: 4, completed: 4 }
       }
-      serialRepo = createMockSerialRepo(counts)
-      service = createBomService({ bom: bomRepo, serials: serialRepo })
+      partRepo = createMockPartRepo(counts)
+      service = createBomService({ bom: bomRepo, parts: partRepo })
 
       const bom = service.createBom({
         name: 'Multi-entry',

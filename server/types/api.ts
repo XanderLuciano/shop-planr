@@ -42,18 +42,24 @@ export interface UpdatePathInput {
   steps?: { name: string, location?: string, optional?: boolean, dependencyType?: 'physical' | 'preferred' | 'completion_gate' }[]
 }
 
-// ---- Serial Numbers ----
+// ---- Parts (formerly Serial Numbers) ----
 
-export interface BatchCreateSerialsInput {
+export interface BatchCreatePartsInput {
   jobId: string
   pathId: string
   quantity: number
   certId?: string
 }
 
-export interface AdvanceSerialInput {
+/** @deprecated Use `BatchCreatePartsInput` instead. Backward-compatible alias. */
+export type BatchCreateSerialsInput = BatchCreatePartsInput
+
+export interface AdvancePartInput {
   userId: string
 }
+
+/** @deprecated Use `AdvancePartInput` instead. Backward-compatible alias. */
+export type AdvanceSerialInput = AdvancePartInput
 
 export interface AttachCertInput {
   certId: string
@@ -70,9 +76,12 @@ export interface CreateCertInput {
 
 export interface BatchAttachCertInput {
   certId: string
-  serialIds: string[]
+  partIds: string[]
   userId: string
 }
+
+/** @deprecated Use `partIds` field. Backward-compatible alias type. */
+export type BatchAttachCertInputLegacy = BatchAttachCertInput
 
 // ---- Template ----
 
@@ -123,11 +132,14 @@ export interface PushNoteToJiraInput {
 
 // ---- Lifecycle ----
 
-export interface ScrapSerialInput {
+export interface ScrapPartInput {
   reason: ScrapReason
   explanation?: string // required when reason = 'other'
   userId: string
 }
+
+/** @deprecated Use `ScrapPartInput` instead. Backward-compatible alias. */
+export type ScrapSerialInput = ScrapPartInput
 
 export interface ForceCompleteInput {
   reason?: string
@@ -149,7 +161,7 @@ export interface WaiveStepInput {
 }
 
 export interface CreateStepOverrideInput {
-  serialIds: string[]
+  partIds: string[]
   stepId: string
   reason: string
   userId: string

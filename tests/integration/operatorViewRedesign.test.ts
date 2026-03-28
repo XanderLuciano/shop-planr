@@ -29,7 +29,7 @@ import type {
 
 /** Replicates GET /api/operator/queue/_all */
 function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
-  const { jobService, pathService, serialService } = ctx
+  const { jobService, pathService, partService } = ctx
   const jobs = jobService.listJobs()
   const groupMap = new Map<string, WorkQueueJob>()
 
@@ -38,8 +38,8 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
     for (const path of paths) {
       const totalSteps = path.steps.length
       for (const step of path.steps) {
-        const serials = serialService.listSerialsByStepIndex(path.id, step.order)
-        if (serials.length === 0 && step.order !== 0) continue
+        const parts = partService.listPartsByStepIndex(path.id, step.order)
+        if (parts.length === 0 && step.order !== 0) continue
         const key = `${job.id}|${path.id}|${step.order}`
         const isFinalStep = step.order === totalSteps - 1
         const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
@@ -53,8 +53,8 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
           stepOrder: step.order,
           stepLocation: step.location,
           totalSteps,
-          serialIds: serials.map(s => s.id),
-          partCount: serials.length,
+          partIds: parts.map(s => s.id),
+          partCount: parts.length,
           nextStepName: nextStep?.name,
           nextStepLocation: nextStep?.location,
           isFinalStep,
@@ -68,9 +68,10 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
   return { operatorId: '_all', jobs: queueJobs, totalParts }
 }
 
+
 /** Replicates GET /api/operator/step/[stepId] */
 function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
-  const { jobService, pathService, serialService, noteService } = ctx
+  const { jobService, pathService, partService, noteService } = ctx
   const jobs = jobService.listJobs()
 
   for (const job of jobs) {
@@ -79,15 +80,15 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
       const totalSteps = path.steps.length
       for (const step of path.steps) {
         if (step.id !== stepId) continue
-        const serials = serialService.listSerialsByStepIndex(path.id, step.order)
+        const parts = partService.listPartsByStepIndex(path.id, step.order)
         const isFinalStep = step.order === totalSteps - 1
         const prevStep = step.order > 0 ? path.steps[step.order - 1] : undefined
         const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
 
         let previousStepWipCount: number | undefined
-        if (step.order > 0 && serials.length === 0) {
-          const prevSerials = serialService.listSerialsByStepIndex(path.id, step.order - 1)
-          previousStepWipCount = prevSerials.length
+        if (step.order > 0 && parts.length === 0) {
+          const prevParts = partService.listPartsByStepIndex(path.id, step.order - 1)
+          previousStepWipCount = prevParts.length
         }
 
         const foundJob: WorkQueueJob = {
@@ -100,8 +101,8 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
           stepOrder: step.order,
           stepLocation: step.location,
           totalSteps,
-          serialIds: serials.map(s => s.id),
-          partCount: serials.length,
+          partIds: parts.map(s => s.id),
+          partCount: parts.length,
           previousStepId: prevStep?.id,
           previousStepName: prevStep?.name,
           nextStepId: nextStep?.id,
@@ -126,7 +127,7 @@ function aggregateGroupedWork(
   ctx: TestContext,
   userService: ReturnType<typeof createUserService>,
 ): WorkQueueGroupedResponse {
-  const { jobService, pathService, serialService } = ctx
+  const { jobService, pathService, partService } = ctx
   const jobs = jobService.listJobs()
   const entries: { job: WorkQueueJob; assignedTo: string | undefined }[] = []
 
@@ -135,8 +136,8 @@ function aggregateGroupedWork(
     for (const path of paths) {
       const totalSteps = path.steps.length
       for (const step of path.steps) {
-        const serials = serialService.listSerialsByStepIndex(path.id, step.order)
-        if (serials.length === 0) continue
+        const parts = partService.listPartsByStepIndex(path.id, step.order)
+        if (parts.length === 0) continue
         const isFinalStep = step.order === totalSteps - 1
         const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
         entries.push({
@@ -151,8 +152,8 @@ function aggregateGroupedWork(
             stepOrder: step.order,
             stepLocation: step.location,
             totalSteps,
-            serialIds: serials.map(s => s.id),
-            partCount: serials.length,
+            partIds: parts.map(s => s.id),
+            partCount: parts.length,
             nextStepName: nextStep?.name,
             nextStepLocation: nextStep?.location,
             isFinalStep,
@@ -202,9 +203,9 @@ describe('Operator View Redesign Integration', () => {
 
   it('all-work endpoint returns correct WorkQueueJob entries for multiple jobs', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService } = ctx
+    const { jobService, pathService, partService } = ctx
 
-    // Job 1: 3-step path, 4 serials — advance 2 to step 1
+    // Job 1: 3-step path, 4 parts — advance 2 to step 1
     const job1 = jobService.createJob({ name: 'Bracket Assembly', goalQuantity: 4 })
     const path1 = pathService.createPath({
       jobId: job1.id,
@@ -216,15 +217,15 @@ describe('Operator View Redesign Integration', () => {
         { name: 'Inspection', location: 'QC Lab' },
       ],
     })
-    const serials1 = serialService.batchCreateSerials(
+    const parts1 = partService.batchCreateParts(
       { jobId: job1.id, pathId: path1.id, quantity: 4 },
       'op1',
     )
-    // Advance first 2 serials to Deburring (step 1)
-    serialService.advanceSerial(serials1[0].id, 'op1')
-    serialService.advanceSerial(serials1[1].id, 'op1')
+    // Advance first 2 parts to Deburring (step 1)
+    partService.advancePart(parts1[0].id, 'op1')
+    partService.advancePart(parts1[1].id, 'op1')
 
-    // Job 2: 2-step path, 3 serials — all at step 0
+    // Job 2: 2-step path, 3 parts — all at step 0
     const job2 = jobService.createJob({ name: 'Housing Unit', goalQuantity: 3 })
     const path2 = pathService.createPath({
       jobId: job2.id,
@@ -235,7 +236,7 @@ describe('Operator View Redesign Integration', () => {
         { name: 'Machining', location: 'CNC Bay 2' },
       ],
     })
-    serialService.batchCreateSerials(
+    partService.batchCreateParts(
       { jobId: job2.id, pathId: path2.id, quantity: 3 },
       'op1',
     )
@@ -247,7 +248,7 @@ describe('Operator View Redesign Integration', () => {
     expect(response.totalParts).toBe(7)
     expect(response.operatorId).toBe('_all')
 
-    // Verify job1 step 0 (Milling) — 2 remaining serials
+    // Verify job1 step 0 (Milling) — 2 remaining parts
     const milling = response.jobs.find(
       j => j.jobId === job1.id && j.stepOrder === 0,
     )!
@@ -261,7 +262,7 @@ describe('Operator View Redesign Integration', () => {
     expect(milling.nextStepName).toBe('Deburring')
     expect(milling.isFinalStep).toBe(false)
 
-    // Verify job1 step 1 (Deburring) — 2 advanced serials
+    // Verify job1 step 1 (Deburring) — 2 advanced parts
     const deburring = response.jobs.find(
       j => j.jobId === job1.id && j.stepOrder === 1,
     )!
@@ -270,7 +271,7 @@ describe('Operator View Redesign Integration', () => {
     expect(deburring.partCount).toBe(2)
     expect(deburring.nextStepName).toBe('Inspection')
 
-    // Verify job2 step 0 (Receiving) — 3 serials
+    // Verify job2 step 0 (Receiving) — 3 parts
     const receiving = response.jobs.find(
       j => j.jobId === job2.id && j.stepOrder === 0,
     )!
@@ -285,7 +286,7 @@ describe('Operator View Redesign Integration', () => {
 
   it('step endpoint returns correct data for a specific step ID', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService } = ctx
+    const { jobService, pathService, partService } = ctx
 
     const job = jobService.createJob({ name: 'Shaft Job', goalQuantity: 5 })
     const path = pathService.createPath({
@@ -298,14 +299,14 @@ describe('Operator View Redesign Integration', () => {
         { name: 'Final QC', location: 'QC Lab' },
       ],
     })
-    const serials = serialService.batchCreateSerials(
+    const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 5 },
       'op1',
     )
 
-    // Advance 3 serials to Grinding (step 1)
+    // Advance 3 parts to Grinding (step 1)
     for (let i = 0; i < 3; i++) {
-      serialService.advanceSerial(serials[i].id, 'op1')
+      partService.advancePart(parts[i].id, 'op1')
     }
 
     // Look up the Grinding step
@@ -328,11 +329,11 @@ describe('Operator View Redesign Integration', () => {
     expect(wqJob.stepLocation).toBe('Grinder Bay')
     expect(wqJob.totalSteps).toBe(3)
 
-    // Verify serial IDs — exactly the 3 advanced serials
+    // Verify part IDs — exactly the 3 advanced parts
     expect(wqJob.partCount).toBe(3)
-    expect(wqJob.serialIds).toHaveLength(3)
-    const advancedIds = new Set(serials.slice(0, 3).map(s => s.id))
-    for (const sid of wqJob.serialIds) {
+    expect(wqJob.partIds).toHaveLength(3)
+    const advancedIds = new Set(parts.slice(0, 3).map(s => s.id))
+    for (const sid of wqJob.partIds) {
       expect(advancedIds.has(sid)).toBe(true)
     }
 
@@ -344,19 +345,19 @@ describe('Operator View Redesign Integration', () => {
     // Notes should be empty (none created)
     expect(notes).toHaveLength(0)
 
-    // Step with no active serials returns valid response with partCount: 0 (fixed behavior)
-    // Advance all 3 grinding serials to Final QC, then to completion
+    // Step with no active parts returns valid response with partCount: 0 (fixed behavior)
+    // Advance all 3 grinding parts to Final QC, then to completion
     for (let i = 0; i < 3; i++) {
-      serialService.advanceSerial(serials[i].id, 'op1') // → Final QC
+      partService.advancePart(parts[i].id, 'op1') // → Final QC
     }
     for (let i = 0; i < 3; i++) {
-      serialService.advanceSerial(serials[i].id, 'op1') // → completed
+      partService.advancePart(parts[i].id, 'op1') // → completed
     }
     const emptyResult = lookupStep(ctx, grindingStep.id)
-    // Fixed: valid step with zero serials returns response with partCount: 0
+    // Fixed: valid step with zero parts returns response with partCount: 0
     expect(emptyResult).not.toBeNull()
     expect(emptyResult!.job.partCount).toBe(0)
-    expect(emptyResult!.job.serialIds).toEqual([])
+    expect(emptyResult!.job.partIds).toEqual([])
     expect(emptyResult!.previousStepWipCount).toBeDefined()
   })
 
@@ -364,7 +365,7 @@ describe('Operator View Redesign Integration', () => {
 
   it('grouped endpoint groups work by assignee with correct operator names', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService, db } = ctx
+    const { jobService, pathService, partService, db } = ctx
 
     // Create users
     const userRepo = new SQLiteUserRepository(db)
@@ -390,17 +391,17 @@ describe('Operator View Redesign Integration', () => {
     ctx.repos.paths.updateStepAssignment(path.steps[1].id, sarah.id)
     // step 2 left unassigned
 
-    // Create 6 serials, advance some
-    const serials = serialService.batchCreateSerials(
+    // Create 6 parts, advance some
+    const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 6 },
       'op1',
     )
     // Advance 3 to Welding (step 1)
     for (let i = 0; i < 3; i++) {
-      serialService.advanceSerial(serials[i].id, 'op1')
+      partService.advancePart(parts[i].id, 'op1')
     }
     // Advance 1 to Painting (step 2)
-    serialService.advanceSerial(serials[0].id, 'op1')
+    partService.advancePart(parts[0].id, 'op1')
 
     // Distribution: step 0 = 3 (Mike), step 1 = 2 (Sarah), step 2 = 1 (Unassigned)
     const response = aggregateGroupedWork(ctx, userService)
@@ -438,9 +439,9 @@ describe('Operator View Redesign Integration', () => {
 
   // ---- 4. Step advancement from step view (Validates: Req 3.3) ----
 
-  it('advancing serials from step view decreases partCount on re-fetch', () => {
+  it('advancing parts from step view decreases partCount on re-fetch', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService } = ctx
+    const { jobService, pathService, partService } = ctx
 
     const job = jobService.createJob({ name: 'Connector Job', goalQuantity: 4 })
     const path = pathService.createPath({
@@ -453,7 +454,7 @@ describe('Operator View Redesign Integration', () => {
         { name: 'Test', location: 'Station C' },
       ],
     })
-    const serials = serialService.batchCreateSerials(
+    const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 4 },
       'op1',
     )
@@ -463,24 +464,24 @@ describe('Operator View Redesign Integration', () => {
     const initial = lookupStep(ctx, prepStep.id)
     expect(initial).not.toBeNull()
     expect(initial!.job.partCount).toBe(4)
-    expect(initial!.job.serialIds).toHaveLength(4)
+    expect(initial!.job.partIds).toHaveLength(4)
 
-    // Advance 2 serials from Prep → Assembly
-    serialService.advanceSerial(serials[0].id, 'op1')
-    serialService.advanceSerial(serials[1].id, 'op1')
+    // Advance 2 parts from Prep → Assembly
+    partService.advancePart(parts[0].id, 'op1')
+    partService.advancePart(parts[1].id, 'op1')
 
     // Re-fetch Prep step — should now have 2 parts
     const afterAdvance = lookupStep(ctx, prepStep.id)
     expect(afterAdvance).not.toBeNull()
     expect(afterAdvance!.job.partCount).toBe(2)
-    expect(afterAdvance!.job.serialIds).toHaveLength(2)
+    expect(afterAdvance!.job.partIds).toHaveLength(2)
 
-    // The advanced serials should NOT be in the Prep step anymore
-    const remainingIds = new Set(afterAdvance!.job.serialIds)
-    expect(remainingIds.has(serials[0].id)).toBe(false)
-    expect(remainingIds.has(serials[1].id)).toBe(false)
-    expect(remainingIds.has(serials[2].id)).toBe(true)
-    expect(remainingIds.has(serials[3].id)).toBe(true)
+    // The advanced parts should NOT be in the Prep step anymore
+    const remainingIds = new Set(afterAdvance!.job.partIds)
+    expect(remainingIds.has(parts[0].id)).toBe(false)
+    expect(remainingIds.has(parts[1].id)).toBe(false)
+    expect(remainingIds.has(parts[2].id)).toBe(true)
+    expect(remainingIds.has(parts[3].id)).toBe(true)
 
     // Assembly step should now have 2 parts
     const assemblyStep = path.steps[1]
@@ -489,14 +490,14 @@ describe('Operator View Redesign Integration', () => {
     expect(assemblyView!.job.partCount).toBe(2)
 
     // Advance all remaining from Prep
-    serialService.advanceSerial(serials[2].id, 'op1')
-    serialService.advanceSerial(serials[3].id, 'op1')
+    partService.advancePart(parts[2].id, 'op1')
+    partService.advancePart(parts[3].id, 'op1')
 
     // Prep step should now return valid response with partCount: 0 (fixed behavior)
     const emptyPrep = lookupStep(ctx, prepStep.id)
     expect(emptyPrep).not.toBeNull()
     expect(emptyPrep!.job.partCount).toBe(0)
-    expect(emptyPrep!.job.serialIds).toEqual([])
+    expect(emptyPrep!.job.partIds).toEqual([])
 
     // Assembly should now have all 4
     const fullAssembly = lookupStep(ctx, assemblyStep.id)

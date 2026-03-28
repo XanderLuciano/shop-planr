@@ -5,7 +5,7 @@ import { join, resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { SQLiteJobRepository } from './jobRepository'
 import { SQLitePathRepository } from './pathRepository'
-import { SQLiteSerialRepository } from './serialRepository'
+import { SQLitePartRepository } from './partRepository'
 import { SQLiteCertRepository } from './certRepository'
 import { SQLiteTemplateRepository } from './templateRepository'
 import { SQLiteAuditRepository } from './auditRepository'
@@ -13,13 +13,13 @@ import { SQLiteBomRepository } from './bomRepository'
 import { SQLiteSettingsRepository } from './settingsRepository'
 import { SQLiteNoteRepository } from './noteRepository'
 import { SQLiteUserRepository } from './userRepository'
-import { SQLiteSnStepStatusRepository } from './snStepStatusRepository'
-import { SQLiteSnStepOverrideRepository } from './snStepOverrideRepository'
+import { SQLitePartStepStatusRepository } from './partStepStatusRepository'
+import { SQLitePartStepOverrideRepository } from './partStepOverrideRepository'
 import { SQLiteBomVersionRepository } from './bomVersionRepository'
 import { SQLiteLibraryRepository } from './libraryRepository'
 import type { JobRepository } from '../interfaces/jobRepository'
 import type { PathRepository } from '../interfaces/pathRepository'
-import type { SerialRepository } from '../interfaces/serialRepository'
+import type { PartRepository } from '../interfaces/partRepository'
 import type { CertRepository } from '../interfaces/certRepository'
 import type { TemplateRepository } from '../interfaces/templateRepository'
 import type { AuditRepository } from '../interfaces/auditRepository'
@@ -27,15 +27,15 @@ import type { BomRepository } from '../interfaces/bomRepository'
 import type { SettingsRepository } from '../interfaces/settingsRepository'
 import type { NoteRepository } from '../interfaces/noteRepository'
 import type { UserRepository } from '../interfaces/userRepository'
-import type { SnStepStatusRepository } from '../interfaces/snStepStatusRepository'
-import type { SnStepOverrideRepository } from '../interfaces/snStepOverrideRepository'
+import type { PartStepStatusRepository } from '../interfaces/partStepStatusRepository'
+import type { PartStepOverrideRepository } from '../interfaces/partStepOverrideRepository'
 import type { BomVersionRepository } from '../interfaces/bomVersionRepository'
 import type { LibraryRepository } from '../interfaces/libraryRepository'
 
 export interface RepositorySet {
   jobs: JobRepository
   paths: PathRepository
-  serials: SerialRepository
+  parts: PartRepository
   certs: CertRepository
   templates: TemplateRepository
   audit: AuditRepository
@@ -43,12 +43,19 @@ export interface RepositorySet {
   settings: SettingsRepository
   notes: NoteRepository
   users: UserRepository
-  snStepStatuses: SnStepStatusRepository
-  snStepOverrides: SnStepOverrideRepository
+  partStepStatuses: PartStepStatusRepository
+  partStepOverrides: PartStepOverrideRepository
   bomVersions: BomVersionRepository
   library: LibraryRepository
-  /** Raw DB handle — used by the service layer for the SN counter. */
+  /** Raw DB handle — used by the service layer for the counter. */
   _db: import('better-sqlite3').Database
+
+  /** @deprecated Use `parts` instead. Backward-compatible alias. */
+  serials?: PartRepository
+  /** @deprecated Use `partStepStatuses` instead. Backward-compatible alias. */
+  snStepStatuses?: PartStepStatusRepository
+  /** @deprecated Use `partStepOverrides` instead. Backward-compatible alias. */
+  snStepOverrides?: PartStepOverrideRepository
 }
 
 interface MigrationFile {
@@ -150,10 +157,14 @@ export function initDatabase(dbPath: string, migrationsDir?: string): Database.D
 export function createSQLiteRepositories(dbPath: string, migrationsDir?: string): RepositorySet {
   const db = initDatabase(dbPath, migrationsDir)
 
+  const partRepo = new SQLitePartRepository(db)
+  const partStepStatusRepo = new SQLitePartStepStatusRepository(db)
+  const partStepOverrideRepo = new SQLitePartStepOverrideRepository(db)
+
   return {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
-    serials: new SQLiteSerialRepository(db),
+    parts: partRepo,
     certs: new SQLiteCertRepository(db),
     templates: new SQLiteTemplateRepository(db),
     audit: new SQLiteAuditRepository(db),
@@ -161,10 +172,14 @@ export function createSQLiteRepositories(dbPath: string, migrationsDir?: string)
     settings: new SQLiteSettingsRepository(db),
     notes: new SQLiteNoteRepository(db),
     users: new SQLiteUserRepository(db),
-    snStepStatuses: new SQLiteSnStepStatusRepository(db),
-    snStepOverrides: new SQLiteSnStepOverrideRepository(db),
+    partStepStatuses: partStepStatusRepo,
+    partStepOverrides: partStepOverrideRepo,
     bomVersions: new SQLiteBomVersionRepository(db),
     library: new SQLiteLibraryRepository(db),
-    _db: db
+    _db: db,
+    // Backward-compatible aliases
+    serials: partRepo,
+    snStepStatuses: partStepStatusRepo,
+    snStepOverrides: partStepOverrideRepo,
   }
 }

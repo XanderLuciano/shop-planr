@@ -40,10 +40,10 @@ const arbUser = () =>
     createdAt: fc.constant(new Date().toISOString())
   })
 
-/** Generate a valid SerialNumber object */
-const arbSerial = () =>
+/** Generate a valid Part object */
+const arbPart = () =>
   fc.record({
-    id: fc.string({ minLength: 1, maxLength: 20 }).map(s => `sn_${s.replace(/[^a-zA-Z0-9]/g, 'x')}`),
+    id: fc.string({ minLength: 1, maxLength: 20 }).map(s => `part_${s.replace(/[^a-zA-Z0-9]/g, 'x')}`),
     jobId: fc.constant('job_1'),
     pathId: fc.constant('path_1'),
     currentStepIndex: fc.integer({ min: -1, max: 10 }),
@@ -167,20 +167,20 @@ describe('Property 12: Malformed JSON Error Reporting', () => {
     )
   })
 
-  it('removing a required field from a SerialNumber produces error mentioning the field', () => {
+  it('removing a required field from a Part produces error mentioning the field', () => {
     fc.assert(
       fc.property(
-        arbSerial(),
+        arbPart(),
         fc.constantFrom('id', 'jobId', 'pathId', 'currentStepIndex', 'createdAt', 'updatedAt'),
-        (serial, fieldToRemove) => {
-          const json = serialize(serial)
+        (part, fieldToRemove) => {
+          const json = serialize(part)
           const parsed = JSON.parse(json)
           delete parsed[fieldToRemove]
           const corrupted = JSON.stringify(parsed)
 
-          expect(() => deserialize(corrupted, 'SerialNumber')).toThrow(ValidationError)
+          expect(() => deserialize(corrupted, 'Part')).toThrow(ValidationError)
           try {
-            deserialize(corrupted, 'SerialNumber')
+            deserialize(corrupted, 'Part')
           } catch (e: any) {
             expect(e.message).toContain(fieldToRemove)
           }
@@ -196,7 +196,7 @@ describe('Property 12: Malformed JSON Error Reporting', () => {
         fc.string({ minLength: 1, maxLength: 50 }).filter((s) => {
           try { JSON.parse(s); return false } catch { return true }
         }),
-        fc.constantFrom('Job', 'Certificate', 'ShopUser', 'SerialNumber') as fc.Arbitrary<DomainType>,
+        fc.constantFrom('Job', 'Certificate', 'ShopUser', 'Part') as fc.Arbitrary<DomainType>,
         (badJson, domainType) => {
           expect(() => deserialize(badJson, domainType)).toThrow(ValidationError)
           try {
@@ -214,7 +214,7 @@ describe('Property 12: Malformed JSON Error Reporting', () => {
     fc.assert(
       fc.property(
         fc.array(fc.integer()),
-        fc.constantFrom('Job', 'Certificate', 'ShopUser', 'SerialNumber') as fc.Arbitrary<DomainType>,
+        fc.constantFrom('Job', 'Certificate', 'ShopUser', 'Part') as fc.Arbitrary<DomainType>,
         (arr, domainType) => {
           const json = JSON.stringify(arr)
           expect(() => deserialize(json, domainType)).toThrow(ValidationError)

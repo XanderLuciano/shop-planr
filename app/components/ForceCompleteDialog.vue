@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const props = defineProps<{
-  serialId: string
+  partId: string
   incompleteSteps: { stepId: string, stepName: string }[]
   modelValue: boolean
 }>()
@@ -35,7 +35,7 @@ async function handleConfirm() {
   }
 
   try {
-    await forceComplete(props.serialId, {
+    await forceComplete(props.partId, {
       reason: reason.value.trim() || undefined,
       userId: operatorId.value,
     })
@@ -61,7 +61,7 @@ function handleCancel() {
           Force Complete
         </h3>
         <p class="text-sm text-(--ui-text-muted)">
-          <span class="font-mono font-medium">{{ serialId }}</span> has
+          <span class="font-mono font-medium">{{ partId }}</span> has
           <span class="font-bold text-amber-600">{{ incompleteSteps.length }}</span>
           required step{{ incompleteSteps.length !== 1 ? 's' : '' }} incomplete — force complete anyway?
         </p>

@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
       throw new ValidationError('stepId is required')
     }
 
-    const { jobService, pathService, serialService, noteService } = getServices()
+    const { jobService, pathService, partService, noteService } = getServices()
     const jobs = jobService.listJobs()
 
     let foundJob: WorkQueueJob | null = null
@@ -24,16 +24,16 @@ export default defineEventHandler(async (event) => {
         for (const step of path.steps) {
           if (step.id !== stepId) continue
 
-          const serials = serialService.listSerialsByStepIndex(path.id, step.order)
+          const parts = partService.listPartsByStepIndex(path.id, step.order)
 
           const isFinalStep = step.order === totalSteps - 1
           const prevStep = step.order > 0 ? path.steps[step.order - 1] : undefined
           const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
 
-          // For non-first steps with zero serials, look up previous step's WIP count
-          if (step.order > 0 && serials.length === 0) {
-            const prevSerials = serialService.listSerialsByStepIndex(path.id, step.order - 1)
-            previousStepWipCount = prevSerials.length
+          // For non-first steps with zero parts, look up previous step's WIP count
+          if (step.order > 0 && parts.length === 0) {
+            const prevParts = partService.listPartsByStepIndex(path.id, step.order - 1)
+            previousStepWipCount = prevParts.length
           }
 
           foundJob = {
@@ -46,8 +46,8 @@ export default defineEventHandler(async (event) => {
             stepOrder: step.order,
             stepLocation: step.location,
             totalSteps,
-            serialIds: serials.map(s => s.id),
-            partCount: serials.length,
+            partIds: parts.map(s => s.id),
+            partCount: parts.length,
             previousStepId: prevStep?.id,
             previousStepName: prevStep?.name,
             nextStepId: nextStep?.id,

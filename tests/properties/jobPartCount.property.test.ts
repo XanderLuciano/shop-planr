@@ -1,8 +1,8 @@
 /**
  * Property 1: Job Part Count Invariant
  *
- * For any Job with any number of Paths, after any sequence of SN creation/advancement/completion,
- * the Job's total part count equals the sum of SN counts across all Paths.
+ * For any Job with any number of Paths, after any sequence of part creation/advancement/completion,
+ * the Job's total part count equals the sum of part counts across all Paths.
  *
  * **Validates: Requirements 1.4, 7.5**
  */
@@ -13,14 +13,14 @@ import { resolve } from 'path'
 import { runMigrations } from '../../server/repositories/sqlite/index'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
-import { SQLiteSerialRepository } from '../../server/repositories/sqlite/serialRepository'
+import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
 import { SQLiteCertRepository } from '../../server/repositories/sqlite/certRepository'
 import { SQLiteAuditRepository } from '../../server/repositories/sqlite/auditRepository'
 import { createJobService } from '../../server/services/jobService'
 import { createPathService } from '../../server/services/pathService'
-import { createSerialService } from '../../server/services/serialService'
+import { createPartService } from '../../server/services/partService'
 import { createAuditService } from '../../server/services/auditService'
-import { createSequentialSnGenerator } from '../../server/utils/idGenerator'
+import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
 
 function createTestDb() {
   const db = new Database(':memory:')
@@ -35,31 +35,31 @@ function setupServices(db: Database.default.Database) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
-    serials: new SQLiteSerialRepository(db),
+    parts: new SQLitePartRepository(db),
     certs: new SQLiteCertRepository(db),
     audit: new SQLiteAuditRepository(db)
   }
 
-  const snGenerator = createSequentialSnGenerator({
+  const partIdGenerator = createSequentialPartIdGenerator({
     getCounter: () => {
-      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('sn') as { value: number } | undefined
+      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
       return row?.value ?? 0
     },
     setCounter: (v: number) => {
-      db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('sn', v)
+      db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
     }
   })
 
   const auditService = createAuditService({ audit: repos.audit })
-  const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, serials: repos.serials })
-  const pathService = createPathService({ paths: repos.paths, serials: repos.serials })
-  const serialService = createSerialService(
-    { serials: repos.serials, paths: repos.paths, certs: repos.certs },
+  const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts })
+  const pathService = createPathService({ paths: repos.paths, parts: repos.parts })
+  const partService = createPartService(
+    { parts: repos.parts, paths: repos.paths, certs: repos.certs },
     auditService,
-    snGenerator
+    partIdGenerator
   )
 
-  return { jobService, pathService, serialService, repos }
+  return { jobService, pathService, partService, repos }
 }
 
 describe('Property 1: Job Part Count Invariant', () => {
@@ -69,21 +69,21 @@ describe('Property 1: Job Part Count Invariant', () => {
     if (db) db.close()
   })
 
-  it('job part count equals sum of SN counts across all paths after any sequence of operations', () => {
+  it('job part count equals sum of part counts across all paths after any sequence of operations', () => {
     fc.assert(
       fc.property(
         // Generate 1-3 paths, each with 1-5 steps
         fc.array(
           fc.record({
             stepCount: fc.integer({ min: 1, max: 5 }),
-            snQuantity: fc.integer({ min: 1, max: 20 }),
+            partQuantity: fc.integer({ min: 1, max: 20 }),
             advanceCount: fc.integer({ min: 0, max: 10 })
           }),
           { minLength: 1, maxLength: 3 }
         ),
         (pathConfigs) => {
           db = createTestDb()
-          const { jobService, pathService, serialService } = setupServices(db)
+          const { jobService, pathService, partService } = setupServices(db)
 
           // Create a job
           const job = jobService.createJob({ name: 'Test Job', goalQuantity: 100 })
@@ -98,34 +98,34 @@ describe('Property 1: Job Part Count Invariant', () => {
             const path = pathService.createPath({
               jobId: job.id,
               name: `Path ${pathIds.length}`,
-              goalQuantity: config.snQuantity,
+              goalQuantity: config.partQuantity,
               steps
             })
             pathIds.push(path.id)
 
-            // Create serials on this path
-            const serials = serialService.batchCreateSerials(
-              { jobId: job.id, pathId: path.id, quantity: config.snQuantity },
+            // Create parts on this path
+            const parts = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: config.partQuantity },
               'user_test'
             )
 
-            // Advance some serials randomly
-            const advanceable = Math.min(config.advanceCount, serials.length)
+            // Advance some parts randomly
+            const advanceable = Math.min(config.advanceCount, parts.length)
             for (let i = 0; i < advanceable; i++) {
               try {
-                serialService.advanceSerial(serials[i].id, 'user_test')
+                partService.advancePart(parts[i].id, 'user_test')
               } catch {
-                // Serial may already be completed — that's fine
+                // Part may already be completed — that's fine
               }
             }
           }
 
-          // ASSERT: jobService.getJobPartCount === sum of serials across all paths
+          // ASSERT: jobService.getJobPartCount === sum of parts across all paths
           const jobPartCount = jobService.getJobPartCount(job.id)
 
           let sumAcrossPaths = 0
           for (const pathId of pathIds) {
-            sumAcrossPaths += serialService.listSerialsByPath(pathId).length
+            sumAcrossPaths += partService.listPartsByPath(pathId).length
           }
 
           expect(jobPartCount).toBe(sumAcrossPaths)

@@ -65,7 +65,7 @@ function depIcon(depType?: string) {
       <!-- Optional label -->
       <span v-if="getProcessStep(step.stepId)?.optional" class="text-[9px] text-(--ui-text-muted) italic">Optional</span>
       <div class="mt-1 flex items-center gap-1 text-[10px]">
-        <span class="font-bold text-(--ui-text-highlighted)">{{ step.serialCount }}</span>
+        <span class="font-bold text-(--ui-text-highlighted)">{{ step.partCount }}</span>
         <span class="text-(--ui-text-muted)">at ·</span>
         <span class="text-green-600 dark:text-green-400">{{ step.completedCount }} done</span>
       </div>

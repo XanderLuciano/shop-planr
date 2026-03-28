@@ -1,14 +1,14 @@
 /**
  * Property 3: Deferred Step Blocks Normal Completion
  *
- * For any serial with deferred required steps, verify normal completion
+ * For any part with deferred required steps, verify normal completion
  * is rejected (canComplete returns false).
  *
  * **Validates: Requirements 4.7, 11.7**
  */
 import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
-import type { SnStepStatusValue } from '../../server/types/domain'
+import type { PartStepStatusValue } from '../../server/types/domain'
 
 interface StepConfig {
   id: string
@@ -17,7 +17,7 @@ interface StepConfig {
 
 interface StepStatusRecord {
   stepId: string
-  status: SnStepStatusValue
+  status: PartStepStatusValue
 }
 
 /**
@@ -44,7 +44,7 @@ function canComplete(
 }
 
 describe('Property 3: Deferred Step Blocks Normal Completion', () => {
-  it('any serial with at least one deferred required step cannot complete normally', () => {
+  it('any part with at least one deferred required step cannot complete normally', () => {
     fc.assert(
       fc.property(
         // totalSteps: 2..10

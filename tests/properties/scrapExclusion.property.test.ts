@@ -21,7 +21,7 @@ function computeProgressPercent(goalQuantity: number, completedCount: number, sc
 }
 
 describe('Property 1: Scrap Exclusion from Progress', () => {
-  it('progressPercent equals completedCount / (goalQuantity - scrappedCount) * 100 for any mix of serial statuses', () => {
+  it('progressPercent equals completedCount / (goalQuantity - scrappedCount) * 100 for any mix of part statuses', () => {
     fc.assert(
       fc.property(
         // goalQuantity: 1..100

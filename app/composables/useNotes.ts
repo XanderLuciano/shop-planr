@@ -10,7 +10,7 @@ export function useNotes() {
     jobId: string
     pathId: string
     stepId: string
-    serialIds: string[]
+    partIds: string[]
     text: string
     userId: string
   }): Promise<StepNote> {
@@ -31,11 +31,11 @@ export function useNotes() {
     }
   }
 
-  async function fetchNotesForSerial(serialId: string): Promise<StepNote[]> {
+  async function fetchNotesForPart(partId: string): Promise<StepNote[]> {
     loading.value = true
     error.value = null
     try {
-      const result = await $fetch<StepNote[]>(`/api/notes/serial/${serialId}`)
+      const result = await $fetch<StepNote[]>(`/api/notes/part/${partId}`)
       notes.value = result
       return result
     } catch (e: any) {
@@ -66,7 +66,7 @@ export function useNotes() {
     loading: readonly(loading),
     error: readonly(error),
     createNote,
-    fetchNotesForSerial,
+    fetchNotesForPart,
     fetchNotesForStep
   }
 }

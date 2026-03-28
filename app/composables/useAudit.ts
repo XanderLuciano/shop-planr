@@ -8,7 +8,7 @@ const error = ref<string | null>(null)
 export interface AuditFilters {
   action?: AuditAction
   userId?: string
-  serialId?: string
+  partId?: string
   jobId?: string
   startDate?: string
   endDate?: string
@@ -28,7 +28,7 @@ export function useAudit() {
       if (options?.offset) params.set('offset', String(options.offset))
       if (options?.filters?.action) params.set('action', options.filters.action)
       if (options?.filters?.userId) params.set('userId', options.filters.userId)
-      if (options?.filters?.serialId) params.set('serialId', options.filters.serialId)
+      if (options?.filters?.partId) params.set('partId', options.filters.partId)
       if (options?.filters?.jobId) params.set('jobId', options.filters.jobId)
       if (options?.filters?.startDate) params.set('startDate', options.filters.startDate)
       if (options?.filters?.endDate) params.set('endDate', options.filters.endDate)
@@ -48,8 +48,8 @@ export function useAudit() {
     }
   }
 
-  async function fetchSerialAudit(serialId: string): Promise<AuditEntry[]> {
-    return await $fetch<AuditEntry[]>(`/api/audit/serial/${serialId}`)
+  async function fetchPartAudit(partId: string): Promise<AuditEntry[]> {
+    return await $fetch<AuditEntry[]>(`/api/audit/part/${partId}`)
   }
 
   return {
@@ -57,6 +57,6 @@ export function useAudit() {
     loading: readonly(loading),
     error: readonly(error),
     fetchEntries,
-    fetchSerialAudit,
+    fetchPartAudit,
   }
 }

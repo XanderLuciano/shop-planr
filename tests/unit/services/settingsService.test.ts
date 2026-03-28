@@ -70,7 +70,7 @@ describe('SettingsService', () => {
           pushEnabled: true
         },
         jiraFieldMappings: [],
-        pageToggles: { jobs: true, serials: true, parts: true, queue: true, templates: true, bom: true, certs: true, jira: true, audit: true },
+        pageToggles: { jobs: true, partsBrowser: true, parts: true, queue: true, templates: true, bom: true, certs: true, jira: true, audit: true },
         updatedAt: '2024-01-01T00:00:00.000Z'
       }
       settingsRepo.upsert(dbSettings)
@@ -100,7 +100,7 @@ describe('SettingsService', () => {
       const toggles = settings.pageToggles
 
       expect(Object.keys(toggles).sort()).toEqual(
-        ['audit', 'bom', 'certs', 'jira', 'jobs', 'parts', 'queue', 'serials', 'templates']
+        ['audit', 'bom', 'certs', 'jira', 'jobs', 'parts', 'partsBrowser', 'queue', 'templates']
       )
       expect(Object.values(toggles).every(v => v === true)).toBe(true)
     })
@@ -117,14 +117,14 @@ describe('SettingsService', () => {
           pushEnabled: false
         },
         jiraFieldMappings: [],
-        pageToggles: { jobs: false, serials: false, parts: true, queue: true, templates: true, bom: false, certs: true, jira: true, audit: false },
+        pageToggles: { jobs: false, partsBrowser: false, parts: true, queue: true, templates: true, bom: false, certs: true, jira: true, audit: false },
         updatedAt: '2024-01-01T00:00:00.000Z'
       }
       settingsRepo.upsert(dbSettings)
 
       const settings = service.getSettings()
       expect(settings.pageToggles.jobs).toBe(false)
-      expect(settings.pageToggles.serials).toBe(false)
+      expect(settings.pageToggles.partsBrowser).toBe(false)
       expect(settings.pageToggles.parts).toBe(true)
       expect(settings.pageToggles.bom).toBe(false)
       expect(settings.pageToggles.audit).toBe(false)
@@ -188,14 +188,14 @@ describe('SettingsService', () => {
           pageToggles: { jobs: false, jira: false }
         })
 
-        // Second: disable only serials — jobs and jira should stay false
+        // Second: disable only partsBrowser — jobs and jira should stay false
         const updated = service.updateSettings({
-          pageToggles: { serials: false }
+          pageToggles: { partsBrowser: false }
         })
 
         expect(updated.pageToggles.jobs).toBe(false)
         expect(updated.pageToggles.jira).toBe(false)
-        expect(updated.pageToggles.serials).toBe(false)
+        expect(updated.pageToggles.partsBrowser).toBe(false)
         // Untouched keys remain true (defaults)
         expect(updated.pageToggles.parts).toBe(true)
         expect(updated.pageToggles.queue).toBe(true)
@@ -216,20 +216,20 @@ describe('SettingsService', () => {
         expect((updated.pageToggles as any).dashboard).toBeUndefined()
         // All valid keys still present
         expect(Object.keys(updated.pageToggles).sort()).toEqual(
-          ['audit', 'bom', 'certs', 'jira', 'jobs', 'parts', 'queue', 'serials', 'templates']
+          ['audit', 'bom', 'certs', 'jira', 'jobs', 'parts', 'partsBrowser', 'queue', 'templates']
         )
       })
 
       it('non-boolean values are rejected and ignored', () => {
         const updated = service.updateSettings({
-          pageToggles: { jobs: 'no', serials: 0, parts: null, queue: false } as any
+          pageToggles: { jobs: 'no', partsBrowser: 0, parts: null, queue: false } as any
         })
 
         // Only the valid boolean (queue: false) should be applied
         expect(updated.pageToggles.queue).toBe(false)
         // Non-boolean values should be ignored — keys keep defaults
         expect(updated.pageToggles.jobs).toBe(true)
-        expect(updated.pageToggles.serials).toBe(true)
+        expect(updated.pageToggles.partsBrowser).toBe(true)
         expect(updated.pageToggles.parts).toBe(true)
       })
 

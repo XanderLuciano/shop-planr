@@ -7,7 +7,7 @@ interface AuditRow {
   action: string
   user_id: string
   timestamp: string
-  serial_id: string | null
+  part_id: string | null
   cert_id: string | null
   job_id: string | null
   path_id: string | null
@@ -24,7 +24,7 @@ function rowToDomain(row: AuditRow): AuditEntry {
     action: row.action as AuditEntry['action'],
     userId: row.user_id,
     timestamp: row.timestamp,
-    serialId: row.serial_id ?? undefined,
+    partId: row.part_id ?? undefined,
     certId: row.cert_id ?? undefined,
     jobId: row.job_id ?? undefined,
     pathId: row.path_id ?? undefined,
@@ -45,14 +45,14 @@ export class SQLiteAuditRepository implements AuditRepository {
 
   create(entry: AuditEntry): AuditEntry {
     this.db.prepare(`
-      INSERT INTO audit_entries (id, action, user_id, timestamp, serial_id, cert_id, job_id, path_id, step_id, from_step_id, to_step_id, batch_quantity, metadata)
+      INSERT INTO audit_entries (id, action, user_id, timestamp, part_id, cert_id, job_id, path_id, step_id, from_step_id, to_step_id, batch_quantity, metadata)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       entry.id,
       entry.action,
       entry.userId,
       entry.timestamp,
-      entry.serialId ?? null,
+      entry.partId ?? null,
       entry.certId ?? null,
       entry.jobId ?? null,
       entry.pathId ?? null,
@@ -65,11 +65,16 @@ export class SQLiteAuditRepository implements AuditRepository {
     return entry
   }
 
-  listBySerialId(serialId: string): AuditEntry[] {
+  listByPartId(partId: string): AuditEntry[] {
     const rows = this.db.prepare(
-      'SELECT * FROM audit_entries WHERE serial_id = ? ORDER BY timestamp ASC'
-    ).all(serialId) as AuditRow[]
+      'SELECT * FROM audit_entries WHERE part_id = ? ORDER BY timestamp ASC'
+    ).all(partId) as AuditRow[]
     return rows.map(rowToDomain)
+  }
+
+  /** @deprecated Use `listByPartId` instead. Backward-compatible alias. */
+  listBySerialId(serialId: string): AuditEntry[] {
+    return this.listByPartId(serialId)
   }
 
   listByJobId(jobId: string): AuditEntry[] {

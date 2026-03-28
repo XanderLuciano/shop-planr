@@ -3,7 +3,7 @@ import type { StepNote } from '../../types/domain'
 export interface NoteRepository {
   create(note: StepNote): StepNote
   getById(id: string): StepNote | null
-  listBySerialId(serialId: string): StepNote[]
+  listByPartId(partId: string): StepNote[]
   listByStepId(stepId: string): StepNote[]
   listByJobId(jobId: string): StepNote[]
 }

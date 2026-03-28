@@ -1,6 +1,6 @@
 import type { BomRepository } from '../repositories/interfaces/bomRepository'
 import type { BomVersionRepository } from '../repositories/interfaces/bomVersionRepository'
-import type { SerialRepository } from '../repositories/interfaces/serialRepository'
+import type { PartRepository } from '../repositories/interfaces/partRepository'
 import type { AuditService } from './auditService'
 import type { BOM, BomVersion } from '../types/domain'
 import type { CreateBomInput, EditBomInput } from '../types/api'
@@ -11,7 +11,7 @@ import { NotFoundError } from '../utils/errors'
 
 export function createBomService(repos: {
   bom: BomRepository
-  serials: SerialRepository
+  parts: PartRepository
   bomVersions?: BomVersionRepository
 }, auditService?: AuditService) {
   return {
@@ -89,8 +89,8 @@ export function createBomService(repos: {
         let totalInProgress = 0
 
         for (const jobId of entry.contributingJobIds) {
-          const total = repos.serials.countByJobId(jobId)
-          const completed = repos.serials.countCompletedByJobId(jobId)
+          const total = repos.parts.countByJobId(jobId)
+          const completed = repos.parts.countCompletedByJobId(jobId)
           totalCompleted += completed
           totalInProgress += (total - completed)
         }

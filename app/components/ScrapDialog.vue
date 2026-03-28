@@ -2,7 +2,7 @@
 import type { ScrapReason } from '~/server/types/domain'
 
 const props = defineProps<{
-  serialId: string
+  partId: string
   modelValue: boolean
 }>()
 
@@ -11,7 +11,7 @@ const emit = defineEmits<{
   'scrapped': []
 }>()
 
-const { scrapSerial, loading, error } = useLifecycle()
+const { scrapPart, loading, error } = useLifecycle()
 const { operatorId } = useOperatorIdentity()
 
 const scrapReasons: { label: string, value: ScrapReason }[] = [
@@ -54,7 +54,7 @@ async function handleConfirm() {
   }
 
   try {
-    await scrapSerial(props.serialId, {
+    await scrapPart(props.partId, {
       reason: selectedReason.value,
       explanation: selectedReason.value === 'other' ? explanation.value.trim() : undefined,
       userId: operatorId.value,
@@ -78,10 +78,10 @@ function handleCancel() {
     <template #content>
       <div class="p-6 space-y-4">
         <h3 class="text-lg font-semibold text-(--ui-text-highlighted)">
-          Scrap Serial Number
+          Scrap Part
         </h3>
         <p class="text-sm text-(--ui-text-muted)">
-          This will permanently remove <span class="font-mono font-medium">{{ serialId }}</span> from active production.
+          This will permanently remove <span class="font-mono font-medium">{{ partId }}</span> from active production.
         </p>
 
         <div>

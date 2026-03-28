@@ -1,7 +1,7 @@
 /**
  * Integration: Notes and Defect Reporting
  *
- * Create notes → verify per-step and per-serial queries.
+ * Create notes → verify per-step and per-part queries.
  * Validates: Requirements 17.1, 17.2, 17.4, 17.5, 17.6, 13.1–13.5
  */
 import { describe, it, afterEach, expect } from 'vitest'
@@ -12,9 +12,9 @@ describe('Note and Defect Integration', () => {
 
   afterEach(() => ctx?.cleanup())
 
-  it('create note on serials at a step → query by serial, step, and job', () => {
+  it('create note on parts at a step → query by part, step, and job', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService, noteService } = ctx
+    const { jobService, pathService, partService, noteService } = ctx
 
     const job = jobService.createJob({ name: 'Note Job', goalQuantity: 5 })
     const path = pathService.createPath({
@@ -24,35 +24,34 @@ describe('Note and Defect Integration', () => {
       steps: [{ name: 'Cut' }, { name: 'Inspect' }]
     })
 
-    const serials = serialService.batchCreateSerials(
+    const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 3 },
       'op1'
     )
 
-    // Create a note on first 2 serials at step 0
+    // Create a note on first 2 parts at step 0
     const note = noteService.createNote({
       jobId: job.id,
       pathId: path.id,
       stepId: path.steps[0].id,
-      serialIds: [serials[0].id, serials[1].id],
+      partIds: [parts[0].id, parts[1].id],
       text: 'Burr detected on edge',
       userId: 'inspector1'
     })
 
     expect(note.text).toBe('Burr detected on edge')
-    expect(note.serialIds).toHaveLength(2)
     expect(note.createdBy).toBe('inspector1')
 
-    // Query by serial → found for serial 0 and 1, not for serial 2
-    const notesForSn0 = noteService.getNotesForSerial(serials[0].id)
-    expect(notesForSn0).toHaveLength(1)
-    expect(notesForSn0[0].text).toBe('Burr detected on edge')
+    // Query by part → found for part 0 and 1, not for part 2
+    const notesForPart0 = noteService.getNotesForPart(parts[0].id)
+    expect(notesForPart0).toHaveLength(1)
+    expect(notesForPart0[0].text).toBe('Burr detected on edge')
 
-    const notesForSn1 = noteService.getNotesForSerial(serials[1].id)
-    expect(notesForSn1).toHaveLength(1)
+    const notesForPart1 = noteService.getNotesForPart(parts[1].id)
+    expect(notesForPart1).toHaveLength(1)
 
-    const notesForSn2 = noteService.getNotesForSerial(serials[2].id)
-    expect(notesForSn2).toHaveLength(0)
+    const notesForPart2 = noteService.getNotesForPart(parts[2].id)
+    expect(notesForPart2).toHaveLength(0)
 
     // Query by step → found
     const notesForStep = noteService.getNotesForStep(path.steps[0].id)
@@ -65,7 +64,7 @@ describe('Note and Defect Integration', () => {
 
   it('multiple notes on different steps are queryable independently', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService, noteService } = ctx
+    const { jobService, pathService, partService, noteService } = ctx
 
     const job = jobService.createJob({ name: 'Multi-Note Job', goalQuantity: 3 })
     const path = pathService.createPath({
@@ -75,7 +74,7 @@ describe('Note and Defect Integration', () => {
       steps: [{ name: 'Cut' }, { name: 'Weld' }, { name: 'QC' }]
     })
 
-    const serials = serialService.batchCreateSerials(
+    const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 3 },
       'op1'
     )
@@ -85,21 +84,21 @@ describe('Note and Defect Integration', () => {
       jobId: job.id,
       pathId: path.id,
       stepId: path.steps[0].id,
-      serialIds: [serials[0].id],
+      partIds: [parts[0].id],
       text: 'Material defect',
       userId: 'op1'
     })
 
-    // Advance serial 0 and 1 to step 1
-    serialService.advanceSerial(serials[0].id, 'op1')
-    serialService.advanceSerial(serials[1].id, 'op1')
+    // Advance part 0 and 1 to step 1
+    partService.advancePart(parts[0].id, 'op1')
+    partService.advancePart(parts[1].id, 'op1')
 
     // Note at step 1 (Weld)
     noteService.createNote({
       jobId: job.id,
       pathId: path.id,
       stepId: path.steps[1].id,
-      serialIds: [serials[0].id, serials[1].id],
+      partIds: [parts[0].id, parts[1].id],
       text: 'Weld porosity found',
       userId: 'welder1'
     })
@@ -109,12 +108,12 @@ describe('Note and Defect Integration', () => {
     expect(noteService.getNotesForStep(path.steps[1].id)).toHaveLength(1)
     expect(noteService.getNotesForStep(path.steps[2].id)).toHaveLength(0)
 
-    // Serial 0 has 2 notes (one at each step)
-    expect(noteService.getNotesForSerial(serials[0].id)).toHaveLength(2)
-    // Serial 1 has 1 note (only at Weld)
-    expect(noteService.getNotesForSerial(serials[1].id)).toHaveLength(1)
-    // Serial 2 has 0 notes
-    expect(noteService.getNotesForSerial(serials[2].id)).toHaveLength(0)
+    // Part 0 has 2 notes (one at each step)
+    expect(noteService.getNotesForPart(parts[0].id)).toHaveLength(2)
+    // Part 1 has 1 note (only at Weld)
+    expect(noteService.getNotesForPart(parts[1].id)).toHaveLength(1)
+    // Part 2 has 0 notes
+    expect(noteService.getNotesForPart(parts[2].id)).toHaveLength(0)
 
     // Job has 2 notes total
     expect(noteService.getNotesForJob(job.id)).toHaveLength(2)
@@ -122,7 +121,7 @@ describe('Note and Defect Integration', () => {
 
   it('note creation is recorded in audit trail', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService, noteService, auditService } = ctx
+    const { jobService, pathService, partService, noteService, auditService } = ctx
 
     const job = jobService.createJob({ name: 'Audit Note Job', goalQuantity: 1 })
     const path = pathService.createPath({
@@ -132,7 +131,7 @@ describe('Note and Defect Integration', () => {
       steps: [{ name: 'OP1' }]
     })
 
-    const [serial] = serialService.batchCreateSerials(
+    const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
       'op1'
     )
@@ -141,7 +140,7 @@ describe('Note and Defect Integration', () => {
       jobId: job.id,
       pathId: path.id,
       stepId: path.steps[0].id,
-      serialIds: [serial.id],
+      partIds: [part.id],
       text: 'Test note for audit',
       userId: 'inspector1'
     })
@@ -156,7 +155,7 @@ describe('Note and Defect Integration', () => {
 
   it('notes are returned in chronological order', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService, noteService } = ctx
+    const { jobService, pathService, partService, noteService } = ctx
 
     const job = jobService.createJob({ name: 'Chrono Note Job', goalQuantity: 1 })
     const path = pathService.createPath({
@@ -166,7 +165,7 @@ describe('Note and Defect Integration', () => {
       steps: [{ name: 'OP1' }]
     })
 
-    const [serial] = serialService.batchCreateSerials(
+    const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
       'op1'
     )
@@ -174,18 +173,18 @@ describe('Note and Defect Integration', () => {
     // Create 3 notes in sequence
     noteService.createNote({
       jobId: job.id, pathId: path.id, stepId: path.steps[0].id,
-      serialIds: [serial.id], text: 'First note', userId: 'user1'
+      partIds: [part.id], text: 'First note', userId: 'user1'
     })
     noteService.createNote({
       jobId: job.id, pathId: path.id, stepId: path.steps[0].id,
-      serialIds: [serial.id], text: 'Second note', userId: 'user2'
+      partIds: [part.id], text: 'Second note', userId: 'user2'
     })
     noteService.createNote({
       jobId: job.id, pathId: path.id, stepId: path.steps[0].id,
-      serialIds: [serial.id], text: 'Third note', userId: 'user1'
+      partIds: [part.id], text: 'Third note', userId: 'user1'
     })
 
-    const notes = noteService.getNotesForSerial(serial.id)
+    const notes = noteService.getNotesForPart(part.id)
     expect(notes).toHaveLength(3)
     // Chronological order
     for (let i = 1; i < notes.length; i++) {

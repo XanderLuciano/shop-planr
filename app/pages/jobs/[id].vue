@@ -33,7 +33,7 @@ const error = ref('')
 const activeTab = ref('routing')
 const tabs = [
   { label: 'Job Routing', value: 'routing', icon: 'i-lucide-route' },
-  { label: 'Serial Numbers', value: 'serials', icon: 'i-lucide-hash' },
+  { label: 'Parts', value: 'parts', icon: 'i-lucide-hash' },
 ]
 
 // Path distributions keyed by path ID
@@ -207,14 +207,14 @@ function onAdvancementModeUpdated() {
   loadJob()
 }
 
-function getPathSerialCount(pathId: string): number {
+function getPathPartCount(pathId: string): number {
   const dist = distributions.value[pathId]
   if (!dist) return 0
-  return dist.reduce((sum, d) => sum + d.serialCount, 0)
+  return dist.reduce((sum, d) => sum + d.partCount, 0)
 }
 
-const totalCompleted = computed(() => progress.value?.completedSerials ?? 0)
-const totalInProgress = computed(() => progress.value?.inProgressSerials ?? 0)
+const totalCompleted = computed(() => progress.value?.completedParts ?? 0)
+const totalInProgress = computed(() => progress.value?.inProgressParts ?? 0)
 
 async function onApplyTemplate() {
   if (!selectedTemplateId.value) return
@@ -334,8 +334,8 @@ onMounted(() => {
           <div class="flex gap-3 text-xs text-(--ui-text-muted)">
             <span>{{ totalCompleted }} completed</span>
             <span>{{ totalInProgress }} in progress</span>
-            <span v-if="progress.scrappedSerials">{{ progress.scrappedSerials }} scrapped</span>
-            <span>{{ progress.totalSerials }} total SNs</span>
+            <span v-if="progress.scrappedParts">{{ progress.scrappedParts }} scrapped</span>
+            <span>{{ progress.totalParts }} total parts</span>
           </div>
         </div>
       </div>
@@ -450,7 +450,7 @@ onMounted(() => {
                 <PathDeleteButton
                   :path-id="p.id"
                   :path-name="p.name"
-                  :serial-count="getPathSerialCount(p.id)"
+                  :part-count="getPathPartCount(p.id)"
                   @deleted="onPathDeleted"
                 />
                 <UButton icon="i-lucide-pencil" size="xs" variant="ghost" color="neutral" @click="startEditPath(p.id)" />
@@ -500,7 +500,7 @@ onMounted(() => {
                 </div>
                 <div v-if="showNoteFormStep" class="p-2 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/30">
                   <StepNoteForm
-                    :job-id="jobId" :path-id="p.id" :step-id="showNoteFormStep" :serial-ids="[]"
+                    :job-id="jobId" :path-id="p.id" :step-id="showNoteFormStep" :part-ids="[]"
                     :jira-ticket-key="job?.jiraTicketKey" :jira-push-enabled="jiraPushAvailable"
                     @created="onNoteCreated(p.id)"
                   />
@@ -512,9 +512,9 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- Serial Numbers Tab -->
-      <div v-if="activeTab === 'serials'">
-        <JobSerialNumbersTab :job-id="jobId" :paths="paths" :goal-quantity="job.goalQuantity" />
+      <!-- Parts Tab -->
+      <div v-if="activeTab === 'parts'">
+        <JobPartsTab :job-id="jobId" :paths="paths" :goal-quantity="job.goalQuantity" />
       </div>
     </template>
   </div>

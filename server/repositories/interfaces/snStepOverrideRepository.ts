@@ -1,10 +1,2 @@
-import type { SnStepOverride } from '../../types/domain'
-
-export interface SnStepOverrideRepository {
-  create(override: SnStepOverride): SnStepOverride
-  createBatch(overrides: SnStepOverride[]): SnStepOverride[]
-  getBySerialAndStep(serialId: string, stepId: string): SnStepOverride | null
-  listBySerialId(serialId: string): SnStepOverride[]
-  listActiveBySerialId(serialId: string): SnStepOverride[]
-  update(id: string, partial: Partial<SnStepOverride>): SnStepOverride
-}
+/** @deprecated Use `./partStepOverrideRepository` instead. This file is a backward-compatible re-export. */
+export type { PartStepOverrideRepository as SnStepOverrideRepository, PartStepOverrideRepository } from './partStepOverrideRepository'

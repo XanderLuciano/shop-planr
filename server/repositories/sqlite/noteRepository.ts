@@ -21,7 +21,7 @@ function rowToDomain(row: NoteRow): StepNote {
     jobId: row.job_id,
     pathId: row.path_id,
     stepId: row.step_id,
-    serialIds: JSON.parse(row.serial_ids),
+    partIds: JSON.parse(row.serial_ids),
     text: row.text,
     createdBy: row.created_by,
     createdAt: row.created_at,
@@ -46,7 +46,7 @@ export class SQLiteNoteRepository implements NoteRepository {
       note.jobId,
       note.pathId,
       note.stepId,
-      JSON.stringify(note.serialIds),
+      JSON.stringify(note.partIds),
       note.text,
       note.createdBy,
       note.createdAt,
@@ -61,13 +61,13 @@ export class SQLiteNoteRepository implements NoteRepository {
     return row ? rowToDomain(row) : null
   }
 
-  listBySerialId(serialId: string): StepNote[] {
+  listByPartId(partId: string): StepNote[] {
     // Use json_each to search within the JSON array of serial_ids
     const rows = this.db.prepare(`
       SELECT DISTINCT sn.* FROM step_notes sn, json_each(sn.serial_ids) je
       WHERE je.value = ?
       ORDER BY sn.created_at ASC
-    `).all(serialId) as NoteRow[]
+    `).all(partId) as NoteRow[]
     return rows.map(rowToDomain)
   }
 
