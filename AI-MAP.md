@@ -168,7 +168,7 @@ Dependencies flow left-to-right only. All business logic lives in services. See 
 | Jobs list | `app/pages/jobs/index.vue` | Expandable table: jobs → paths → steps |
 | Job detail | `app/pages/jobs/[id].vue` | Tabbed: Job Routing (paths, steps, config) + Serial Numbers tab |
 | Job create | `app/pages/jobs/new.vue` | Dedicated job creation form via `JobCreationForm` component |
-| Job edit | `app/pages/jobs/[id]/edit.vue` | Edit existing job (paths, steps) via `JobCreationForm` component |
+| Job edit | `app/pages/jobs/edit/[id].vue` | Edit existing job (paths, steps) via `JobCreationForm` component |
 | Operator | `app/pages/operator.vue` | ~~Removed~~ — replaced by Parts View + Work Queue |
 | Assignees | `app/pages/assignees.vue` | ~~Removed~~ — subsumed by Work Queue |
 | Parts View | `app/pages/parts/index.vue` | All active parts grouped by job/step, click navigates to Step View |
