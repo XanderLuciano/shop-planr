@@ -9,4 +9,5 @@ export interface PathRepository {
   getStepById(stepId: string): ProcessStep | null
   updateStepAssignment(stepId: string, userId: string | null): ProcessStep
   updateStep(stepId: string, partial: Partial<ProcessStep>): ProcessStep
+  hasStepDependents(stepId: string): boolean
 }

@@ -13,7 +13,7 @@
 
 | Command | What it does |
 |---------|-------------|
-| `npm run test` | `vitest run` — single pass, all tests (759 tests, 128 files) |
+| `npm run test` | `vitest run` — single pass, all tests (820 tests, 142 files) |
 | `npm run test:watch` | `vitest` — watch mode |
 | `npx vitest run tests/properties` | Property tests only |
 | `npx vitest run tests/unit` | Unit tests only |
@@ -24,10 +24,11 @@
 ```
 tests/
   unit/
-    services/           → jobService, pathService, serialService, etc. (10 files)
+    services/           → jobService, pathService, serialService, reconcileSteps, etc. (11 files)
     utils/              → serialization, validation, idGenerator, errors, progressBar, services (6 files)
     composables/        → useBarcode, useViewFilters, useJobForm, workQueueSearch (4 files)
     components/         → SerialCreationPanel, serialNoteAdd, EndpointCard, DocsSidebar, JobEditNavigation (5 files)
+    repositories/       → hasStepDependents (1 file)
     repositories/sqlite/ → migrations (1 file)
   properties/
     jobPartCount.property.test.ts        → CP-1: Job part count invariant
@@ -55,6 +56,11 @@ tests/
     docsSearchScoping.property.test.ts → P7: Search result scoping (4 tests)
     docsSlugResolution.property.test.ts → P5: Slug resolution correctness (5 tests)
     editRouteToggle.property.test.ts → Edit route toggle inheritance (1 test)
+    stepIdPreservation.property.test.ts → FK-P1: Step ID preservation during reconciliation (1 test)
+    reconciliationCompleteness.property.test.ts → FK-P2: Count conservation (3 tests)
+    appendOnlyInserts.property.test.ts → FK-P3: Append-only inserts (3 tests)
+    sequentialOrderInvariant.property.test.ts → FK-P4: Sequential order invariant (1 test)
+    idempotentUpdate.property.test.ts → FK-P5: Idempotent update (1 test)
   integration/
     helpers.ts                           → createTestContext() with all services
     jobLifecycle.test.ts                 → Full job lifecycle (6 tests)
@@ -63,6 +69,7 @@ tests/
     progressTracking.test.ts             → Progress percentages + >100% (4 tests)
     operatorView.test.ts                 → Current/coming/backlog (4 tests)
     noteAndDefect.test.ts                → Step notes per-step/per-serial (4 tests)
+    fkSafePathUpdate.test.ts             → FK-safe path update: ID preservation, append, delete guard, idempotent (6 tests)
 ```
 
 Optional property tests (skipped for MVP):

@@ -8,6 +8,69 @@ import { generateId } from '../utils/idGenerator'
 import { assertNonEmpty, assertNonEmptyArray, assertPositive } from '../utils/validation'
 import { NotFoundError, ValidationError } from '../utils/errors'
 
+/** Input shape for steps provided by the client (no server-side ID). */
+export interface StepInput {
+  name: string
+  location?: string
+  optional?: boolean
+  dependencyType?: 'physical' | 'preferred' | 'completion_gate'
+}
+
+/** Result of reconciling existing steps with incoming step inputs. */
+export interface StepReconciliation {
+  toUpdate: ProcessStep[]
+  toInsert: ProcessStep[]
+  toDelete: string[]
+}
+
+/**
+ * Pure function (except for ID generation) that reconciles existing steps
+ * with incoming input steps by position index.
+ *
+ * - Positions 0..min(N,M)-1: reuse existing step ID → toUpdate
+ * - Positions beyond existing count: generate new ID → toInsert
+ * - Existing positions beyond input count: collect IDs → toDelete
+ * - All output steps get sequential order values 0..N-1
+ */
+export function reconcileSteps(
+  existingSteps: ProcessStep[],
+  inputSteps: StepInput[],
+): StepReconciliation {
+  const toUpdate: ProcessStep[] = []
+  const toInsert: ProcessStep[] = []
+  const toDelete: string[] = []
+
+  for (let i = 0; i < inputSteps.length; i++) {
+    const input = inputSteps[i]
+    if (i < existingSteps.length) {
+      toUpdate.push({
+        id: existingSteps[i].id,
+        name: input.name,
+        order: i,
+        location: input.location,
+        assignedTo: existingSteps[i].assignedTo,
+        optional: input.optional ?? false,
+        dependencyType: input.dependencyType ?? 'preferred',
+      })
+    } else {
+      toInsert.push({
+        id: generateId('step'),
+        name: input.name,
+        order: i,
+        location: input.location,
+        optional: input.optional ?? false,
+        dependencyType: input.dependencyType ?? 'preferred',
+      })
+    }
+  }
+
+  for (let i = inputSteps.length; i < existingSteps.length; i++) {
+    toDelete.push(existingSteps[i].id)
+  }
+
+  return { toUpdate, toInsert, toDelete }
+}
+
 export function createPathService(repos: {
   paths: PathRepository
   parts: PartRepository
@@ -74,14 +137,8 @@ export function createPathService(repos: {
       if (input.goalQuantity !== undefined) partial.goalQuantity = input.goalQuantity
       if (input.advancementMode !== undefined) partial.advancementMode = input.advancementMode
       if (input.steps !== undefined) {
-        partial.steps = input.steps.map((s, index) => ({
-          id: generateId('step'),
-          name: s.name,
-          order: index,
-          location: s.location,
-          optional: s.optional ?? false,
-          dependencyType: s.dependencyType ?? 'preferred',
-        }))
+        const { toUpdate, toInsert } = reconcileSteps(existing.steps, input.steps)
+        partial.steps = [...toUpdate, ...toInsert]
       }
 
       return repos.paths.update(id, partial)

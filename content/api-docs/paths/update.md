@@ -18,7 +18,9 @@ navigation:
 
 Updates an existing manufacturing path. This endpoint supports partial updates — only the fields included in the request body are modified; omitted fields retain their current values. You can update any combination of `name`, `goalQuantity`, `advancementMode`, and `steps` in a single request.
 
-When `steps` is included in the request body, the entire step sequence is replaced. Existing step IDs are discarded and new IDs are generated for every step in the replacement array. This is a full replacement, not a merge — if you want to add a step to an existing sequence, you must include all existing steps plus the new one in the `steps` array. Step `order` values are reassigned based on array index, just like during creation.
+When `steps` is included in the request body, the step sequence is reconciled with the existing steps using a position-based matching strategy that preserves step IDs. Steps at matching positions (0 through min(existing, new) - 1) are updated in place, keeping their original IDs and all foreign key references intact. Steps beyond the existing count are inserted with fresh IDs. Steps that existed beyond the new count are removed — but only if they have no associated data (certificates, notes, part statuses, or overrides). If a step marked for removal has associated data, the entire update is rejected with a 400 error.
+
+This means you can safely update step fields, append new steps, or remove unused steps without breaking FK references from `cert_attachments`, `step_notes`, `part_step_statuses`, or `part_step_overrides`. Step `order` values are reassigned based on array index, just like during creation.
 
 This endpoint is useful for adjusting production routes mid-run — renaming a path, changing the target quantity, switching advancement modes, or restructuring the step sequence when manufacturing requirements change.
 
@@ -39,7 +41,7 @@ All fields are optional. Include only the fields you want to change. An empty bo
 | `name` | `string` | No | The new name for the path. Must be a non-empty string if provided. Leading and trailing whitespace is trimmed. |
 | `goalQuantity` | `number` | No | The new target quantity for this path. Must be a positive integer greater than zero if provided. |
 | `advancementMode` | `"strict" \| "flexible" \| "per_step"` | No | The new advancement mode. Changes how serial numbers advance through steps on this path. |
-| `steps` | `object[]` | No | A complete replacement for the path's step sequence. Must contain at least one step if provided. Replaces all existing steps — new IDs are generated and order values are reassigned from array index. |
+| `steps` | `object[]` | No | A replacement for the path's step sequence. Must contain at least one step if provided. Steps are reconciled by position: existing step IDs are preserved for matched positions, new IDs are generated only for appended steps, and removed steps are deleted only if they have no associated data. |
 
 #### `steps[]` — Step Definition objects (when replacing steps)
 
@@ -71,7 +73,7 @@ Returned when the path is successfully updated. The response contains the comple
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `id` | `string` | Unique identifier for the step — new IDs if steps were replaced, existing IDs if steps were not updated |
+| `id` | `string` | Unique identifier for the step — preserved for steps at matched positions, new IDs only for appended steps |
 | `name` | `string` | Step name |
 | `order` | `number` | Zero-based position in the step sequence |
 | `location` | `string \| undefined` | Physical location, if set |
@@ -88,6 +90,7 @@ Returned when the request body contains invalid values. Validation is only appli
 | `name` is provided but empty | `"name is required"` |
 | `goalQuantity` is provided but zero or negative | `"goalQuantity must be greater than 0"` |
 | `steps` is provided but empty array | `"steps is required"` |
+| A removed step has associated data (certs, notes, statuses, overrides) | `"Cannot remove step because it has associated data (certificates, notes, part statuses, or overrides). Remove the associated data first, or keep the step."` |
 
 ### 404 Not Found
 
@@ -195,6 +198,8 @@ curl -X PUT http://localhost:3000/api/paths/path_xyz789 \
 
 ### Response — Replace step sequence
 
+Assuming the path previously had 3 steps (`step_001`, `step_002`, `step_003`), the first 3 positions preserve their original IDs and only the 4th step gets a new ID:
+
 ```json
 {
   "id": "path_xyz789",
@@ -204,7 +209,7 @@ curl -X PUT http://localhost:3000/api/paths/path_xyz789 \
   "advancementMode": "strict",
   "steps": [
     {
-      "id": "step_new01",
+      "id": "step_001",
       "name": "Laser Cutting",
       "order": 0,
       "location": "Bay 1",
@@ -212,7 +217,7 @@ curl -X PUT http://localhost:3000/api/paths/path_xyz789 \
       "dependencyType": "physical"
     },
     {
-      "id": "step_new02",
+      "id": "step_002",
       "name": "Deburring",
       "order": 1,
       "location": "Bay 3",
@@ -220,7 +225,7 @@ curl -X PUT http://localhost:3000/api/paths/path_xyz789 \
       "dependencyType": "preferred"
     },
     {
-      "id": "step_new03",
+      "id": "step_003",
       "name": "Surface Treatment",
       "order": 2,
       "location": "Bay 4",
@@ -262,7 +267,7 @@ curl -X PUT http://localhost:3000/api/paths/path_xyz789 \
   "advancementMode": "flexible",
   "steps": [
     {
-      "id": "step_new01",
+      "id": "step_001",
       "name": "Laser Cutting",
       "order": 0,
       "location": "Bay 1",
@@ -270,7 +275,7 @@ curl -X PUT http://localhost:3000/api/paths/path_xyz789 \
       "dependencyType": "physical"
     },
     {
-      "id": "step_new02",
+      "id": "step_002",
       "name": "Deburring",
       "order": 1,
       "location": "Bay 3",
@@ -278,7 +283,7 @@ curl -X PUT http://localhost:3000/api/paths/path_xyz789 \
       "dependencyType": "preferred"
     },
     {
-      "id": "step_new03",
+      "id": "step_003",
       "name": "Surface Treatment",
       "order": 2,
       "location": "Bay 4",
@@ -302,7 +307,9 @@ curl -X PUT http://localhost:3000/api/paths/path_xyz789 \
 ## Notes
 
 - This is a **partial update** endpoint. You do not need to send the full path object — only the fields you want to change. Fields not included in the request body are left untouched.
-- When `steps` is provided, the **entire step array is replaced**. All existing step IDs are discarded, new IDs are generated, and `order` values are reassigned from array index. Any `assignedTo` values on the old steps are lost. If you need to preserve step assignments, read the current path first and include the assignments in your update.
+- When `steps` is provided, steps are **reconciled by position**. Existing step IDs are preserved for matched positions (0 through min(existing, new) - 1), new IDs are generated only for appended steps, and removed steps are deleted only if they have no associated data. This preserves all foreign key references from `cert_attachments`, `step_notes`, `part_step_statuses`, and `part_step_overrides`.
+- **Removing steps with associated data is blocked.** If a step you're removing has certificates, notes, part statuses, or overrides attached, the entire update is rejected with a 400 error. Remove the associated data first, or keep the step in the sequence.
+- The `assignedTo` field on existing steps is preserved when steps are updated in place. New appended steps have no assignment.
 - The `jobId` field is **immutable** — it cannot be changed after creation. To move a path to a different job, you must delete it and create a new one.
 - Changing `advancementMode` does **not** retroactively affect serial numbers that have already advanced past steps. It only affects future advancement operations.
 - Changing `goalQuantity` does **not** affect existing serial numbers. If you reduce the goal below the number of already-created serials, the path will appear over-allocated.
