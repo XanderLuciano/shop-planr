@@ -18,8 +18,8 @@
 - [ ] A toolbar button with a "chevrons-up" icon and "Collapse All Jobs" tooltip is visible on the Jobs page
 - [ ] Clicking the button collapses every expanded job row, hiding all path sub-tables
 - [ ] The button is disabled when no jobs are currently expanded
-- [ ] Path expansion state within each job is preserved — re-expanding a job shows previously expanded paths
-- [ ] Cached path distribution data is not cleared on collapse
+- [ ] Re-expanding a job restores its default (collapsed) path state; previously expanded paths are reloaded as needed
+- [ ] Cached path distribution data may be cleared on collapse; re-expansion will fetch data again if needed
 
 ### Requirement 3: Expand All Paths
 **User Story**: As a shop floor user, I want to expand all paths within all jobs at once so I can see step-level distribution details across the entire job list without drilling into each path individually.
@@ -31,7 +31,7 @@
 - [ ] Step distribution data is lazy-loaded only for paths not already cached — previously fetched data is reused
 - [ ] Concurrent API requests are throttled (max 3 simultaneous) to avoid overwhelming the server
 - [ ] Paths that fail to load display gracefully with a "No steps defined" fallback instead of an error
-- [ ] The button is disabled when no jobs are expanded (and the expand-all-paths action would have no visible effect beyond what expand-all-jobs does)
+- [ ] The button is disabled when there are no jobs in the list (empty list)
 
 ### Requirement 4: Collapse All Paths
 **User Story**: As a shop floor user, I want to collapse all expanded paths at once so I can return to the job/path summary level without collapsing the jobs themselves.

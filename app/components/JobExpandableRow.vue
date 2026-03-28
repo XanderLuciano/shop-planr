@@ -37,7 +37,7 @@ const loading = ref(false)
 const expandedPathIds = ref<Set<string>>(new Set())
 const pathDistributions = ref<Record<string, StepDist[]>>({})
 const pathCompletedCounts = ref<Record<string, number>>({})
-const loadingPathId = ref<string | null>(null)
+const loadingPathIds = ref<Set<string>>(new Set())
 
 async function fetchPaths() {
   loading.value = true
@@ -63,7 +63,8 @@ async function togglePath(pathId: string) {
   emit('paths-expanded-change', { jobId: props.jobId, hasExpandedPaths: true })
 
   if (!pathDistributions.value[pathId]) {
-    loadingPathId.value = pathId
+    loadingPathIds.value.add(pathId)
+    loadingPathIds.value = new Set(loadingPathIds.value)
     try {
       const detail = await $fetch<{ distribution: StepDist[], completedCount?: number }>(`/api/paths/${pathId}`)
       pathDistributions.value[pathId] = detail.distribution ?? []
@@ -71,7 +72,8 @@ async function togglePath(pathId: string) {
     } catch {
       pathDistributions.value[pathId] = []
     } finally {
-      loadingPathId.value = null
+      loadingPathIds.value.delete(pathId)
+      loadingPathIds.value = new Set(loadingPathIds.value)
     }
   }
 }
@@ -89,7 +91,8 @@ async function onExpandAllPaths() {
     const batch = uncachedIds.slice(i, i + CONCURRENCY)
     const results = await Promise.allSettled(
       batch.map(async (pathId) => {
-        loadingPathId.value = pathId
+        loadingPathIds.value.add(pathId)
+        loadingPathIds.value = new Set(loadingPathIds.value)
         const detail = await $fetch<{ distribution: StepDist[], completedCount?: number }>(`/api/paths/${pathId}`)
         pathDistributions.value[pathId] = detail.distribution ?? []
         pathCompletedCounts.value[pathId] = detail.completedCount ?? 0
@@ -99,9 +102,10 @@ async function onExpandAllPaths() {
       if (results[j]!.status === 'rejected' && !pathDistributions.value[batch[j]!]) {
         pathDistributions.value[batch[j]!] = []
       }
+      loadingPathIds.value.delete(batch[j]!)
     }
+    loadingPathIds.value = new Set(loadingPathIds.value)
   }
-  loadingPathId.value = null
 }
 
 function onCollapseAllPaths() {
@@ -113,13 +117,13 @@ watch(() => props.expandAllPathsSignal, (newVal, oldVal) => {
   if (newVal > (oldVal ?? 0)) {
     onExpandAllPaths()
   }
-})
+}, { immediate: true })
 
 watch(() => props.collapseAllPathsSignal, (newVal, oldVal) => {
   if (newVal > (oldVal ?? 0)) {
     onCollapseAllPaths()
   }
-})
+}, { immediate: true })
 
 onMounted(() => {
   fetchPaths()
@@ -225,7 +229,7 @@ onMounted(() => {
             >
               <div class="pl-6 pr-2 py-2 bg-(--ui-bg-elevated)/30">
                 <div
-                  v-if="loadingPathId === path.id"
+                  v-if="loadingPathIds.has(path.id)"
                   class="flex items-center gap-2 text-xs text-(--ui-text-muted) py-1"
                 >
                   <UIcon

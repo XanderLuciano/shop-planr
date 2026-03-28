@@ -24,12 +24,14 @@ function expandAllJobs() {
 
 function collapseAllJobs() {
   expanded.value = {}
+  jobsWithExpandedPaths.value.clear()
 }
 
-function expandAllPaths() {
+async function expandAllPaths() {
   if (expanded.value !== true) {
     expanded.value = true
   }
+  await nextTick()
   expandAllPathsSignal.value++
 }
 
