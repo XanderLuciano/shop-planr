@@ -2,9 +2,9 @@
  * ID generation utilities for SHOP_ERP.
  *
  * - `generateId(prefix)` — creates unique IDs like "job_V1StGXR8_Z5j"
- * - `createSequentialSnGenerator()` — produces sequential serial numbers like "SN-00001"
+ * - `createSequentialPartIdGenerator()` — produces sequential part IDs like "part_00001"
  *
- * The sequential SN generator accepts get/set callbacks for the counter,
+ * The sequential part ID generator accepts get/set callbacks for the counter,
  * allowing the counter to be persisted in the database via a counters table.
  */
 
@@ -18,31 +18,31 @@ export function generateId(prefix: string): string {
   return `${prefix}_${nanoid(12)}`
 }
 
-export interface SnGeneratorOptions {
+export interface SequentialIdGeneratorOptions {
   /** Read the current counter value from persistence. */
   getCounter: () => number
   /** Write the updated counter value to persistence. */
   setCounter: (value: number) => void
-  /** Prefix before the zero-padded number. Default: "SN-" */
+  /** Prefix before the zero-padded number. Default: "part_" */
   prefix?: string
   /** Number of digits to zero-pad. Default: 5 */
   padLength?: number
 }
 
 /**
- * Create a sequential serial number generator backed by a persistent counter.
+ * Create a sequential part ID generator backed by a persistent counter.
  *
  * @example
- * const gen = createSequentialSnGenerator({
- *   getCounter: () => db.prepare('SELECT value FROM counters WHERE name = ?').get('sn')?.value ?? 0,
- *   setCounter: (v) => db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('sn', v),
+ * const gen = createSequentialPartIdGenerator({
+ *   getCounter: () => db.prepare('SELECT value FROM counters WHERE name = ?').get('part')?.value ?? 0,
+ *   setCounter: (v) => db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v),
  * })
- * gen.next()  // "SN-00001"
- * gen.next()  // "SN-00002"
- * gen.nextBatch(3)  // ["SN-00003", "SN-00004", "SN-00005"]
+ * gen.next()  // "part_00001"
+ * gen.next()  // "part_00002"
+ * gen.nextBatch(3)  // ["part_00003", "part_00004", "part_00005"]
  */
-export function createSequentialSnGenerator(options: SnGeneratorOptions) {
-  const prefix = options.prefix ?? 'SN-'
+export function createSequentialPartIdGenerator(options: SequentialIdGeneratorOptions) {
+  const prefix = options.prefix ?? 'part_'
   const padLength = options.padLength ?? 5
 
   function format(n: number): string {
@@ -50,7 +50,7 @@ export function createSequentialSnGenerator(options: SnGeneratorOptions) {
   }
 
   return {
-    /** Generate the next sequential serial number. */
+    /** Generate the next sequential part ID. */
     next(): string {
       const current = options.getCounter()
       const next = current + 1
@@ -58,7 +58,7 @@ export function createSequentialSnGenerator(options: SnGeneratorOptions) {
       return format(next)
     },
 
-    /** Generate a batch of sequential serial numbers. */
+    /** Generate a batch of sequential part IDs. */
     nextBatch(count: number): string[] {
       if (count <= 0) return []
       const current = options.getCounter()
@@ -71,3 +71,8 @@ export function createSequentialSnGenerator(options: SnGeneratorOptions) {
     }
   }
 }
+
+/**
+ * @deprecated Use createSequentialPartIdGenerator instead. Alias kept for backward compatibility during migration.
+ */
+export const createSequentialSnGenerator = createSequentialPartIdGenerator

@@ -4,7 +4,7 @@ import type { JobService } from './jobService'
 import type { PathService } from './pathService'
 import type { NoteService } from './noteService'
 import type { CertService } from './certService'
-import type { SerialService } from './serialService'
+import type { PartService } from './partService'
 import type { Job, JiraFieldMapping } from '../types/domain'
 import type { LinkJiraInput } from '../types/api'
 import { ValidationError } from '../utils/errors'
@@ -131,7 +131,7 @@ export function createJiraService(
     pathService?: PathService
     noteService?: NoteService
     certService?: CertService
-    serialService?: SerialService
+    partService?: PartService
   },
   fetchFn?: typeof fetch
 ) {
@@ -403,7 +403,7 @@ export function createJiraService(
           // Build header row
           const header = `|| Date || ${stepNames.join(' || ')} || Completed ||`
           // Build data row with counts
-          const counts = distribution.map(d => String(d.serialCount))
+          const counts = distribution.map(d => String(d.partCount))
           const dataRow = `| ${today} | ${counts.join(' | ')} | ${completedCount} |`
 
           tables.push(`*${path.name}*\n${header}\n${dataRow}`)
@@ -454,7 +454,7 @@ export function createJiraService(
           const completedCount = distribution.length > 0 ? distribution[0]!.completedCount : 0
           lines.push(`\n*${path.name}:*`)
           for (const step of distribution) {
-            lines.push(`- ${step.stepName}: ${step.serialCount} parts`)
+            lines.push(`- ${step.stepName}: ${step.partCount} parts`)
           }
           lines.push(`- Completed: ${completedCount}`)
         }
@@ -497,8 +497,8 @@ export function createJiraService(
         const step = path.steps.find(s => s.id === note.stepId)
         const stepName = step?.name ?? 'Unknown Step'
 
-        const snList = note.serialIds.join(', ')
-        const commentBody = `${stepName} - ${snList}: ${note.text}`
+        const partList = note.partIds.join(', ')
+        const commentBody = `${stepName} - ${partList}: ${note.text}`
 
         await jiraPost(`issue/${encodeURIComponent(job.jiraTicketKey)}/comment`, {
           body: commentBody
@@ -522,18 +522,18 @@ export function createJiraService(
         return { success: false, error: 'Job is not linked to a Jira ticket' }
       }
 
-      if (!deps?.serialService || !deps?.certService) {
+      if (!deps?.partService || !deps?.certService) {
         return { success: false, error: 'Required services not available' }
       }
 
       try {
         const progress = jobService.computeJobProgress(jobId)
-        const serials = deps.serialService.listSerialsByJob(jobId)
+        const parts = deps.partService.listPartsByJob(jobId)
 
-        // Collect unique cert IDs from all serials
+        // Collect unique cert IDs from all parts
         const certIdSet = new Set<string>()
-        for (const serial of serials) {
-          const attachments = deps.certService.getCertsForSerial(serial.id)
+        for (const part of parts) {
+          const attachments = deps.certService.getCertsForSerial(part.id)
           for (const att of attachments) {
             certIdSet.add(att.certId)
           }
@@ -553,8 +553,8 @@ export function createJiraService(
         const lines: string[] = [
           `*Job Completion Summary: ${job.name}*`,
           `Goal: ${progress.goalQuantity}`,
-          `Completed: ${progress.completedSerials}`,
-          `Total Serials: ${progress.totalSerials}`,
+          `Completed: ${progress.completedParts}`,
+          `Total Parts: ${progress.totalParts}`,
           `Progress: ${progress.progressPercent.toFixed(1)}%`
         ]
 

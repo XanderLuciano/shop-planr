@@ -2,6 +2,11 @@ import type { AuditRepository } from '../repositories/interfaces/auditRepository
 import type { AuditAction, AuditEntry } from '../types/domain'
 import { generateId } from '../utils/idGenerator'
 
+/** Helper: resolve partId from params that may use either partId or deprecated serialId */
+function resolvePartId(params: { partId?: string; serialId?: string }): string | undefined {
+  return params.partId ?? params.serialId
+}
+
 export function createAuditService(repos: { audit: AuditRepository }) {
   function createEntry(
     action: AuditAction,
@@ -18,7 +23,9 @@ export function createAuditService(repos: { audit: AuditRepository }) {
   return {
     recordCertAttachment(params: {
       userId: string
-      serialId: string
+      partId?: string
+      /** @deprecated Use `partId` instead. */
+      serialId?: string
       certId: string
       stepId: string
       jobId?: string
@@ -26,7 +33,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
     }): AuditEntry {
       return createEntry('cert_attached', {
         userId: params.userId,
-        serialId: params.serialId,
+        partId: resolvePartId(params),
         certId: params.certId,
         stepId: params.stepId,
         jobId: params.jobId,
@@ -34,13 +41,13 @@ export function createAuditService(repos: { audit: AuditRepository }) {
       })
     },
 
-    recordSerialCreation(params: {
+    recordPartCreation(params: {
       userId: string
       jobId: string
       pathId: string
       batchQuantity: number
     }): AuditEntry {
-      return createEntry('serial_created', {
+      return createEntry('part_created', {
         userId: params.userId,
         jobId: params.jobId,
         pathId: params.pathId,
@@ -48,17 +55,19 @@ export function createAuditService(repos: { audit: AuditRepository }) {
       })
     },
 
-    recordSerialAdvancement(params: {
+    recordPartAdvancement(params: {
       userId: string
-      serialId: string
+      partId?: string
+      /** @deprecated Use `partId` instead. */
+      serialId?: string
       jobId?: string
       pathId?: string
       fromStepId: string
       toStepId: string
     }): AuditEntry {
-      return createEntry('serial_advanced', {
+      return createEntry('part_advanced', {
         userId: params.userId,
-        serialId: params.serialId,
+        partId: resolvePartId(params),
         jobId: params.jobId,
         pathId: params.pathId,
         fromStepId: params.fromStepId,
@@ -66,16 +75,18 @@ export function createAuditService(repos: { audit: AuditRepository }) {
       })
     },
 
-    recordSerialCompletion(params: {
+    recordPartCompletion(params: {
       userId: string
-      serialId: string
+      partId?: string
+      /** @deprecated Use `partId` instead. */
+      serialId?: string
       jobId?: string
       pathId?: string
       fromStepId: string
     }): AuditEntry {
-      return createEntry('serial_completed', {
+      return createEntry('part_completed', {
         userId: params.userId,
-        serialId: params.serialId,
+        partId: resolvePartId(params),
         jobId: params.jobId,
         pathId: params.pathId,
         fromStepId: params.fromStepId
@@ -87,6 +98,8 @@ export function createAuditService(repos: { audit: AuditRepository }) {
       jobId: string
       pathId: string
       stepId: string
+      partId?: string
+      /** @deprecated Use `partId` instead. */
       serialId?: string
     }): AuditEntry {
       return createEntry('note_created', {
@@ -94,20 +107,22 @@ export function createAuditService(repos: { audit: AuditRepository }) {
         jobId: params.jobId,
         pathId: params.pathId,
         stepId: params.stepId,
-        serialId: params.serialId
+        partId: resolvePartId(params)
       })
     },
 
     recordStepSkipped(params: {
       userId: string
-      serialId: string
+      partId?: string
+      /** @deprecated Use `partId` instead. */
+      serialId?: string
       jobId?: string
       pathId?: string
       stepId: string
     }): AuditEntry {
       return createEntry('step_skipped', {
         userId: params.userId,
-        serialId: params.serialId,
+        partId: resolvePartId(params),
         jobId: params.jobId,
         pathId: params.pathId,
         stepId: params.stepId,
@@ -116,14 +131,16 @@ export function createAuditService(repos: { audit: AuditRepository }) {
 
     recordStepDeferred(params: {
       userId: string
-      serialId: string
+      partId?: string
+      /** @deprecated Use `partId` instead. */
+      serialId?: string
       jobId?: string
       pathId?: string
       stepId: string
     }): AuditEntry {
       return createEntry('step_deferred', {
         userId: params.userId,
-        serialId: params.serialId,
+        partId: resolvePartId(params),
         jobId: params.jobId,
         pathId: params.pathId,
         stepId: params.stepId,
@@ -132,15 +149,17 @@ export function createAuditService(repos: { audit: AuditRepository }) {
 
     recordScrap(params: {
       userId: string
-      serialId: string
+      partId?: string
+      /** @deprecated Use `partId` instead. */
+      serialId?: string
       jobId: string
       pathId: string
       stepId: string
       metadata: { reason: string; explanation?: string }
     }): AuditEntry {
-      return createEntry('serial_scrapped', {
+      return createEntry('part_scrapped', {
         userId: params.userId,
-        serialId: params.serialId,
+        partId: resolvePartId(params),
         jobId: params.jobId,
         pathId: params.pathId,
         stepId: params.stepId,
@@ -150,14 +169,16 @@ export function createAuditService(repos: { audit: AuditRepository }) {
 
     recordForceComplete(params: {
       userId: string
-      serialId: string
+      partId?: string
+      /** @deprecated Use `partId` instead. */
+      serialId?: string
       jobId: string
       pathId: string
       metadata: { reason?: string; incompleteStepIds: string[] }
     }): AuditEntry {
-      return createEntry('serial_force_completed', {
+      return createEntry('part_force_completed', {
         userId: params.userId,
-        serialId: params.serialId,
+        partId: resolvePartId(params),
         jobId: params.jobId,
         pathId: params.pathId,
         metadata: params.metadata
@@ -166,14 +187,16 @@ export function createAuditService(repos: { audit: AuditRepository }) {
 
     recordDeferredStepCompleted(params: {
       userId: string
-      serialId: string
+      partId?: string
+      /** @deprecated Use `partId` instead. */
+      serialId?: string
       jobId?: string
       pathId?: string
       stepId: string
     }): AuditEntry {
       return createEntry('deferred_step_completed', {
         userId: params.userId,
-        serialId: params.serialId,
+        partId: resolvePartId(params),
         jobId: params.jobId,
         pathId: params.pathId,
         stepId: params.stepId,
@@ -182,7 +205,9 @@ export function createAuditService(repos: { audit: AuditRepository }) {
 
     recordStepWaived(params: {
       userId: string
-      serialId: string
+      partId?: string
+      /** @deprecated Use `partId` instead. */
+      serialId?: string
       jobId?: string
       pathId?: string
       stepId: string
@@ -190,7 +215,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
     }): AuditEntry {
       return createEntry('step_waived', {
         userId: params.userId,
-        serialId: params.serialId,
+        partId: resolvePartId(params),
         jobId: params.jobId,
         pathId: params.pathId,
         stepId: params.stepId,
@@ -200,7 +225,9 @@ export function createAuditService(repos: { audit: AuditRepository }) {
 
     recordStepOverrideCreated(params: {
       userId: string
-      serialId: string
+      partId?: string
+      /** @deprecated Use `partId` instead. */
+      serialId?: string
       jobId?: string
       pathId?: string
       stepId: string
@@ -208,7 +235,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
     }): AuditEntry {
       return createEntry('step_override_created', {
         userId: params.userId,
-        serialId: params.serialId,
+        partId: resolvePartId(params),
         jobId: params.jobId,
         pathId: params.pathId,
         stepId: params.stepId,
@@ -218,14 +245,16 @@ export function createAuditService(repos: { audit: AuditRepository }) {
 
     recordStepOverrideReversed(params: {
       userId: string
-      serialId: string
+      partId?: string
+      /** @deprecated Use `partId` instead. */
+      serialId?: string
       jobId?: string
       pathId?: string
       stepId: string
     }): AuditEntry {
       return createEntry('step_override_reversed', {
         userId: params.userId,
-        serialId: params.serialId,
+        partId: resolvePartId(params),
         jobId: params.jobId,
         pathId: params.pathId,
         stepId: params.stepId,
@@ -242,8 +271,8 @@ export function createAuditService(repos: { audit: AuditRepository }) {
       })
     },
 
-    getSerialAuditTrail(serialId: string): AuditEntry[] {
-      return repos.audit.listBySerialId(serialId)
+    getPartAuditTrail(partId: string): AuditEntry[] {
+      return repos.audit.listByPartId(partId)
     },
 
     getJobAuditTrail(jobId: string): AuditEntry[] {
@@ -252,7 +281,47 @@ export function createAuditService(repos: { audit: AuditRepository }) {
 
     listAuditEntries(options?: { limit?: number, offset?: number }): AuditEntry[] {
       return repos.audit.list(options)
-    }
+    },
+
+    // ---- Backward-compatible aliases (deprecated) ----
+
+    /** @deprecated Use `recordPartCreation` instead. */
+    recordSerialCreation(params: {
+      userId: string
+      jobId: string
+      pathId: string
+      batchQuantity: number
+    }): AuditEntry {
+      return this.recordPartCreation(params)
+    },
+
+    /** @deprecated Use `recordPartAdvancement` instead. */
+    recordSerialAdvancement(params: {
+      userId: string
+      serialId: string
+      jobId?: string
+      pathId?: string
+      fromStepId: string
+      toStepId: string
+    }): AuditEntry {
+      return this.recordPartAdvancement({ ...params, partId: params.serialId })
+    },
+
+    /** @deprecated Use `recordPartCompletion` instead. */
+    recordSerialCompletion(params: {
+      userId: string
+      serialId: string
+      jobId?: string
+      pathId?: string
+      fromStepId: string
+    }): AuditEntry {
+      return this.recordPartCompletion({ ...params, partId: params.serialId })
+    },
+
+    /** @deprecated Use `getPartAuditTrail` instead. */
+    getSerialAuditTrail(serialId: string): AuditEntry[] {
+      return this.getPartAuditTrail(serialId)
+    },
   }
 }
 

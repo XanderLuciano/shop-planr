@@ -20,7 +20,7 @@ const filteredJobs = computed(() =>
     status: (j) => {
       const p = progressFor(j.id)
       if (!p) return 'active'
-      return p.completedSerials >= p.goalQuantity && p.goalQuantity > 0 ? 'completed' : 'active'
+      return p.completedParts >= p.goalQuantity && p.goalQuantity > 0 ? 'completed' : 'active'
     }
   })
 )
@@ -96,9 +96,9 @@ const columns: TableColumn<Job>[] = [
       const p = progressFor(row.original.id)
       if (!p) return '—'
       return h(resolveComponent('ProgressBar'), {
-        completed: p.completedSerials,
+        completed: p.completedParts,
         goal: p.goalQuantity,
-        inProgress: p.inProgressSerials
+        inProgress: p.inProgressParts
       })
     }
   },

@@ -9,7 +9,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
-import type { SnStepStatusValue } from '../../server/types/domain'
+import type { PartStepStatusValue } from '../../server/types/domain'
 
 interface StepConfig {
   id: string
@@ -18,7 +18,7 @@ interface StepConfig {
 
 interface StepStatusRecord {
   stepId: string
-  status: SnStepStatusValue
+  status: PartStepStatusValue
 }
 
 /**
@@ -46,7 +46,7 @@ function canComplete(
  * Validates whether a reversal is allowed:
  * Cannot reverse if step is already skipped or completed.
  */
-function canReverseOverride(stepStatus: SnStepStatusValue | undefined): boolean {
+function canReverseOverride(stepStatus: PartStepStatusValue | undefined): boolean {
   if (stepStatus === 'skipped' || stepStatus === 'completed') return false
   return true
 }
@@ -57,7 +57,7 @@ describe('Property 5: Step Override Reversibility', () => {
       fc.property(
         fc.integer({ min: 3, max: 10 }),
         fc.integer({ min: 0, max: 9 }),
-        fc.constantFrom<SnStepStatusValue>('pending', 'deferred', 'in_progress'),
+        fc.constantFrom<PartStepStatusValue>('pending', 'deferred', 'in_progress'),
         (totalSteps, overrideIdx, stepStatus) => {
           const overrideStepIndex = overrideIdx % totalSteps
 
@@ -94,7 +94,7 @@ describe('Property 5: Step Override Reversibility', () => {
   it('reversal is rejected when step is already skipped or completed', () => {
     fc.assert(
       fc.property(
-        fc.constantFrom<SnStepStatusValue>('skipped', 'completed'),
+        fc.constantFrom<PartStepStatusValue>('skipped', 'completed'),
         (terminalStatus) => {
           expect(canReverseOverride(terminalStatus)).toBe(false)
         },
@@ -106,7 +106,7 @@ describe('Property 5: Step Override Reversibility', () => {
   it('reversal is allowed for pending, deferred, in_progress, and waived statuses', () => {
     fc.assert(
       fc.property(
-        fc.constantFrom<SnStepStatusValue>('pending', 'deferred', 'in_progress', 'waived'),
+        fc.constantFrom<PartStepStatusValue>('pending', 'deferred', 'in_progress', 'waived'),
         (status) => {
           expect(canReverseOverride(status)).toBe(true)
         },

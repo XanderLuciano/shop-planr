@@ -45,9 +45,9 @@ describe('serialize / deserialize round-trip', () => {
     expect(result).toEqual(step)
   })
 
-  it('should round-trip a SerialNumber', () => {
-    const sn = {
-      id: 'SN-00001',
+  it('should round-trip a Part', () => {
+    const part = {
+      id: 'part_00001',
       jobId: 'job_1',
       pathId: 'path_1',
       currentStepIndex: 2,
@@ -55,8 +55,8 @@ describe('serialize / deserialize round-trip', () => {
       createdAt: '2025-01-15T00:00:00.000Z',
       updatedAt: '2025-01-15T00:00:00.000Z'
     }
-    const result = deserialize(serialize(sn), 'SerialNumber')
-    expect(result).toEqual(sn)
+    const result = deserialize(serialize(part), 'Part')
+    expect(result).toEqual(part)
   })
 
   it('should round-trip a ShopUser', () => {
@@ -74,7 +74,7 @@ describe('serialize / deserialize round-trip', () => {
   it('should round-trip an AuditEntry', () => {
     const entry = {
       id: 'aud_1',
-      action: 'serial_created',
+      action: 'part_created',
       userId: 'user_1',
       timestamp: '2025-01-15T00:00:00.000Z',
       jobId: 'job_1',

@@ -1,14 +1,14 @@
 /**
  * Property 4: Optional Skip and Waiver Allow Completion
  *
- * For any serial where all required steps are completed/waived and only
+ * For any part where all required steps are completed/waived and only
  * optional steps are skipped, verify normal completion succeeds.
  *
  * **Validates: Requirements 4.6, 13.7**
  */
 import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
-import type { SnStepStatusValue } from '../../server/types/domain'
+import type { PartStepStatusValue } from '../../server/types/domain'
 
 interface StepConfig {
   id: string
@@ -17,7 +17,7 @@ interface StepConfig {
 
 interface StepStatusRecord {
   stepId: string
-  status: SnStepStatusValue
+  status: PartStepStatusValue
 }
 
 /**
@@ -85,10 +85,10 @@ describe('Property 4: Optional Skip and Waiver Allow Completion', () => {
           }))
 
           const stepStatuses: StepStatusRecord[] = steps.map((step, i) => {
-            if (step.optional) return { stepId: step.id, status: 'skipped' as SnStepStatusValue }
+            if (step.optional) return { stepId: step.id, status: 'skipped' as PartStepStatusValue }
             // Required: either completed or waived
             const status = (waiveFlags[i] ?? false) ? 'waived' : 'completed'
-            return { stepId: step.id, status: status as SnStepStatusValue }
+            return { stepId: step.id, status: status as PartStepStatusValue }
           })
 
           const result = canComplete(steps, stepStatuses, new Set())

@@ -1,7 +1,7 @@
 /**
  * Property 3: Sequential Step Advancement
  *
- * Advancing a SN at step N results in step N+1 or completion at final step,
+ * Advancing a part at step N results in step N+1 or completion at final step,
  * no other transitions permitted.
  *
  * **Validates: Requirements 3.1, 3.2, 3.3**
@@ -13,14 +13,14 @@ import { resolve } from 'path'
 import { runMigrations } from '../../server/repositories/sqlite/index'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
-import { SQLiteSerialRepository } from '../../server/repositories/sqlite/serialRepository'
+import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
 import { SQLiteCertRepository } from '../../server/repositories/sqlite/certRepository'
 import { SQLiteAuditRepository } from '../../server/repositories/sqlite/auditRepository'
 import { createJobService } from '../../server/services/jobService'
 import { createPathService } from '../../server/services/pathService'
-import { createSerialService } from '../../server/services/serialService'
+import { createPartService } from '../../server/services/partService'
 import { createAuditService } from '../../server/services/auditService'
-import { createSequentialSnGenerator } from '../../server/utils/idGenerator'
+import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
 
 function createTestDb() {
   const db = new Database(':memory:')
@@ -35,31 +35,31 @@ function setupServices(db: Database.default.Database) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
-    serials: new SQLiteSerialRepository(db),
+    parts: new SQLitePartRepository(db),
     certs: new SQLiteCertRepository(db),
     audit: new SQLiteAuditRepository(db)
   }
 
-  const snGenerator = createSequentialSnGenerator({
+  const partIdGenerator = createSequentialPartIdGenerator({
     getCounter: () => {
-      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('sn') as { value: number } | undefined
+      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
       return row?.value ?? 0
     },
     setCounter: (v: number) => {
-      db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('sn', v)
+      db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
     }
   })
 
   const auditService = createAuditService({ audit: repos.audit })
-  const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, serials: repos.serials })
-  const pathService = createPathService({ paths: repos.paths, serials: repos.serials })
-  const serialService = createSerialService(
-    { serials: repos.serials, paths: repos.paths, certs: repos.certs },
+  const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts })
+  const pathService = createPathService({ paths: repos.paths, parts: repos.parts })
+  const partService = createPartService(
+    { parts: repos.parts, paths: repos.paths, certs: repos.certs },
     auditService,
-    snGenerator
+    partIdGenerator
   )
 
-  return { jobService, pathService, serialService }
+  return { jobService, pathService, partService }
 }
 
 describe('Property 3: Sequential Step Advancement', () => {
@@ -69,7 +69,7 @@ describe('Property 3: Sequential Step Advancement', () => {
     if (db) db.close()
   })
 
-  it('advancing a SN at step N results in step N+1 or completion at final step', () => {
+  it('advancing a part at step N results in step N+1 or completion at final step', () => {
     fc.assert(
       fc.property(
         fc.record({
@@ -78,7 +78,7 @@ describe('Property 3: Sequential Step Advancement', () => {
         }),
         ({ stepCount, advanceTimes }) => {
           db = createTestDb()
-          const { jobService, pathService, serialService } = setupServices(db)
+          const { jobService, pathService, partService } = setupServices(db)
 
           const job = jobService.createJob({ name: 'Test Job', goalQuantity: 10 })
           const steps = Array.from({ length: stepCount }, (_, i) => ({
@@ -91,23 +91,23 @@ describe('Property 3: Sequential Step Advancement', () => {
             steps
           })
 
-          const serials = serialService.batchCreateSerials(
+          const parts = partService.batchCreateParts(
             { jobId: job.id, pathId: path.id, quantity: 1 },
             'user_test'
           )
-          const serialId = serials[0].id
+          const partId = parts[0].id
 
           let previousIndex = 0
           for (let i = 0; i < advanceTimes; i++) {
-            const before = serialService.getSerial(serialId)
+            const before = partService.getPart(partId)
             if (before.currentStepIndex === -1) {
               // Already completed — advancing should throw
-              expect(() => serialService.advanceSerial(serialId, 'user_test')).toThrow()
+              expect(() => partService.advancePart(partId, 'user_test')).toThrow()
               break
             }
 
             previousIndex = before.currentStepIndex
-            const after = serialService.advanceSerial(serialId, 'user_test')
+            const after = partService.advancePart(partId, 'user_test')
 
             if (previousIndex === stepCount - 1) {
               // Was at final step — should be completed

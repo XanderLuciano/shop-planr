@@ -46,11 +46,11 @@ export interface ProcessStep {
   dependencyType: 'physical' | 'preferred' | 'completion_gate'
 }
 
-// ---- Serial Number ----
+// ---- Part (formerly Serial Number) ----
 
 export type ScrapReason = 'out_of_tolerance' | 'process_defect' | 'damaged' | 'operator_error' | 'other'
 
-export interface SerialNumber {
+export interface Part {
   id: string
   jobId: string
   pathId: string
@@ -69,6 +69,9 @@ export interface SerialNumber {
   updatedAt: string
 }
 
+/** @deprecated Use `Part` instead. Backward-compatible alias. */
+export type SerialNumber = Part
+
 // ---- Certificate ----
 
 export interface Certificate {
@@ -83,7 +86,7 @@ export interface Certificate {
 
 export interface CertAttachment {
   id?: string
-  serialId: string
+  partId: string
   certId: string
   stepId: string
   attachedAt: string
@@ -130,12 +133,12 @@ export interface BomEntry {
 
 export type AuditAction
   = | 'cert_attached'
-    | 'serial_created'
-    | 'serial_advanced'
-    | 'serial_completed'
+    | 'part_created'
+    | 'part_advanced'
+    | 'part_completed'
     | 'note_created'
-    | 'serial_scrapped'
-    | 'serial_force_completed'
+    | 'part_scrapped'
+    | 'part_force_completed'
     | 'step_override_created'
     | 'step_override_reversed'
     | 'step_deferred'
@@ -149,7 +152,7 @@ export interface AuditEntry {
   action: AuditAction
   userId: string
   timestamp: string
-  serialId?: string
+  partId?: string
   certId?: string
   jobId?: string
   pathId?: string
@@ -177,7 +180,7 @@ export interface StepNote {
   jobId: string
   pathId: string
   stepId: string
-  serialIds: string[]
+  partIds: string[]
   text: string
   createdBy: string
   createdAt: string
@@ -189,7 +192,7 @@ export interface StepNote {
 
 export interface PageToggles {
   jobs: boolean
-  serials: boolean
+  partsBrowser: boolean
   parts: boolean
   queue: boolean
   templates: boolean
@@ -238,30 +241,39 @@ export interface FilterState {
   status?: 'active' | 'completed' | 'all'
 }
 
-// ---- SN Step Status ----
+// ---- Part Step Status (formerly SN Step Status) ----
 
-export type SnStepStatusValue = 'pending' | 'in_progress' | 'completed' | 'skipped' | 'deferred' | 'waived'
+export type PartStepStatusValue = 'pending' | 'in_progress' | 'completed' | 'skipped' | 'deferred' | 'waived'
 
-export interface SnStepStatus {
+/** @deprecated Use `PartStepStatusValue` instead. Backward-compatible alias. */
+export type SnStepStatusValue = PartStepStatusValue
+
+export interface PartStepStatus {
   id: string
-  serialId: string
+  partId: string
   stepId: string
   stepIndex: number
-  status: SnStepStatusValue
+  status: PartStepStatusValue
   updatedAt: string
 }
 
-// ---- SN Step Override ----
+/** @deprecated Use `PartStepStatus` instead. Backward-compatible alias. */
+export type SnStepStatus = PartStepStatus
 
-export interface SnStepOverride {
+// ---- Part Step Override (formerly SN Step Override) ----
+
+export interface PartStepOverride {
   id: string
-  serialId: string
+  partId: string
   stepId: string
   active: boolean
   reason?: string
   createdBy: string
   createdAt: string
 }
+
+/** @deprecated Use `PartStepOverride` instead. Backward-compatible alias. */
+export type SnStepOverride = PartStepOverride
 
 // ---- BOM Version ----
 

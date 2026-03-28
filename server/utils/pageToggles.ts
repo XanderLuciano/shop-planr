@@ -9,7 +9,7 @@ import type { PageToggles } from '../types/domain'
 /** Default page toggles — all pages enabled. */
 export const DEFAULT_PAGE_TOGGLES: PageToggles = {
   jobs: true,
-  serials: true,
+  partsBrowser: true,
   parts: true,
   queue: true,
   templates: true,
@@ -22,7 +22,7 @@ export const DEFAULT_PAGE_TOGGLES: PageToggles = {
 /** Maps route base paths to their corresponding toggle key. */
 export const ROUTE_TOGGLE_MAP: Record<string, keyof PageToggles> = {
   '/jobs': 'jobs',
-  '/serials': 'serials',
+  '/parts-browser': 'partsBrowser',
   '/parts': 'parts',
   '/queue': 'queue',
   '/templates': 'templates',

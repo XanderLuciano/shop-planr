@@ -1,11 +1,11 @@
 /**
  * Property 4: Step Endpoint Correctness
  *
- * For any valid step ID that has active serials, the step endpoint should return
+ * For any valid step ID that has active parts, the step endpoint should return
  * a WorkQueueJob with: the correct stepId, stepOrder, stepName, and stepLocation
  * matching the process step; the correct jobId, jobName, pathId, and pathName
- * matching the parent path and job; serialIds containing exactly the IDs of all
- * active serials at that step; and partCount equal to the length of serialIds.
+ * matching the parent path and job; partIds containing exactly the IDs of all
+ * active parts at that step; and partCount equal to the length of partIds.
  *
  * **Validates: Requirements 2.3, 3.1, 3.5**
  */
@@ -19,7 +19,7 @@ import type { WorkQueueJob, StepViewResponse } from '../../server/types/computed
  * server/api/operator/step/[stepId].get.ts as a pure function.
  */
 function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
-  const { jobService, pathService, serialService, noteService } = ctx
+  const { jobService, pathService, partService, noteService } = ctx
   const jobs = jobService.listJobs()
 
   for (const job of jobs) {
@@ -31,16 +31,16 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
       for (const step of path.steps) {
         if (step.id !== stepId) continue
 
-        const serials = serialService.listSerialsByStepIndex(path.id, step.order)
+        const parts = partService.listPartsByStepIndex(path.id, step.order)
 
         const isFinalStep = step.order === totalSteps - 1
         const prevStep = step.order > 0 ? path.steps[step.order - 1] : undefined
         const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
 
         let previousStepWipCount: number | undefined
-        if (step.order > 0 && serials.length === 0) {
-          const prevSerials = serialService.listSerialsByStepIndex(path.id, step.order - 1)
-          previousStepWipCount = prevSerials.length
+        if (step.order > 0 && parts.length === 0) {
+          const prevParts = partService.listPartsByStepIndex(path.id, step.order - 1)
+          previousStepWipCount = prevParts.length
         }
 
         const foundJob: WorkQueueJob = {
@@ -53,8 +53,8 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
           stepOrder: step.order,
           stepLocation: step.location,
           totalSteps,
-          serialIds: serials.map(s => s.id),
-          partCount: serials.length,
+          partIds: parts.map(s => s.id),
+          partCount: parts.length,
           previousStepId: prevStep?.id,
           previousStepName: prevStep?.name,
           nextStepId: nextStep?.id,
@@ -76,19 +76,19 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
   return null // step not found → 404
 }
 
-/** Arbitrary for a single job with one path, random steps, and random serials */
+/** Arbitrary for a single job with one path, random steps, and random parts */
 const jobPathConfigArb = fc.record({
   jobName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
   pathName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
   stepCount: fc.integer({ min: 1, max: 5 }),
-  serialCount: fc.integer({ min: 1, max: 8 }),
+  partCount: fc.integer({ min: 1, max: 8 }),
   stepLocations: fc.array(
     fc.option(fc.string({ minLength: 1, maxLength: 15 }).filter(s => s.trim().length > 0), { nil: undefined }),
     { minLength: 5, maxLength: 5 },
   ),
   advancementSpecs: fc.array(
     fc.record({
-      serialIndex: fc.integer({ min: 0, max: 7 }),
+      partIndex: fc.integer({ min: 0, max: 7 }),
       advanceTimes: fc.integer({ min: 0, max: 4 }),
     }),
     { minLength: 0, maxLength: 8 },
@@ -110,13 +110,13 @@ describe('Property 4: Step Endpoint Correctness', () => {
     }
   })
 
-  it('returns correct WorkQueueJob for any step with active serials', () => {
+  it('returns correct WorkQueueJob for any step with active parts', () => {
     fc.assert(
       fc.property(scenarioArb, (configs) => {
         ctx = createTestContext()
-        const { jobService, pathService, serialService } = ctx
+        const { jobService, pathService, partService } = ctx
 
-        // Track created step IDs and serial positions
+        // Track created step IDs and part positions
         interface StepRecord {
           stepId: string
           stepOrder: number
@@ -129,19 +129,19 @@ describe('Property 4: Step Endpoint Correctness', () => {
           totalSteps: number
         }
 
-        interface TrackedSerial {
+        interface TrackedPart {
           id: string
           pathId: string
           currentStepIndex: number // -1 = completed
         }
 
         const allStepRecords: StepRecord[] = []
-        const allTrackedSerials: TrackedSerial[] = []
+        const allTrackedParts: TrackedPart[] = []
 
         for (const config of configs) {
           const job = jobService.createJob({
             name: config.jobName,
-            goalQuantity: Math.max(config.serialCount, 1),
+            goalQuantity: Math.max(config.partCount, 1),
           })
 
           const steps = Array.from({ length: config.stepCount }, (_, i) => ({
@@ -152,7 +152,7 @@ describe('Property 4: Step Endpoint Correctness', () => {
           const path = pathService.createPath({
             jobId: job.id,
             name: config.pathName,
-            goalQuantity: Math.max(config.serialCount, 1),
+            goalQuantity: Math.max(config.partCount, 1),
             steps,
           })
 
@@ -171,14 +171,14 @@ describe('Property 4: Step Endpoint Correctness', () => {
             })
           }
 
-          // Create serials
-          const serials = serialService.batchCreateSerials(
-            { jobId: job.id, pathId: path.id, quantity: config.serialCount },
+          // Create parts
+          const parts = partService.batchCreateParts(
+            { jobId: job.id, pathId: path.id, quantity: config.partCount },
             'user_test',
           )
 
-          for (const s of serials) {
-            allTrackedSerials.push({
+          for (const s of parts) {
+            allTrackedParts.push({
               id: s.id,
               pathId: path.id,
               currentStepIndex: 0,
@@ -187,14 +187,14 @@ describe('Property 4: Step Endpoint Correctness', () => {
 
           // Apply advancements
           for (const spec of config.advancementSpecs) {
-            if (spec.serialIndex >= serials.length) continue
-            const serial = serials[spec.serialIndex]
-            const tracked = allTrackedSerials.find(t => t.id === serial.id)!
+            if (spec.partIndex >= parts.length) continue
+            const part = parts[spec.partIndex]
+            const tracked = allTrackedParts.find(t => t.id === part.id)!
 
             for (let i = 0; i < spec.advanceTimes; i++) {
               if (tracked.currentStepIndex === -1) break
               try {
-                serialService.advanceSerial(serial.id, 'user_test')
+                partService.advancePart(part.id, 'user_test')
                 if (tracked.currentStepIndex === config.stepCount - 1) {
                   tracked.currentStepIndex = -1 // completed
                 } else {
@@ -207,24 +207,24 @@ describe('Property 4: Step Endpoint Correctness', () => {
           }
         }
 
-        // Find steps that have active serials
-        const stepsWithActiveSerials = allStepRecords.filter((rec) => {
-          return allTrackedSerials.some(
+        // Find steps that have active parts
+        const stepsWithActiveParts = allStepRecords.filter((rec) => {
+          return allTrackedParts.some(
             s => s.pathId === rec.pathId && s.currentStepIndex === rec.stepOrder,
           )
         })
 
-        // If no steps have active serials, skip this iteration
-        if (stepsWithActiveSerials.length === 0) return
+        // If no steps have active parts, skip this iteration
+        if (stepsWithActiveParts.length === 0) return
 
         // Pick a target step from the first config (clamped)
-        const targetIdx = configs[0].targetStepIndex % stepsWithActiveSerials.length
-        const targetStep = stepsWithActiveSerials[targetIdx]
+        const targetIdx = configs[0].targetStepIndex % stepsWithActiveParts.length
+        const targetStep = stepsWithActiveParts[targetIdx]
 
         // Call the replicated lookup
         const result = lookupStep(ctx, targetStep.stepId)
 
-        // The step has active serials, so result must not be null
+        // The step has active parts, so result must not be null
         expect(result, `Expected non-null result for step ${targetStep.stepId}`).not.toBeNull()
         const { job } = result!
 
@@ -241,16 +241,16 @@ describe('Property 4: Step Endpoint Correctness', () => {
         expect(job.pathName).toBe(targetStep.pathName)
         expect(job.totalSteps).toBe(targetStep.totalSteps)
 
-        // Verify serialIds contains exactly the active serials at this step
-        const expectedSerialIds = allTrackedSerials
+        // Verify partIds contains exactly the active parts at this step
+        const expectedPartIds = allTrackedParts
           .filter(s => s.pathId === targetStep.pathId && s.currentStepIndex === targetStep.stepOrder)
           .map(s => s.id)
 
-        expect(job.serialIds.length).toBe(expectedSerialIds.length)
-        expect(new Set(job.serialIds)).toEqual(new Set(expectedSerialIds))
+        expect(job.partIds.length).toBe(expectedPartIds.length)
+        expect(new Set(job.partIds)).toEqual(new Set(expectedPartIds))
 
-        // Verify partCount equals serialIds length
-        expect(job.partCount).toBe(job.serialIds.length)
+        // Verify partCount equals partIds length
+        expect(job.partCount).toBe(job.partIds.length)
 
         // Verify isFinalStep and next step info
         const isFinalStep = targetStep.stepOrder === targetStep.totalSteps - 1

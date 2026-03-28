@@ -9,8 +9,8 @@ function createMockNoteRepo(): NoteRepository {
   const store = new Map<string, StepNote>()
   return {
     create: vi.fn((note: StepNote) => { store.set(note.id, note); return note }),
-    listBySerialId: vi.fn((serialId: string) =>
-      [...store.values()].filter(n => n.serialIds.includes(serialId))
+    listByPartId: vi.fn((partId: string) =>
+      [...store.values()].filter(n => n.partIds.includes(partId))
     ),
     listByStepId: vi.fn((stepId: string) =>
       [...store.values()].filter(n => n.stepId === stepId)
@@ -24,11 +24,11 @@ function createMockNoteRepo(): NoteRepository {
 function createMockAuditService(): AuditService {
   return {
     recordCertAttachment: vi.fn(),
-    recordSerialCreation: vi.fn(),
-    recordSerialAdvancement: vi.fn(),
-    recordSerialCompletion: vi.fn(),
+    recordPartCreation: vi.fn(),
+    recordPartAdvancement: vi.fn(),
+    recordPartCompletion: vi.fn(),
     recordNoteCreation: vi.fn(),
-    getSerialAuditTrail: vi.fn(() => []),
+    getPartAuditTrail: vi.fn(() => []),
     getJobAuditTrail: vi.fn(() => []),
     listAuditEntries: vi.fn(() => [])
   } as unknown as AuditService
@@ -51,7 +51,7 @@ describe('NoteService', () => {
         jobId: 'job_1',
         pathId: 'path_1',
         stepId: 'step_1',
-        serialIds: ['sn_1', 'sn_2'],
+        partIds: ['part_1', 'part_2'],
         text: 'Threaded feature is missing',
         userId: 'user_1'
       })
@@ -60,7 +60,7 @@ describe('NoteService', () => {
       expect(note.jobId).toBe('job_1')
       expect(note.pathId).toBe('path_1')
       expect(note.stepId).toBe('step_1')
-      expect(note.serialIds).toEqual(['sn_1', 'sn_2'])
+      expect(note.partIds).toEqual(['part_1', 'part_2'])
       expect(note.text).toBe('Threaded feature is missing')
       expect(note.createdBy).toBe('user_1')
       expect(note.createdAt).toBeTruthy()
@@ -72,7 +72,7 @@ describe('NoteService', () => {
         jobId: 'job_1',
         pathId: 'path_1',
         stepId: 'step_1',
-        serialIds: ['sn_1'],
+        partIds: ['part_1'],
         text: '  some note  ',
         userId: 'user_1'
       })
@@ -84,7 +84,7 @@ describe('NoteService', () => {
         jobId: 'job_1',
         pathId: 'path_1',
         stepId: 'step_1',
-        serialIds: ['sn_1'],
+        partIds: ['part_1'],
         text: 'Defect found',
         userId: 'user_1'
       })
@@ -102,7 +102,7 @@ describe('NoteService', () => {
         jobId: 'job_1',
         pathId: 'path_1',
         stepId: 'step_1',
-        serialIds: ['sn_1'],
+        partIds: ['part_1'],
         text: '',
         userId: 'user_1'
       })).toThrow(ValidationError)
@@ -113,42 +113,42 @@ describe('NoteService', () => {
         jobId: 'job_1',
         pathId: 'path_1',
         stepId: 'step_1',
-        serialIds: ['sn_1'],
+        partIds: ['part_1'],
         text: '   ',
         userId: 'user_1'
       })).toThrow(ValidationError)
     })
 
-    it('throws ValidationError for empty serialIds array', () => {
+    it('throws ValidationError for empty partIds array', () => {
       expect(() => service.createNote({
         jobId: 'job_1',
         pathId: 'path_1',
         stepId: 'step_1',
-        serialIds: [],
+        partIds: [],
         text: 'Some note',
         userId: 'user_1'
       })).toThrow(ValidationError)
     })
   })
 
-  describe('getNotesForSerial', () => {
-    it('returns notes containing the serial ID', () => {
+  describe('getNotesForPart', () => {
+    it('returns notes containing the part ID', () => {
       service.createNote({
         jobId: 'job_1', pathId: 'path_1', stepId: 'step_1',
-        serialIds: ['sn_1', 'sn_2'], text: 'Note A', userId: 'user_1'
+        partIds: ['part_1', 'part_2'], text: 'Note A', userId: 'user_1'
       })
       service.createNote({
         jobId: 'job_1', pathId: 'path_1', stepId: 'step_2',
-        serialIds: ['sn_3'], text: 'Note B', userId: 'user_1'
+        partIds: ['part_3'], text: 'Note B', userId: 'user_1'
       })
 
-      const notes = service.getNotesForSerial('sn_1')
+      const notes = service.getNotesForPart('part_1')
       expect(notes).toHaveLength(1)
       expect(notes[0].text).toBe('Note A')
     })
 
     it('returns empty array when no notes match', () => {
-      expect(service.getNotesForSerial('nonexistent')).toHaveLength(0)
+      expect(service.getNotesForPart('nonexistent')).toHaveLength(0)
     })
   })
 
@@ -156,7 +156,7 @@ describe('NoteService', () => {
     it('returns notes for the given step', () => {
       service.createNote({
         jobId: 'job_1', pathId: 'path_1', stepId: 'step_1',
-        serialIds: ['sn_1'], text: 'Step note', userId: 'user_1'
+        partIds: ['part_1'], text: 'Step note', userId: 'user_1'
       })
 
       const notes = service.getNotesForStep('step_1')
@@ -169,7 +169,7 @@ describe('NoteService', () => {
     it('returns notes for the given job', () => {
       service.createNote({
         jobId: 'job_1', pathId: 'path_1', stepId: 'step_1',
-        serialIds: ['sn_1'], text: 'Job note', userId: 'user_1'
+        partIds: ['part_1'], text: 'Job note', userId: 'user_1'
       })
 
       const notes = service.getNotesForJob('job_1')

@@ -14,14 +14,14 @@ const emit = defineEmits<{
 const showNoteForm = ref(false)
 
 const currentColumns = [
-  { key: 'serialId', label: 'SN' },
+  { key: 'partId', label: 'Part' },
   { key: 'jobName', label: 'Job' },
   { key: 'pathName', label: 'Path' },
   { key: 'nextStep', label: 'Next Step → Location' }
 ]
 
 const upstreamColumns = [
-  { key: 'serialId', label: 'SN' },
+  { key: 'partId', label: 'Part' },
   { key: 'jobName', label: 'Job' },
   { key: 'pathName', label: 'Path' }
 ]
@@ -88,11 +88,11 @@ function formatNextStep(row: { nextStepName?: string, nextStepLocation?: string 
           <tbody>
             <tr
               v-for="part in data.currentParts"
-              :key="part.serialId"
+              :key="part.partId"
               class="border-t border-(--ui-border)"
             >
               <td class="px-2 py-1 font-mono">
-                {{ part.serialId }}
+                {{ part.partId }}
               </td>
               <td class="px-2 py-1">
                 {{ part.jobName }}
@@ -146,11 +146,11 @@ function formatNextStep(row: { nextStepName?: string, nextStepLocation?: string 
           <tbody>
             <tr
               v-for="part in data.comingSoon"
-              :key="part.serialId"
+              :key="part.partId"
               class="border-t border-(--ui-border)"
             >
               <td class="px-2 py-1 font-mono">
-                {{ part.serialId }}
+                {{ part.partId }}
               </td>
               <td class="px-2 py-1">
                 {{ part.jobName }}
@@ -201,11 +201,11 @@ function formatNextStep(row: { nextStepName?: string, nextStepLocation?: string 
           <tbody>
             <tr
               v-for="part in data.backlog"
-              :key="part.serialId"
+              :key="part.partId"
               class="border-t border-(--ui-border)"
             >
               <td class="px-2 py-1 font-mono">
-                {{ part.serialId }}
+                {{ part.partId }}
               </td>
               <td class="px-2 py-1">
                 {{ part.jobName }}
@@ -257,7 +257,7 @@ function formatNextStep(row: { nextStepName?: string, nextStepLocation?: string 
           :job-id="data.currentParts[0]!.jobId"
           :path-id="data.currentParts[0]!.pathId"
           :step-id="data.stepIds[0]!"
-          :serial-ids="data.currentParts.map(p => p.serialId)"
+          :part-ids="data.currentParts.map(p => p.partId)"
           @created="showNoteForm = false; emit('noteCreated')"
         />
         <div class="flex justify-end mt-1">

@@ -38,7 +38,7 @@ function getFilteredNavItems(toggles: PageToggles) {
 /** Arbitrary that produces a full PageToggles object with random booleans. */
 const arbPageToggles: fc.Arbitrary<PageToggles> = fc.record({
   jobs: fc.boolean(),
-  serials: fc.boolean(),
+  partsBrowser: fc.boolean(),
   parts: fc.boolean(),
   queue: fc.boolean(),
   templates: fc.boolean(),

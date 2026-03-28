@@ -2,10 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { detectScanType } from '~/app/composables/useBarcode'
 
 describe('detectScanType', () => {
-  it('detects serial numbers starting with SN-', () => {
-    expect(detectScanType('SN-00001')).toBe('serial')
-    expect(detectScanType('SN-99999')).toBe('serial')
-    expect(detectScanType('SN-')).toBe('serial')
+  it('detects parts starting with SN- or part_', () => {
+    expect(detectScanType('SN-00001')).toBe('part')
+    expect(detectScanType('SN-99999')).toBe('part')
+    expect(detectScanType('SN-')).toBe('part')
+    expect(detectScanType('part_00001')).toBe('part')
+    expect(detectScanType('part_')).toBe('part')
   })
 
   it('detects certificates starting with cert_', () => {
@@ -47,9 +49,9 @@ describe('useBarcode – handleScan routing', () => {
     return mod.useBarcode().handleScan
   }
 
-  it('looks up serial when type is "serial"', async () => {
+  it('looks up part when type is "part"', async () => {
     fetchMock.mockResolvedValueOnce({
-      id: 'SN-00001',
+      id: 'part_00001',
       jobId: 'job_1',
       pathId: 'path_1',
       currentStepIndex: 2,
@@ -57,24 +59,24 @@ describe('useBarcode – handleScan routing', () => {
     })
 
     const handleScan = await getHandleScan()
-    await handleScan({ value: 'SN-00001', type: 'serial' })
+    await handleScan({ value: 'part_00001', type: 'part' })
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/serials/SN-00001')
+    expect(fetchMock).toHaveBeenCalledWith('/api/parts/part_00001')
     expect(mockToastAdd).toHaveBeenCalledWith(
       expect.objectContaining({
-        title: 'SN: SN-00001',
+        title: 'Part: part_00001',
         color: 'success'
       })
     )
   })
 
-  it('shows not found toast when serial lookup fails', async () => {
+  it('shows not found toast when part lookup fails', async () => {
     fetchMock.mockRejectedValueOnce(new Error('404'))
 
     const handleScan = await getHandleScan()
-    await handleScan({ value: 'SN-99999', type: 'serial' })
+    await handleScan({ value: 'part_99999', type: 'part' })
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/serials/SN-99999')
+    expect(fetchMock).toHaveBeenCalledWith('/api/parts/part_99999')
     expect(mockToastAdd).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Not Found',
@@ -117,7 +119,7 @@ describe('useBarcode – handleScan routing', () => {
     )
   })
 
-  it('tries serial then cert for unknown type, finds serial', async () => {
+  it('tries part then cert for unknown type, finds part', async () => {
     fetchMock.mockResolvedValueOnce({
       id: 'UNKNOWN-1',
       jobId: 'job_1',
@@ -129,23 +131,23 @@ describe('useBarcode – handleScan routing', () => {
     const handleScan = await getHandleScan()
     await handleScan({ value: 'UNKNOWN-1', type: 'unknown' })
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/serials/UNKNOWN-1')
-    // Should NOT try cert since serial was found
+    expect(fetchMock).toHaveBeenCalledWith('/api/parts/UNKNOWN-1')
+    // Should NOT try cert since part was found
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(mockToastAdd).toHaveBeenCalledWith(
       expect.objectContaining({ color: 'success' })
     )
   })
 
-  it('tries serial then cert for unknown type, finds cert', async () => {
+  it('tries part then cert for unknown type, finds cert', async () => {
     fetchMock
-      .mockRejectedValueOnce(new Error('404')) // serial not found
+      .mockRejectedValueOnce(new Error('404')) // part not found
       .mockResolvedValueOnce({ id: 'x', name: 'Process Cert', type: 'process' }) // cert found
 
     const handleScan = await getHandleScan()
     await handleScan({ value: 'UNKNOWN-2', type: 'unknown' })
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/serials/UNKNOWN-2')
+    expect(fetchMock).toHaveBeenCalledWith('/api/parts/UNKNOWN-2')
     expect(fetchMock).toHaveBeenCalledWith('/api/certs/UNKNOWN-2')
     expect(mockToastAdd).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -155,7 +157,7 @@ describe('useBarcode – handleScan routing', () => {
     )
   })
 
-  it('shows not found for unknown type when neither serial nor cert exists', async () => {
+  it('shows not found for unknown type when neither part nor cert exists', async () => {
     fetchMock
       .mockRejectedValueOnce(new Error('404'))
       .mockRejectedValueOnce(new Error('404'))
@@ -173,9 +175,9 @@ describe('useBarcode – handleScan routing', () => {
     )
   })
 
-  it('shows completed status for serial at step -1', async () => {
+  it('shows completed status for part at step -1', async () => {
     fetchMock.mockResolvedValueOnce({
-      id: 'SN-00005',
+      id: 'part_00005',
       jobId: 'job_2',
       pathId: 'path_2',
       currentStepIndex: -1,
@@ -183,7 +185,7 @@ describe('useBarcode – handleScan routing', () => {
     })
 
     const handleScan = await getHandleScan()
-    await handleScan({ value: 'SN-00005', type: 'serial' })
+    await handleScan({ value: 'part_00005', type: 'part' })
 
     expect(mockToastAdd).toHaveBeenCalledWith(
       expect.objectContaining({

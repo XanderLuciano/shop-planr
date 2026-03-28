@@ -7,9 +7,9 @@ defineProps<{
 
 const actionConfig: Record<AuditAction, { label: string, color: string, icon: string }> = {
   cert_attached: { label: 'Cert Attached', color: 'text-blue-500', icon: 'i-lucide-paperclip' },
-  serial_created: { label: 'Serial Created', color: 'text-green-500', icon: 'i-lucide-plus-circle' },
-  serial_advanced: { label: 'Advanced', color: 'text-violet-500', icon: 'i-lucide-arrow-right' },
-  serial_completed: { label: 'Completed', color: 'text-emerald-500', icon: 'i-lucide-check-circle' },
+  part_created: { label: 'Part Created', color: 'text-green-500', icon: 'i-lucide-plus-circle' },
+  part_advanced: { label: 'Advanced', color: 'text-violet-500', icon: 'i-lucide-arrow-right' },
+  part_completed: { label: 'Completed', color: 'text-emerald-500', icon: 'i-lucide-check-circle' },
   note_created: { label: 'Note', color: 'text-amber-500', icon: 'i-lucide-message-square' }
 }
 
@@ -51,7 +51,7 @@ function formatTime(ts: string): string {
           User
         </th>
         <th class="text-left py-1 px-2 font-medium">
-          Serial
+          Part
         </th>
         <th class="text-left py-1 px-2 font-medium">
           Cert
@@ -86,7 +86,7 @@ function formatTime(ts: string): string {
           {{ entry.userId || '—' }}
         </td>
         <td class="py-1 px-2 font-mono">
-          {{ entry.serialId || (entry.batchQuantity ? `×${entry.batchQuantity}` : '—') }}
+          {{ entry.partId || (entry.batchQuantity ? `×${entry.batchQuantity}` : '—') }}
         </td>
         <td class="py-1 px-2 font-mono">
           {{ entry.certId || '—' }}

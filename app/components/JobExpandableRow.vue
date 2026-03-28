@@ -4,7 +4,7 @@ interface StepDist {
   stepName: string
   stepOrder: number
   location?: string
-  serialCount: number
+  partCount: number
   completedCount: number
   isBottleneck: boolean
 }
@@ -133,7 +133,7 @@ onMounted(() => {
                 <ProgressBar
                   :completed="pathDistributions[path.id]!.reduce((s: number, d: StepDist) => s + d.completedCount, 0)"
                   :goal="path.goalQuantity"
-                  :in-progress="pathDistributions[path.id]!.reduce((s: number, d: StepDist) => s + d.serialCount, 0)"
+                  :in-progress="pathDistributions[path.id]!.reduce((s: number, d: StepDist) => s + d.partCount, 0)"
                 />
               </div>
               <span
@@ -201,7 +201,7 @@ onMounted(() => {
                         >({{ step!.location }})</span>
                       </td>
                       <td class="py-1 pr-3">
-                        {{ step!.serialCount }}
+                        {{ step!.partCount }}
                       </td>
                       <td class="py-1 pr-3">
                         {{ step!.completedCount }}

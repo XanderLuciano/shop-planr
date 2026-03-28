@@ -48,18 +48,18 @@ function formatTime(ts: string): string {
         {{ note.text }}
       </p>
       <div
-        v-if="note.serialIds.length"
+        v-if="note.partIds.length"
         class="flex items-center gap-1 flex-wrap"
       >
         <UBadge
-          v-for="sn in note.serialIds"
-          :key="sn"
+          v-for="pid in note.partIds"
+          :key="pid"
           size="xs"
           variant="subtle"
           color="neutral"
           class="font-mono"
         >
-          {{ sn }}
+          {{ pid }}
         </UBadge>
         <UBadge
           v-if="note.pushedToJira"

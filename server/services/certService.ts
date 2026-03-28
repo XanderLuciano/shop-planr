@@ -38,9 +38,9 @@ export function createCertService(
       return repos.certs.list()
     },
 
-    attachCertToSerial(params: {
+    attachCertToPart(params: {
       certId: string
-      serialId: string
+      partId: string
       stepId: string
       userId: string
       jobId?: string
@@ -52,8 +52,8 @@ export function createCertService(
       }
 
       const now = new Date().toISOString()
-      const attachment = repos.certs.attachToSerial({
-        serialId: params.serialId,
+      const attachment = repos.certs.attachToPart({
+        partId: params.partId,
         certId: params.certId,
         stepId: params.stepId,
         attachedAt: now,
@@ -62,7 +62,7 @@ export function createCertService(
 
       auditService.recordCertAttachment({
         userId: params.userId,
-        serialId: params.serialId,
+        partId: params.partId,
         certId: params.certId,
         stepId: params.stepId,
         jobId: params.jobId,
@@ -72,6 +72,21 @@ export function createCertService(
       return attachment
     },
 
+    /** @deprecated Use `attachCertToPart` instead. */
+    attachCertToSerial(params: {
+      certId: string
+      serialId: string
+      stepId: string
+      userId: string
+      jobId?: string
+      pathId?: string
+    }): CertAttachment {
+      return this.attachCertToPart({
+        ...params,
+        partId: params.serialId,
+      })
+    },
+
     batchAttachCert(input: BatchAttachCertInput): CertAttachment[] {
       const cert = repos.certs.getById(input.certId)
       if (!cert) {
@@ -79,8 +94,8 @@ export function createCertService(
       }
 
       const now = new Date().toISOString()
-      const attachments: CertAttachment[] = input.serialIds.map(serialId => ({
-        serialId,
+      const attachments: CertAttachment[] = input.partIds.map(partId => ({
+        partId,
         certId: input.certId,
         stepId: '',
         attachedAt: now,
@@ -93,7 +108,7 @@ export function createCertService(
       for (const attachment of results) {
         auditService.recordCertAttachment({
           userId: input.userId,
-          serialId: attachment.serialId,
+          partId: attachment.partId,
           certId: input.certId,
           stepId: attachment.stepId
         })
@@ -102,12 +117,22 @@ export function createCertService(
       return results
     },
 
-    getCertsForSerial(serialId: string): CertAttachment[] {
-      return repos.certs.getAttachmentsForSerial(serialId)
+    getCertsForPart(partId: string): CertAttachment[] {
+      return repos.certs.getAttachmentsForPart(partId)
     },
 
+    /** @deprecated Use `getCertsForPart` instead. */
+    getCertsForSerial(serialId: string): CertAttachment[] {
+      return this.getCertsForPart(serialId)
+    },
+
+    getAttachmentsByPartId(partId: string): CertAttachment[] {
+      return repos.certs.getAttachmentsForPart(partId)
+    },
+
+    /** @deprecated Use `getAttachmentsByPartId` instead. */
     getAttachmentsBySerialId(serialId: string): CertAttachment[] {
-      return repos.certs.getAttachmentsForSerial(serialId)
+      return this.getAttachmentsByPartId(serialId)
     },
 
     getAttachmentsByCertId(certId: string): CertAttachment[] {

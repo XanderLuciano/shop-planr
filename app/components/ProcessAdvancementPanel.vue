@@ -9,11 +9,11 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  advance: [payload: { serialIds: string[], note?: string }]
+  advance: [payload: { partIds: string[], note?: string }]
   cancel: []
 }>()
 
-const selectedSerials = ref<Set<string>>(new Set())
+const selectedParts = ref<Set<string>>(new Set())
 const quantity = ref(props.job.partCount)
 const note = ref('')
 const validationError = ref<string | null>(null)
@@ -25,7 +25,7 @@ const scrapTargetId = ref<string | null>(null)
 const showForceCompleteDialog = ref(false)
 const forceCompleteTargetId = ref<string | null>(null)
 
-watch(selectedSerials, (sel) => {
+watch(selectedParts, (sel) => {
   quantity.value = sel.size
   validateQuantity()
 }, { deep: true })
@@ -42,37 +42,37 @@ function validateQuantity() {
   }
 }
 
-function toggleSerial(serialId: string) {
-  const next = new Set(selectedSerials.value)
-  if (next.has(serialId)) next.delete(serialId)
-  else next.add(serialId)
-  selectedSerials.value = next
+function togglePart(partId: string) {
+  const next = new Set(selectedParts.value)
+  if (next.has(partId)) next.delete(partId)
+  else next.add(partId)
+  selectedParts.value = next
 }
 
 function selectByQuantity() {
   const q = Math.min(Math.max(1, quantity.value), props.job.partCount)
   const next = new Set<string>()
-  for (let i = 0; i < q && i < props.job.serialIds.length; i++) {
-    next.add(props.job.serialIds[i]!)
+  for (let i = 0; i < q && i < props.job.partIds.length; i++) {
+    next.add(props.job.partIds[i]!)
   }
-  selectedSerials.value = next
+  selectedParts.value = next
 }
 
 function selectAll() {
-  selectedSerials.value = new Set(props.job.serialIds)
+  selectedParts.value = new Set(props.job.partIds)
   quantity.value = props.job.partCount
 }
 
 function selectNone() {
-  selectedSerials.value = new Set()
+  selectedParts.value = new Set()
   quantity.value = 0
 }
 
 function handleAdvance() {
-  if (validationError.value || selectedSerials.value.size === 0) return
-  const ids = props.job.serialIds.filter((id: string) => selectedSerials.value.has(id))
+  if (validationError.value || selectedParts.value.size === 0) return
+  const ids = props.job.partIds.filter((id: string) => selectedParts.value.has(id))
   const trimmedNote = note.value.trim()
-  emit('advance', { serialIds: ids, note: trimmedNote || undefined })
+  emit('advance', { partIds: ids, note: trimmedNote || undefined })
 }
 
 function formatDestination(): string {
@@ -83,13 +83,13 @@ function formatDestination(): string {
     : props.job.nextStepName
 }
 
-function openScrap(serialId: string) {
-  scrapTargetId.value = serialId
+function openScrap(partId: string) {
+  scrapTargetId.value = partId
   showScrapDialog.value = true
 }
 
-function openForceComplete(serialId: string) {
-  forceCompleteTargetId.value = serialId
+function openForceComplete(partId: string) {
+  forceCompleteTargetId.value = partId
   showForceCompleteDialog.value = true
 }
 
@@ -104,11 +104,11 @@ onMounted(() => { selectAll() })
       <span class="ml-1 font-medium text-(--ui-text-highlighted)">{{ formatDestination() }}</span>
     </div>
 
-    <!-- Serial selection -->
+    <!-- Part selection -->
     <div>
       <div class="flex items-center justify-between mb-1">
         <span class="text-xs font-semibold text-(--ui-text-highlighted)">
-          Serial Numbers ({{ selectedSerials.size }}/{{ job.partCount }})
+          Parts ({{ selectedParts.size }}/{{ job.partCount }})
         </span>
         <div class="flex gap-1">
           <UButton size="xs" variant="ghost" label="All" @click="selectAll" />
@@ -117,17 +117,17 @@ onMounted(() => { selectAll() })
       </div>
       <div class="max-h-40 overflow-y-auto border border-(--ui-border) rounded-md divide-y divide-(--ui-border)">
         <div
-          v-for="serialId in job.serialIds"
-          :key="serialId"
+          v-for="partId in job.partIds"
+          :key="partId"
           class="flex items-center justify-between px-2 py-1.5 hover:bg-(--ui-bg-elevated)/30"
         >
           <label class="flex items-center gap-2 cursor-pointer text-xs flex-1">
-            <input type="checkbox" :checked="selectedSerials.has(serialId)" class="rounded" @change="toggleSerial(serialId)">
-            <span class="font-mono">{{ serialId }}</span>
+            <input type="checkbox" :checked="selectedParts.has(partId)" class="rounded" @change="togglePart(partId)">
+            <span class="font-mono">{{ partId }}</span>
           </label>
           <div class="flex items-center gap-0.5 shrink-0">
-            <UButton size="xs" variant="ghost" color="error" icon="i-lucide-trash-2" title="Scrap" @click="openScrap(serialId)" />
-            <UButton size="xs" variant="ghost" color="warning" icon="i-lucide-shield-check" title="Force Complete" @click="openForceComplete(serialId)" />
+            <UButton size="xs" variant="ghost" color="error" icon="i-lucide-trash-2" title="Scrap" @click="openScrap(partId)" />
+            <UButton size="xs" variant="ghost" color="warning" icon="i-lucide-shield-check" title="Force Complete" @click="openForceComplete(partId)" />
           </div>
         </div>
       </div>
@@ -137,7 +137,7 @@ onMounted(() => { selectAll() })
     <div>
       <label class="text-xs font-semibold text-(--ui-text-highlighted) block mb-1">Quantity</label>
       <div class="flex items-center gap-2">
-        <UInput v-model.number="quantity" type="number" :min="1" :max="job.partCount" size="sm" class="w-24" @blur="selectByQuantity" />
+      <UInput v-model.number="quantity" type="number" :min="1" :max="job.partCount" size="sm" class="w-24" @blur="selectByQuantity" />
         <span class="text-xs text-(--ui-text-muted)">of {{ job.partCount }} available</span>
       </div>
       <p v-if="validationError" class="text-xs text-(--ui-error) mt-1">{{ validationError }}</p>
@@ -160,7 +160,7 @@ onMounted(() => { selectAll() })
     <div class="flex items-center gap-2 pt-1">
       <UButton
         :loading="loading"
-        :disabled="!!validationError || selectedSerials.size === 0"
+        :disabled="!!validationError || selectedParts.size === 0"
         size="sm" color="primary" label="Advance" icon="i-lucide-arrow-right"
         @click="handleAdvance"
       />
@@ -175,7 +175,7 @@ onMounted(() => { selectAll() })
     <!-- Scrap dialog -->
     <ScrapDialog
       v-if="scrapTargetId"
-      :serial-id="scrapTargetId"
+      :part-id="scrapTargetId"
       :model-value="showScrapDialog"
       @update:model-value="showScrapDialog = $event"
       @scrapped="scrapTargetId = null"
@@ -184,7 +184,7 @@ onMounted(() => { selectAll() })
     <!-- Force complete dialog -->
     <ForceCompleteDialog
       v-if="forceCompleteTargetId"
-      :serial-id="forceCompleteTargetId"
+      :part-id="forceCompleteTargetId"
       :incomplete-steps="[]"
       :model-value="showForceCompleteDialog"
       @update:model-value="showForceCompleteDialog = $event"

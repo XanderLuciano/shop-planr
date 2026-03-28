@@ -1,7 +1,7 @@
 /**
  * Integration: Step Override Workflow
  *
- * Create job → create overrides on subset → verify overridden serials can skip →
+ * Create job → create overrides on subset → verify overridden parts can skip →
  * verify non-overridden blocked → reverse override → verify restored.
  * Validates: Requirements 9.1, 9.3, 9.4, 9.9, 9.10
  */
@@ -15,7 +15,7 @@ describe('Step Override Workflow Integration', () => {
 
   it('full override flow: create → skip overridden → block non-overridden → reverse → verify restored', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService, lifecycleService } = ctx
+    const { jobService, pathService, partService, lifecycleService } = ctx
 
     // 1. Create job with flexible path and a required step
     const job = jobService.createJob({ name: 'Override Job', goalQuantity: 4 })
@@ -31,23 +31,23 @@ describe('Step Override Workflow Integration', () => {
 
     // Step 1 (QC Check) is required by default
 
-    // 2. Create 4 serials
-    const serials = serialService.batchCreateSerials(
+    // 2. Create 4 parts
+    const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 4 },
       'operator1'
     )
 
-    // 3. Create override on first 2 serials for step 1 (QC Check)
+    // 3. Create override on first 2 parts for step 1 (QC Check)
     const overrides = lifecycleService.createStepOverride(
-      [serials[0].id, serials[1].id],
+      [parts[0].id, parts[1].id],
       path.steps[1].id,
       'Prototype fast-track',
       'engineer1'
     )
     expect(overrides).toHaveLength(2)
 
-    // 4. Overridden serials can skip QC Check (step 1) — it becomes effectively optional
-    const result1 = lifecycleService.advanceToStep(serials[0].id, {
+    // 4. Overridden parts can skip QC Check (step 1) — it becomes effectively optional
+    const result1 = lifecycleService.advanceToStep(parts[0].id, {
       targetStepIndex: 2,
       userId: 'operator1',
     })
@@ -56,8 +56,8 @@ describe('Step Override Workflow Integration', () => {
     expect(qcBypass).toBeDefined()
     expect(qcBypass!.classification).toBe('skipped')
 
-    // 5. Non-overridden serial skipping QC Check → step is deferred (required)
-    const result3 = lifecycleService.advanceToStep(serials[2].id, {
+    // 5. Non-overridden part skipping QC Check → step is deferred (required)
+    const result3 = lifecycleService.advanceToStep(parts[2].id, {
       targetStepIndex: 2,
       userId: 'operator1',
     })
@@ -65,16 +65,16 @@ describe('Step Override Workflow Integration', () => {
     expect(qcBypass3).toBeDefined()
     expect(qcBypass3!.classification).toBe('deferred') // required → deferred
 
-    // 6. Verify non-overridden serial has deferred blocker
-    const check = lifecycleService.canComplete(serials[2].id)
+    // 6. Verify non-overridden part has deferred blocker
+    const check = lifecycleService.canComplete(parts[2].id)
     expect(check.canComplete).toBe(false)
     expect(check.blockers).toContain(path.steps[1].id)
 
-    // 7. Reverse override on serial[1] (which hasn't been advanced yet)
-    lifecycleService.reverseStepOverride(serials[1].id, path.steps[1].id, 'engineer1')
+    // 7. Reverse override on parts[1] (which hasn't been advanced yet)
+    lifecycleService.reverseStepOverride(parts[1].id, path.steps[1].id, 'engineer1')
 
-    // 8. After reversal, serial[1] skipping QC Check → deferred (required again)
-    const result2 = lifecycleService.advanceToStep(serials[1].id, {
+    // 8. After reversal, parts[1] skipping QC Check → deferred (required again)
+    const result2 = lifecycleService.advanceToStep(parts[1].id, {
       targetStepIndex: 2,
       userId: 'operator1',
     })
@@ -85,7 +85,7 @@ describe('Step Override Workflow Integration', () => {
 
   it('override on already-completed step is rejected', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService, lifecycleService } = ctx
+    const { jobService, pathService, partService, lifecycleService } = ctx
 
     const job = jobService.createJob({ name: 'Completed Override Test', goalQuantity: 1 })
     const path = pathService.createPath({
@@ -95,23 +95,23 @@ describe('Step Override Workflow Integration', () => {
       steps: [{ name: 'A' }, { name: 'B' }],
     })
 
-    const [serial] = serialService.batchCreateSerials(
+    const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
       'user1'
     )
 
-    // Advance past step 0 using lifecycleService (updates sn_step_statuses)
-    lifecycleService.advanceToStep(serial.id, { targetStepIndex: 1, userId: 'user1' })
+    // Advance past step 0 using lifecycleService (updates part_step_statuses)
+    lifecycleService.advanceToStep(part.id, { targetStepIndex: 1, userId: 'user1' })
 
     // Try to override step 0 (already completed) → should fail
     expect(() =>
-      lifecycleService.createStepOverride([serial.id], path.steps[0].id, 'reason', 'user1')
+      lifecycleService.createStepOverride([part.id], path.steps[0].id, 'reason', 'user1')
     ).toThrow(/completed/)
   })
 
   it('audit entries are created for override and reversal', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService, lifecycleService, auditService } = ctx
+    const { jobService, pathService, partService, lifecycleService, auditService } = ctx
 
     const job = jobService.createJob({ name: 'Override Audit Test', goalQuantity: 1 })
     const path = pathService.createPath({
@@ -121,19 +121,19 @@ describe('Step Override Workflow Integration', () => {
       steps: [{ name: 'A' }, { name: 'B' }],
     })
 
-    const [serial] = serialService.batchCreateSerials(
+    const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
       'user1'
     )
 
     // Create override
-    lifecycleService.createStepOverride([serial.id], path.steps[1].id, 'Fast track', 'eng1')
+    lifecycleService.createStepOverride([part.id], path.steps[1].id, 'Fast track', 'eng1')
 
     // Reverse override
-    lifecycleService.reverseStepOverride(serial.id, path.steps[1].id, 'eng1')
+    lifecycleService.reverseStepOverride(part.id, path.steps[1].id, 'eng1')
 
     // Check audit
-    const trail = auditService.getSerialAuditTrail(serial.id)
+    const trail = auditService.getPartAuditTrail(part.id)
     const createEntry = trail.find(e => e.action === 'step_override_created')
     const reverseEntry = trail.find(e => e.action === 'step_override_reversed')
 

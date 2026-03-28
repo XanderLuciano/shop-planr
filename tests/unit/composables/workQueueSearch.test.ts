@@ -27,7 +27,7 @@ function makeJob(overrides: Partial<WorkQueueJob> = {}): WorkQueueJob {
     stepName: 'Default Step',
     stepOrder: 0,
     totalSteps: 3,
-    serialIds: ['sn_1'],
+    partIds: ['part_1'],
     partCount: 1,
     isFinalStep: false,
     ...overrides,

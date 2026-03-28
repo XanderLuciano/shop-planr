@@ -1,73 +1,73 @@
 /**
  * Property 6: Scrap Immutability
  *
- * For any scrapped serial, verify that advance, complete, force-complete,
+ * For any scrapped part, verify that advance, complete, force-complete,
  * and re-scrap operations all fail.
  *
  * **Validates: Requirements 3.6, 3.10, 3.11**
  */
 import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
-import type { SerialNumber, ScrapReason } from '../../server/types/domain'
+import type { Part, ScrapReason } from '../../server/types/domain'
 
 /**
- * Pure validation logic matching lifecycleService.scrapSerial:
- * Rejects if serial is already scrapped or completed.
+ * Pure validation logic matching lifecycleService.scrapPart:
+ * Rejects if part is already scrapped or completed.
  */
-function validateScrap(serial: SerialNumber): { valid: boolean; error?: string } {
-  if (serial.status === 'scrapped') {
-    return { valid: false, error: 'Serial is already scrapped' }
+function validateScrap(part: Part): { valid: boolean; error?: string } {
+  if (part.status === 'scrapped') {
+    return { valid: false, error: 'Part is already scrapped' }
   }
-  if (serial.status === 'completed') {
-    return { valid: false, error: 'Cannot scrap a completed serial' }
+  if (part.status === 'completed') {
+    return { valid: false, error: 'Cannot scrap a completed part' }
   }
   return { valid: true }
 }
 
 /**
- * Pure validation for advancing a serial:
- * Rejects if serial is scrapped or completed.
+ * Pure validation for advancing a part:
+ * Rejects if part is scrapped or completed.
  */
-function validateAdvance(serial: SerialNumber): { valid: boolean; error?: string } {
-  if (serial.status === 'scrapped') {
-    return { valid: false, error: 'Cannot advance a scrapped serial' }
+function validateAdvance(part: Part): { valid: boolean; error?: string } {
+  if (part.status === 'scrapped') {
+    return { valid: false, error: 'Cannot advance a scrapped part' }
   }
-  if (serial.status === 'completed') {
-    return { valid: false, error: 'Cannot advance a completed serial' }
+  if (part.status === 'completed') {
+    return { valid: false, error: 'Cannot advance a completed part' }
   }
   return { valid: true }
 }
 
 /**
- * Pure validation for completing a serial:
- * Rejects if serial is scrapped or already completed.
+ * Pure validation for completing a part:
+ * Rejects if part is scrapped or already completed.
  */
-function validateComplete(serial: SerialNumber): { valid: boolean; error?: string } {
-  if (serial.status === 'scrapped') {
-    return { valid: false, error: 'Cannot complete a scrapped serial' }
+function validateComplete(part: Part): { valid: boolean; error?: string } {
+  if (part.status === 'scrapped') {
+    return { valid: false, error: 'Cannot complete a scrapped part' }
   }
-  if (serial.status === 'completed') {
-    return { valid: false, error: 'Serial is already completed' }
+  if (part.status === 'completed') {
+    return { valid: false, error: 'Part is already completed' }
   }
   return { valid: true }
 }
 
 /**
- * Pure validation for force-completing a serial:
- * Rejects if serial is scrapped or already completed.
+ * Pure validation for force-completing a part:
+ * Rejects if part is scrapped or already completed.
  */
-function validateForceComplete(serial: SerialNumber): { valid: boolean; error?: string } {
-  if (serial.status === 'scrapped') {
-    return { valid: false, error: 'Cannot force-complete a scrapped serial' }
+function validateForceComplete(part: Part): { valid: boolean; error?: string } {
+  if (part.status === 'scrapped') {
+    return { valid: false, error: 'Cannot force-complete a scrapped part' }
   }
-  if (serial.status === 'completed') {
-    return { valid: false, error: 'Serial is already completed' }
+  if (part.status === 'completed') {
+    return { valid: false, error: 'Part is already completed' }
   }
   return { valid: true }
 }
 
-/** Generate an arbitrary scrapped SerialNumber */
-function scrappedSerialArb(): fc.Arbitrary<SerialNumber> {
+/** Generate an arbitrary scrapped Part */
+function scrappedPartArb(): fc.Arbitrary<Part> {
   const scrapReasons: ScrapReason[] = ['out_of_tolerance', 'process_defect', 'damaged', 'operator_error', 'other']
 
   return fc.record({
@@ -91,10 +91,10 @@ function scrappedSerialArb(): fc.Arbitrary<SerialNumber> {
 }
 
 describe('Property 6: Scrap Immutability', () => {
-  it('advance is rejected for any scrapped serial', () => {
+  it('advance is rejected for any scrapped part', () => {
     fc.assert(
-      fc.property(scrappedSerialArb(), (serial) => {
-        const result = validateAdvance(serial)
+      fc.property(scrappedPartArb(), (part) => {
+        const result = validateAdvance(part)
         expect(result.valid).toBe(false)
         expect(result.error).toContain('scrapped')
       }),
@@ -102,10 +102,10 @@ describe('Property 6: Scrap Immutability', () => {
     )
   })
 
-  it('complete is rejected for any scrapped serial', () => {
+  it('complete is rejected for any scrapped part', () => {
     fc.assert(
-      fc.property(scrappedSerialArb(), (serial) => {
-        const result = validateComplete(serial)
+      fc.property(scrappedPartArb(), (part) => {
+        const result = validateComplete(part)
         expect(result.valid).toBe(false)
         expect(result.error).toContain('scrapped')
       }),
@@ -113,10 +113,10 @@ describe('Property 6: Scrap Immutability', () => {
     )
   })
 
-  it('force-complete is rejected for any scrapped serial', () => {
+  it('force-complete is rejected for any scrapped part', () => {
     fc.assert(
-      fc.property(scrappedSerialArb(), (serial) => {
-        const result = validateForceComplete(serial)
+      fc.property(scrappedPartArb(), (part) => {
+        const result = validateForceComplete(part)
         expect(result.valid).toBe(false)
         expect(result.error).toContain('scrapped')
       }),
@@ -124,10 +124,10 @@ describe('Property 6: Scrap Immutability', () => {
     )
   })
 
-  it('re-scrap is rejected for any scrapped serial', () => {
+  it('re-scrap is rejected for any scrapped part', () => {
     fc.assert(
-      fc.property(scrappedSerialArb(), (serial) => {
-        const result = validateScrap(serial)
+      fc.property(scrappedPartArb(), (part) => {
+        const result = validateScrap(part)
         expect(result.valid).toBe(false)
         expect(result.error).toContain('already scrapped')
       }),

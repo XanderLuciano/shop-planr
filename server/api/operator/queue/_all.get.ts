@@ -2,7 +2,7 @@ import type { WorkQueueJob, WorkQueueResponse } from '../../../types/computed'
 
 export default defineEventHandler(async () => {
   try {
-    const { jobService, pathService, serialService } = getServices()
+    const { jobService, pathService, partService } = getServices()
     const jobs = jobService.listJobs()
 
     const groupMap = new Map<string, WorkQueueJob>()
@@ -14,8 +14,8 @@ export default defineEventHandler(async () => {
         const totalSteps = path.steps.length
 
         for (const step of path.steps) {
-          const serials = serialService.listSerialsByStepIndex(path.id, step.order)
-          if (serials.length === 0 && step.order !== 0) continue
+          const parts = partService.listPartsByStepIndex(path.id, step.order)
+          if (parts.length === 0 && step.order !== 0) continue
 
           const key = `${job.id}|${path.id}|${step.order}`
           const isFinalStep = step.order === totalSteps - 1
@@ -31,8 +31,8 @@ export default defineEventHandler(async () => {
             stepOrder: step.order,
             stepLocation: step.location,
             totalSteps,
-            serialIds: serials.map(s => s.id),
-            partCount: serials.length,
+            partIds: parts.map(s => s.id),
+            partCount: parts.length,
             nextStepName: nextStep?.name,
             nextStepLocation: nextStep?.location,
             isFinalStep,

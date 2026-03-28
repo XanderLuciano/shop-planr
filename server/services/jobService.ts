@@ -1,6 +1,6 @@
 import type { JobRepository } from '../repositories/interfaces/jobRepository'
 import type { PathRepository } from '../repositories/interfaces/pathRepository'
-import type { SerialRepository } from '../repositories/interfaces/serialRepository'
+import type { PartRepository } from '../repositories/interfaces/partRepository'
 import type { Job } from '../types/domain'
 import type { CreateJobInput, UpdateJobInput } from '../types/api'
 import type { JobProgress } from '../types/computed'
@@ -11,7 +11,7 @@ import { NotFoundError } from '../utils/errors'
 export function createJobService(repos: {
   jobs: JobRepository
   paths: PathRepository
-  serials: SerialRepository
+  parts: PartRepository
 }) {
   return {
     createJob(input: CreateJobInput): Job {
@@ -72,33 +72,33 @@ export function createJobService(repos: {
         throw new NotFoundError('Job', jobId)
       }
 
-      const totalSerials = repos.serials.countByJobId(jobId)
-      const completedSerials = repos.serials.countCompletedByJobId(jobId)
-      const scrappedSerials = repos.serials.countScrappedByJobId(jobId)
-      const inProgressSerials = totalSerials - completedSerials - scrappedSerials
+      const totalParts = repos.parts.countByJobId(jobId)
+      const completedParts = repos.parts.countCompletedByJobId(jobId)
+      const scrappedParts = repos.parts.countScrappedByJobId(jobId)
+      const inProgressParts = totalParts - completedParts - scrappedParts
 
       // progressPercent = completedCount / (goalQuantity - scrappedCount) * 100
-      const adjustedGoal = job.goalQuantity - scrappedSerials
+      const adjustedGoal = job.goalQuantity - scrappedParts
       const progressPercent = adjustedGoal > 0
-        ? (completedSerials / adjustedGoal) * 100
-        : (completedSerials > 0 ? 100 : 0)
+        ? (completedParts / adjustedGoal) * 100
+        : (completedParts > 0 ? 100 : 0)
 
       return {
         jobId: job.id,
         jobName: job.name,
         goalQuantity: job.goalQuantity,
-        totalSerials,
-        completedSerials,
-        inProgressSerials,
-        scrappedSerials,
-        producedQuantity: totalSerials,
+        totalParts,
+        completedParts,
+        inProgressParts,
+        scrappedParts,
+        producedQuantity: totalParts,
         orderedQuantity: job.goalQuantity,
         progressPercent,
       }
     },
 
     getJobPartCount(jobId: string): number {
-      return repos.serials.countByJobId(jobId)
+      return repos.parts.countByJobId(jobId)
     }
   }
 }

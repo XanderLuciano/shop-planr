@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
       throw new ValidationError('userId is required')
     }
 
-    const { jobService, pathService, serialService } = getServices()
+    const { jobService, pathService, partService } = getServices()
     const jobs = jobService.listJobs()
 
     // Map keyed by "jobId|pathId|stepOrder" → WorkQueueJob (in-progress build)
@@ -20,8 +20,8 @@ export default defineEventHandler(async (event) => {
         const totalSteps = path.steps.length
 
         for (const step of path.steps) {
-          const serials = serialService.listSerialsByStepIndex(path.id, step.order)
-          if (serials.length === 0) continue
+          const parts = partService.listPartsByStepIndex(path.id, step.order)
+          if (parts.length === 0) continue
 
           const key = `${job.id}|${path.id}|${step.order}`
           const isFinalStep = step.order === totalSteps - 1
@@ -37,8 +37,8 @@ export default defineEventHandler(async (event) => {
             stepOrder: step.order,
             stepLocation: step.location,
             totalSteps,
-            serialIds: serials.map(s => s.id),
-            partCount: serials.length,
+            partIds: parts.map(s => s.id),
+            partCount: parts.length,
             nextStepName: nextStep?.name,
             nextStepLocation: nextStep?.location,
             isFinalStep,

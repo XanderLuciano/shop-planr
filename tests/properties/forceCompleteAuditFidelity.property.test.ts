@@ -1,14 +1,14 @@
 /**
  * Property 12: Force Complete Audit Fidelity
  *
- * For any force-completed serial, verify audit metadata contains
+ * For any force-completed part, verify audit metadata contains
  * the exact set of incomplete required step IDs.
  *
  * **Validates: Requirements 8.4, 8.5**
  */
 import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
-import type { SnStepStatusValue } from '../../server/types/domain'
+import type { PartStepStatusValue } from '../../server/types/domain'
 
 interface StepConfig {
   id: string
@@ -17,7 +17,7 @@ interface StepConfig {
 
 interface StepStatusRecord {
   stepId: string
-  status: SnStepStatusValue
+  status: PartStepStatusValue
 }
 
 /**
@@ -53,7 +53,7 @@ describe('Property 12: Force Complete Audit Fidelity', () => {
         fc.array(fc.boolean(), { minLength: 12, maxLength: 12 }),
         // array of step statuses
         fc.array(
-          fc.constantFrom<SnStepStatusValue>('pending', 'in_progress', 'completed', 'skipped', 'deferred', 'waived'),
+          fc.constantFrom<PartStepStatusValue>('pending', 'in_progress', 'completed', 'skipped', 'deferred', 'waived'),
           { minLength: 12, maxLength: 12 },
         ),
         (totalSteps, optionalFlags, statusValues) => {
@@ -111,7 +111,7 @@ describe('Property 12: Force Complete Audit Fidelity', () => {
 
           const stepStatuses: StepStatusRecord[] = steps.map(step => ({
             stepId: step.id,
-            status: 'pending' as SnStepStatusValue,
+            status: 'pending' as PartStepStatusValue,
           }))
 
           // Override every other step

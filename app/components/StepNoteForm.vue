@@ -5,7 +5,7 @@ const props = defineProps<{
   jobId: string
   pathId: string
   stepId: string
-  serialIds: string[]
+  partIds: string[]
   jiraTicketKey?: string
   jiraPushEnabled?: boolean
 }>()
@@ -42,7 +42,7 @@ async function onSubmit() {
       jobId: props.jobId,
       pathId: props.pathId,
       stepId: props.stepId,
-      serialIds: props.serialIds,
+      partIds: props.partIds,
       text: trimmed,
       userId: user.id
     })

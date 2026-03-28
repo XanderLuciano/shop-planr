@@ -2,7 +2,7 @@
  * Property 5: Invalid Step Rejection
  *
  * For any step ID that does not exist in the database, the step endpoint should
- * return a 404 error. Steps that exist but have zero active serials now return
+ * return a 404 error. Steps that exist but have zero active parts now return
  * a valid response with partCount: 0 (fixed behavior).
  *
  * **Validates: Requirements 2.6**
@@ -18,7 +18,7 @@ import type { WorkQueueJob, StepViewResponse } from '../../server/types/computed
  * Returns null only when the step ID does not exist in the database (maps to 404).
  */
 function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
-  const { jobService, pathService, serialService, noteService } = ctx
+  const { jobService, pathService, partService, noteService } = ctx
   const jobs = jobService.listJobs()
 
   for (const job of jobs) {
@@ -30,16 +30,16 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
       for (const step of path.steps) {
         if (step.id !== stepId) continue
 
-        const serials = serialService.listSerialsByStepIndex(path.id, step.order)
+        const parts = partService.listPartsByStepIndex(path.id, step.order)
 
         const isFinalStep = step.order === totalSteps - 1
         const prevStep = step.order > 0 ? path.steps[step.order - 1] : undefined
         const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
 
         let previousStepWipCount: number | undefined
-        if (step.order > 0 && serials.length === 0) {
-          const prevSerials = serialService.listSerialsByStepIndex(path.id, step.order - 1)
-          previousStepWipCount = prevSerials.length
+        if (step.order > 0 && parts.length === 0) {
+          const prevParts = partService.listPartsByStepIndex(path.id, step.order - 1)
+          previousStepWipCount = prevParts.length
         }
 
         const foundJob: WorkQueueJob = {
@@ -52,8 +52,8 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
           stepOrder: step.order,
           stepLocation: step.location,
           totalSteps,
-          serialIds: serials.map(s => s.id),
-          partCount: serials.length,
+          partIds: parts.map(s => s.id),
+          partCount: parts.length,
           previousStepId: prevStep?.id,
           previousStepName: prevStep?.name,
           nextStepId: nextStep?.id,
@@ -103,23 +103,23 @@ describe('Property 5: Invalid Step Rejection', () => {
     )
   })
 
-  it('returns valid response for step 0 with zero active serials (fixed behavior)', () => {
+  it('returns valid response for step 0 with zero active parts (fixed behavior)', () => {
     const configArb = fc.record({
       jobName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
       pathName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
       stepCount: fc.integer({ min: 2, max: 5 }),
-      serialCount: fc.integer({ min: 1, max: 6 }),
+      partCount: fc.integer({ min: 1, max: 6 }),
     })
 
     fc.assert(
       fc.property(configArb, (config) => {
         ctx = createTestContext()
-        const { jobService, pathService, serialService } = ctx
+        const { jobService, pathService, partService } = ctx
 
         // Create a job with a path and multiple steps
         const job = jobService.createJob({
           name: config.jobName,
-          goalQuantity: config.serialCount,
+          goalQuantity: config.partCount,
         })
 
         const steps = Array.from({ length: config.stepCount }, (_, i) => ({
@@ -129,27 +129,27 @@ describe('Property 5: Invalid Step Rejection', () => {
         const path = pathService.createPath({
           jobId: job.id,
           name: config.pathName,
-          goalQuantity: config.serialCount,
+          goalQuantity: config.partCount,
           steps,
         })
 
-        // Create serials (they start at step 0)
-        const serials = serialService.batchCreateSerials(
-          { jobId: job.id, pathId: path.id, quantity: config.serialCount },
+        // Create parts (they start at step 0)
+        const parts = partService.batchCreateParts(
+          { jobId: job.id, pathId: path.id, quantity: config.partCount },
           'user_test',
         )
 
-        // Advance ALL serials past step 0 so step 0 has zero active serials
-        for (const serial of serials) {
-          serialService.advanceSerial(serial.id, 'user_test')
+        // Advance ALL parts past step 0 so step 0 has zero active parts
+        for (const part of parts) {
+          partService.advancePart(part.id, 'user_test')
         }
 
-        // Step 0 now has zero active serials — fixed lookup returns valid response with partCount: 0
+        // Step 0 now has zero active parts — fixed lookup returns valid response with partCount: 0
         const step0Id = path.steps[0].id
         const result = lookupStep(ctx, step0Id)
-        expect(result, `Expected non-null for step 0 ${step0Id} with zero active serials`).not.toBeNull()
+        expect(result, `Expected non-null for step 0 ${step0Id} with zero active parts`).not.toBeNull()
         expect(result!.job.partCount).toBe(0)
-        expect(result!.job.serialIds).toEqual([])
+        expect(result!.job.partIds).toEqual([])
         expect(result!.job.stepOrder).toBe(0)
 
         ctx.cleanup()

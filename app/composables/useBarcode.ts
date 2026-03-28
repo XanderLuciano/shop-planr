@@ -1,4 +1,4 @@
-export type ScanType = 'serial' | 'certificate' | 'unknown'
+export type ScanType = 'part' | 'certificate' | 'unknown'
 
 export interface ScanResult {
   value: string
@@ -6,13 +6,13 @@ export interface ScanResult {
 }
 
 /**
- * Detects whether a scanned/typed value is a Serial Number, Certificate, or unknown.
- * - Starts with "SN-" → serial
+ * Detects whether a scanned/typed value is a Part, Certificate, or unknown.
+ * - Starts with "SN-" or "part_" → part
  * - Starts with "cert_" → certificate
  * - Otherwise → unknown
  */
 export function detectScanType(value: string): ScanType {
-  if (value.startsWith('SN-')) return 'serial'
+  if (value.startsWith('SN-') || value.startsWith('part_')) return 'part'
   if (value.startsWith('cert_')) return 'certificate'
   return 'unknown'
 }
@@ -47,27 +47,27 @@ export function useBarcode() {
   })
 
   /**
-   * Handles a scan result by looking up the value as a serial or certificate.
-   * - serial: fetches serial detail, shows toast with job/step info
+   * Handles a scan result by looking up the value as a part or certificate.
+   * - part: fetches part detail, shows toast with job/step info
    * - certificate: fetches cert detail, shows toast with cert info
-   * - unknown: tries serial first, then cert, shows "not found" if neither matches
+   * - unknown: tries part first, then cert, shows "not found" if neither matches
    *
    * Requirements: 6.1, 6.2, 6.3, 6.4, 6.8
    */
   async function handleScan(result: ScanResult) {
-    if (result.type === 'serial') {
-      await lookupSerial(result.value)
+    if (result.type === 'part') {
+      await lookupPart(result.value)
     } else if (result.type === 'certificate') {
       await lookupCert(result.value)
     } else {
-      // Unknown type — try serial first, then cert
-      const foundSerial = await lookupSerial(result.value, true)
-      if (!foundSerial) {
+      // Unknown type — try part first, then cert
+      const foundPart = await lookupPart(result.value, true)
+      if (!foundPart) {
         const foundCert = await lookupCert(result.value, true)
         if (!foundCert) {
           toast.add({
             title: 'Not Found',
-            description: `"${result.value}" not found as Serial Number or Certificate`,
+            description: `"${result.value}" not found as Part or Certificate`,
             color: 'error'
           })
         }
@@ -76,23 +76,23 @@ export function useBarcode() {
   }
 
   /**
-   * Looks up a serial number by ID and shows a toast with its status.
+   * Looks up a part by ID and shows a toast with its status.
    * Returns true if found, false if not found.
    * When `silent` is true, suppresses the "not found" toast (used for unknown-type fallback).
    */
-  async function lookupSerial(id: string, silent = false): Promise<boolean> {
+  async function lookupPart(id: string, silent = false): Promise<boolean> {
     try {
-      const serial = await $fetch<{
+      const part = await $fetch<{
         id: string
         jobId: string
         pathId: string
         currentStepIndex: number
         certs: unknown[]
-      }>(`/api/serials/${id}`)
+      }>(`/api/parts/${id}`)
 
       toast.add({
-        title: `SN: ${serial.id}`,
-        description: `Job: ${serial.jobId} · Step: ${serial.currentStepIndex === -1 ? 'Completed' : serial.currentStepIndex} · Certs: ${serial.certs.length}`,
+        title: `Part: ${part.id}`,
+        description: `Job: ${part.jobId} · Step: ${part.currentStepIndex === -1 ? 'Completed' : part.currentStepIndex} · Certs: ${part.certs.length}`,
         color: 'success'
       })
       return true
@@ -100,7 +100,7 @@ export function useBarcode() {
       if (!silent) {
         toast.add({
           title: 'Not Found',
-          description: `Serial "${id}" not found`,
+          description: `Part "${id}" not found`,
           color: 'error'
         })
       }
@@ -144,7 +144,7 @@ export function useBarcode() {
     focusBarcodeInput,
     detectScanType,
     handleScan,
-    lookupSerial,
+    lookupPart,
     lookupCert
   }
 }

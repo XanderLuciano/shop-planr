@@ -1,9 +1,9 @@
 /**
  * Property 1: Queue aggregation correctness
  *
- * For any set of jobs, paths, and serials where some serials have
+ * For any set of jobs, paths, and parts where some parts have
  * currentStepIndex >= 0, the work queue aggregation returns WorkQueueJob
- * entries whose serialIds collectively contain exactly all active serial IDs,
+ * entries whose partIds collectively contain exactly all active part IDs,
  * each in exactly one group matching its pathId and currentStepIndex.
  *
  * **Validates: Requirements 1.1, 3.2**
@@ -15,14 +15,14 @@ import { resolve } from 'path'
 import { runMigrations } from '../../server/repositories/sqlite/index'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
-import { SQLiteSerialRepository } from '../../server/repositories/sqlite/serialRepository'
+import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
 import { SQLiteCertRepository } from '../../server/repositories/sqlite/certRepository'
 import { SQLiteAuditRepository } from '../../server/repositories/sqlite/auditRepository'
 import { createJobService } from '../../server/services/jobService'
 import { createPathService } from '../../server/services/pathService'
-import { createSerialService } from '../../server/services/serialService'
+import { createPartService } from '../../server/services/partService'
 import { createAuditService } from '../../server/services/auditService'
-import { createSequentialSnGenerator } from '../../server/utils/idGenerator'
+import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
 import type { WorkQueueJob, WorkQueueResponse } from '../../server/types/computed'
 
 const migrationsDir = resolve(__dirname, '../../server/repositories/sqlite/migrations')
@@ -39,31 +39,31 @@ function setupServices(db: Database.default.Database) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
-    serials: new SQLiteSerialRepository(db),
+    parts: new SQLitePartRepository(db),
     certs: new SQLiteCertRepository(db),
     audit: new SQLiteAuditRepository(db),
   }
 
-  const snGenerator = createSequentialSnGenerator({
+  const partIdGenerator = createSequentialPartIdGenerator({
     getCounter: () => {
-      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('sn') as { value: number } | undefined
+      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
       return row?.value ?? 0
     },
     setCounter: (v: number) => {
-      db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('sn', v)
+      db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
     },
   })
 
   const auditService = createAuditService({ audit: repos.audit })
-  const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, serials: repos.serials })
-  const pathService = createPathService({ paths: repos.paths, serials: repos.serials })
-  const serialService = createSerialService(
-    { serials: repos.serials, paths: repos.paths, certs: repos.certs },
+  const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts })
+  const pathService = createPathService({ paths: repos.paths, parts: repos.parts })
+  const partService = createPartService(
+    { parts: repos.parts, paths: repos.paths, certs: repos.certs },
     auditService,
-    snGenerator,
+    partIdGenerator,
   )
 
-  return { jobService, pathService, serialService }
+  return { jobService, pathService, partService }
 }
 
 /**
@@ -74,7 +74,7 @@ function aggregateWorkQueue(
   services: ReturnType<typeof setupServices>,
   userId: string,
 ): WorkQueueResponse {
-  const { jobService, pathService, serialService } = services
+  const { jobService, pathService, partService } = services
   const jobs = jobService.listJobs()
   const groupMap = new Map<string, WorkQueueJob>()
 
@@ -85,8 +85,8 @@ function aggregateWorkQueue(
       const totalSteps = path.steps.length
 
       for (const step of path.steps) {
-        const serials = serialService.listSerialsByStepIndex(path.id, step.order)
-        if (serials.length === 0) continue
+        const parts = partService.listPartsByStepIndex(path.id, step.order)
+        if (parts.length === 0) continue
 
         const key = `${job.id}|${path.id}|${step.order}`
         const isFinalStep = step.order === totalSteps - 1
@@ -102,8 +102,8 @@ function aggregateWorkQueue(
           stepOrder: step.order,
           stepLocation: step.location,
           totalSteps,
-          serialIds: serials.map(s => s.id),
-          partCount: serials.length,
+          partIds: parts.map(s => s.id),
+          partCount: parts.length,
           nextStepName: nextStep?.name,
           nextStepLocation: nextStep?.location,
           isFinalStep,
@@ -118,18 +118,18 @@ function aggregateWorkQueue(
   return { operatorId: userId, jobs: queueJobs, totalParts }
 }
 
-/** Arbitrary for a single job/path/serial configuration */
+/** Arbitrary for a single job/path/part configuration */
 const jobPathConfigArb = fc.record({
   jobName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
   pathName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
   stepCount: fc.integer({ min: 1, max: 5 }),
-  serialCount: fc.integer({ min: 0, max: 8 }),
-  /** How many serials to advance (and by how many steps each) */
+  partCount: fc.integer({ min: 0, max: 8 }),
+  /** How many parts to advance (and by how many steps each) */
   advancementSpecs: fc.array(
     fc.record({
-      /** Index into the serials array for this path */
-      serialIndex: fc.integer({ min: 0, max: 7 }),
-      /** How many times to advance this serial */
+      /** Index into the parts array for this path */
+      partIndex: fc.integer({ min: 0, max: 7 }),
+      /** How many times to advance this part */
       advanceTimes: fc.integer({ min: 0, max: 6 }),
     }),
     { minLength: 0, maxLength: 10 },
@@ -149,15 +149,15 @@ describe('Property 1: Queue aggregation correctness', () => {
     }
   })
 
-  it('all active serial IDs appear exactly once across WorkQueueJob.serialIds, each in the correct group', () => {
+  it('all active part IDs appear exactly once across WorkQueueJob.partIds, each in the correct group', () => {
     fc.assert(
       fc.property(scenarioArb, (configs) => {
         db = createTestDb()
         const services = setupServices(db)
-        const { jobService, pathService, serialService } = services
+        const { jobService, pathService, partService } = services
 
-        // Track all created serials with their expected state
-        const allSerials: Array<{
+        // Track all created parts with their expected state
+        const allParts: Array<{
           id: string
           pathId: string
           currentStepIndex: number
@@ -166,7 +166,7 @@ describe('Property 1: Queue aggregation correctness', () => {
         for (const config of configs) {
           const job = jobService.createJob({
             name: config.jobName,
-            goalQuantity: Math.max(config.serialCount, 1),
+            goalQuantity: Math.max(config.partCount, 1),
           })
 
           const steps = Array.from({ length: config.stepCount }, (_, i) => ({
@@ -177,32 +177,32 @@ describe('Property 1: Queue aggregation correctness', () => {
           const path = pathService.createPath({
             jobId: job.id,
             name: config.pathName,
-            goalQuantity: Math.max(config.serialCount, 1),
+            goalQuantity: Math.max(config.partCount, 1),
             steps,
           })
 
-          if (config.serialCount === 0) continue
+          if (config.partCount === 0) continue
 
-          const serials = serialService.batchCreateSerials(
-            { jobId: job.id, pathId: path.id, quantity: config.serialCount },
+          const parts = partService.batchCreateParts(
+            { jobId: job.id, pathId: path.id, quantity: config.partCount },
             'user_test',
           )
 
           // Initialize tracking — all start at step 0
-          for (const s of serials) {
-            allSerials.push({ id: s.id, pathId: path.id, currentStepIndex: 0 })
+          for (const s of parts) {
+            allParts.push({ id: s.id, pathId: path.id, currentStepIndex: 0 })
           }
 
           // Apply advancements
           for (const spec of config.advancementSpecs) {
-            if (spec.serialIndex >= serials.length) continue
-            const serial = serials[spec.serialIndex]
-            const tracked = allSerials.find(t => t.id === serial.id)!
+            if (spec.partIndex >= parts.length) continue
+            const part = parts[spec.partIndex]
+            const tracked = allParts.find(t => t.id === part.id)!
 
             for (let i = 0; i < spec.advanceTimes; i++) {
               if (tracked.currentStepIndex === -1) break // already completed
               try {
-                serialService.advanceSerial(serial.id, 'user_test')
+                partService.advancePart(part.id, 'user_test')
                 if (tracked.currentStepIndex === config.stepCount - 1) {
                   tracked.currentStepIndex = -1 // completed
                 } else {
@@ -218,35 +218,35 @@ describe('Property 1: Queue aggregation correctness', () => {
         // Run aggregation
         const response = aggregateWorkQueue(services, 'user_test')
 
-        // Collect all active serials (currentStepIndex >= 0)
+        // Collect all active parts (currentStepIndex >= 0)
         const expectedActiveIds = new Set(
-          allSerials
+          allParts
             .filter(s => s.currentStepIndex >= 0)
             .map(s => s.id),
         )
 
-        // Collect all serial IDs from the response
+        // Collect all part IDs from the response
         const actualIds: string[] = []
         for (const job of response.jobs) {
-          actualIds.push(...job.serialIds)
+          actualIds.push(...job.partIds)
         }
         const actualIdSet = new Set(actualIds)
 
-        // 1. Every active serial appears in the response
+        // 1. Every active part appears in the response
         for (const expectedId of expectedActiveIds) {
           expect(actualIdSet.has(expectedId)).toBe(true)
         }
 
-        // 2. No extra serials in the response (no completed serials)
+        // 2. No extra parts in the response (no completed parts)
         expect(actualIds.length).toBe(expectedActiveIds.size)
 
-        // 3. No duplicates — each serial appears exactly once
+        // 3. No duplicates — each part appears exactly once
         expect(actualIdSet.size).toBe(actualIds.length)
 
-        // 4. Each serial is in the correct group (matching pathId and stepOrder)
+        // 4. Each part is in the correct group (matching pathId and stepOrder)
         for (const job of response.jobs) {
-          for (const serialId of job.serialIds) {
-            const tracked = allSerials.find(t => t.id === serialId)!
+          for (const partId of job.partIds) {
+            const tracked = allParts.find(t => t.id === partId)!
             expect(tracked.pathId).toBe(job.pathId)
             expect(tracked.currentStepIndex).toBe(job.stepOrder)
           }
@@ -264,7 +264,7 @@ describe('Property 1: Queue aggregation correctness', () => {
  * Property 2: Queue structural invariants
  *
  * For any WorkQueueResponse, the following must hold:
- * (a) each WorkQueueJob has partCount equal to serialIds.length,
+ * (a) each WorkQueueJob has partCount equal to partIds.length,
  * (b) each job has a non-empty stepName and stepId,
  * (c) totalParts equals the sum of all partCount values across all jobs,
  * (d) jobs are grouped by the combination of jobId + pathId + stepOrder.
@@ -281,17 +281,17 @@ describe('Property 2: Queue structural invariants', () => {
     }
   })
 
-  it('partCount === serialIds.length, stepName/stepId non-empty, totalParts === sum(partCount), grouping uniqueness', () => {
+  it('partCount === partIds.length, stepName/stepId non-empty, totalParts === sum(partCount), grouping uniqueness', () => {
     fc.assert(
       fc.property(scenarioArb, (configs) => {
         db = createTestDb()
         const services = setupServices(db)
-        const { jobService, pathService, serialService } = services
+        const { jobService, pathService, partService } = services
 
         for (const config of configs) {
           const job = jobService.createJob({
             name: config.jobName,
-            goalQuantity: Math.max(config.serialCount, 1),
+            goalQuantity: Math.max(config.partCount, 1),
           })
 
           const steps = Array.from({ length: config.stepCount }, (_, i) => ({
@@ -302,24 +302,24 @@ describe('Property 2: Queue structural invariants', () => {
           const path = pathService.createPath({
             jobId: job.id,
             name: config.pathName,
-            goalQuantity: Math.max(config.serialCount, 1),
+            goalQuantity: Math.max(config.partCount, 1),
             steps,
           })
 
-          if (config.serialCount === 0) continue
+          if (config.partCount === 0) continue
 
-          const serials = serialService.batchCreateSerials(
-            { jobId: job.id, pathId: path.id, quantity: config.serialCount },
+          const parts = partService.batchCreateParts(
+            { jobId: job.id, pathId: path.id, quantity: config.partCount },
             'user_test',
           )
 
           // Apply advancements
           for (const spec of config.advancementSpecs) {
-            if (spec.serialIndex >= serials.length) continue
-            const serial = serials[spec.serialIndex]
+            if (spec.partIndex >= parts.length) continue
+            const part = parts[spec.partIndex]
             for (let i = 0; i < spec.advanceTimes; i++) {
               try {
-                serialService.advanceSerial(serial.id, 'user_test')
+                partService.advancePart(part.id, 'user_test')
               } catch {
                 break
               }
@@ -330,9 +330,9 @@ describe('Property 2: Queue structural invariants', () => {
         // Run aggregation
         const response = aggregateWorkQueue(services, 'user_test')
 
-        // (a) partCount === serialIds.length for every job
+        // (a) partCount === partIds.length for every job
         for (const job of response.jobs) {
-          expect(job.partCount).toBe(job.serialIds.length)
+          expect(job.partCount).toBe(job.partIds.length)
         }
 
         // (b) stepName and stepId are non-empty for every job

@@ -9,11 +9,11 @@ const emit = defineEmits<{
 const actionTypes: { label: string, value: AuditAction | '__all__' }[] = [
   { label: 'All Actions', value: '__all__' },
   { label: 'Cert Attached', value: 'cert_attached' },
-  { label: 'Serial Created', value: 'serial_created' },
-  { label: 'Serial Advanced', value: 'serial_advanced' },
-  { label: 'Serial Completed', value: 'serial_completed' },
-  { label: 'Serial Scrapped', value: 'serial_scrapped' },
-  { label: 'Serial Force Completed', value: 'serial_force_completed' },
+  { label: 'Part Created', value: 'part_created' },
+  { label: 'Part Advanced', value: 'part_advanced' },
+  { label: 'Part Completed', value: 'part_completed' },
+  { label: 'Part Scrapped', value: 'part_scrapped' },
+  { label: 'Part Force Completed', value: 'part_force_completed' },
   { label: 'Note Created', value: 'note_created' },
   { label: 'Step Override Created', value: 'step_override_created' },
   { label: 'Step Override Reversed', value: 'step_override_reversed' },
@@ -26,7 +26,7 @@ const actionTypes: { label: string, value: AuditAction | '__all__' }[] = [
 
 const selectedAction = ref<AuditAction | '__all__'>('__all__')
 const userId = ref('')
-const serialId = ref('')
+const partId = ref('')
 const jobId = ref('')
 const startDate = ref('')
 const endDate = ref('')
@@ -35,7 +35,7 @@ function emitFilters() {
   const filters: AuditFilters = {}
   if (selectedAction.value && selectedAction.value !== '__all__') filters.action = selectedAction.value as AuditAction
   if (userId.value.trim()) filters.userId = userId.value.trim()
-  if (serialId.value.trim()) filters.serialId = serialId.value.trim()
+  if (partId.value.trim()) filters.partId = partId.value.trim()
   if (jobId.value.trim()) filters.jobId = jobId.value.trim()
   if (startDate.value) filters.startDate = startDate.value
   if (endDate.value) filters.endDate = endDate.value
@@ -45,14 +45,14 @@ function emitFilters() {
 function clearFilters() {
   selectedAction.value = '__all__'
   userId.value = ''
-  serialId.value = ''
+  partId.value = ''
   jobId.value = ''
   startDate.value = ''
   endDate.value = ''
   emitFilters()
 }
 
-watch([selectedAction, userId, serialId, jobId, startDate, endDate], emitFilters)
+watch([selectedAction, userId, partId, jobId, startDate, endDate], emitFilters)
 </script>
 
 <template>
@@ -75,8 +75,8 @@ watch([selectedAction, userId, serialId, jobId, startDate, endDate], emitFilters
     </div>
 
     <div>
-      <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Serial</label>
-      <UInput v-model="serialId" placeholder="Serial ID..." size="xs" class="w-32" />
+      <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Part</label>
+      <UInput v-model="partId" placeholder="Part ID..." size="xs" class="w-32" />
     </div>
 
     <div>

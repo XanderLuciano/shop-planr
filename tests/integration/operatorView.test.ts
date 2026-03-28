@@ -12,12 +12,12 @@ import { createTestContext, type TestContext } from './helpers'
 
 /** Replicates the operator view aggregation from server/api/operator/[stepName].get.ts */
 function getOperatorView(ctx: TestContext, stepName: string) {
-  const { jobService, pathService, serialService } = ctx
+  const { jobService, pathService, partService } = ctx
   const jobs = jobService.listJobs()
 
-  const currentParts: Array<{ serialId: string, jobName: string, pathName: string, nextStepName?: string, nextStepLocation?: string }> = []
-  const comingSoon: Array<{ serialId: string, jobName: string, pathName: string }> = []
-  const backlog: Array<{ serialId: string, jobName: string, pathName: string }> = []
+  const currentParts: Array<{ partId: string, jobName: string, pathName: string, nextStepName?: string, nextStepLocation?: string }> = []
+  const comingSoon: Array<{ partId: string, jobName: string, pathName: string }> = []
+  const backlog: Array<{ partId: string, jobName: string, pathName: string }> = []
 
   for (const job of jobs) {
     const paths = pathService.listPathsByJob(job.id)
@@ -26,11 +26,11 @@ function getOperatorView(ctx: TestContext, stepName: string) {
       if (stepIndex === -1) continue
 
       // Current parts at this step
-      const atStep = serialService.listSerialsByStepIndex(path.id, stepIndex)
-      for (const sn of atStep) {
+      const atStep = partService.listPartsByStepIndex(path.id, stepIndex)
+      for (const part of atStep) {
         const nextStep = path.steps[stepIndex + 1]
         currentParts.push({
-          serialId: sn.id,
+          partId: part.id,
           jobName: job.name,
           pathName: path.name,
           nextStepName: nextStep?.name,
@@ -40,17 +40,17 @@ function getOperatorView(ctx: TestContext, stepName: string) {
 
       // Coming soon (one step upstream)
       if (stepIndex > 0) {
-        const upstream = serialService.listSerialsByStepIndex(path.id, stepIndex - 1)
-        for (const sn of upstream) {
-          comingSoon.push({ serialId: sn.id, jobName: job.name, pathName: path.name })
+        const upstream = partService.listPartsByStepIndex(path.id, stepIndex - 1)
+        for (const part of upstream) {
+          comingSoon.push({ partId: part.id, jobName: job.name, pathName: path.name })
         }
       }
 
       // Backlog (two+ steps upstream)
       for (let i = 0; i < stepIndex - 1; i++) {
-        const far = serialService.listSerialsByStepIndex(path.id, i)
-        for (const sn of far) {
-          backlog.push({ serialId: sn.id, jobName: job.name, pathName: path.name })
+        const far = partService.listPartsByStepIndex(path.id, i)
+        for (const part of far) {
+          backlog.push({ partId: part.id, jobName: job.name, pathName: path.name })
         }
       }
     }
@@ -66,9 +66,9 @@ describe('Operator View Integration', () => {
 
   it('shows current parts at selected step across multiple jobs', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService } = ctx
+    const { jobService, pathService, partService } = ctx
 
-    // Job 1: 3-step path, 3 SNs at step 1 ("Weld")
+    // Job 1: 3-step path, 3 parts at step 1 ("Weld")
     const job1 = jobService.createJob({ name: 'Job Alpha', goalQuantity: 5 })
     const path1 = pathService.createPath({
       jobId: job1.id,
@@ -80,16 +80,16 @@ describe('Operator View Integration', () => {
         { name: 'Inspect', location: 'QC Lab' }
       ]
     })
-    const serials1 = serialService.batchCreateSerials(
+    const parts1 = partService.batchCreateParts(
       { jobId: job1.id, pathId: path1.id, quantity: 3 },
       'op1'
     )
     // Advance all 3 to "Weld" (step 1)
-    for (const sn of serials1) {
-      serialService.advanceSerial(sn.id, 'op1')
+    for (const part of parts1) {
+      partService.advancePart(part.id, 'op1')
     }
 
-    // Job 2: different path but also has "Weld" step, 2 SNs at "Weld"
+    // Job 2: different path but also has "Weld" step, 2 parts at "Weld"
     const job2 = jobService.createJob({ name: 'Job Beta', goalQuantity: 4 })
     const path2 = pathService.createPath({
       jobId: job2.id,
@@ -101,13 +101,13 @@ describe('Operator View Integration', () => {
         { name: 'Coat', location: 'Vendor - Anodize Co.' }
       ]
     })
-    const serials2 = serialService.batchCreateSerials(
+    const parts2 = partService.batchCreateParts(
       { jobId: job2.id, pathId: path2.id, quantity: 4 },
       'op1'
     )
     // Advance 2 to "Weld"
     for (let i = 0; i < 2; i++) {
-      serialService.advanceSerial(serials2[i].id, 'op1')
+      partService.advancePart(parts2[i].id, 'op1')
     }
 
     const view = getOperatorView(ctx, 'Weld')
@@ -118,7 +118,7 @@ describe('Operator View Integration', () => {
 
   it('shows coming soon (one step upstream) and backlog (two+ steps upstream)', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService } = ctx
+    const { jobService, pathService, partService } = ctx
 
     const job = jobService.createJob({ name: 'Upstream Job', goalQuantity: 10 })
     const path = pathService.createPath({
@@ -133,7 +133,7 @@ describe('Operator View Integration', () => {
       ]
     })
 
-    const serials = serialService.batchCreateSerials(
+    const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 10 },
       'op1'
     )
@@ -143,17 +143,17 @@ describe('Operator View Integration', () => {
     // 2 at step 2 (Weld) — coming soon for "Inspect"
     // 2 at step 3 (Inspect) — current for "Inspect"
 
-    // Advance serials[0..6] to step 1 (Cut)
+    // Advance parts[0..6] to step 1 (Cut)
     for (let i = 0; i < 7; i++) {
-      serialService.advanceSerial(serials[i].id, 'op1')
+      partService.advancePart(parts[i].id, 'op1')
     }
-    // Advance serials[0..3] to step 2 (Weld)
+    // Advance parts[0..3] to step 2 (Weld)
     for (let i = 0; i < 4; i++) {
-      serialService.advanceSerial(serials[i].id, 'op1')
+      partService.advancePart(parts[i].id, 'op1')
     }
-    // Advance serials[0..1] to step 3 (Inspect)
+    // Advance parts[0..1] to step 3 (Inspect)
     for (let i = 0; i < 2; i++) {
-      serialService.advanceSerial(serials[i].id, 'op1')
+      partService.advancePart(parts[i].id, 'op1')
     }
 
     // Distribution: step 0 = 3, step 1 = 3, step 2 = 2, step 3 = 2
@@ -171,7 +171,7 @@ describe('Operator View Integration', () => {
 
   it('shows next step name and location for current parts', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService } = ctx
+    const { jobService, pathService, partService } = ctx
 
     const job = jobService.createJob({ name: 'Next Step Job', goalQuantity: 2 })
     const path = pathService.createPath({
@@ -185,7 +185,7 @@ describe('Operator View Integration', () => {
       ]
     })
 
-    const serials = serialService.batchCreateSerials(
+    const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 2 },
       'op1'
     )
@@ -201,7 +201,7 @@ describe('Operator View Integration', () => {
 
   it('switching step updates the view', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService } = ctx
+    const { jobService, pathService, partService } = ctx
 
     const job = jobService.createJob({ name: 'Switch Job', goalQuantity: 4 })
     const path = pathService.createPath({
@@ -211,15 +211,15 @@ describe('Operator View Integration', () => {
       steps: [{ name: 'A' }, { name: 'B' }, { name: 'C' }]
     })
 
-    const serials = serialService.batchCreateSerials(
+    const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 4 },
       'op1'
     )
 
     // 2 at A, 1 at B, 1 at C
-    serialService.advanceSerial(serials[0].id, 'op1') // → B
-    serialService.advanceSerial(serials[1].id, 'op1') // → B
-    serialService.advanceSerial(serials[0].id, 'op1') // → C
+    partService.advancePart(parts[0].id, 'op1') // → B
+    partService.advancePart(parts[1].id, 'op1') // → B
+    partService.advancePart(parts[0].id, 'op1') // → C
 
     const viewA = getOperatorView(ctx, 'A')
     expect(viewA.currentParts).toHaveLength(2)

@@ -10,19 +10,19 @@ export function createNoteService(repos: { notes: NoteRepository }, auditService
       jobId: string
       pathId: string
       stepId: string
-      serialIds: string[]
+      partIds: string[]
       text: string
       userId: string
     }): StepNote {
       assertNonEmpty(input.text, 'text')
-      assertNonEmptyArray(input.serialIds, 'serialIds')
+      assertNonEmptyArray(input.partIds, 'partIds')
 
       const note: StepNote = {
         id: generateId('note'),
         jobId: input.jobId,
         pathId: input.pathId,
         stepId: input.stepId,
-        serialIds: input.serialIds,
+        partIds: input.partIds,
         text: input.text.trim(),
         createdBy: input.userId,
         createdAt: new Date().toISOString(),
@@ -41,8 +41,8 @@ export function createNoteService(repos: { notes: NoteRepository }, auditService
       return created
     },
 
-    getNotesForSerial(serialId: string): StepNote[] {
-      return repos.notes.listBySerialId(serialId)
+    getNotesForPart(partId: string): StepNote[] {
+      return repos.notes.listByPartId(partId)
     },
 
     getNotesForStep(stepId: string): StepNote[] {

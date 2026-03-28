@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { SnStepStatusView } from '~/server/types/computed'
+import type { PartStepStatusView } from '~/server/types/computed'
 
 const props = defineProps<{
-  serialId: string
-  steps: SnStepStatusView[]
+  partId: string
+  steps: PartStepStatusView[]
 }>()
 
 const { completeDeferredStep, waiveStep, loading } = useLifecycle()
@@ -24,7 +24,7 @@ async function handleComplete(stepId: string) {
     return
   }
   try {
-    await completeDeferredStep(props.serialId, stepId, { userId: operatorId.value })
+    await completeDeferredStep(props.partId, stepId, { userId: operatorId.value })
   } catch (e: any) {
     actionError.value = e?.data?.message ?? e?.message ?? 'Failed to complete step'
   }
@@ -52,7 +52,7 @@ async function confirmWaive() {
     return
   }
   try {
-    await waiveStep(props.serialId, waiveStepId.value, {
+    await waiveStep(props.partId, waiveStepId.value, {
       reason: waiveReason.value.trim(),
       approverId: operatorId.value,
     })

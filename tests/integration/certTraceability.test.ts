@@ -12,9 +12,9 @@ describe('Certificate Traceability Integration', () => {
 
   afterEach(() => ctx?.cleanup())
 
-  it('create certs → attach to serial at step → verify audit entry', () => {
+  it('create certs → attach to part at step → verify audit entry', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService, certService, auditService } = ctx
+    const { jobService, pathService, partService, certService, auditService } = ctx
 
     const job = jobService.createJob({ name: 'Cert Job', goalQuantity: 5 })
     const path = pathService.createPath({
@@ -24,7 +24,7 @@ describe('Certificate Traceability Integration', () => {
       steps: [{ name: 'Cut' }, { name: 'Inspect' }]
     })
 
-    const [serial] = serialService.batchCreateSerials(
+    const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
       'operator1'
     )
@@ -44,22 +44,22 @@ describe('Certificate Traceability Integration', () => {
     expect(procCert.type).toBe('process')
 
     // Attach material cert at step 0
-    const attachment = certService.attachCertToSerial({
+    const attachment = certService.attachCertToPart({
       certId: matCert.id,
-      serialId: serial.id,
+      partId: part.id,
       stepId: path.steps[0].id,
       userId: 'qe1',
       jobId: job.id,
       pathId: path.id
     })
     expect(attachment.certId).toBe(matCert.id)
-    expect(attachment.serialId).toBe(serial.id)
+    expect(attachment.partId).toBe(part.id)
 
-    // Advance serial, attach process cert at step 1
-    serialService.advanceSerial(serial.id, 'operator1')
-    certService.attachCertToSerial({
+    // Advance part, attach process cert at step 1
+    partService.advancePart(part.id, 'operator1')
+    certService.attachCertToPart({
       certId: procCert.id,
-      serialId: serial.id,
+      partId: part.id,
       stepId: path.steps[1].id,
       userId: 'qe1',
       jobId: job.id,
@@ -79,9 +79,9 @@ describe('Certificate Traceability Integration', () => {
     }
   })
 
-  it('attach cert to multiple serials individually → verify all have cert', () => {
+  it('attach cert to multiple parts individually → verify all have cert', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService, certService } = ctx
+    const { jobService, pathService, partService, certService } = ctx
 
     const job = jobService.createJob({ name: 'Batch Cert Job', goalQuantity: 5 })
     const path = pathService.createPath({
@@ -91,18 +91,18 @@ describe('Certificate Traceability Integration', () => {
       steps: [{ name: 'OP1' }, { name: 'OP2' }]
     })
 
-    const serials = serialService.batchCreateSerials(
+    const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 5 },
       'operator1'
     )
 
     const cert = certService.createCert({ type: 'material', name: 'Batch Cert' })
 
-    // Attach cert to all 5 serials at their current step
-    for (const sn of serials) {
-      certService.attachCertToSerial({
+    // Attach cert to all 5 parts at their current step
+    for (const part of parts) {
+      certService.attachCertToPart({
         certId: cert.id,
-        serialId: sn.id,
+        partId: part.id,
         stepId: path.steps[0].id,
         userId: 'qe1',
         jobId: job.id,
@@ -110,17 +110,17 @@ describe('Certificate Traceability Integration', () => {
       })
     }
 
-    // Verify each serial has the cert
-    for (const sn of serials) {
-      const attachments = certService.getCertsForSerial(sn.id)
+    // Verify each part has the cert
+    for (const part of parts) {
+      const attachments = certService.getCertsForPart(part.id)
       expect(attachments.length).toBeGreaterThanOrEqual(1)
       expect(attachments.some(a => a.certId === cert.id)).toBe(true)
     }
   })
 
-  it('query serial certs → returns in attachment order', () => {
+  it('query part certs → returns in attachment order', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService, certService } = ctx
+    const { jobService, pathService, partService, certService } = ctx
 
     const job = jobService.createJob({ name: 'Order Test', goalQuantity: 1 })
     const path = pathService.createPath({
@@ -130,7 +130,7 @@ describe('Certificate Traceability Integration', () => {
       steps: [{ name: 'Step A' }, { name: 'Step B' }, { name: 'Step C' }]
     })
 
-    const [serial] = serialService.batchCreateSerials(
+    const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
       'op1'
     )
@@ -140,28 +140,28 @@ describe('Certificate Traceability Integration', () => {
     const cert3 = certService.createCert({ type: 'material', name: 'Third Cert' })
 
     // Attach in order: cert1 at step 0, advance, cert2 at step 1, advance, cert3 at step 2
-    certService.attachCertToSerial({
-      certId: cert1.id, serialId: serial.id, stepId: path.steps[0].id, userId: 'qe1'
+    certService.attachCertToPart({
+      certId: cert1.id, partId: part.id, stepId: path.steps[0].id, userId: 'qe1'
     })
-    serialService.advanceSerial(serial.id, 'op1')
-    certService.attachCertToSerial({
-      certId: cert2.id, serialId: serial.id, stepId: path.steps[1].id, userId: 'qe1'
+    partService.advancePart(part.id, 'op1')
+    certService.attachCertToPart({
+      certId: cert2.id, partId: part.id, stepId: path.steps[1].id, userId: 'qe1'
     })
-    serialService.advanceSerial(serial.id, 'op1')
-    certService.attachCertToSerial({
-      certId: cert3.id, serialId: serial.id, stepId: path.steps[2].id, userId: 'qe1'
+    partService.advancePart(part.id, 'op1')
+    certService.attachCertToPart({
+      certId: cert3.id, partId: part.id, stepId: path.steps[2].id, userId: 'qe1'
     })
 
-    const certs = certService.getCertsForSerial(serial.id)
+    const certs = certService.getCertsForPart(part.id)
     expect(certs).toHaveLength(3)
     expect(certs[0].certId).toBe(cert1.id)
     expect(certs[1].certId).toBe(cert2.id)
     expect(certs[2].certId).toBe(cert3.id)
   })
 
-  it('audit trail is complete for all operations on a serial', () => {
+  it('audit trail is complete for all operations on a part', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService, certService, auditService } = ctx
+    const { jobService, pathService, partService, certService, auditService } = ctx
 
     const job = jobService.createJob({ name: 'Full Audit Job', goalQuantity: 1 })
     const path = pathService.createPath({
@@ -171,27 +171,27 @@ describe('Certificate Traceability Integration', () => {
       steps: [{ name: 'OP1' }, { name: 'OP2' }]
     })
 
-    const [serial] = serialService.batchCreateSerials(
+    const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
       'op1'
     )
 
     const cert = certService.createCert({ type: 'material', name: 'Audit Cert' })
-    certService.attachCertToSerial({
-      certId: cert.id, serialId: serial.id, stepId: path.steps[0].id, userId: 'qe1'
+    certService.attachCertToPart({
+      certId: cert.id, partId: part.id, stepId: path.steps[0].id, userId: 'qe1'
     })
-    serialService.advanceSerial(serial.id, 'op1')
-    serialService.advanceSerial(serial.id, 'op1') // completes
+    partService.advancePart(part.id, 'op1')
+    partService.advancePart(part.id, 'op1') // completes
 
-    // Query audit trail for this serial
-    const trail = auditService.getSerialAuditTrail(serial.id)
+    // Query audit trail for this part
+    const trail = auditService.getPartAuditTrail(part.id)
 
-    // Should have: cert_attached + serial_advanced + serial_completed = 3
-    // (serial_created is per-batch, not per-serial, so it may not appear in serial trail)
+    // Should have: cert_attached + part_advanced + part_completed = 3
+    // (part_created is per-batch, not per-part, so it may not appear in part trail)
     const actions = trail.map(e => e.action)
     expect(actions).toContain('cert_attached')
-    expect(actions).toContain('serial_advanced')
-    expect(actions).toContain('serial_completed')
+    expect(actions).toContain('part_advanced')
+    expect(actions).toContain('part_completed')
 
     // Entries are in chronological order
     for (let i = 1; i < trail.length; i++) {
@@ -201,7 +201,7 @@ describe('Certificate Traceability Integration', () => {
 
   it('rejects attaching a non-existent cert', () => {
     ctx = createTestContext()
-    const { jobService, pathService, serialService, certService } = ctx
+    const { jobService, pathService, partService, certService } = ctx
 
     const job = jobService.createJob({ name: 'Bad Cert Job', goalQuantity: 1 })
     const path = pathService.createPath({
@@ -210,14 +210,14 @@ describe('Certificate Traceability Integration', () => {
       goalQuantity: 1,
       steps: [{ name: 'OP1' }]
     })
-    const [serial] = serialService.batchCreateSerials(
+    const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
       'op1'
     )
 
-    expect(() => certService.attachCertToSerial({
+    expect(() => certService.attachCertToPart({
       certId: 'nonexistent-cert',
-      serialId: serial.id,
+      partId: part.id,
       stepId: path.steps[0].id,
       userId: 'qe1'
     })).toThrow(/not found/i)

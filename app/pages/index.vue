@@ -35,7 +35,7 @@ async function loadJobProgress() {
 const activeJobCount = computed(() => jobs.value.length)
 
 const totalInProgress = computed(() =>
-  jobProgressList.value.reduce((sum, p) => sum + p.inProgressSerials, 0)
+  jobProgressList.value.reduce((sum, p) => sum + p.inProgressParts, 0)
 )
 
 const summaryCards = computed(() => [

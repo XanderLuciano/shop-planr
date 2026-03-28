@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createPathService } from '../../../server/services/pathService'
 import { NotFoundError, ValidationError } from '../../../server/utils/errors'
 import type { PathRepository } from '../../../server/repositories/interfaces/pathRepository'
-import type { SerialRepository } from '../../../server/repositories/interfaces/serialRepository'
-import type { Path, SerialNumber } from '../../../server/types/domain'
+import type { PartRepository } from '../../../server/repositories/interfaces/partRepository'
+import type { Path, Part } from '../../../server/types/domain'
 
 function createMockPathRepo(): PathRepository {
   const store = new Map<string, Path>()
@@ -21,32 +21,34 @@ function createMockPathRepo(): PathRepository {
   }
 }
 
-function createMockSerialRepo(serials: SerialNumber[] = []): SerialRepository {
+function createMockPartRepo(parts: Part[] = []): PartRepository {
   return {
     create: vi.fn(),
     createBatch: vi.fn(),
     getById: vi.fn(),
     getByIdentifier: vi.fn(),
-    listByPathId: vi.fn((pathId: string) => serials.filter(s => s.pathId === pathId)),
+    listByPathId: vi.fn((pathId: string) => parts.filter(s => s.pathId === pathId)),
     listByJobId: vi.fn(),
     listByStepIndex: vi.fn((pathId: string, stepIndex: number) =>
-      serials.filter(s => s.pathId === pathId && s.currentStepIndex === stepIndex)
+      parts.filter(s => s.pathId === pathId && s.currentStepIndex === stepIndex)
     ),
     update: vi.fn(),
     countByJobId: vi.fn(),
-    countCompletedByJobId: vi.fn()
+    countCompletedByJobId: vi.fn(),
+    countScrappedByJobId: vi.fn(() => 0),
+    listAll: vi.fn(() => [])
   }
 }
 
 describe('PathService', () => {
   let pathRepo: PathRepository
-  let serialRepo: SerialRepository
+  let partRepo: PartRepository
   let service: ReturnType<typeof createPathService>
 
   beforeEach(() => {
     pathRepo = createMockPathRepo()
-    serialRepo = createMockSerialRepo()
-    service = createPathService({ paths: pathRepo, serials: serialRepo })
+    partRepo = createMockPartRepo()
+    service = createPathService({ paths: pathRepo, parts: partRepo })
   })
 
   describe('createPath', () => {
@@ -203,45 +205,45 @@ describe('PathService', () => {
   })
 
   describe('getStepDistribution', () => {
-    it('returns distribution with serial counts per step', () => {
+    it('returns distribution with part counts per step', () => {
       const path = service.createPath({
         jobId: 'job_1', name: 'Route', goalQuantity: 10,
         steps: [{ name: 'Machining' }, { name: 'Inspection' }, { name: 'Coating' }]
       })
 
-      const serials: SerialNumber[] = [
-        { id: 'sn1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' },
-        { id: 'sn2', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' },
-        { id: 'sn3', jobId: 'job_1', pathId: path.id, currentStepIndex: 1, createdAt: '', updatedAt: '' },
-        { id: 'sn4', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, createdAt: '', updatedAt: '' }
+      const parts: Part[] = [
+        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' },
+        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' },
+        { id: 'p3', jobId: 'job_1', pathId: path.id, currentStepIndex: 1, createdAt: '', updatedAt: '' },
+        { id: 'p4', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, createdAt: '', updatedAt: '' }
       ]
-      const serialRepoWithData = createMockSerialRepo(serials)
-      const svc = createPathService({ paths: pathRepo, serials: serialRepoWithData })
+      const partRepoWithData = createMockPartRepo(parts)
+      const svc = createPathService({ paths: pathRepo, parts: partRepoWithData })
 
       const dist = svc.getStepDistribution(path.id)
       expect(dist).toHaveLength(3)
       expect(dist[0].stepName).toBe('Machining')
-      expect(dist[0].serialCount).toBe(2)
+      expect(dist[0].partCount).toBe(2)
       expect(dist[0].isBottleneck).toBe(true)
       expect(dist[1].stepName).toBe('Inspection')
-      expect(dist[1].serialCount).toBe(1)
+      expect(dist[1].partCount).toBe(1)
       expect(dist[1].isBottleneck).toBe(false)
       expect(dist[2].stepName).toBe('Coating')
-      expect(dist[2].serialCount).toBe(0)
+      expect(dist[2].partCount).toBe(0)
       expect(dist[2].isBottleneck).toBe(false)
       // completedCount should be 1 for all steps
       expect(dist[0].completedCount).toBe(1)
       expect(dist[1].completedCount).toBe(1)
     })
 
-    it('returns no bottleneck when all steps have zero serials', () => {
+    it('returns no bottleneck when all steps have zero parts', () => {
       const path = service.createPath({
         jobId: 'job_1', name: 'Route', goalQuantity: 10,
         steps: [{ name: 'S1' }, { name: 'S2' }]
       })
       const dist = service.getStepDistribution(path.id)
       expect(dist.every(d => !d.isBottleneck)).toBe(true)
-      expect(dist.every(d => d.serialCount === 0)).toBe(true)
+      expect(dist.every(d => d.partCount === 0)).toBe(true)
     })
 
     it('throws NotFoundError for missing path', () => {
@@ -254,12 +256,12 @@ describe('PathService', () => {
         steps: [{ name: 'S1' }, { name: 'S2' }]
       })
 
-      const serials: SerialNumber[] = [
-        { id: 'sn1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' },
-        { id: 'sn2', jobId: 'job_1', pathId: path.id, currentStepIndex: 1, createdAt: '', updatedAt: '' }
+      const parts: Part[] = [
+        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' },
+        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepIndex: 1, createdAt: '', updatedAt: '' }
       ]
-      const serialRepoWithData = createMockSerialRepo(serials)
-      const svc = createPathService({ paths: pathRepo, serials: serialRepoWithData })
+      const partRepoWithData = createMockPartRepo(parts)
+      const svc = createPathService({ paths: pathRepo, parts: partRepoWithData })
 
       const dist = svc.getStepDistribution(path.id)
       expect(dist[0].isBottleneck).toBe(true)
@@ -268,7 +270,7 @@ describe('PathService', () => {
   })
 
   describe('deletePath', () => {
-    it('deletes a path when no serials are attached', () => {
+    it('deletes a path when no parts are attached', () => {
       const path = service.createPath({
         jobId: 'job_1', name: 'Route', goalQuantity: 10, steps: [{ name: 'S1' }]
       })
@@ -277,19 +279,19 @@ describe('PathService', () => {
       expect(pathRepo.delete).toHaveBeenCalledWith(path.id)
     })
 
-    it('throws ValidationError when serials are attached to the path', () => {
+    it('throws ValidationError when parts are attached to the path', () => {
       const path = service.createPath({
         jobId: 'job_1', name: 'Route', goalQuantity: 10, steps: [{ name: 'S1' }]
       })
 
-      const serials: SerialNumber[] = [
-        { id: 'sn1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' }
+      const parts: Part[] = [
+        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' }
       ]
-      const serialRepoWithData = createMockSerialRepo(serials)
-      const svc = createPathService({ paths: pathRepo, serials: serialRepoWithData })
+      const partRepoWithData = createMockPartRepo(parts)
+      const svc = createPathService({ paths: pathRepo, parts: partRepoWithData })
 
       expect(() => svc.deletePath(path.id)).toThrow(ValidationError)
-      expect(() => svc.deletePath(path.id)).toThrow('Cannot delete path with serial numbers attached')
+      expect(() => svc.deletePath(path.id)).toThrow('Cannot delete path with parts attached')
     })
 
     it('throws NotFoundError for non-existent path ID', () => {

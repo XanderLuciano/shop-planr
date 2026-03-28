@@ -2,7 +2,7 @@
 const props = defineProps<{
   pathId: string
   pathName: string
-  serialCount: number
+  partCount: number
 }>()
 
 const emit = defineEmits<{
@@ -13,7 +13,7 @@ const confirming = ref(false)
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-const canDelete = computed(() => props.serialCount === 0)
+const canDelete = computed(() => props.partCount === 0)
 
 async function handleDelete() {
   if (!confirming.value) {
@@ -50,7 +50,7 @@ function cancelDelete() {
         color="neutral"
         icon="i-lucide-trash-2"
         disabled
-        title="Cannot delete path with serial numbers"
+        title="Cannot delete path with parts"
       />
     </template>
     <template v-else-if="confirming">

@@ -2,10 +2,10 @@
  * Property 1: All-Work Endpoint Completeness
  *
  * For any set of jobs, each with paths containing ordered process steps and
- * serials at various steps, the all-work endpoint should return a WorkQueueJob
- * entry for every step that has at least one active serial. Each entry should
+ * parts at various steps, the all-work endpoint should return a WorkQueueJob
+ * entry for every step that has at least one active part. Each entry should
  * contain the correct partCount, stepName, stepLocation, pathName, jobName,
- * and serialIds.
+ * and partIds.
  *
  * **Validates: Requirements 1.2, 1.3**
  */
@@ -19,7 +19,7 @@ import type { WorkQueueJob, WorkQueueResponse } from '../../server/types/compute
  * as a pure function operating on the test context services.
  */
 function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
-  const { jobService, pathService, serialService } = ctx
+  const { jobService, pathService, partService } = ctx
   const jobs = jobService.listJobs()
   const groupMap = new Map<string, WorkQueueJob>()
 
@@ -30,8 +30,8 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
       const totalSteps = path.steps.length
 
       for (const step of path.steps) {
-        const serials = serialService.listSerialsByStepIndex(path.id, step.order)
-        if (serials.length === 0) continue
+        const parts = partService.listPartsByStepIndex(path.id, step.order)
+        if (parts.length === 0) continue
 
         const key = `${job.id}|${path.id}|${step.order}`
         const isFinalStep = step.order === totalSteps - 1
@@ -47,8 +47,8 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
           stepOrder: step.order,
           stepLocation: step.location,
           totalSteps,
-          serialIds: serials.map(s => s.id),
-          partCount: serials.length,
+          partIds: parts.map(s => s.id),
+          partCount: parts.length,
           nextStepName: nextStep?.name,
           nextStepLocation: nextStep?.location,
           isFinalStep,
@@ -63,19 +63,19 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
   return { operatorId: '_all', jobs: queueJobs, totalParts }
 }
 
-/** Arbitrary for a single job with one path, random steps, and random serials */
+/** Arbitrary for a single job with one path, random steps, and random parts */
 const jobPathConfigArb = fc.record({
   jobName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
   pathName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
   stepCount: fc.integer({ min: 1, max: 5 }),
-  serialCount: fc.integer({ min: 0, max: 8 }),
+  partCount: fc.integer({ min: 0, max: 8 }),
   stepLocations: fc.array(
     fc.option(fc.string({ minLength: 1, maxLength: 15 }).filter(s => s.trim().length > 0), { nil: undefined }),
     { minLength: 5, maxLength: 5 },
   ),
   advancementSpecs: fc.array(
     fc.record({
-      serialIndex: fc.integer({ min: 0, max: 7 }),
+      partIndex: fc.integer({ min: 0, max: 7 }),
       advanceTimes: fc.integer({ min: 0, max: 6 }),
     }),
     { minLength: 0, maxLength: 10 },
@@ -95,14 +95,14 @@ describe('Property 1: All-Work Endpoint Completeness', () => {
     }
   })
 
-  it('returns a WorkQueueJob for every step with active serials, with correct metadata', () => {
+  it('returns a WorkQueueJob for every step with active parts, with correct metadata', () => {
     fc.assert(
       fc.property(scenarioArb, (configs) => {
         ctx = createTestContext()
-        const { jobService, pathService, serialService } = ctx
+        const { jobService, pathService, partService } = ctx
 
-        // Track expected state: which serials are at which step
-        const expectedSerials: Array<{
+        // Track expected state: which parts are at which step
+        const expectedParts: Array<{
           id: string
           jobId: string
           jobName: string
@@ -123,7 +123,7 @@ describe('Property 1: All-Work Endpoint Completeness', () => {
         for (const config of configs) {
           const job = jobService.createJob({
             name: config.jobName,
-            goalQuantity: Math.max(config.serialCount, 1),
+            goalQuantity: Math.max(config.partCount, 1),
           })
 
           const steps = Array.from({ length: config.stepCount }, (_, i) => ({
@@ -134,7 +134,7 @@ describe('Property 1: All-Work Endpoint Completeness', () => {
           const path = pathService.createPath({
             jobId: job.id,
             name: config.pathName,
-            goalQuantity: Math.max(config.serialCount, 1),
+            goalQuantity: Math.max(config.partCount, 1),
             steps,
           })
 
@@ -150,16 +150,16 @@ describe('Property 1: All-Work Endpoint Completeness', () => {
             })
           }
 
-          if (config.serialCount === 0) continue
+          if (config.partCount === 0) continue
 
-          const serials = serialService.batchCreateSerials(
-            { jobId: job.id, pathId: path.id, quantity: config.serialCount },
+          const parts = partService.batchCreateParts(
+            { jobId: job.id, pathId: path.id, quantity: config.partCount },
             'user_test',
           )
 
-          // All serials start at step 0
-          for (const s of serials) {
-            expectedSerials.push({
+          // All parts start at step 0
+          for (const s of parts) {
+            expectedParts.push({
               id: s.id,
               jobId: job.id,
               jobName: job.name,
@@ -171,14 +171,14 @@ describe('Property 1: All-Work Endpoint Completeness', () => {
 
           // Apply advancements
           for (const spec of config.advancementSpecs) {
-            if (spec.serialIndex >= serials.length) continue
-            const serial = serials[spec.serialIndex]
-            const tracked = expectedSerials.find(t => t.id === serial.id)!
+            if (spec.partIndex >= parts.length) continue
+            const part = parts[spec.partIndex]
+            const tracked = expectedParts.find(t => t.id === part.id)!
 
             for (let i = 0; i < spec.advanceTimes; i++) {
               if (tracked.currentStepIndex === -1) break
               try {
-                serialService.advanceSerial(serial.id, 'user_test')
+                partService.advancePart(part.id, 'user_test')
                 if (tracked.currentStepIndex === config.stepCount - 1) {
                   tracked.currentStepIndex = -1 // completed
                 } else {
@@ -194,17 +194,17 @@ describe('Property 1: All-Work Endpoint Completeness', () => {
         // Run the aggregation
         const response = aggregateAllWork(ctx)
 
-        // Build expected groups: step key → set of active serial IDs
+        // Build expected groups: step key → set of active part IDs
         const expectedGroups = new Map<string, Set<string>>()
-        for (const s of expectedSerials) {
+        for (const s of expectedParts) {
           if (s.currentStepIndex < 0) continue // completed/scrapped
           const key = `${s.jobId}|${s.pathId}|${s.currentStepIndex}`
           if (!expectedGroups.has(key)) expectedGroups.set(key, new Set())
           expectedGroups.get(key)!.add(s.id)
         }
 
-        // 1. Every step with active serials has a corresponding WorkQueueJob
-        for (const [key, serialIds] of expectedGroups) {
+        // 1. Every step with active parts has a corresponding WorkQueueJob
+        for (const [key, partIds] of expectedGroups) {
           const entry = response.jobs.find((j) => {
             const entryKey = `${j.jobId}|${j.pathId}|${j.stepOrder}`
             return entryKey === key
@@ -212,17 +212,17 @@ describe('Property 1: All-Work Endpoint Completeness', () => {
           expect(entry, `Missing WorkQueueJob for group ${key}`).toBeDefined()
         }
 
-        // 2. No extra entries — response only contains steps with active serials
+        // 2. No extra entries — response only contains steps with active parts
         expect(response.jobs.length).toBe(expectedGroups.size)
 
-        // 3. Each entry has correct partCount and serialIds
+        // 3. Each entry has correct partCount and partIds
         for (const entry of response.jobs) {
           const key = `${entry.jobId}|${entry.pathId}|${entry.stepOrder}`
           const expectedIds = expectedGroups.get(key)!
 
           expect(entry.partCount).toBe(expectedIds.size)
-          expect(entry.serialIds.length).toBe(expectedIds.size)
-          for (const sid of entry.serialIds) {
+          expect(entry.partIds.length).toBe(expectedIds.size)
+          for (const sid of entry.partIds) {
             expect(expectedIds.has(sid)).toBe(true)
           }
         }

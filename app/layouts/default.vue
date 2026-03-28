@@ -4,7 +4,7 @@ import type { NavigationMenuItem } from '@nuxt/ui'
 const navItems: NavigationMenuItem[] = [
   { label: 'Dashboard', icon: 'i-lucide-layout-dashboard', to: '/' },
   { label: 'Jobs', icon: 'i-lucide-briefcase', to: '/jobs' },
-  { label: 'Serials', icon: 'i-lucide-hash', to: '/serials' },
+  { label: 'Parts Browser', icon: 'i-lucide-hash', to: '/parts-browser' },
   { label: 'Parts', icon: 'i-lucide-wrench', to: '/parts' },
   { label: 'Work Queue', icon: 'i-lucide-hard-hat', to: '/queue' },
   { label: 'Templates', icon: 'i-lucide-copy', to: '/templates' },

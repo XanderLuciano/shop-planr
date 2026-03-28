@@ -13,7 +13,7 @@ import { resolve } from 'path'
 import { runMigrations } from '../../server/repositories/sqlite/index'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
-import { SQLiteSerialRepository } from '../../server/repositories/sqlite/serialRepository'
+import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
 import { SQLiteTemplateRepository } from '../../server/repositories/sqlite/templateRepository'
 import { createJobService } from '../../server/services/jobService'
 import { createPathService } from '../../server/services/pathService'
@@ -32,12 +32,12 @@ function setupServices(db: Database.default.Database) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
-    serials: new SQLiteSerialRepository(db),
+    parts: new SQLitePartRepository(db),
     templates: new SQLiteTemplateRepository(db)
   }
 
-  const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, serials: repos.serials })
-  const pathService = createPathService({ paths: repos.paths, serials: repos.serials })
+  const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts })
+  const pathService = createPathService({ paths: repos.paths, parts: repos.parts })
   const templateService = createTemplateService({ templates: repos.templates, paths: repos.paths })
 
   return { jobService, pathService, templateService }

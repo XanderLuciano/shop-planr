@@ -1,8 +1,8 @@
 /**
  * Property 4: Process Step Count Conservation
  *
- * Sum of SNs at each step plus completed SNs equals total SNs created on that Path.
- * No serial numbers are lost or duplicated during advancement.
+ * Sum of parts at each step plus completed parts equals total parts created on that Path.
+ * No parts are lost or duplicated during advancement.
  *
  * **Validates: Requirements 3.4, 2.4, 7.4**
  */
@@ -13,14 +13,14 @@ import { resolve } from 'path'
 import { runMigrations } from '../../server/repositories/sqlite/index'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
-import { SQLiteSerialRepository } from '../../server/repositories/sqlite/serialRepository'
+import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
 import { SQLiteCertRepository } from '../../server/repositories/sqlite/certRepository'
 import { SQLiteAuditRepository } from '../../server/repositories/sqlite/auditRepository'
 import { createJobService } from '../../server/services/jobService'
 import { createPathService } from '../../server/services/pathService'
-import { createSerialService } from '../../server/services/serialService'
+import { createPartService } from '../../server/services/partService'
 import { createAuditService } from '../../server/services/auditService'
-import { createSequentialSnGenerator } from '../../server/utils/idGenerator'
+import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
 
 function createTestDb() {
   const db = new Database(':memory:')
@@ -35,31 +35,31 @@ function setupServices(db: Database.default.Database) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
-    serials: new SQLiteSerialRepository(db),
+    parts: new SQLitePartRepository(db),
     certs: new SQLiteCertRepository(db),
     audit: new SQLiteAuditRepository(db)
   }
 
-  const snGenerator = createSequentialSnGenerator({
+  const partIdGenerator = createSequentialPartIdGenerator({
     getCounter: () => {
-      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('sn') as { value: number } | undefined
+      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
       return row?.value ?? 0
     },
     setCounter: (v: number) => {
-      db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('sn', v)
+      db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
     }
   })
 
   const auditService = createAuditService({ audit: repos.audit })
-  const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, serials: repos.serials })
-  const pathService = createPathService({ paths: repos.paths, serials: repos.serials })
-  const serialService = createSerialService(
-    { serials: repos.serials, paths: repos.paths, certs: repos.certs },
+  const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts })
+  const pathService = createPathService({ paths: repos.paths, parts: repos.parts })
+  const partService = createPartService(
+    { parts: repos.parts, paths: repos.paths, certs: repos.certs },
     auditService,
-    snGenerator
+    partIdGenerator
   )
 
-  return { jobService, pathService, serialService }
+  return { jobService, pathService, partService }
 }
 
 describe('Property 4: Process Step Count Conservation', () => {
@@ -69,24 +69,24 @@ describe('Property 4: Process Step Count Conservation', () => {
     if (db) db.close()
   })
 
-  it('sum of SNs at each step plus completed SNs equals total SNs created', () => {
+  it('sum of parts at each step plus completed parts equals total parts created', () => {
     fc.assert(
       fc.property(
         fc.record({
           stepCount: fc.integer({ min: 1, max: 5 }),
-          snQuantity: fc.integer({ min: 1, max: 20 }),
-          // Which serials to advance and how many times (indices into serial array)
+          partQuantity: fc.integer({ min: 1, max: 20 }),
+          // Which parts to advance and how many times (indices into part array)
           advanceOps: fc.array(
             fc.record({
-              serialIndex: fc.nat(),
+              partIndex: fc.nat(),
               times: fc.integer({ min: 1, max: 6 })
             }),
             { minLength: 0, maxLength: 15 }
           )
         }),
-        ({ stepCount, snQuantity, advanceOps }) => {
+        ({ stepCount, partQuantity, advanceOps }) => {
           db = createTestDb()
-          const { jobService, pathService, serialService } = setupServices(db)
+          const { jobService, pathService, partService } = setupServices(db)
 
           const job = jobService.createJob({ name: 'Test Job', goalQuantity: 100 })
           const steps = Array.from({ length: stepCount }, (_, i) => ({
@@ -95,22 +95,22 @@ describe('Property 4: Process Step Count Conservation', () => {
           const path = pathService.createPath({
             jobId: job.id,
             name: 'Route',
-            goalQuantity: snQuantity,
+            goalQuantity: partQuantity,
             steps
           })
 
-          const serials = serialService.batchCreateSerials(
-            { jobId: job.id, pathId: path.id, quantity: snQuantity },
+          const parts = partService.batchCreateParts(
+            { jobId: job.id, pathId: path.id, quantity: partQuantity },
             'user_test'
           )
-          const totalCreated = serials.length
+          const totalCreated = parts.length
 
-          // Advance some serials randomly
+          // Advance some parts randomly
           for (const op of advanceOps) {
-            const idx = op.serialIndex % serials.length
+            const idx = op.partIndex % parts.length
             for (let t = 0; t < op.times; t++) {
               try {
-                serialService.advanceSerial(serials[idx].id, 'user_test')
+                partService.advancePart(parts[idx].id, 'user_test')
               } catch {
                 // Already completed — skip
                 break
@@ -118,15 +118,15 @@ describe('Property 4: Process Step Count Conservation', () => {
             }
           }
 
-          // Count SNs at each step index + completed (-1)
+          // Count parts at each step index + completed (-1)
           let countSum = 0
           for (let stepIdx = 0; stepIdx < stepCount; stepIdx++) {
-            countSum += serialService.listSerialsByStepIndex(path.id, stepIdx).length
+            countSum += partService.listPartsByStepIndex(path.id, stepIdx).length
           }
-          // Add completed serials (stepIndex === -1)
-          countSum += serialService.listSerialsByStepIndex(path.id, -1).length
+          // Add completed parts (stepIndex === -1)
+          countSum += partService.listPartsByStepIndex(path.id, -1).length
 
-          // ASSERT: conservation — no SNs lost or duplicated
+          // ASSERT: conservation — no parts lost or duplicated
           expect(countSum).toBe(totalCreated)
 
           db.close()

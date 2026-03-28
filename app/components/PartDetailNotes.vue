@@ -2,14 +2,14 @@
 import type { StepNote } from '~/server/types/domain'
 
 const props = defineProps<{
-  serialId: string
+  partId: string
   hideHeading?: boolean
 }>()
 
-const { notes, loading, fetchNotesForSerial } = useNotes()
+const { notes, loading, fetchNotesForPart } = useNotes()
 
 onMounted(() => {
-  fetchNotesForSerial(props.serialId)
+  fetchNotesForPart(props.partId)
 })
 
 const sortedNotes = computed(() =>
@@ -31,7 +31,7 @@ function formatDate(iso: string): string {
     <div v-if="loading" class="text-sm text-(--ui-text-muted)">Loading notes...</div>
 
     <div v-else-if="!sortedNotes.length" class="text-sm text-(--ui-text-muted)">
-      No notes for this serial
+      No notes for this part
     </div>
 
     <div v-else class="space-y-2">

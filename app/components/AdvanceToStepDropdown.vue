@@ -2,7 +2,7 @@
 import type { ProcessStep } from '~/server/types/domain'
 
 const props = defineProps<{
-  serialId: string
+  partId: string
   currentStepIndex: number
   steps: ProcessStep[]
 }>()
@@ -47,7 +47,7 @@ async function handleAdvance() {
   }
 
   try {
-    await advanceToStep(props.serialId, {
+    await advanceToStep(props.partId, {
       targetStepIndex: selectedIndex.value,
       userId: operatorId.value,
     })

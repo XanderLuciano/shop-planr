@@ -63,22 +63,22 @@ function formatDate(iso: string): string {
 
       <div class="space-y-1">
         <h4 class="text-sm font-semibold text-(--ui-text-highlighted)">
-          Attached Serials ({{ attachments.length }})
+          Attached Parts ({{ attachments.length }})
         </h4>
         <div v-if="!attachments.length" class="text-sm text-(--ui-text-muted)">
-          No serials attached
+          No parts attached
         </div>
         <div v-else class="border border-(--ui-border) rounded-md divide-y divide-(--ui-border) max-h-60 overflow-y-auto">
           <div
             v-for="att in attachments"
-            :key="`${att.serialId}-${att.stepId}`"
+            :key="`${att.partId}-${att.stepId}`"
             class="px-3 py-2 flex items-center justify-between text-sm"
           >
             <NuxtLink
-              :to="`/serials/${att.serialId}`"
+              :to="`/parts-browser/${att.partId}`"
               class="font-mono text-(--ui-primary) hover:underline"
             >
-              {{ att.serialId }}
+              {{ att.partId }}
             </NuxtLink>
             <span class="text-xs text-(--ui-text-muted)">
               {{ formatDate(att.attachedAt) }} by {{ att.attachedBy }}

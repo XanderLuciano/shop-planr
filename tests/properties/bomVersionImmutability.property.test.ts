@@ -54,12 +54,12 @@ function createInMemoryAuditRepo() {
   return {
     create: (entry: AuditEntry) => { entries.push(entry); return entry },
     list: () => [...entries],
-    listBySerialId: () => [],
+    listByPartId: () => [],
     listByJobId: () => [],
   }
 }
 
-function createInMemorySerialRepo() {
+function createInMemoryPartRepo() {
   return {
     countByJobId: () => 0,
     countCompletedByJobId: () => 0,
@@ -88,10 +88,10 @@ describe('Property 9: BOM Version Immutability', () => {
           const bomRepo = createInMemoryBomRepo()
           const bomVersionRepo = createInMemoryBomVersionRepo()
           const auditRepo = createInMemoryAuditRepo()
-          const serialRepo = createInMemorySerialRepo()
+          const partRepo = createInMemoryPartRepo()
           const auditService = createAuditService({ audit: auditRepo })
           const bomService = createBomService(
-            { bom: bomRepo, serials: serialRepo as any, bomVersions: bomVersionRepo },
+            { bom: bomRepo, parts: partRepo as any, bomVersions: bomVersionRepo },
             auditService,
           )
 

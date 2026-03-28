@@ -20,13 +20,13 @@ import type { PageToggles } from '~/server/types/domain'
 
 /** All 9 valid toggle keys. */
 const ALL_KEYS: (keyof PageToggles)[] = [
-  'jobs', 'serials', 'parts', 'queue', 'templates', 'bom', 'certs', 'jira', 'audit',
+  'jobs', 'partsBrowser', 'parts', 'queue', 'templates', 'bom', 'certs', 'jira', 'audit',
 ]
 
 /** Arbitrary that produces a full PageToggles object with random booleans. */
 const arbPageToggles: fc.Arbitrary<PageToggles> = fc.record({
   jobs: fc.boolean(),
-  serials: fc.boolean(),
+  partsBrowser: fc.boolean(),
   parts: fc.boolean(),
   queue: fc.boolean(),
   templates: fc.boolean(),

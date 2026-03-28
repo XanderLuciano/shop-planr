@@ -23,13 +23,13 @@ function createMockCertRepo(): CertRepository {
     create: vi.fn((c: Certificate) => { certs.set(c.id, c); return c }),
     getById: vi.fn((id: string) => certs.get(id) ?? null),
     list: vi.fn(() => [...certs.values()]),
-    attachToSerial: vi.fn((a: CertAttachment) => {
+    attachToPart: vi.fn((a: CertAttachment) => {
       const result = { ...a, id: String(attachments.length + 1) }
       attachments.push(result)
       return result
     }),
-    getAttachmentsForSerial: vi.fn((serialId: string) =>
-      attachments.filter(a => a.serialId === serialId)
+    getAttachmentsForPart: vi.fn((partId: string) =>
+      attachments.filter(a => a.partId === partId)
     ),
     batchAttach: vi.fn((incoming: CertAttachment[]) => {
       const results: CertAttachment[] = []
@@ -46,11 +46,11 @@ function createMockCertRepo(): CertRepository {
 function createMockAuditService(): AuditService {
   return {
     recordCertAttachment: vi.fn(() => ({}) as any),
-    recordSerialCreation: vi.fn(() => ({}) as any),
-    recordSerialAdvancement: vi.fn(() => ({}) as any),
-    recordSerialCompletion: vi.fn(() => ({}) as any),
+    recordPartCreation: vi.fn(() => ({}) as any),
+    recordPartAdvancement: vi.fn(() => ({}) as any),
+    recordPartCompletion: vi.fn(() => ({}) as any),
     recordNoteCreation: vi.fn(() => ({}) as any),
-    getSerialAuditTrail: vi.fn(() => []),
+    getPartAuditTrail: vi.fn(() => []),
     getJobAuditTrail: vi.fn(() => []),
     listAuditEntries: vi.fn(() => [])
   }
@@ -136,27 +136,27 @@ describe('CertService', () => {
     })
   })
 
-  describe('attachCertToSerial', () => {
+  describe('attachCertToPart', () => {
     it('attaches cert and records audit', () => {
       certRepo.create(makeCert({ id: 'cert_1' }))
 
-      const result = service.attachCertToSerial({
+      const result = service.attachCertToPart({
         certId: 'cert_1',
-        serialId: 'SN-00001',
+        partId: 'part_00001',
         stepId: 'step_0',
         userId: 'user_1',
         jobId: 'job_1',
         pathId: 'path_1'
       })
 
-      expect(result.serialId).toBe('SN-00001')
+      expect(result.partId).toBe('part_00001')
       expect(result.certId).toBe('cert_1')
       expect(result.stepId).toBe('step_0')
       expect(result.attachedBy).toBe('user_1')
-      expect(certRepo.attachToSerial).toHaveBeenCalledTimes(1)
+      expect(certRepo.attachToPart).toHaveBeenCalledTimes(1)
       expect(auditService.recordCertAttachment).toHaveBeenCalledWith({
         userId: 'user_1',
-        serialId: 'SN-00001',
+        partId: 'part_00001',
         certId: 'cert_1',
         stepId: 'step_0',
         jobId: 'job_1',
@@ -166,9 +166,9 @@ describe('CertService', () => {
 
     it('throws NotFoundError when cert does not exist', () => {
       expect(() =>
-        service.attachCertToSerial({
+        service.attachCertToPart({
           certId: 'nonexistent',
-          serialId: 'SN-00001',
+          partId: 'part_00001',
           stepId: 'step_0',
           userId: 'user_1'
         })
@@ -177,12 +177,12 @@ describe('CertService', () => {
   })
 
   describe('batchAttachCert', () => {
-    it('attaches cert to multiple serials and records audit for each', () => {
+    it('attaches cert to multiple parts and records audit for each', () => {
       certRepo.create(makeCert({ id: 'cert_1' }))
 
       const result = service.batchAttachCert({
         certId: 'cert_1',
-        serialIds: ['SN-00001', 'SN-00002', 'SN-00003'],
+        partIds: ['part_00001', 'part_00002', 'part_00003'],
         userId: 'user_1'
       })
 
@@ -195,30 +195,30 @@ describe('CertService', () => {
       expect(() =>
         service.batchAttachCert({
           certId: 'nonexistent',
-          serialIds: ['SN-00001'],
+          partIds: ['part_00001'],
           userId: 'user_1'
         })
       ).toThrow(NotFoundError)
     })
   })
 
-  describe('getCertsForSerial', () => {
-    it('returns attachments for a serial', () => {
+  describe('getCertsForPart', () => {
+    it('returns attachments for a part', () => {
       certRepo.create(makeCert({ id: 'cert_1' }))
-      service.attachCertToSerial({
+      service.attachCertToPart({
         certId: 'cert_1',
-        serialId: 'SN-00001',
+        partId: 'part_00001',
         stepId: 'step_0',
         userId: 'user_1'
       })
 
-      const result = service.getCertsForSerial('SN-00001')
+      const result = service.getCertsForPart('part_00001')
       expect(result).toHaveLength(1)
       expect(result[0].certId).toBe('cert_1')
     })
 
     it('returns empty array when no attachments exist', () => {
-      const result = service.getCertsForSerial('SN-99999')
+      const result = service.getCertsForPart('part_99999')
       expect(result).toEqual([])
     })
   })

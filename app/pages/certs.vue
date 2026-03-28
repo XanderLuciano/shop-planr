@@ -12,7 +12,7 @@ const formError = ref('')
 // Batch attach state
 const showBatchAttach = ref(false)
 const batchCertId = ref('')
-const batchSerialIds = ref('')
+const batchPartIds = ref('')
 const batchSaving = ref(false)
 const batchError = ref('')
 const batchSuccess = ref('')
@@ -68,13 +68,13 @@ async function onBatchAttach() {
     return
   }
 
-  const ids = batchSerialIds.value
+  const ids = batchPartIds.value
     .split(/[,\n]+/)
     .map(s => s.trim())
     .filter(Boolean)
 
   if (!ids.length) {
-    batchError.value = 'Enter at least one serial ID'
+    batchError.value = 'Enter at least one part ID'
     return
   }
 
@@ -90,11 +90,11 @@ async function onBatchAttach() {
   try {
     await batchAttachCert({
       certId: batchCertId.value,
-      serialIds: ids,
+      partIds: ids,
       userId
     })
-    batchSuccess.value = `Attached certificate to ${ids.length} serial(s)`
-    batchSerialIds.value = ''
+    batchSuccess.value = `Attached certificate to ${ids.length} part(s)`
+    batchPartIds.value = ''
   } catch (e: any) {
     batchError.value = e?.data?.message ?? e?.message ?? 'Failed to batch attach'
   } finally {
@@ -157,8 +157,8 @@ onMounted(() => {
             <USelect v-model="batchCertId" :items="certOptions" placeholder="Select certificate" size="sm" value-key="value" />
           </div>
           <div>
-            <label class="block text-xs text-(--ui-text-muted) mb-0.5">Serial IDs (comma or newline separated)</label>
-            <UTextarea v-model="batchSerialIds" size="sm" placeholder="SN-00001, SN-00002&#10;SN-00003" :rows="3" />
+            <label class="block text-xs text-(--ui-text-muted) mb-0.5">Part IDs (comma or newline separated)</label>
+            <UTextarea v-model="batchPartIds" size="sm" placeholder="part_00001, part_00002&#10;part_00003" :rows="3" />
           </div>
         </div>
         <p v-if="batchError" class="text-xs text-red-500">{{ batchError }}</p>

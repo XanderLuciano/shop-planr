@@ -8,7 +8,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
-import type { SnStepStatusValue } from '../../server/types/domain'
+import type { PartStepStatusValue } from '../../server/types/domain'
 
 interface StepConfig {
   id: string
@@ -20,7 +20,7 @@ interface StepConfig {
 
 interface StepStatus {
   stepId: string
-  status: SnStepStatusValue
+  status: PartStepStatusValue
 }
 
 /**

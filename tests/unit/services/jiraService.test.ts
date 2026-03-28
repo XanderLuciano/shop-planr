@@ -4,7 +4,7 @@ import { resolve } from 'path'
 import { runMigrations } from '../../../server/repositories/sqlite/index'
 import { SQLiteJobRepository } from '../../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../../server/repositories/sqlite/pathRepository'
-import { SQLiteSerialRepository } from '../../../server/repositories/sqlite/serialRepository'
+import { SQLitePartRepository } from '../../../server/repositories/sqlite/partRepository'
 import { SQLiteSettingsRepository } from '../../../server/repositories/sqlite/settingsRepository'
 import { SQLiteNoteRepository } from '../../../server/repositories/sqlite/noteRepository'
 import { SQLiteCertRepository } from '../../../server/repositories/sqlite/certRepository'
@@ -12,7 +12,7 @@ import { SQLiteAuditRepository } from '../../../server/repositories/sqlite/audit
 import { createSettingsService } from '../../../server/services/settingsService'
 import { createJobService } from '../../../server/services/jobService'
 import { createPathService } from '../../../server/services/pathService'
-import { createSerialService } from '../../../server/services/serialService'
+import { createPartService } from '../../../server/services/partService'
 import { createCertService } from '../../../server/services/certService'
 import { createNoteService } from '../../../server/services/noteService'
 import { createAuditService } from '../../../server/services/auditService'
@@ -21,11 +21,11 @@ import type { PITicket } from '../../../server/services/jiraService'
 import type { SettingsService } from '../../../server/services/settingsService'
 import type { JobService } from '../../../server/services/jobService'
 import type { PathService } from '../../../server/services/pathService'
-import type { SerialService } from '../../../server/services/serialService'
+import type { PartService } from '../../../server/services/partService'
 import type { CertService } from '../../../server/services/certService'
 import type { NoteService } from '../../../server/services/noteService'
 import { ValidationError } from '../../../server/utils/errors'
-import { createSequentialSnGenerator } from '../../../server/utils/idGenerator'
+import { createSequentialPartIdGenerator } from '../../../server/utils/idGenerator'
 
 function createTestDb() {
   const db = new Database(':memory:')
@@ -82,8 +82,8 @@ describe('JiraService', () => {
     })
     const jobsRepo = new SQLiteJobRepository(db)
     const pathsRepo = new SQLitePathRepository(db)
-    const serialsRepo = new SQLiteSerialRepository(db)
-    jobService = createJobService({ jobs: jobsRepo, paths: pathsRepo, serials: serialsRepo })
+    const partsRepo = new SQLitePartRepository(db)
+    jobService = createJobService({ jobs: jobsRepo, paths: pathsRepo, parts: partsRepo })
   })
 
   afterEach(() => {
@@ -403,12 +403,12 @@ describe('JiraService', () => {
 
   describe('push methods', () => {
     let pathService: PathService
-    let serialService: SerialService
+    let partService: PartService
     let certService: CertService
     let noteService: NoteService
     let jobsRepo: SQLiteJobRepository
     let pathsRepo: SQLitePathRepository
-    let serialsRepo: SQLiteSerialRepository
+    let partsRepo: SQLitePartRepository
     let certsRepo: SQLiteCertRepository
     let notesRepo: SQLiteNoteRepository
     let auditRepo: SQLiteAuditRepository
@@ -416,23 +416,23 @@ describe('JiraService', () => {
     beforeEach(() => {
       jobsRepo = new SQLiteJobRepository(db)
       pathsRepo = new SQLitePathRepository(db)
-      serialsRepo = new SQLiteSerialRepository(db)
+      partsRepo = new SQLitePartRepository(db)
       certsRepo = new SQLiteCertRepository(db)
       notesRepo = new SQLiteNoteRepository(db)
       auditRepo = new SQLiteAuditRepository(db)
 
       const auditService = createAuditService({ audit: auditRepo })
-      pathService = createPathService({ paths: pathsRepo, serials: serialsRepo })
-      const snGenerator = createSequentialSnGenerator({
+      pathService = createPathService({ paths: pathsRepo, parts: partsRepo })
+      const partIdGenerator = createSequentialPartIdGenerator({
         getCounter: () => {
-          const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('sn') as { value: number } | undefined
+          const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
           return row?.value ?? 0
         },
         setCounter: (v: number) => {
-          db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('sn', v)
+          db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
         }
       })
-      serialService = createSerialService({ serials: serialsRepo, paths: pathsRepo, certs: certsRepo }, auditService, snGenerator)
+      partService = createPartService({ parts: partsRepo, paths: pathsRepo, certs: certsRepo }, auditService, partIdGenerator)
       certService = createCertService({ certs: certsRepo }, auditService)
       noteService = createNoteService({ notes: notesRepo }, auditService)
     })
@@ -558,13 +558,13 @@ describe('JiraService', () => {
         )
         const { job, path } = createJobWithPath(mockFetch)
 
-        // Create serials and a note
-        const serials = serialService.batchCreateSerials(
+        // Create parts and a note
+        const parts = partService.batchCreateParts(
           { jobId: job.id, pathId: path.id, quantity: 2 }, 'user1'
         )
         const note = noteService.createNote({
           jobId: job.id, pathId: path.id, stepId: path.steps[0].id,
-          serialIds: serials.map(s => s.id), text: 'threaded feature is missing', userId: 'user1'
+          partIds: parts.map(s => s.id), text: 'threaded feature is missing', userId: 'user1'
         })
 
         const result = await jira.pushNoteAsComment(note.id, job.id)
@@ -598,12 +598,12 @@ describe('JiraService', () => {
         const mockFetch = makeMockFetch({ id: '12345' })
         const jira = createJiraService(
           { jobs: jobsRepo }, settingsService, jobService,
-          { pathService, serialService, certService }, mockFetch
+          { pathService, partService: partService as any, certService }, mockFetch
         )
         const { job, path } = createJobWithPath(mockFetch)
 
-        // Create serials
-        serialService.batchCreateSerials({ jobId: job.id, pathId: path.id, quantity: 3 }, 'user1')
+        // Create parts
+        partService.batchCreateParts({ jobId: job.id, pathId: path.id, quantity: 3 }, 'user1')
 
         const result = await jira.pushCompletionDocs(job.id)
 
@@ -613,7 +613,7 @@ describe('JiraService', () => {
         expect(body.body).toContain('Job Completion Summary')
         expect(body.body).toContain('Test Job')
         expect(body.body).toContain('Goal: 10')
-        expect(body.body).toContain('Total Serials: 3')
+        expect(body.body).toContain('Total Parts: 3')
       })
 
       it('includes certificate list in completion summary', async () => {
@@ -621,12 +621,12 @@ describe('JiraService', () => {
         const mockFetch = makeMockFetch({ id: '12345' })
         const jira = createJiraService(
           { jobs: jobsRepo }, settingsService, jobService,
-          { pathService, serialService, certService }, mockFetch
+          { pathService, partService: partService as any, certService }, mockFetch
         )
         const { job, path } = createJobWithPath(mockFetch)
 
         const cert = certService.createCert({ type: 'material', name: 'Steel Cert 304L' })
-        const serials = serialService.batchCreateSerials(
+        const parts = partService.batchCreateParts(
           { jobId: job.id, pathId: path.id, quantity: 1, certId: cert.id }, 'user1'
         )
 
@@ -645,7 +645,7 @@ describe('JiraService', () => {
         const mockFetch = makeMockFetch({})
         const jira = createJiraService(
           { jobs: jobsRepo }, settingsService, jobService,
-          { serialService, certService }, mockFetch
+          { partService: partService as any, certService }, mockFetch
         )
         const job = jobService.createJob({ name: 'No Jira', goalQuantity: 5 })
 

@@ -4,7 +4,7 @@ export default defineEventHandler(async (event) => {
       jobId: string
       pathId: string
       stepId: string
-      serialIds: string[]
+      partIds: string[]
       text: string
       userId: string
     }>(event)

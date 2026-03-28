@@ -2,7 +2,7 @@ import { createAuditService } from '../services/auditService'
 import { createUserService } from '../services/userService'
 import { createJobService } from '../services/jobService'
 import { createPathService } from '../services/pathService'
-import { createSerialService } from '../services/serialService'
+import { createPartService } from '../services/partService'
 import { createCertService } from '../services/certService'
 import { createTemplateService } from '../services/templateService'
 import { createNoteService } from '../services/noteService'
@@ -11,12 +11,12 @@ import { createBomService } from '../services/bomService'
 import { createJiraService } from '../services/jiraService'
 import { createLifecycleService } from '../services/lifecycleService'
 import { createLibraryService } from '../services/libraryService'
-import { createSequentialSnGenerator } from '../utils/idGenerator'
+import { createSequentialPartIdGenerator } from '../utils/idGenerator'
 import type { AuditService } from '../services/auditService'
 import type { UserService } from '../services/userService'
 import type { JobService } from '../services/jobService'
 import type { PathService } from '../services/pathService'
-import type { SerialService } from '../services/serialService'
+import type { PartService } from '../services/partService'
 import type { CertService } from '../services/certService'
 import type { TemplateService } from '../services/templateService'
 import type { NoteService } from '../services/noteService'
@@ -31,7 +31,7 @@ export interface ServiceSet {
   userService: UserService
   jobService: JobService
   pathService: PathService
-  serialService: SerialService
+  partService: PartService
   certService: CertService
   templateService: TemplateService
   noteService: NoteService
@@ -40,6 +40,8 @@ export interface ServiceSet {
   jiraService: JiraService
   lifecycleService: LifecycleService
   libraryService: LibraryService
+  /** @deprecated Use `partService` instead. Backward-compatible alias. */
+  serialService: PartService
 }
 
 let services: ServiceSet | null = null
@@ -52,17 +54,17 @@ export function getServices(): ServiceSet {
     // Services with no service dependencies
     const auditService = createAuditService({ audit: repos.audit })
     const userService = createUserService({ users: repos.users })
-    const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, serials: repos.serials })
-    const pathService = createPathService({ paths: repos.paths, serials: repos.serials, users: repos.users })
+    const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts })
+    const pathService = createPathService({ paths: repos.paths, parts: repos.parts, users: repos.users })
     const templateService = createTemplateService({ templates: repos.templates, paths: repos.paths })
 
     // Lifecycle service depends on auditService
     const lifecycleService = createLifecycleService({
-      serials: repos.serials,
+      parts: repos.parts,
       paths: repos.paths,
       jobs: repos.jobs,
-      snStepStatuses: repos.snStepStatuses,
-      snStepOverrides: repos.snStepOverrides,
+      partStepStatuses: repos.partStepStatuses,
+      partStepOverrides: repos.partStepOverrides,
     }, auditService)
 
     // Library service
@@ -70,27 +72,27 @@ export function getServices(): ServiceSet {
 
     // BOM service with version support and audit
     const bomService = createBomService(
-      { bom: repos.bom, serials: repos.serials, bomVersions: repos.bomVersions },
+      { bom: repos.bom, parts: repos.parts, bomVersions: repos.bomVersions },
       auditService
     )
 
-    // SN generator backed by the counters table
+    // Part ID generator backed by the counters table
     const db = repos._db
-    const snGenerator = createSequentialSnGenerator({
+    const partIdGenerator = createSequentialPartIdGenerator({
       getCounter: () => {
-        const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('sn') as { value: number } | undefined
+        const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
         return row?.value ?? 0
       },
       setCounter: (v: number) => {
-        db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('sn', v)
+        db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
       }
     })
 
     // Services that depend on auditService (and optionally lifecycleService)
-    const serialService = createSerialService(
-      { serials: repos.serials, paths: repos.paths, certs: repos.certs, jobs: repos.jobs },
+    const partService = createPartService(
+      { parts: repos.parts, paths: repos.paths, certs: repos.certs, jobs: repos.jobs },
       auditService,
-      snGenerator,
+      partIdGenerator,
       lifecycleService
     )
     const certService = createCertService({ certs: repos.certs }, auditService)
@@ -109,7 +111,7 @@ export function getServices(): ServiceSet {
       pathService,
       noteService,
       certService,
-      serialService
+      partService
     })
 
     services = {
@@ -117,7 +119,7 @@ export function getServices(): ServiceSet {
       userService,
       jobService,
       pathService,
-      serialService,
+      partService,
       certService,
       templateService,
       noteService,
@@ -126,6 +128,8 @@ export function getServices(): ServiceSet {
       jiraService,
       lifecycleService,
       libraryService,
+      // Backward-compatible alias
+      serialService: partService,
     }
   }
   return services
