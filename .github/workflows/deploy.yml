@@ -47,7 +47,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           fingerprint: ${{ secrets.SERVER_SSH_FINGERPRINT }}
-          source: ".output/"
+          source: ".output/,Dockerfile,docker-compose.yml"
           target: "/opt/shop-planr/"
           strip_components: 0
           overwrite: true
@@ -59,9 +59,21 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           fingerprint: ${{ secrets.SERVER_SSH_FINGERPRINT }}
+          command_timeout: 10m
           script: |
             cd /opt/shop-planr
             docker build -t shop-planr:latest .
             docker compose down || true
             docker compose up -d
             docker image prune -f
+            
+            # Health check - wait for container to be healthy
+            echo "Waiting for container to start..."
+            sleep 5
+            if curl -sf http://localhost:3005 > /dev/null; then
+              echo "✅ Health check passed"
+            else
+              echo "❌ Health check failed"
+              docker logs shop-planr --tail 50
+              exit 1
+            fi
