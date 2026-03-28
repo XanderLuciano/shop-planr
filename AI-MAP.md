@@ -7,7 +7,7 @@
 
 Shop Planr (package name: `shop-erp`) is a job routing and ERP application for machine shops. It tracks production orders (Jobs) through multi-path routing of parts across sequential Process Steps, with serial number management, certificate traceability, progress visualization, and optional Jira integration. Built as a full-stack Nuxt 4 app with SQLite persistence.
 
-**Status**: All features implemented. Job lifecycle management added (scrap, force-complete, flexible advancement, step overrides, waivers, BOM versioning, process/location libraries). Dedicated job creation/edit pages. Serial detail page Routing tab reorganized into SectionCard sections. First-step serial creation panel (SerialCreationPanel) for operator work queue. Operator view redesigned: monolithic operator.vue split into Parts View (/parts), Step View (/parts/step/[stepId]), and Operator Work Queue (/queue). Inline note creation on serial detail page. Step overflow UX: StepTracker uses flex-wrap instead of horizontal scroll, compact step cards, condensed serial counts. Nav page toggles: Settings → Page Visibility tab to hide/show sidebar pages, with route middleware guard and reactive sidebar filtering. Step 1 disabled-after-advance bugfix: zero-serial steps return 200 with partCount:0 instead of 404; first steps always visible in Parts View; prev/next step navigation; deduplicated step headers. Page toggle refresh bugfix: `app/plugins/settings.ts` plugin fetches settings once on app init so sidebar filtering and route middleware have correct toggle state on every page load (no flash, no stale fallback). 109 property-based tests (72 correctness properties), 51 integration tests, 708 tests passing across 120 files. Nav jobs-to-steps back arrow bugfix: Step View back arrow is context-aware via `from` query parameter, returning to Job detail when navigated from there. Job-step dashboard redirect bugfix: `ALWAYS_ENABLED_ROUTES` constant in `pageToggles.ts` ensures `/parts/step/*` routes are always accessible regardless of the `parts` toggle state. Full frontend with lifecycle dialogs, configuration panels, and audit filters.
+**Status**: All features implemented. Job lifecycle management added (scrap, force-complete, flexible advancement, step overrides, waivers, BOM versioning, process/location libraries). Dedicated job creation/edit pages. Serial detail page Routing tab reorganized into SectionCard sections. First-step serial creation panel (SerialCreationPanel) for operator work queue. Operator view redesigned: monolithic operator.vue split into Parts View (/parts), Step View (/parts/step/[stepId]), and Operator Work Queue (/queue). Inline note creation on serial detail page. Step overflow UX: StepTracker uses flex-wrap instead of horizontal scroll, compact step cards, condensed serial counts. Nav page toggles: Settings → Page Visibility tab to hide/show sidebar pages, with route middleware guard and reactive sidebar filtering. Step 1 disabled-after-advance bugfix: zero-serial steps return 200 with partCount:0 instead of 404; first steps always visible in Parts View; prev/next step navigation; deduplicated step headers. Page toggle refresh bugfix: `app/plugins/settings.ts` plugin fetches settings once on app init so sidebar filtering and route middleware have correct toggle state on every page load (no flash, no stale fallback). Nav jobs-to-steps back arrow bugfix: Step View back arrow is context-aware via `from` query parameter, returning to Job detail when navigated from there. Job-step dashboard redirect bugfix: `ALWAYS_ENABLED_ROUTES` constant in `pageToggles.ts` ensures `/parts/step/*` routes are always accessible regardless of the `parts` toggle state. API Documentation CMS: integrated Nuxt Content v3 docs site at `/api-docs` with 67+ endpoint docs across 14 service domains, sidebar navigation, full-text search, EndpointCard MDC component, and responsive docs layout. 759 tests passing across 128 files. Full frontend with lifecycle dialogs, configuration panels, and audit filters.
 
 ## Tech Stack
 
@@ -15,6 +15,7 @@ Shop Planr (package name: `shop-erp`) is a job routing and ERP application for m
 |-------|------|
 | Framework | Nuxt 4.2.2 (Vue 3, Nitro server) |
 | UI Library | Nuxt UI 4.3.0 (Tailwind CSS v4, Reka UI) |
+| Content CMS | Nuxt Content 3.x (Markdown/MDC, SQLite, MiniSearch) |
 | Language | TypeScript 5.9 |
 | Icons | `@iconify-json/lucide` |
 | Database | SQLite via `better-sqlite3` |
@@ -32,13 +33,14 @@ app/
   app.config.ts          → UI color config (primary: violet, neutral: neutral)
   pages/
     index.vue            → Placeholder homepage (to become dashboard)
-  components/            → 40+ components: SectionCard (reusable card wrapper), lifecycle dialogs (ScrapDialog, ForceCompleteDialog, AdvanceToStepDropdown), config panels (StepConfigPanel, AdvancementModeSelector, LibraryManager), job form (JobCreationForm), serial creation (SerialCreationPanel — first-step batch creation + advancement), page visibility (PageVisibilitySettings — toggle switches for nav pages), utility (BonusBadge, PathDeleteButton, CertDetailView, TemplateEditor, etc.)
-  composables/           → 22+ composables: useJobForm, useLifecycle, useLibrary, useBomVersions, useAudit (with filters), usePartsView, useStepView, useOperatorWorkQueue, useSettings (extended with pageToggles) + existing ones
+  components/            → 40+ components: SectionCard (reusable card wrapper), lifecycle dialogs (ScrapDialog, ForceCompleteDialog, AdvanceToStepDropdown), config panels (StepConfigPanel, AdvancementModeSelector, LibraryManager), job form (JobCreationForm), serial creation (SerialCreationPanel — first-step batch creation + advancement), page visibility (PageVisibilitySettings — toggle switches for nav pages), docs (EndpointCard MDC, DocsSidebar, DocsSearch), utility (BonusBadge, PathDeleteButton, CertDetailView, TemplateEditor, etc.)
+  composables/           → 22+ composables: useJobForm, useLifecycle, useLibrary, useBomVersions, useAudit (with filters), usePartsView, useStepView, useOperatorWorkQueue, useSettings (extended with pageToggles), useDocsNavigation, useDocsSearch + existing ones
   middleware/
     pageGuard.global.ts  → Global route middleware: blocks navigation to disabled pages, redirects to /
   utils/
     pageToggles.ts       → Re-exports DEFAULT_PAGE_TOGGLES, ROUTE_TOGGLE_MAP, ALWAYS_ENABLED_ROUTES, isPageEnabled() for client-side auto-import
     resolveBackNavigation.ts → Pure helper: computes back-arrow destination/label from `from` query param (auto-imported)
+    docsMethodColor.ts   → getMethodColor() — maps HTTP methods to Tailwind color classes for EndpointCard badges
   assets/css/
     main.css             → Tailwind imports + custom violet #8750FF scale + green scale
 server/
@@ -64,12 +66,29 @@ server/
 public/
   favicon.ico
 data/                    → SQLite DB file (shop_erp.db) — gitignored
+content/
+  api-docs/              → Nuxt Content v3 markdown docs: 14 service domains, 67+ endpoint files
+    index.md             → API overview and getting-started guide
+    jobs/                → Jobs API: index.md + list.md, get.md, create.md, update.md
+    paths/               → Paths API: index.md + get.md, create.md, update.md, delete.md, advancement-mode.md
+    serials/             → Serials API: index.md + 14 endpoint files (advance, scrap, overrides, etc.)
+    certs/               → Certificates API: index.md + list.md, get.md, create.md, batch-attach.md, attachments.md
+    templates/           → Templates API: index.md + list.md, get.md, create.md, update.md, delete.md, apply.md
+    bom/                 → BOM API: index.md + list.md, get.md, create.md, update.md, edit.md, versions.md
+    audit/               → Audit API: index.md + list.md, serial.md
+    jira/                → Jira API: index.md + tickets.md, ticket-detail.md, link.md, push.md, comment.md
+    settings/            → Settings API: index.md + get.md, update.md
+    users/               → Users API: index.md + list.md, create.md, update.md
+    notes/               → Notes API: index.md + create.md, by-serial.md, by-step.md
+    operator/            → Operator API: index.md + step-view.md, work-queue.md, queue-all.md, queue-user.md, by-step-name.md
+    steps/               → Steps API: index.md + assign.md, config.md
+    library/             → Library API: index.md + processes.md, process-delete.md, locations.md, location-delete.md
 tests/
   unit/
     utils/               → 4 test files (errors, idGenerator, serialization, validation, services)
     services/            → 10 test files (one per service)
     composables/         → 4 test files (useBarcode, useViewFilters, useJobForm, workQueueSearch)
-    components/          → 2 test files (SerialCreationPanel, serialNoteAdd)
+    components/          → 4 test files (SerialCreationPanel, serialNoteAdd, EndpointCard, DocsSidebar)
     repositories/sqlite/ → 1 test file (migrations)
   properties/            → property-based tests (fast-check properties; see tests/properties for full list)
   integration/           → 15 files: helpers + 14 end-to-end lifecycle tests (51 tests)
@@ -82,7 +101,7 @@ tests/
 | Dev server | `npm run dev` | Nuxt dev with HMR |
 | Build | `npm run build` | Production build to `.output/` |
 | Preview | `npm run preview` | Preview production build locally |
-| Test | `npm run test` | `vitest run` — 708 tests, 120 files |
+| Test | `npm run test` | `vitest run` — 759 tests, 128 files |
 | Test watch | `npm run test:watch` | `vitest` in watch mode |
 | Lint | `npm run lint` | ESLint with Nuxt config |
 | Typecheck | `npm run typecheck` | `nuxt typecheck` |
@@ -104,6 +123,7 @@ tests/
 | Homepage | `app/pages/index.vue` |
 | Service singleton | `server/utils/services.ts` → `getServices()` |
 | Repository singleton | `server/utils/db.ts` → `getRepositories()` |
+| Content config | `content.config.ts` |
 | Vitest config | `vitest.config.ts` |
 | ESLint config | `eslint.config.mjs` |
 | Docker | `Dockerfile` + `docker-compose.yml` |
@@ -159,6 +179,7 @@ Dependencies flow left-to-right only. All business logic lives in services. See 
 | Jira | `app/pages/jira.vue` | Jira ticket dashboard (conditional) |
 | Audit | `app/pages/audit.vue` | Audit trail viewer with filters (action type, user, serial, job, date range) |
 | Settings | `app/pages/settings.vue` | Users, Jira connection, field mappings, process/location libraries, page visibility toggles |
+| API Docs CMS | `app/pages/api-docs/[...slug].vue` | Nuxt Content v3 docs site (67+ endpoint docs) |
 | Serial browser | `app/pages/serials/index.vue` | Searchable/filterable serial number list |
 | Part detail | `app/pages/serials/[id].vue` | Tabbed part view: routing (SectionCard sections: routing, certificates, notes, advance process; lifecycle features, deferred steps, overrides, certs) + sibling serials |
 
@@ -210,3 +231,5 @@ Core entities and relationships:
 - `vitest.config.ts` aliases `~` to project root (`.`) for server-side imports.
 - `runtimeConfig` in `nuxt.config.ts` has `dbType`, `dbPath`, and 4 Jira env vars.
 - `USelect` items must never have `value: ''` or `value: null`. Reka UI's `SelectItem` throws if value is an empty string (reserved for clearing selection). Use a sentinel like `_placeholder` with `disabled: true` for placeholder items.
+- Nuxt Content v3 requires `content.config.ts` at project root to define collections. The `docs` collection uses `source: 'api-docs/**'` with custom schema fields. Without this file, content queries return empty results.
+- Endpoint docs use `endpoint` (not `path`) as the frontmatter field for the API path (e.g. `endpoint: "/api/jobs"`). Nuxt Content reserves `path` for URL routing — using `path` in frontmatter overrides the page's URL.

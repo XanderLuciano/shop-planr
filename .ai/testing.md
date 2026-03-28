@@ -13,7 +13,7 @@
 
 | Command | What it does |
 |---------|-------------|
-| `npm run test` | `vitest run` — single pass, all tests (708 tests, 120 files) |
+| `npm run test` | `vitest run` — single pass, all tests (759 tests, 128 files) |
 | `npm run test:watch` | `vitest` — watch mode |
 | `npx vitest run tests/properties` | Property tests only |
 | `npx vitest run tests/unit` | Unit tests only |
@@ -27,7 +27,7 @@ tests/
     services/           → jobService, pathService, serialService, etc. (10 files)
     utils/              → serialization, validation, idGenerator, errors, progressBar, services (6 files)
     composables/        → useBarcode, useViewFilters, useJobForm, workQueueSearch (4 files)
-    components/         → SerialCreationPanel, serialNoteAdd (2 files)
+    components/         → SerialCreationPanel, serialNoteAdd, EndpointCard, DocsSidebar (4 files)
     repositories/sqlite/ → migrations (1 file)
   properties/
     jobPartCount.property.test.ts        → CP-1: Job part count invariant
@@ -48,6 +48,12 @@ tests/
     partsToggleRespected.property.test.ts → Non-step /parts routes respect parts toggle (2 tests)
     otherTogglesUnaffected.property.test.ts → Other toggle-mapped routes unaffected by always-enabled fix (2 tests)
     dashboardSettingsAlwaysEnabled.property.test.ts → Dashboard + Settings always enabled (2 tests)
+    docsDirectoryCompleteness.property.test.ts → P2: Content directory structure completeness (2 tests)
+    docsFrontmatterValidity.property.test.ts → P3: Endpoint frontmatter validity (2 tests)
+    docsMethodBadgeColor.property.test.ts → P8: Method badge color mapping (3 tests)
+    docsNavOrdering.property.test.ts → P6: Navigation tree ordering (3 tests)
+    docsSearchScoping.property.test.ts → P7: Search result scoping (4 tests)
+    docsSlugResolution.property.test.ts → P5: Slug resolution correctness (5 tests)
   integration/
     helpers.ts                           → createTestContext() with all services
     jobLifecycle.test.ts                 → Full job lifecycle (6 tests)
