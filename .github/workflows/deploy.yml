@@ -5,10 +5,17 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
+    environment: production
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+
     steps:
       - uses: actions/checkout@v4
       
@@ -45,8 +52,7 @@ jobs:
           fingerprint: ${{ secrets.SERVER_SSH_FINGERPRINT }}
           script: |
             cd /opt/shop-planr
-            docker build -t shop-planr:latest .
-            docker stop shop-planr 2>/dev/null || true
-            docker rm shop-planr 2>/dev/null || true
-            docker run -d --name shop-planr -p 3005:3000 --restart unless-stopped shop-planr:latest
+            docker build -t localhost/shop-erp:latest .
+            docker compose down || true
+            docker compose up -d
             docker image prune -f
