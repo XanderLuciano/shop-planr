@@ -158,8 +158,8 @@ export function createPathService(repos: {
       return repos.paths.delete(id)
     },
 
-    getStepDistribution(pathId: string): StepDistribution[] {
-      const path = repos.paths.getById(pathId)
+    getStepDistribution(pathId: string, prefetchedPath?: Path): StepDistribution[] {
+      const path = prefetchedPath ?? repos.paths.getById(pathId)
       if (!path) {
         throw new NotFoundError('Path', pathId)
       }
@@ -195,8 +195,8 @@ export function createPathService(repos: {
       return distribution
     },
 
-    getPathCompletedCount(pathId: string): number {
-      const path = repos.paths.getById(pathId)
+    getPathCompletedCount(pathId: string, prefetchedPath?: Path): number {
+      const path = prefetchedPath ?? repos.paths.getById(pathId)
       if (!path) {
         throw new NotFoundError('Path', pathId)
       }
