@@ -56,9 +56,20 @@ function onScanned(result: ScanResult) {
       />
 
       <template #footer>
-        <div class="flex items-center justify-between">
-          <UDashboardSidebarCollapse />
-          <UColorModeButton size="xs" />
+        <div class="flex flex-col gap-2">
+          <NuxtLink
+            to="/api-docs"
+            target="_blank"
+            class="flex items-center gap-2 px-2 py-1.5 text-sm text-(--ui-text-muted) hover:text-(--ui-text-highlighted) rounded-md hover:bg-(--ui-bg-elevated) transition-colors"
+          >
+            <UIcon name="i-lucide-book-open" class="size-4" />
+            <span class="truncate group-data-[collapsed]:hidden">API Docs</span>
+            <UIcon name="i-lucide-external-link" class="size-3 ml-auto opacity-50 group-data-[collapsed]:hidden" />
+          </NuxtLink>
+          <div class="flex items-center justify-between">
+            <UDashboardSidebarCollapse />
+            <UColorModeButton size="xs" />
+          </div>
         </div>
       </template>
     </UDashboardSidebar>
