@@ -47,7 +47,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           fingerprint: ${{ secrets.SERVER_SSH_FINGERPRINT }}
-          source: ".output/,Dockerfile,docker-compose.yml"
+          source: ".output/,Dockerfile,docker-compose.yml,server/repositories/sqlite/migrations/"
           target: "/opt/shop-planr/"
           strip_components: 0
           overwrite: true

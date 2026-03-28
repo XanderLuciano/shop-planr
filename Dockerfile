@@ -1,9 +1,10 @@
 # Production image - uses pre-built .output directory
-# Using slim instead of alpine for glibc compatibility with native modules (better-sqlite3)
-FROM node:20-slim
+# Using node:24-slim to match build environment (glibc + same Node version)
+FROM node:24-slim
 WORKDIR /app
 
 COPY .output .output
+COPY server/repositories/sqlite/migrations server/repositories/sqlite/migrations
 
 ENV HOST=0.0.0.0
 ENV PORT=3000
