@@ -1,7 +1,7 @@
 import type Database from 'better-sqlite3'
 import type { Path, ProcessStep } from '../../types/domain'
 import type { PathRepository } from '../interfaces/pathRepository'
-import { NotFoundError } from '../../utils/errors'
+import { NotFoundError, ValidationError } from '../../utils/errors'
 
 interface PathRow {
   id: string
@@ -117,21 +117,62 @@ export class SQLitePathRepository implements PathRepository {
       updatedAt: partial.updatedAt ?? new Date().toISOString()
     }
 
-    const updatePath = this.db.prepare(`
+    const updatePathStmt = this.db.prepare(`
       UPDATE paths SET name = ?, goal_quantity = ?, advancement_mode = ?, updated_at = ? WHERE id = ?
     `)
-    const deleteSteps = this.db.prepare('DELETE FROM process_steps WHERE path_id = ?')
-    const insertStep = this.db.prepare(`
+    const setTempOrderStmt = this.db.prepare(
+      'UPDATE process_steps SET step_order = ? WHERE id = ?'
+    )
+    const updateStepStmt = this.db.prepare(`
+      UPDATE process_steps SET name = ?, step_order = ?, location = ?, optional = ?, dependency_type = ? WHERE id = ?
+    `)
+    const insertStepStmt = this.db.prepare(`
       INSERT INTO process_steps (id, path_id, name, step_order, location, optional, dependency_type)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `)
+    const deleteStepStmt = this.db.prepare(
+      'DELETE FROM process_steps WHERE id = ?'
+    )
 
     this.db.transaction(() => {
-      updatePath.run(updated.name, updated.goalQuantity, updated.advancementMode, updated.updatedAt, id)
+      // Phase 0: Update path-level fields
+      updatePathStmt.run(updated.name, updated.goalQuantity, updated.advancementMode, updated.updatedAt, id)
+
       if (partial.steps) {
-        deleteSteps.run(id)
-        for (const step of updated.steps) {
-          insertStep.run(step.id, id, step.name, step.order, step.location ?? null, step.optional ? 1 : 0, step.dependencyType ?? 'preferred')
+        // Phase 1: Identify steps to update, insert, and delete
+        const existingIds = new Set(existing.steps.map(s => s.id))
+        const newIds = new Set(updated.steps.map(s => s.id))
+        const stepsToUpdate = updated.steps.filter(s => existingIds.has(s.id))
+        const stepsToInsert = updated.steps.filter(s => !existingIds.has(s.id))
+        const idsToDelete = [...existingIds].filter(stepId => !newIds.has(stepId))
+
+        // Phase 2: Guard — check FK dependents before any deletes
+        for (const stepId of idsToDelete) {
+          if (this.hasStepDependents(stepId)) {
+            throw new ValidationError(
+              'Cannot remove step because it has associated data (certificates, notes, or part statuses). Remove the associated data first, or keep the step.'
+            )
+          }
+        }
+
+        // Phase 3: Set temporary negative step_order to avoid UNIQUE(path_id, step_order) conflicts
+        for (const step of stepsToUpdate) {
+          setTempOrderStmt.run(-(step.order + 1), step.id)
+        }
+
+        // Phase 4: Delete removed steps first to free up step_order slots (already verified no FK dependents)
+        for (const stepId of idsToDelete) {
+          deleteStepStmt.run(stepId)
+        }
+
+        // Phase 5: Update existing steps in place with new field values and correct order
+        for (const step of stepsToUpdate) {
+          updateStepStmt.run(step.name, step.order, step.location ?? null, step.optional ? 1 : 0, step.dependencyType ?? 'preferred', step.id)
+        }
+
+        // Phase 6: Insert new steps
+        for (const step of stepsToInsert) {
+          insertStepStmt.run(step.id, id, step.name, step.order, step.location ?? null, step.optional ? 1 : 0, step.dependencyType ?? 'preferred')
         }
       }
     })()
@@ -170,5 +211,21 @@ export class SQLitePathRepository implements PathRepository {
       updated.optional ? 1 : 0, updated.dependencyType ?? 'preferred', stepId,
     )
     return updated
+  }
+
+  hasStepDependents(stepId: string): boolean {
+    const tables = [
+      'cert_attachments',
+      'step_notes',
+      'part_step_statuses',
+      'part_step_overrides',
+    ]
+    for (const table of tables) {
+      const row = this.db.prepare(
+        `SELECT 1 FROM ${table} WHERE step_id = ? LIMIT 1`
+      ).get(stepId)
+      if (row) return true
+    }
+    return false
   }
 }
