@@ -27,7 +27,7 @@
 
 ### 5. Cancel / Back Navigation
 - 5.1 Clicking "Cancel" MUST navigate to `/jobs/:id` without making any API calls
-- 5.2 The "Back to Jobs" link MUST navigate to `/jobs` (the jobs list)
+- 5.2 The "Back to Job" link MUST navigate to `/jobs/:id` (the job detail page being edited)
 
 ### 6. Page Toggle Compatibility
 - 6.1 The route `/jobs/edit/:id` MUST respect the `jobs` page toggle — disabled when `jobs` toggle is `false`

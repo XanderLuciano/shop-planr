@@ -155,7 +155,7 @@ function onCancel() {
 //   TO:   app/pages/jobs/edit/[id].vue
 
 // Step 2: Update the edit page's back link
-//   The "Back to Jobs" NuxtLink stays as-is (points to /jobs)
+//   The "Back to Job" NuxtLink points to /jobs/:id (the job detail page)
 //   The onCancel/onSaved navigations already point to /jobs/:id — no change needed
 
 // Step 3: Update the detail page's Edit button
