@@ -7,7 +7,7 @@
 
 Shop Planr (package name: `shop-erp`) is a job routing and ERP application for machine shops. It tracks production orders (Jobs) through multi-path routing of parts across sequential Process Steps, with serial number management, certificate traceability, progress visualization, and optional Jira integration. Built as a full-stack Nuxt 4 app with SQLite persistence.
 
-**Status**: All features implemented. Job lifecycle management added (scrap, force-complete, flexible advancement, step overrides, waivers, BOM versioning, process/location libraries). Dedicated job creation/edit pages. Serial detail page Routing tab reorganized into SectionCard sections. First-step serial creation panel (SerialCreationPanel) for operator work queue. Operator view redesigned: monolithic operator.vue split into Parts View (/parts), Step View (/parts/step/[stepId]), and Operator Work Queue (/queue). Inline note creation on serial detail page. Step overflow UX: StepTracker uses flex-wrap instead of horizontal scroll, compact step cards, condensed serial counts. Nav page toggles: Settings → Page Visibility tab to hide/show sidebar pages, with route middleware guard and reactive sidebar filtering. Step 1 disabled-after-advance bugfix: zero-serial steps return 200 with partCount:0 instead of 404; first steps always visible in Parts View; prev/next step navigation; deduplicated step headers. Page toggle refresh bugfix: `app/plugins/settings.ts` plugin fetches settings once on app init so sidebar filtering and route middleware have correct toggle state on every page load (no flash, no stale fallback). 109 property-based tests (72 correctness properties), 51 integration tests, 708 tests passing across 120 files. Nav jobs-to-steps back arrow bugfix: Step View back arrow is context-aware via `from` query parameter, returning to Job detail when navigated from there. Job-step dashboard redirect bugfix: `ALWAYS_ENABLED_ROUTES` constant in `pageToggles.ts` ensures `/parts/step/*` routes are always accessible regardless of the `parts` toggle state. Full frontend with lifecycle dialogs, configuration panels, and audit filters.
+**Status**: All features implemented. Job lifecycle management added (scrap, force-complete, flexible advancement, step overrides, waivers, BOM versioning, process/location libraries). Dedicated job creation/edit pages. Serial detail page Routing tab reorganized into SectionCard sections. First-step serial creation panel (SerialCreationPanel) for operator work queue. Operator view redesigned: monolithic operator.vue split into Parts View (/parts), Step View (/parts/step/[stepId]), and Operator Work Queue (/queue). Inline note creation on serial detail page. Step overflow UX: StepTracker uses flex-wrap instead of horizontal scroll, compact step cards, condensed serial counts. Nav page toggles: Settings → Page Visibility tab to hide/show sidebar pages, with route middleware guard and reactive sidebar filtering. Step 1 disabled-after-advance bugfix: zero-serial steps return 200 with partCount:0 instead of 404; first steps always visible in Parts View; prev/next step navigation; deduplicated step headers. Page toggle refresh bugfix: `app/plugins/settings.ts` plugin fetches settings once on app init so sidebar filtering and route middleware have correct toggle state on every page load (no flash, no stale fallback). Nav jobs-to-steps back arrow bugfix: Step View back arrow is context-aware via `from` query parameter, returning to Job detail when navigated from there. Job-step dashboard redirect bugfix: `ALWAYS_ENABLED_ROUTES` constant in `pageToggles.ts` ensures `/parts/step/*` routes are always accessible regardless of the `parts` toggle state. API Documentation CMS: integrated Nuxt Content v3 docs site at `/api-docs` with 67+ endpoint docs across 14 service domains, sidebar navigation, full-text search, EndpointCard MDC component, and responsive docs layout. 759 tests passing across 128 files. Full frontend with lifecycle dialogs, configuration panels, and audit filters.
 
 ## Tech Stack
 
@@ -15,6 +15,7 @@ Shop Planr (package name: `shop-erp`) is a job routing and ERP application for m
 |-------|------|
 | Framework | Nuxt 4.2.2 (Vue 3, Nitro server) |
 | UI Library | Nuxt UI 4.3.0 (Tailwind CSS v4, Reka UI) |
+| Content CMS | Nuxt Content 3.x (Markdown/MDC, SQLite, MiniSearch) |
 | Language | TypeScript 5.9 |
 | Icons | `@iconify-json/lucide` |
 | Database | SQLite via `better-sqlite3` |
@@ -104,6 +105,7 @@ tests/
 | Homepage | `app/pages/index.vue` |
 | Service singleton | `server/utils/services.ts` → `getServices()` |
 | Repository singleton | `server/utils/db.ts` → `getRepositories()` |
+| Content config | `content.config.ts` |
 | Vitest config | `vitest.config.ts` |
 | ESLint config | `eslint.config.mjs` |
 | Docker | `Dockerfile` + `docker-compose.yml` |
@@ -159,6 +161,7 @@ Dependencies flow left-to-right only. All business logic lives in services. See 
 | Jira | `app/pages/jira.vue` | Jira ticket dashboard (conditional) |
 | Audit | `app/pages/audit.vue` | Audit trail viewer with filters (action type, user, serial, job, date range) |
 | Settings | `app/pages/settings.vue` | Users, Jira connection, field mappings, process/location libraries, page visibility toggles |
+| API Docs CMS | `app/pages/api-docs/[...slug].vue` | Nuxt Content v3 docs site (67+ endpoint docs) |
 | Serial browser | `app/pages/serials/index.vue` | Searchable/filterable serial number list |
 | Part detail | `app/pages/serials/[id].vue` | Tabbed part view: routing (SectionCard sections: routing, certificates, notes, advance process; lifecycle features, deferred steps, overrides, certs) + sibling serials |
 
