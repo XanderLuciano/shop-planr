@@ -11,7 +11,7 @@ Fix the non-functional edit button on the Job detail page (`/jobs/:id`). The roo
     - _Requirements: 1.1, 1.2, 1.4, 3.1, 3.2, 3.3, 3.4_
   - [x] 1.2 Delete `app/pages/jobs/[id]/edit.vue` and remove the empty `app/pages/jobs/[id]/` directory
     - _Requirements: 1.2, 1.3_
-  - [x] 1.3 Update the "Back to Jobs" link in the edit page to point to `/jobs` (verify it's correct after move)
+  - [x] 1.3 Update the edit page's back link to navigate to the job detail page (`/jobs/:id`) (verify it still points to the correct job after the route move)
     - _Requirements: 5.2_
 
 - [x] 2. Update navigation references
