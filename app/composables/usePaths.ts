@@ -10,7 +10,7 @@ export function usePaths() {
     })
   }
 
-  async function getPath(id: string): Promise<Path & { distribution: StepDistribution[] }> {
+  async function getPath(id: string): Promise<Path & { distribution: StepDistribution[]; completedCount: number }> {
     return await $fetch(`/api/paths/${id}`)
   }
 

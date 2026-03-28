@@ -5,9 +5,11 @@ import type { StepDistribution } from '~/server/types/computed'
 const props = withDefaults(defineProps<{
   path: Path
   distribution: StepDistribution[]
+  completedCount?: number
   users?: ShopUser[]
   stepAssignments?: Record<string, string | undefined>
 }>(), {
+  completedCount: 0,
   users: () => [],
 })
 
@@ -93,7 +95,7 @@ function depIcon(depType?: string) {
       <UIcon name="i-lucide-check-circle" class="size-4 text-green-600 dark:text-green-400" />
       <div class="mt-1">
         <span class="text-sm font-bold text-green-600 dark:text-green-400">
-          {{ distribution.reduce((s, d) => s + d.completedCount, 0) }}
+          {{ completedCount }}
         </span>
       </div>
       <span class="text-[10px] text-(--ui-text-muted)">completed</span>

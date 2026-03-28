@@ -38,6 +38,7 @@ const tabs = [
 
 // Path distributions keyed by path ID
 const distributions = ref<Record<string, StepDistribution[]>>({})
+const pathCompletedCounts = ref<Record<string, number>>({})
 
 // Notes keyed by step ID
 const pathNotes = ref<Record<string, StepNote[]>>({})
@@ -128,16 +129,19 @@ async function loadJob() {
 async function loadAllDistributions() {
   const results = await Promise.allSettled(
     paths.value.map(p =>
-      fetchPathDetail(p.id).then(d => ({ id: p.id, distribution: d.distribution }))
+      fetchPathDetail(p.id).then(d => ({ id: p.id, distribution: d.distribution, completedCount: d.completedCount }))
     )
   )
   const map: Record<string, StepDistribution[]> = {}
+  const counts: Record<string, number> = {}
   for (const r of results) {
     if (r.status === 'fulfilled') {
       map[r.value.id] = r.value.distribution
+      counts[r.value.id] = r.value.completedCount
     }
   }
   distributions.value = map
+  pathCompletedCounts.value = counts
 }
 
 async function loadPathNotes(pathId: string) {
@@ -471,6 +475,7 @@ onMounted(() => {
               <StepTracker
                 :path="p"
                 :distribution="distributions[p.id]!"
+                :completed-count="pathCompletedCounts[p.id] ?? 0"
                 :users="activeUsers"
                 @step-click="onStepClick(p.id, $event)"
                 @assigned="onStepAssigned"

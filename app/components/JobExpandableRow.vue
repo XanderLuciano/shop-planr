@@ -27,6 +27,7 @@ const paths = ref<PathInfo[]>([])
 const loading = ref(false)
 const expandedPathId = ref<string | null>(null)
 const pathDistributions = ref<Record<string, StepDist[]>>({})
+const pathCompletedCounts = ref<Record<string, number>>({})
 const loadingPathId = ref<string | null>(null)
 
 async function fetchPaths() {
@@ -51,8 +52,9 @@ async function togglePath(pathId: string) {
   if (!pathDistributions.value[pathId]) {
     loadingPathId.value = pathId
     try {
-      const detail = await $fetch<{ distribution: StepDist[] }>(`/api/paths/${pathId}`)
+      const detail = await $fetch<{ distribution: StepDist[], completedCount?: number }>(`/api/paths/${pathId}`)
       pathDistributions.value[pathId] = detail.distribution ?? []
+      pathCompletedCounts.value[pathId] = detail.completedCount ?? 0
     } catch {
       pathDistributions.value[pathId] = []
     } finally {
@@ -131,7 +133,7 @@ onMounted(() => {
                 class="w-full"
               >
                 <ProgressBar
-                  :completed="pathDistributions[path.id]!.reduce((s: number, d: StepDist) => s + d.completedCount, 0)"
+                  :completed="pathCompletedCounts[path.id] ?? 0"
                   :goal="path.goalQuantity"
                   :in-progress="pathDistributions[path.id]!.reduce((s: number, d: StepDist) => s + d.partCount, 0)"
                 />
