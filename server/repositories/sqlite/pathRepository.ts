@@ -150,7 +150,7 @@ export class SQLitePathRepository implements PathRepository {
         for (const stepId of idsToDelete) {
           if (this.hasStepDependents(stepId)) {
             throw new ValidationError(
-              'Cannot remove step because it has associated data (certificates, notes, or part statuses). Remove the associated data first, or keep the step.'
+              'Cannot remove step because it has associated data (certificates, notes, part statuses, or overrides). Remove the associated data first, or keep the step.'
             )
           }
         }

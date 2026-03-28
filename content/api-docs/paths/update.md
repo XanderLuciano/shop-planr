@@ -90,7 +90,7 @@ Returned when the request body contains invalid values. Validation is only appli
 | `name` is provided but empty | `"name is required"` |
 | `goalQuantity` is provided but zero or negative | `"goalQuantity must be greater than 0"` |
 | `steps` is provided but empty array | `"steps is required"` |
-| A removed step has associated data (certs, notes, statuses, overrides) | `"Cannot remove step because it has associated data (certificates, notes, or part statuses). Remove the associated data first, or keep the step."` |
+| A removed step has associated data (certs, notes, statuses, overrides) | `"Cannot remove step because it has associated data (certificates, notes, part statuses, or overrides). Remove the associated data first, or keep the step."` |
 
 ### 404 Not Found
 

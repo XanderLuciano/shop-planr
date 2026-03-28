@@ -157,7 +157,7 @@ describe('FK-Safe Path Update Integration', () => {
     } catch (err) {
       expect(err).toBeInstanceOf(ValidationError)
       expect((err as ValidationError).message).toBe(
-        'Cannot remove step because it has associated data (certificates, notes, or part statuses). Remove the associated data first, or keep the step.',
+        'Cannot remove step because it has associated data (certificates, notes, part statuses, or overrides). Remove the associated data first, or keep the step.',
       )
     }
   })
