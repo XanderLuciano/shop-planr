@@ -1,9 +1,9 @@
 services:
   webapp:
-    image: localhost/shop-erp:latest
-    container_name: shop-erp
+    image: shop-planr:latest
+    container_name: shop-planr
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3005:3000"
     environment:
       - NODE_ENV=production

@@ -61,7 +61,7 @@ jobs:
           fingerprint: ${{ secrets.SERVER_SSH_FINGERPRINT }}
           script: |
             cd /opt/shop-planr
-            docker build -t localhost/shop-erp:latest .
+            docker build -t shop-planr:latest .
             docker compose down || true
             docker compose up -d
             docker image prune -f
