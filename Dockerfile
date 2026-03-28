@@ -1,7 +1,6 @@
 # Production image - uses pre-built .output directory
-# Build locally with: npm run build
-# Then build image with: docker build -t shop-erp .
-FROM node:20-alpine
+# Using slim instead of alpine for glibc compatibility with native modules (better-sqlite3)
+FROM node:20-slim
 WORKDIR /app
 
 COPY .output .output
