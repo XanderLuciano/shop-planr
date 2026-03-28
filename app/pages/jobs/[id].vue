@@ -325,7 +325,7 @@ onMounted(() => {
               <span v-if="job.jiraPartNumber">Part #: {{ job.jiraPartNumber }}</span>
             </div>
           </div>
-          <UButton icon="i-lucide-pencil" size="xs" variant="ghost" label="Edit" @click="navigateTo(`/jobs/${encodeURIComponent(jobId)}/edit`)" />
+          <UButton icon="i-lucide-pencil" size="xs" variant="ghost" label="Edit" @click="navigateTo(`/jobs/edit/${encodeURIComponent(jobId)}`)" />
         </div>
 
         <!-- Progress -->

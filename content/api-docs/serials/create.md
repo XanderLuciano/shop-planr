@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Batch Create Serials"
 description: "Create multiple serial numbers for a job path in a single batch operation"
 method: "POST"

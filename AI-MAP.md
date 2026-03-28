@@ -7,7 +7,7 @@
 
 Shop Planr (package name: `shop-erp`) is a job routing and ERP application for machine shops. It tracks production orders (Jobs) through multi-path routing of parts across sequential Process Steps, with serial number management, certificate traceability, progress visualization, and optional Jira integration. Built as a full-stack Nuxt 4 app with SQLite persistence.
 
-**Status**: All features implemented. Job lifecycle management added (scrap, force-complete, flexible advancement, step overrides, waivers, BOM versioning, process/location libraries). Dedicated job creation/edit pages. Serial detail page Routing tab reorganized into SectionCard sections. First-step serial creation panel (SerialCreationPanel) for operator work queue. Operator view redesigned: monolithic operator.vue split into Parts View (/parts), Step View (/parts/step/[stepId]), and Operator Work Queue (/queue). Inline note creation on serial detail page. Step overflow UX: StepTracker uses flex-wrap instead of horizontal scroll, compact step cards, condensed serial counts. Nav page toggles: Settings → Page Visibility tab to hide/show sidebar pages, with route middleware guard and reactive sidebar filtering. Step 1 disabled-after-advance bugfix: zero-serial steps return 200 with partCount:0 instead of 404; first steps always visible in Parts View; prev/next step navigation; deduplicated step headers. Page toggle refresh bugfix: `app/plugins/settings.ts` plugin fetches settings once on app init so sidebar filtering and route middleware have correct toggle state on every page load (no flash, no stale fallback). Nav jobs-to-steps back arrow bugfix: Step View back arrow is context-aware via `from` query parameter, returning to Job detail when navigated from there. Job-step dashboard redirect bugfix: `ALWAYS_ENABLED_ROUTES` constant in `pageToggles.ts` ensures `/parts/step/*` routes are always accessible regardless of the `parts` toggle state. API Documentation CMS: integrated Nuxt Content v3 docs site at `/api-docs` with 67+ endpoint docs across 14 service domains, sidebar navigation, full-text search, EndpointCard MDC component, and responsive docs layout. 759 tests passing across 128 files. Full frontend with lifecycle dialogs, configuration panels, and audit filters.
+**Status**: All features implemented. Job lifecycle management added (scrap, force-complete, flexible advancement, step overrides, waivers, BOM versioning, process/location libraries). Dedicated job creation/edit pages. Serial detail page Routing tab reorganized into SectionCard sections. First-step serial creation panel (SerialCreationPanel) for operator work queue. Operator view redesigned: monolithic operator.vue split into Parts View (/parts), Step View (/parts/step/[stepId]), and Operator Work Queue (/queue). Inline note creation on serial detail page. Step overflow UX: StepTracker uses flex-wrap instead of horizontal scroll, compact step cards, condensed serial counts. Nav page toggles: Settings → Page Visibility tab to hide/show sidebar pages, with route middleware guard and reactive sidebar filtering. Step 1 disabled-after-advance bugfix: zero-serial steps return 200 with partCount:0 instead of 404; first steps always visible in Parts View; prev/next step navigation; deduplicated step headers. Page toggle refresh bugfix: `app/plugins/settings.ts` plugin fetches settings once on app init so sidebar filtering and route middleware have correct toggle state on every page load (no flash, no stale fallback). Nav jobs-to-steps back arrow bugfix: Step View back arrow is context-aware via `from` query parameter, returning to Job detail when navigated from there. Job-step dashboard redirect bugfix: `ALWAYS_ENABLED_ROUTES` constant in `pageToggles.ts` ensures `/parts/step/*` routes are always accessible regardless of the `parts` toggle state. API Documentation CMS: integrated Nuxt Content v3 docs site at `/api-docs` with 67+ endpoint docs across 14 service domains, sidebar navigation, full-text search, EndpointCard MDC component, and responsive docs layout. 785 tests passing across 134 files. Full frontend with lifecycle dialogs, configuration panels, and audit filters.
 
 ## Tech Stack
 
@@ -88,7 +88,7 @@ tests/
     utils/               → 4 test files (errors, idGenerator, serialization, validation, services)
     services/            → 10 test files (one per service)
     composables/         → 4 test files (useBarcode, useViewFilters, useJobForm, workQueueSearch)
-    components/          → 4 test files (SerialCreationPanel, serialNoteAdd, EndpointCard, DocsSidebar)
+    components/          → 5 test files (SerialCreationPanel, serialNoteAdd, EndpointCard, DocsSidebar, JobEditNavigation)
     repositories/sqlite/ → 1 test file (migrations)
   properties/            → property-based tests (fast-check properties; see tests/properties for full list)
   integration/           → 15 files: helpers + 14 end-to-end lifecycle tests (51 tests)
@@ -101,7 +101,7 @@ tests/
 | Dev server | `npm run dev` | Nuxt dev with HMR |
 | Build | `npm run build` | Production build to `.output/` |
 | Preview | `npm run preview` | Preview production build locally |
-| Test | `npm run test` | `vitest run` — 759 tests, 128 files |
+| Test | `npm run test` | `vitest run` — 785 tests, 134 files |
 | Test watch | `npm run test:watch` | `vitest` in watch mode |
 | Lint | `npm run lint` | ESLint with Nuxt config |
 | Typecheck | `npm run typecheck` | `nuxt typecheck` |
@@ -168,7 +168,7 @@ Dependencies flow left-to-right only. All business logic lives in services. See 
 | Jobs list | `app/pages/jobs/index.vue` | Expandable table: jobs → paths → steps |
 | Job detail | `app/pages/jobs/[id].vue` | Tabbed: Job Routing (paths, steps, config) + Serial Numbers tab |
 | Job create | `app/pages/jobs/new.vue` | Dedicated job creation form via `JobCreationForm` component |
-| Job edit | `app/pages/jobs/[id]/edit.vue` | Edit existing job (paths, steps) via `JobCreationForm` component |
+| Job edit | `app/pages/jobs/edit/[id].vue` | Edit existing job (paths, steps) via `JobCreationForm` component |
 | Operator | `app/pages/operator.vue` | ~~Removed~~ — replaced by Parts View + Work Queue |
 | Assignees | `app/pages/assignees.vue` | ~~Removed~~ — subsumed by Work Queue |
 | Parts View | `app/pages/parts/index.vue` | All active parts grouped by job/step, click navigates to Step View |

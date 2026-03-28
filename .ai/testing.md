@@ -27,7 +27,7 @@ tests/
     services/           → jobService, pathService, serialService, etc. (10 files)
     utils/              → serialization, validation, idGenerator, errors, progressBar, services (6 files)
     composables/        → useBarcode, useViewFilters, useJobForm, workQueueSearch (4 files)
-    components/         → SerialCreationPanel, serialNoteAdd, EndpointCard, DocsSidebar (4 files)
+    components/         → SerialCreationPanel, serialNoteAdd, EndpointCard, DocsSidebar, JobEditNavigation (5 files)
     repositories/sqlite/ → migrations (1 file)
   properties/
     jobPartCount.property.test.ts        → CP-1: Job part count invariant
@@ -54,6 +54,7 @@ tests/
     docsNavOrdering.property.test.ts → P6: Navigation tree ordering (3 tests)
     docsSearchScoping.property.test.ts → P7: Search result scoping (4 tests)
     docsSlugResolution.property.test.ts → P5: Slug resolution correctness (5 tests)
+    editRouteToggle.property.test.ts → Edit route toggle inheritance (1 test)
   integration/
     helpers.ts                           → createTestContext() with all services
     jobLifecycle.test.ts                 → Full job lifecycle (6 tests)

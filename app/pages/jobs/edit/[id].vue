@@ -39,11 +39,11 @@ onMounted(() => {
 <template>
   <div class="p-4 space-y-4 max-w-5xl">
     <NuxtLink
-      to="/jobs"
+      :to="`/jobs/${encodeURIComponent(jobId)}`"
       class="inline-flex items-center gap-1 text-xs text-(--ui-text-muted) hover:text-(--ui-text-highlighted) transition-colors"
     >
       <UIcon name="i-lucide-arrow-left" class="size-3" />
-      Back to Jobs
+      Back to Job
     </NuxtLink>
 
     <!-- Loading -->
@@ -56,11 +56,11 @@ onMounted(() => {
     <div v-else-if="error" class="space-y-2 py-8">
       <p class="text-sm text-red-500">{{ error }}</p>
       <NuxtLink
-        to="/jobs"
+        :to="`/jobs/${encodeURIComponent(jobId)}`"
         class="inline-flex items-center gap-1 text-xs text-(--ui-text-muted) hover:text-(--ui-text-highlighted) transition-colors"
       >
         <UIcon name="i-lucide-arrow-left" class="size-3" />
-        Back to Jobs
+        Back to Job
       </NuxtLink>
     </div>
 
