@@ -28,6 +28,11 @@ export function buildCancelRedirectUrl(jobId: string): string {
   return `/jobs/${encodeURIComponent(jobId)}`
 }
 
+/** Builds the back link URL from the edit page (mirrors "Back to Job" NuxtLink). */
+export function buildBackUrl(jobId: string): string {
+  return `/jobs/${encodeURIComponent(jobId)}`
+}
+
 // ---- Tests ----
 
 describe('JobEditNavigation — pure logic', () => {
@@ -75,6 +80,18 @@ describe('JobEditNavigation — pure logic', () => {
       const url = buildCancelRedirectUrl('job_abc123')
       expect(url).not.toBe('/jobs')
       expect(url).toBe('/jobs/job_abc123')
+    })
+  })
+
+  describe('Back to Job link (Req 5.2)', () => {
+    it('navigates to /jobs/:id (job detail), not /jobs (list)', () => {
+      const url = buildBackUrl('job_abc123')
+      expect(url).toBe('/jobs/job_abc123')
+      expect(url).not.toBe('/jobs')
+    })
+
+    it('encodes special characters', () => {
+      expect(buildBackUrl('job/123')).toBe('/jobs/job%2F123')
     })
   })
 })
