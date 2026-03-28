@@ -5,7 +5,7 @@ method: "GET"
 endpoint: "/api/paths/:id"
 service: "pathService"
 category: "Paths"
-responseType: "Path & { distribution: StepDistribution[] }"
+responseType: "Path & { distribution: StepDistribution[]; completedCount: number }"
 errorCodes: [404, 500]
 navigation:
   order: 2
@@ -15,9 +15,9 @@ navigation:
 
 ::endpoint-card{method="GET" path="/api/paths/:id"}
 
-Retrieves a single manufacturing path by its unique identifier, enriched with real-time step distribution data. This endpoint combines two service calls — `pathService.getPath(id)` to fetch the path record and `pathService.getStepDistribution(id)` to compute where serial numbers are currently positioned across the path's steps.
+Retrieves a single manufacturing path by its unique identifier, enriched with real-time step distribution data. This endpoint combines three service calls — `pathService.getPath(id)` to fetch the path record, `pathService.getStepDistribution(id)` to compute where serial numbers are currently positioned across the path's steps, and `pathService.getPathCompletedCount(id)` to count parts that have finished all steps.
 
-The response includes the full path object (name, goal quantity, advancement mode, and ordered process steps) merged with a `distribution` array that provides a per-step breakdown of serial counts, completion counts, and bottleneck detection. This is the primary endpoint for building path detail views and production flow dashboards.
+The response includes the full path object (name, goal quantity, advancement mode, and ordered process steps) merged with a `distribution` array that provides a per-step breakdown of serial counts and bottleneck detection, plus a top-level `completedCount` integer representing parts that have completed the entire path. This is the primary endpoint for building path detail views and production flow dashboards.
 
 ## Request
 
@@ -31,7 +31,7 @@ The response includes the full path object (name, goal quantity, advancement mod
 
 ### 200 OK
 
-Returned when the path is found. The response is a single object containing all `Path` fields plus a `distribution` array with real-time serial number positioning data.
+Returned when the path is found. The response is a single object containing all `Path` fields, a `distribution` array with real-time serial number positioning data, and a top-level `completedCount` integer.
 
 #### Path Fields
 
@@ -69,8 +69,14 @@ The distribution array contains one entry per step, computed in real time from t
 | `stepOrder` | `number` | Zero-based position in the step sequence |
 | `location` | `string \| undefined` | Physical location of the step, if set |
 | `serialCount` | `number` | Number of serial numbers currently at this step (work-in-progress) |
-| `completedCount` | `number` | Number of serial numbers that have completed the entire path |
+| `completedCount` | `number` | Always `0` — per-step completion is not independently tracked. Path-level completion is returned as a top-level `completedCount` field. |
 | `isBottleneck` | `boolean` | `true` if this step has the highest `serialCount` among all steps — indicates a production bottleneck |
+
+#### Top-level `completedCount`
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `completedCount` | `number` | Count of parts that have completed all steps in this path (i.e., `currentStepIndex === -1`). This is the value displayed in the "Done" card. |
 
 ### 404 Not Found
 
@@ -144,7 +150,7 @@ curl -X GET http://localhost:3000/api/paths/path_xyz789 \
       "stepOrder": 0,
       "location": "Bay 3",
       "serialCount": 12,
-      "completedCount": 8,
+      "completedCount": 0,
       "isBottleneck": true
     },
     {
@@ -153,7 +159,7 @@ curl -X GET http://localhost:3000/api/paths/path_xyz789 \
       "stepOrder": 1,
       "location": "Bay 3",
       "serialCount": 5,
-      "completedCount": 8,
+      "completedCount": 0,
       "isBottleneck": false
     },
     {
@@ -162,10 +168,11 @@ curl -X GET http://localhost:3000/api/paths/path_xyz789 \
       "stepOrder": 2,
       "location": "QC Lab",
       "serialCount": 3,
-      "completedCount": 8,
+      "completedCount": 0,
       "isBottleneck": false
     }
-  ]
+  ],
+  "completedCount": 8
 }
 ```
 
@@ -215,14 +222,15 @@ curl -X GET http://localhost:3000/api/paths/path_xyz789 \
       "completedCount": 0,
       "isBottleneck": false
     }
-  ]
+  ],
+  "completedCount": 0
 }
 ```
 
 ## Notes
 
 - The `distribution` array is **computed on every request** from the current state of all serial numbers on this path. It is not cached or stored. For paths with many serial numbers, this computation may take slightly longer.
-- The `completedCount` value is the same across all distribution entries — it represents the total number of serials that have finished the entire path, not just a specific step.
+- The `completedCount` at the top level represents the total number of serials that have finished the entire path (i.e., `currentStepIndex === -1`). Each distribution entry's `completedCount` is always `0` — per-step completion is not independently tracked since parts advance sequentially through all steps.
 - The `isBottleneck` flag is set on the step(s) with the highest `serialCount`. If multiple steps are tied for the highest count, all of them are flagged as bottlenecks. If no serials are in progress, no step is flagged.
 - The `steps` array is ordered by the `order` field. Always use `order` to determine step sequence rather than array index.
 - The `assignedTo` field on steps contains a user ID, not a display name. Use the Users API to resolve display names if needed.

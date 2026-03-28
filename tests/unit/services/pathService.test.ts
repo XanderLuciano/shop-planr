@@ -231,9 +231,11 @@ describe('PathService', () => {
       expect(dist[2].stepName).toBe('Coating')
       expect(dist[2].partCount).toBe(0)
       expect(dist[2].isBottleneck).toBe(false)
-      // completedCount should be 1 for all steps
-      expect(dist[0].completedCount).toBe(1)
-      expect(dist[1].completedCount).toBe(1)
+      // completedCount should be 0 for all steps (path-level count is separate)
+      expect(dist[0].completedCount).toBe(0)
+      expect(dist[1].completedCount).toBe(0)
+      expect(dist[2].completedCount).toBe(0)
+      expect(dist.every(d => d.completedCount === 0)).toBe(true)
     })
 
     it('returns no bottleneck when all steps have zero parts', () => {
@@ -244,6 +246,27 @@ describe('PathService', () => {
       const dist = service.getStepDistribution(path.id)
       expect(dist.every(d => !d.isBottleneck)).toBe(true)
       expect(dist.every(d => d.partCount === 0)).toBe(true)
+      expect(dist.every(d => d.completedCount === 0)).toBe(true)
+    })
+
+    it('has completedCount 0 on all entries even when completed parts exist', () => {
+      const path = service.createPath({
+        jobId: 'job_1', name: 'Route', goalQuantity: 10,
+        steps: [{ name: 'S1' }, { name: 'S2' }, { name: 'S3' }]
+      })
+
+      const parts: Part[] = [
+        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' },
+        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, createdAt: '', updatedAt: '' },
+        { id: 'p3', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, createdAt: '', updatedAt: '' },
+        { id: 'p4', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, createdAt: '', updatedAt: '' }
+      ]
+      const partRepoWithData = createMockPartRepo(parts)
+      const svc = createPathService({ paths: pathRepo, parts: partRepoWithData })
+
+      const dist = svc.getStepDistribution(path.id)
+      // Even with 3 completed parts, every distribution entry should have completedCount === 0
+      expect(dist.every(d => d.completedCount === 0)).toBe(true)
     })
 
     it('throws NotFoundError for missing path', () => {
@@ -266,6 +289,46 @@ describe('PathService', () => {
       const dist = svc.getStepDistribution(path.id)
       expect(dist[0].isBottleneck).toBe(true)
       expect(dist[1].isBottleneck).toBe(true)
+    })
+  })
+
+  describe('getPathCompletedCount', () => {
+    it('returns correct count of parts with currentStepIndex === -1', () => {
+      const path = service.createPath({
+        jobId: 'job_1', name: 'Route', goalQuantity: 10,
+        steps: [{ name: 'S1' }, { name: 'S2' }]
+      })
+
+      const parts: Part[] = [
+        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' },
+        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, createdAt: '', updatedAt: '' },
+        { id: 'p3', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, createdAt: '', updatedAt: '' },
+        { id: 'p4', jobId: 'job_1', pathId: path.id, currentStepIndex: 1, createdAt: '', updatedAt: '' }
+      ]
+      const partRepoWithData = createMockPartRepo(parts)
+      const svc = createPathService({ paths: pathRepo, parts: partRepoWithData })
+
+      expect(svc.getPathCompletedCount(path.id)).toBe(2)
+    })
+
+    it('returns 0 when no parts are completed', () => {
+      const path = service.createPath({
+        jobId: 'job_1', name: 'Route', goalQuantity: 10,
+        steps: [{ name: 'S1' }, { name: 'S2' }]
+      })
+
+      const parts: Part[] = [
+        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' },
+        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepIndex: 1, createdAt: '', updatedAt: '' }
+      ]
+      const partRepoWithData = createMockPartRepo(parts)
+      const svc = createPathService({ paths: pathRepo, parts: partRepoWithData })
+
+      expect(svc.getPathCompletedCount(path.id)).toBe(0)
+    })
+
+    it('throws NotFoundError for missing path', () => {
+      expect(() => service.getPathCompletedCount('nonexistent')).toThrow(NotFoundError)
     })
   })
 

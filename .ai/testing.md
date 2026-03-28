@@ -13,7 +13,7 @@
 
 | Command | What it does |
 |---------|-------------|
-| `npm run test` | `vitest run` — single pass, all tests (820 tests, 142 files) |
+| `npm run test` | `vitest run` — single pass, all tests (824 tests, 143 files) |
 | `npm run test:watch` | `vitest` — watch mode |
 | `npx vitest run tests/properties` | Property tests only |
 | `npx vitest run tests/unit` | Unit tests only |
@@ -61,12 +61,13 @@ tests/
     appendOnlyInserts.property.test.ts → FK-P3: Append-only inserts (3 tests)
     sequentialOrderInvariant.property.test.ts → FK-P4: Sequential order invariant (1 test)
     idempotentUpdate.property.test.ts → FK-P5: Idempotent update (1 test)
+    pathDoneCount.property.test.ts       → CP-DONE-1/2: Path completed count + distribution completedCount always 0 (2 tests)
   integration/
     helpers.ts                           → createTestContext() with all services
     jobLifecycle.test.ts                 → Full job lifecycle (6 tests)
     templateApplication.test.ts          → Template apply + independence (4 tests)
     certTraceability.test.ts             → Cert attach + audit trail (5 tests)
-    progressTracking.test.ts             → Progress percentages + >100% (4 tests)
+    progressTracking.test.ts             → Done count correctness: completedCount vs distribution (2 tests)
     operatorView.test.ts                 → Current/coming/backlog (4 tests)
     noteAndDefect.test.ts                → Step notes per-step/per-serial (4 tests)
     fkSafePathUpdate.test.ts             → FK-safe path update: ID preservation, append, delete guard, idempotent (6 tests)

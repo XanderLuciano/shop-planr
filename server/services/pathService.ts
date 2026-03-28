@@ -177,13 +177,6 @@ export function createPathService(repos: {
         }
       })
 
-      // Count completed parts (stepIndex = -1) and distribute to each step's completedCount
-      const completedParts = repos.parts.listByStepIndex(pathId, -1)
-      const completedCount = completedParts.length
-      for (const entry of distribution) {
-        entry.completedCount = completedCount
-      }
-
       // Determine bottleneck: step with highest partCount
       let maxCount = 0
       for (const entry of distribution) {
@@ -200,6 +193,14 @@ export function createPathService(repos: {
       }
 
       return distribution
+    },
+
+    getPathCompletedCount(pathId: string): number {
+      const path = repos.paths.getById(pathId)
+      if (!path) {
+        throw new NotFoundError('Path', pathId)
+      }
+      return repos.parts.listByStepIndex(pathId, -1).length
     },
 
     assignStep(stepId: string, userId: string | null): ProcessStep {

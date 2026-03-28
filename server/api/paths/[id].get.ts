@@ -4,7 +4,8 @@ export default defineEventHandler(async (event) => {
     const { pathService } = getServices()
     const path = pathService.getPath(id)
     const distribution = pathService.getStepDistribution(id)
-    return { ...path, distribution }
+    const completedCount = pathService.getPathCompletedCount(id)
+    return { ...path, distribution, completedCount }
   } catch (error) {
     if (error instanceof ValidationError) {
       throw createError({ statusCode: 400, message: error.message })
