@@ -121,7 +121,7 @@ describe('FK-Safe Path Update Integration', () => {
   it('7.3 remove step blocked by FK dependents — throws ValidationError', () => {
     const { job, path } = createJobWithPath(3)
 
-    // Create a part and attach a cert to step 1 (the one we'll try to remove)
+    // Create a part and attach a cert to step 2 (the one we'll try to remove)
     const [part] = ctx.partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
       'operator1',

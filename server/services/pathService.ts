@@ -48,6 +48,7 @@ export function reconcileSteps(
         name: input.name,
         order: i,
         location: input.location,
+        assignedTo: existingSteps[i].assignedTo,
         optional: input.optional ?? false,
         dependencyType: input.dependencyType ?? 'preferred',
       })

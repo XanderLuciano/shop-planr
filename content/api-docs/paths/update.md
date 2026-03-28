@@ -18,7 +18,7 @@ navigation:
 
 Updates an existing manufacturing path. This endpoint supports partial updates — only the fields included in the request body are modified; omitted fields retain their current values. You can update any combination of `name`, `goalQuantity`, `advancementMode`, and `steps` in a single request.
 
-When `steps` is included in the request body, the step sequence is reconciled with the existing steps using a position-based matching strategy that preserves step IDs. Steps at matching positions (0 through min(existing, new) - 1) are updated in place, keeping their original IDs and all foreign key references intact. Steps beyond the existing count are inserted with fresh IDs. Steps that existed beyond the new count are removed — but only if they have no associated data (certificates, notes, or part statuses). If a step marked for removal has associated data, the entire update is rejected with a 400 error.
+When `steps` is included in the request body, the step sequence is reconciled with the existing steps using a position-based matching strategy that preserves step IDs. Steps at matching positions (0 through min(existing, new) - 1) are updated in place, keeping their original IDs and all foreign key references intact. Steps beyond the existing count are inserted with fresh IDs. Steps that existed beyond the new count are removed — but only if they have no associated data (certificates, notes, part statuses, or overrides). If a step marked for removal has associated data, the entire update is rejected with a 400 error.
 
 This means you can safely update step fields, append new steps, or remove unused steps without breaking FK references from `cert_attachments`, `step_notes`, `part_step_statuses`, or `part_step_overrides`. Step `order` values are reassigned based on array index, just like during creation.
 
@@ -90,7 +90,7 @@ Returned when the request body contains invalid values. Validation is only appli
 | `name` is provided but empty | `"name is required"` |
 | `goalQuantity` is provided but zero or negative | `"goalQuantity must be greater than 0"` |
 | `steps` is provided but empty array | `"steps is required"` |
-| A removed step has associated data (certs, notes, statuses) | `"Cannot remove step because it has associated data (certificates, notes, or part statuses). Remove the associated data first, or keep the step."` |
+| A removed step has associated data (certs, notes, statuses, overrides) | `"Cannot remove step because it has associated data (certificates, notes, or part statuses). Remove the associated data first, or keep the step."` |
 
 ### 404 Not Found
 
@@ -308,7 +308,7 @@ curl -X PUT http://localhost:3000/api/paths/path_xyz789 \
 
 - This is a **partial update** endpoint. You do not need to send the full path object — only the fields you want to change. Fields not included in the request body are left untouched.
 - When `steps` is provided, steps are **reconciled by position**. Existing step IDs are preserved for matched positions (0 through min(existing, new) - 1), new IDs are generated only for appended steps, and removed steps are deleted only if they have no associated data. This preserves all foreign key references from `cert_attachments`, `step_notes`, `part_step_statuses`, and `part_step_overrides`.
-- **Removing steps with associated data is blocked.** If a step you're removing has certificates, notes, or part statuses attached, the entire update is rejected with a 400 error. Remove the associated data first, or keep the step in the sequence.
+- **Removing steps with associated data is blocked.** If a step you're removing has certificates, notes, part statuses, or overrides attached, the entire update is rejected with a 400 error. Remove the associated data first, or keep the step in the sequence.
 - The `assignedTo` field on existing steps is preserved when steps are updated in place. New appended steps have no assignment.
 - The `jobId` field is **immutable** — it cannot be changed after creation. To move a path to a different job, you must delete it and create a new one.
 - Changing `advancementMode` does **not** retroactively affect serial numbers that have already advanced past steps. It only affects future advancement operations.
