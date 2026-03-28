@@ -18,7 +18,7 @@ export function generateId(prefix: string): string {
   return `${prefix}_${nanoid(12)}`
 }
 
-export interface SnGeneratorOptions {
+export interface SequentialIdGeneratorOptions {
   /** Read the current counter value from persistence. */
   getCounter: () => number
   /** Write the updated counter value to persistence. */
@@ -41,7 +41,7 @@ export interface SnGeneratorOptions {
  * gen.next()  // "part_00002"
  * gen.nextBatch(3)  // ["part_00003", "part_00004", "part_00005"]
  */
-export function createSequentialPartIdGenerator(options: SnGeneratorOptions) {
+export function createSequentialPartIdGenerator(options: SequentialIdGeneratorOptions) {
   const prefix = options.prefix ?? 'part_'
   const padLength = options.padLength ?? 5
 
