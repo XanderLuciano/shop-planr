@@ -5,7 +5,8 @@ const route = useRoute()
 
 const { data: page } = await useAsyncData(
   `docs-${route.path}`,
-  () => queryCollection('docs').path(route.path).first()
+  () => queryCollection('docs').path(route.path).first(),
+  { watch: [() => route.path] }
 )
 
 if (!page.value) {
@@ -21,7 +22,8 @@ const { data: surround } = await useAsyncData(
   `docs-surround-${route.path}`,
   () => queryCollectionItemSurroundings('docs', route.path, {
     fields: ['title', 'path']
-  })
+  }),
+  { watch: [() => route.path] }
 )
 
 const prev = computed(() => surround.value?.[0] ?? null)

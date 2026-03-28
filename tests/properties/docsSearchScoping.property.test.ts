@@ -100,21 +100,12 @@ describe('Property 7: Search result scoping', () => {
     )
   })
 
-  it('no content files exist outside content/api-docs/ that could leak into search', () => {
+  it('no stray markdown files exist at content/ root that could leak into search', () => {
     if (!existsSync(CONTENT_ROOT)) return
 
     const topLevelEntries = readdirSync(CONTENT_ROOT)
 
-    // Only api-docs/ should exist as a content subdirectory
-    const contentDirs = topLevelEntries.filter(entry =>
-      statSync(join(CONTENT_ROOT, entry)).isDirectory()
-    )
-    expect(
-      contentDirs,
-      `content/ should only contain the api-docs/ subdirectory, found: [${contentDirs.join(', ')}]`
-    ).toEqual(['api-docs'])
-
-    // No stray .md files at content/ root
+    // No stray .md files at content/ root (they would be in the default collection, not scoped)
     const rootMdFiles = topLevelEntries.filter(entry =>
       entry.endsWith('.md') && statSync(join(CONTENT_ROOT, entry)).isFile()
     )

@@ -1,8 +1,7 @@
 <script setup lang="ts">
 const { query, results, isSearching, search } = useDocsSearch()
 
-function onInput(event: Event) {
-  const value = (event.target as HTMLInputElement).value
+function onSearchInput(value: string) {
   search(value)
 }
 
@@ -21,14 +20,14 @@ const showNoResults = computed(
 <template>
   <div class="relative">
     <UInput
-      :model-value="query"
+      v-model="query"
       icon="i-lucide-search"
       size="sm"
       placeholder="Search docs..."
       :loading="isSearching"
       trailing
       class="w-full"
-      @input="onInput"
+      @update:model-value="onSearchInput"
     />
 
     <!-- Results dropdown -->
