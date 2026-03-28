@@ -6,7 +6,7 @@ endpoint: "/api/bom"
 service: "bomService"
 category: "BOM"
 responseType: "BOM[]"
-errorCodes: [400]
+errorCodes: [500]
 navigation:
   order: 1
 ---
@@ -15,11 +15,50 @@ navigation:
 
 ::endpoint-card{method="GET" path="/api/bom"}
 
-Retrieves all bills of materials. Each BOM defines the parts and quantities required for a production build.
+Retrieves all bills of materials in the system. Returns a flat array of BOM objects, each containing its full set of entries. This endpoint does not include the computed production summary — use [Get BOM](/api-docs/bom/get) for individual BOMs with summary data.
+
+Use this endpoint to populate BOM selection lists, display a BOM management dashboard, or export all BOM definitions.
+
+## Request
+
+No request body or query parameters.
 
 ## Response
 
-Returns an array of `BOM` objects:
+### 200 OK
+
+Returns an array of `BOM` objects. If no BOMs exist, returns an empty array `[]`.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique identifier for the BOM (prefixed with `bom_`) |
+| `name` | `string` | Human-readable BOM name |
+| `entries` | `BomEntry[]` | Array of part entries |
+| `entries[].id` | `string \| undefined` | Entry ID, if assigned by the repository |
+| `entries[].bomId` | `string \| undefined` | Parent BOM ID reference |
+| `entries[].partType` | `string` | Part type name or identifier |
+| `entries[].requiredQuantityPerBuild` | `number` | Quantity of this part needed per build |
+| `entries[].contributingJobIds` | `string[]` | Job IDs that supply this part |
+| `createdAt` | `string` | ISO 8601 timestamp of when the BOM was created |
+| `updatedAt` | `string` | ISO 8601 timestamp of the last modification |
+
+### 500 Internal Server Error
+
+Returned if an unhandled error occurs while querying the database.
+
+| Condition | Message |
+|-----------|---------|
+| Database read failure | `"Internal Server Error"` |
+
+## Examples
+
+### Request
+
+```bash
+curl http://localhost:3000/api/bom
+```
+
+### Response — Multiple BOMs
 
 ```json
 [
@@ -33,18 +72,52 @@ Returns an array of `BOM` objects:
         "partType": "Steel Plate",
         "requiredQuantityPerBuild": 4,
         "contributingJobIds": ["job_001", "job_002"]
+      },
+      {
+        "id": "entry_002",
+        "bomId": "bom_abc123",
+        "partType": "Bolt M8",
+        "requiredQuantityPerBuild": 12,
+        "contributingJobIds": ["job_003"]
       }
     ],
-    "createdAt": "2024-01-15T10:30:00Z",
-    "updatedAt": "2024-01-15T10:30:00Z"
+    "createdAt": "2024-01-15T10:30:00.000Z",
+    "updatedAt": "2024-01-15T10:30:00.000Z"
+  },
+  {
+    "id": "bom_def456",
+    "name": "Enclosure BOM",
+    "entries": [
+      {
+        "id": "entry_003",
+        "bomId": "bom_def456",
+        "partType": "Aluminum Sheet",
+        "requiredQuantityPerBuild": 2,
+        "contributingJobIds": ["job_004"]
+      }
+    ],
+    "createdAt": "2024-01-16T08:00:00.000Z",
+    "updatedAt": "2024-01-18T11:00:00.000Z"
   }
 ]
 ```
 
-## Errors
+### Response — No BOMs
 
-| Code | Condition |
-|------|-----------|
-| `400` | Validation error |
+```json
+[]
+```
+
+## Notes
+
+- The list endpoint does **not** include the computed `summary` field. To get production progress data for a specific BOM, use the [Get BOM](/api-docs/bom/get) endpoint.
+- This endpoint is not paginated. For deployments with a very large number of BOMs, the response may be large.
+- Entries are returned as stored — the `id` and `bomId` fields on entries may or may not be present depending on the repository implementation.
+
+## Related Endpoints
+
+- [Get BOM](/api-docs/bom/get) — Retrieve a single BOM with production summary
+- [Create BOM](/api-docs/bom/create) — Create a new BOM
+- [Edit BOM](/api-docs/bom/edit) — Make a versioned edit to a BOM
 
 ::

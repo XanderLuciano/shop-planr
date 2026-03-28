@@ -150,7 +150,7 @@ Build an integrated API documentation site using Nuxt Content v3 within the exis
     - Respect sidebar collapsed state (icon-only when collapsed)
     - _Requirements: 9.1, 9.2, 9.3_
 
-- [ ] 10. Final checkpoint — Full integration verification
+- [x] 10. Final checkpoint — Full integration verification
   - Ensure all tests pass, ask the user if questions arise.
   - Verify sidebar entry point opens docs in new tab
   - Verify search returns results scoped to api-docs

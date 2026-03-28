@@ -6,7 +6,7 @@ endpoint: "/api/library/locations"
 service: "libraryService"
 category: "Library"
 responseType: "LocationLibraryEntry[]"
-errorCodes: [400]
+errorCodes: [400, 500]
 navigation:
   order: 3
 ---
@@ -17,32 +17,70 @@ navigation:
 
 ::endpoint-card{method="GET" path="/api/library/locations"}
 
-Retrieves all entries in the location library. Location library entries are reusable location names for process steps.
+Retrieves all entries in the location library. Location library entries are reusable physical location names (bays, labs, booths, vendor sites) that appear as dropdown options when configuring process steps in paths and templates. The list is not paginated — all entries are returned in a single response.
+
+### Request
+
+No request body or query parameters.
 
 ### Response
 
-Returns an array of `LocationLibraryEntry` objects:
+#### 200 OK
+
+Returns an array of `LocationLibraryEntry` objects. May be empty if no entries exist.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique entry identifier (e.g. `"lloc_a1b2c3"`) |
+| `name` | `string` | Location name |
+| `createdAt` | `string` | ISO 8601 creation timestamp |
+
+#### 500 Internal Server Error
+
+| Condition | Message |
+|-----------|---------|
+| Database read failure | `"Internal Server Error"` |
+
+### Examples
+
+#### Request
+
+```bash
+curl http://localhost:3000/api/library/locations
+```
+
+#### Response — Multiple entries
 
 ```json
 [
   {
-    "id": "loc_001",
-    "name": "Bay 3",
-    "createdAt": "2024-01-10T08:00:00Z"
+    "id": "lloc_a1b2c3",
+    "name": "Bay 1",
+    "createdAt": "2024-01-10T08:00:00.000Z"
   },
   {
-    "id": "loc_002",
+    "id": "lloc_d4e5f6",
+    "name": "Bay 2",
+    "createdAt": "2024-01-10T08:00:00.000Z"
+  },
+  {
+    "id": "lloc_g7h8i9",
     "name": "QC Lab",
-    "createdAt": "2024-01-10T08:00:00Z"
+    "createdAt": "2024-01-10T08:00:00.000Z"
+  },
+  {
+    "id": "lloc_j0k1l2",
+    "name": "Vendor - Plating Co.",
+    "createdAt": "2024-01-10T08:00:00.000Z"
   }
 ]
 ```
 
-### Errors
+#### Response — Empty library
 
-| Code | Condition |
-|------|-----------|
-| `400` | Validation error |
+```json
+[]
+```
 
 ::
 
@@ -50,38 +88,86 @@ Returns an array of `LocationLibraryEntry` objects:
 
 ::endpoint-card{method="POST" path="/api/library/locations"}
 
-Creates a new entry in the location library.
+Creates a new entry in the location library. The name must be unique (exact match after trimming). Duplicate names are rejected with a `400` error.
 
-### Request Body
+### Request
+
+#### Request Body
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `name` | `string` | Yes | Location name |
-
-### Example Request
-
-```json
-{
-  "name": "Paint Booth"
-}
-```
+| `name` | `string` | Yes | The location name to add. Must be non-empty. Trimmed of leading/trailing whitespace. Must not duplicate an existing entry. |
 
 ### Response
 
-Returns the created `LocationLibraryEntry` object:
+#### 200 OK
+
+Returns the newly created `LocationLibraryEntry` object.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Server-generated unique identifier (e.g. `"lloc_m3n4o5"`) |
+| `name` | `string` | The trimmed location name |
+| `createdAt` | `string` | ISO 8601 creation timestamp |
+
+#### 400 Bad Request
+
+| Condition | Message |
+|-----------|---------|
+| `name` is missing or empty | `"name is required"` |
+| `name` is only whitespace | `"name is required"` |
+| `name` already exists in the library (after trimming) | `"Location name already exists"` |
+
+#### 500 Internal Server Error
+
+| Condition | Message |
+|-----------|---------|
+| Database write failure | `"Internal Server Error"` |
+
+### Examples
+
+#### Request
+
+```bash
+curl -X POST http://localhost:3000/api/library/locations \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Paint Booth"
+  }'
+```
+
+#### Response — Entry created
 
 ```json
 {
-  "id": "loc_003",
+  "id": "lloc_m3n4o5",
   "name": "Paint Booth",
-  "createdAt": "2024-01-15T10:30:00Z"
+  "createdAt": "2024-01-15T10:30:00.000Z"
 }
 ```
 
-### Errors
+#### Error — Duplicate name
 
-| Code | Condition |
-|------|-----------|
-| `400` | Missing `name` or duplicate entry |
+```bash
+curl -X POST http://localhost:3000/api/library/locations \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Bay 1"
+  }'
+# 400: { "message": "Location name already exists" }
+```
+
+### Notes
+
+- The duplicate check is an exact string match after trimming. `"Bay 1"` and `"bay 1"` are treated as different names.
+- The `id` is generated server-side with the `lloc_` prefix followed by a unique nanoid.
+- Location names containing the substring "vendor" (case-insensitive) have special significance in the [Parts View](/api-docs/operator/by-step-name) endpoint, where they contribute to the `vendorPartsCount` metric.
+- Creating a library entry does not automatically apply it to any existing steps. It simply makes the name available in dropdown lists.
 
 ::
+
+## Related Endpoints
+
+- [Delete Location](/api-docs/library/location-delete) — Remove a location library entry
+- [List & Create Processes](/api-docs/library/processes) — Manage the process library
+- [Create Path](/api-docs/paths/create) — Use location names when defining path steps
