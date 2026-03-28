@@ -72,5 +72,6 @@ const hasActiveFilters = computed(() => {
       label="Clear"
       @click="clearAll"
     />
+    <slot />
   </div>
 </template>

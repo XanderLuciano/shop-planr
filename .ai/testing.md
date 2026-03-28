@@ -13,7 +13,7 @@
 
 | Command | What it does |
 |---------|-------------|
-| `npm run test` | `vitest run` — single pass, all tests (824 tests, 143 files) |
+| `npm run test` | `vitest run` — single pass, all tests (857 tests, 148 files) |
 | `npm run test:watch` | `vitest` — watch mode |
 | `npx vitest run tests/properties` | Property tests only |
 | `npx vitest run tests/unit` | Unit tests only |
@@ -27,7 +27,7 @@ tests/
     services/           → jobService, pathService, serialService, reconcileSteps, etc. (11 files)
     utils/              → serialization, validation, idGenerator, errors, progressBar, services (6 files)
     composables/        → useBarcode, useViewFilters, useJobForm, workQueueSearch (4 files)
-    components/         → SerialCreationPanel, serialNoteAdd, EndpointCard, DocsSidebar, JobEditNavigation (5 files)
+    components/         → SerialCreationPanel, serialNoteAdd, EndpointCard, DocsSidebar, JobEditNavigation, JobViewToolbar (6 files)
     repositories/       → hasStepDependents (1 file)
     repositories/sqlite/ → migrations (1 file)
   properties/
@@ -62,6 +62,9 @@ tests/
     sequentialOrderInvariant.property.test.ts → FK-P4: Sequential order invariant (1 test)
     idempotentUpdate.property.test.ts → FK-P5: Idempotent update (1 test)
     pathDoneCount.property.test.ts       → CP-DONE-1/2: Path completed count + distribution completedCount always 0 (2 tests)
+    jobViewCachePreservation.property.test.ts → PBT-JV1: Cache preservation on collapse (1 test)
+    jobViewBulkExpand.property.test.ts   → PBT-JV3: Bulk expand populates all distributions (1 test)
+    jobViewExpandedState.property.test.ts → PBT-JV2: ExpandedState validity (2 tests)
   integration/
     helpers.ts                           → createTestContext() with all services
     jobLifecycle.test.ts                 → Full job lifecycle (6 tests)
@@ -71,6 +74,7 @@ tests/
     operatorView.test.ts                 → Current/coming/backlog (4 tests)
     noteAndDefect.test.ts                → Step notes per-step/per-serial (4 tests)
     fkSafePathUpdate.test.ts             → FK-safe path update: ID preservation, append, delete guard, idempotent (6 tests)
+    jobViewUtilities.test.ts             → Job view expand/collapse orchestration + path expansion flow (15 tests)
 ```
 
 Optional property tests (skipped for MVP):
