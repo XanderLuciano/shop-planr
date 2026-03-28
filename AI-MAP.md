@@ -33,13 +33,14 @@ app/
   app.config.ts          → UI color config (primary: violet, neutral: neutral)
   pages/
     index.vue            → Placeholder homepage (to become dashboard)
-  components/            → 40+ components: SectionCard (reusable card wrapper), lifecycle dialogs (ScrapDialog, ForceCompleteDialog, AdvanceToStepDropdown), config panels (StepConfigPanel, AdvancementModeSelector, LibraryManager), job form (JobCreationForm), serial creation (SerialCreationPanel — first-step batch creation + advancement), page visibility (PageVisibilitySettings — toggle switches for nav pages), utility (BonusBadge, PathDeleteButton, CertDetailView, TemplateEditor, etc.)
-  composables/           → 22+ composables: useJobForm, useLifecycle, useLibrary, useBomVersions, useAudit (with filters), usePartsView, useStepView, useOperatorWorkQueue, useSettings (extended with pageToggles) + existing ones
+  components/            → 40+ components: SectionCard (reusable card wrapper), lifecycle dialogs (ScrapDialog, ForceCompleteDialog, AdvanceToStepDropdown), config panels (StepConfigPanel, AdvancementModeSelector, LibraryManager), job form (JobCreationForm), serial creation (SerialCreationPanel — first-step batch creation + advancement), page visibility (PageVisibilitySettings — toggle switches for nav pages), docs (EndpointCard MDC, DocsSidebar, DocsSearch), utility (BonusBadge, PathDeleteButton, CertDetailView, TemplateEditor, etc.)
+  composables/           → 22+ composables: useJobForm, useLifecycle, useLibrary, useBomVersions, useAudit (with filters), usePartsView, useStepView, useOperatorWorkQueue, useSettings (extended with pageToggles), useDocsNavigation, useDocsSearch + existing ones
   middleware/
     pageGuard.global.ts  → Global route middleware: blocks navigation to disabled pages, redirects to /
   utils/
     pageToggles.ts       → Re-exports DEFAULT_PAGE_TOGGLES, ROUTE_TOGGLE_MAP, ALWAYS_ENABLED_ROUTES, isPageEnabled() for client-side auto-import
     resolveBackNavigation.ts → Pure helper: computes back-arrow destination/label from `from` query param (auto-imported)
+    docsMethodColor.ts   → getMethodColor() — maps HTTP methods to Tailwind color classes for EndpointCard badges
   assets/css/
     main.css             → Tailwind imports + custom violet #8750FF scale + green scale
 server/
@@ -65,12 +66,29 @@ server/
 public/
   favicon.ico
 data/                    → SQLite DB file (shop_erp.db) — gitignored
+content/
+  api-docs/              → Nuxt Content v3 markdown docs: 14 service domains, 67+ endpoint files
+    index.md             → API overview and getting-started guide
+    jobs/                → Jobs API: index.md + list.md, get.md, create.md, update.md
+    paths/               → Paths API: index.md + get.md, create.md, update.md, delete.md, advancement-mode.md
+    serials/             → Serials API: index.md + 14 endpoint files (advance, scrap, overrides, etc.)
+    certs/               → Certificates API: index.md + list.md, get.md, create.md, batch-attach.md, attachments.md
+    templates/           → Templates API: index.md + list.md, get.md, create.md, update.md, delete.md, apply.md
+    bom/                 → BOM API: index.md + list.md, get.md, create.md, update.md, edit.md, versions.md
+    audit/               → Audit API: index.md + list.md, serial.md
+    jira/                → Jira API: index.md + tickets.md, ticket-detail.md, link.md, push.md, comment.md
+    settings/            → Settings API: index.md + get.md, update.md
+    users/               → Users API: index.md + list.md, create.md, update.md
+    notes/               → Notes API: index.md + create.md, by-serial.md, by-step.md
+    operator/            → Operator API: index.md + step-view.md, work-queue.md, queue-all.md, queue-user.md, by-step-name.md
+    steps/               → Steps API: index.md + assign.md, config.md
+    library/             → Library API: index.md + processes.md, process-delete.md, locations.md, location-delete.md
 tests/
   unit/
     utils/               → 4 test files (errors, idGenerator, serialization, validation, services)
     services/            → 10 test files (one per service)
     composables/         → 4 test files (useBarcode, useViewFilters, useJobForm, workQueueSearch)
-    components/          → 2 test files (SerialCreationPanel, serialNoteAdd)
+    components/          → 4 test files (SerialCreationPanel, serialNoteAdd, EndpointCard, DocsSidebar)
     repositories/sqlite/ → 1 test file (migrations)
   properties/            → property-based tests (fast-check properties; see tests/properties for full list)
   integration/           → 15 files: helpers + 14 end-to-end lifecycle tests (51 tests)
@@ -83,7 +101,7 @@ tests/
 | Dev server | `npm run dev` | Nuxt dev with HMR |
 | Build | `npm run build` | Production build to `.output/` |
 | Preview | `npm run preview` | Preview production build locally |
-| Test | `npm run test` | `vitest run` — 708 tests, 120 files |
+| Test | `npm run test` | `vitest run` — 759 tests, 128 files |
 | Test watch | `npm run test:watch` | `vitest` in watch mode |
 | Lint | `npm run lint` | ESLint with Nuxt config |
 | Typecheck | `npm run typecheck` | `nuxt typecheck` |
@@ -213,3 +231,5 @@ Core entities and relationships:
 - `vitest.config.ts` aliases `~` to project root (`.`) for server-side imports.
 - `runtimeConfig` in `nuxt.config.ts` has `dbType`, `dbPath`, and 4 Jira env vars.
 - `USelect` items must never have `value: ''` or `value: null`. Reka UI's `SelectItem` throws if value is an empty string (reserved for clearing selection). Use a sentinel like `_placeholder` with `disabled: true` for placeholder items.
+- Nuxt Content v3 requires `content.config.ts` at project root to define collections. The `docs` collection uses `source: 'api-docs/**'` with custom schema fields. Without this file, content queries return empty results.
+- Endpoint docs use `endpoint` (not `path`) as the frontmatter field for the API path (e.g. `endpoint: "/api/jobs"`). Nuxt Content reserves `path` for URL routing — using `path` in frontmatter overrides the page's URL.
