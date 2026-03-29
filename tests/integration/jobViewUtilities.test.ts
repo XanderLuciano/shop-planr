@@ -121,7 +121,7 @@ function toolbarDisabledStates(opts: {
   return {
     expandAllJobs: !opts.jobCount,
     collapseAllJobs: !opts.hasExpandedJobs,
-    expandAllPaths: !opts.hasExpandedJobs,
+    expandAllPaths: !opts.jobCount,
     collapseAllPaths: !opts.hasExpandedPaths,
   }
 }
@@ -278,7 +278,7 @@ describe('Job View Utilities – integration', () => {
       })
       expect(disabled.expandAllJobs).toBe(false) // jobs exist, can expand
       expect(disabled.collapseAllJobs).toBe(true) // nothing expanded
-      expect(disabled.expandAllPaths).toBe(true)  // no jobs expanded
+      expect(disabled.expandAllPaths).toBe(false)  // jobs exist, can expand paths
       expect(disabled.collapseAllPaths).toBe(true) // no paths expanded
     })
 

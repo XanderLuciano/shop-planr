@@ -29,7 +29,7 @@ const JobViewToolbar = defineComponent({
     const buttons = [
       { tooltip: 'Expand All Jobs', icon: 'i-lucide-chevrons-down', event: 'expand-all-jobs' as const, disabled: () => !props.jobCount },
       { tooltip: 'Collapse All Jobs', icon: 'i-lucide-chevrons-up', event: 'collapse-all-jobs' as const, disabled: () => !props.hasExpandedJobs },
-      { tooltip: 'Expand All Paths', icon: 'i-lucide-list-tree', event: 'expand-all-paths' as const, disabled: () => !props.hasExpandedJobs },
+      { tooltip: 'Expand All Paths', icon: 'i-lucide-list-tree', event: 'expand-all-paths' as const, disabled: () => !props.jobCount },
       { tooltip: 'Collapse All Paths', icon: 'i-lucide-list-minus', event: 'collapse-all-paths' as const, disabled: () => !props.hasExpandedPaths },
     ]
 
@@ -80,15 +80,15 @@ describe('JobViewToolbar', () => {
       expect(buttons[1].attributes('disabled')).toBeUndefined()
     })
 
-    // Req 3.7: Expand All Paths disabled when !hasExpandedJobs
-    it('disables "Expand All Paths" when hasExpandedJobs is false', () => {
-      const wrapper = mountToolbar({ hasExpandedJobs: false, hasExpandedPaths: false, jobCount: 5 })
+    // Req 3.7: Expand All Paths disabled when jobCount === 0
+    it('disables "Expand All Paths" when jobCount is 0', () => {
+      const wrapper = mountToolbar({ hasExpandedJobs: false, hasExpandedPaths: false, jobCount: 0 })
       const buttons = wrapper.findAll('button')
       expect(buttons[2].attributes('disabled')).toBeDefined()
     })
 
-    it('enables "Expand All Paths" when hasExpandedJobs is true', () => {
-      const wrapper = mountToolbar({ hasExpandedJobs: true, hasExpandedPaths: false, jobCount: 5 })
+    it('enables "Expand All Paths" when jobCount > 0', () => {
+      const wrapper = mountToolbar({ hasExpandedJobs: false, hasExpandedPaths: false, jobCount: 5 })
       const buttons = wrapper.findAll('button')
       expect(buttons[2].attributes('disabled')).toBeUndefined()
     })

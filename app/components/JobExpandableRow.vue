@@ -38,6 +38,7 @@ const expandedPathIds = ref<Set<string>>(new Set())
 const pathDistributions = ref<Record<string, StepDist[]>>({})
 const pathCompletedCounts = ref<Record<string, number>>({})
 const loadingPathIds = ref<Set<string>>(new Set())
+const fetchPathsPromise = ref<Promise<void> | null>(null)
 
 async function fetchPaths() {
   loading.value = true
@@ -62,7 +63,7 @@ async function togglePath(pathId: string) {
   expandedPathIds.value = new Set(expandedPathIds.value)
   emit('paths-expanded-change', { jobId: props.jobId, hasExpandedPaths: true })
 
-  if (!pathDistributions.value[pathId]) {
+  if (!pathDistributions.value[pathId] || pathDistributions.value[pathId].length === 0) {
     loadingPathIds.value.add(pathId)
     loadingPathIds.value = new Set(loadingPathIds.value)
     try {
@@ -79,6 +80,10 @@ async function togglePath(pathId: string) {
 }
 
 async function onExpandAllPaths() {
+  // Wait for paths to load if fetch is still in-flight
+  if (fetchPathsPromise.value) {
+    await fetchPathsPromise.value
+  }
   const allPathIds = paths.value.map(p => p.id)
   expandedPathIds.value = new Set(allPathIds)
   emit('paths-expanded-change', { jobId: props.jobId, hasExpandedPaths: allPathIds.length > 0 })
@@ -126,7 +131,13 @@ watch(() => props.collapseAllPathsSignal, (newVal, oldVal) => {
 }, { immediate: true })
 
 onMounted(() => {
-  fetchPaths()
+  fetchPathsPromise.value = fetchPaths()
+})
+
+onUnmounted(() => {
+  if (expandedPathIds.value.size > 0) {
+    emit('paths-expanded-change', { jobId: props.jobId, hasExpandedPaths: false })
+  }
 })
 </script>
 

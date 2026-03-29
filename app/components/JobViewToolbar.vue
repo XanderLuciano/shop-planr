@@ -41,7 +41,7 @@ defineEmits<{
         variant="ghost"
         color="neutral"
         size="xs"
-        :disabled="!hasExpandedJobs"
+        :disabled="!jobCount"
         @click="$emit('expand-all-paths')"
       />
     </UTooltip>
