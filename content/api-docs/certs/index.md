@@ -1,7 +1,7 @@
 ---
-title: "Certificates API"
-description: "Certificate management, batch attachment, and traceability for material and process certifications"
-icon: "i-lucide-shield-check"
+title: 'Certificates API'
+description: 'Certificate management, batch attachment, and traceability for material and process certifications'
+icon: 'i-lucide-shield-check'
 navigation:
   order: 4
 ---
@@ -38,13 +38,13 @@ Certificates support an optional `metadata` field — a free-form JSON object wh
 
 ## Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | [`/api/certs`](/api-docs/certs/list) | List all certificates |
-| `GET` | [`/api/certs/:id`](/api-docs/certs/get) | Get a single certificate by ID |
-| `POST` | [`/api/certs`](/api-docs/certs/create) | Create a new certificate |
-| `POST` | [`/api/certs/batch-attach`](/api-docs/certs/batch-attach) | Batch attach a certificate to multiple serials |
-| `GET` | [`/api/certs/:id/attachments`](/api-docs/certs/attachments) | List all attachments for a certificate |
+| Method | Path                                                        | Description                                    |
+| ------ | ----------------------------------------------------------- | ---------------------------------------------- |
+| `GET`  | [`/api/certs`](/api-docs/certs/list)                        | List all certificates                          |
+| `GET`  | [`/api/certs/:id`](/api-docs/certs/get)                     | Get a single certificate by ID                 |
+| `POST` | [`/api/certs`](/api-docs/certs/create)                      | Create a new certificate                       |
+| `POST` | [`/api/certs/batch-attach`](/api-docs/certs/batch-attach)   | Batch attach a certificate to multiple serials |
+| `GET`  | [`/api/certs/:id/attachments`](/api-docs/certs/attachments) | List all attachments for a certificate         |
 
 ## Related APIs
 

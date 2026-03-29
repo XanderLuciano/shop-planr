@@ -6,7 +6,11 @@ export interface PartStepStatusRepository {
   getByPartAndStep(partId: string, stepId: string): PartStepStatus | null
   listByPartId(partId: string): PartStepStatus[]
   update(id: string, partial: Partial<PartStepStatus>): PartStepStatus
-  updateByPartAndStep(partId: string, stepId: string, partial: Partial<PartStepStatus>): PartStepStatus
+  updateByPartAndStep(
+    partId: string,
+    stepId: string,
+    partial: Partial<PartStepStatus>
+  ): PartStepStatus
 }
 
 /** @deprecated Use `PartStepStatusRepository` instead. Backward-compatible alias. */

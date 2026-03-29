@@ -34,9 +34,7 @@ function formatLocation(loc?: string): string {
 function formatNextStep(job: WorkQueueJob): string {
   if (job.isFinalStep) return 'Completed'
   if (!job.nextStepName) return '—'
-  return job.nextStepLocation
-    ? `${job.nextStepName} → ${job.nextStepLocation}`
-    : job.nextStepName
+  return job.nextStepLocation ? `${job.nextStepName} → ${job.nextStepLocation}` : job.nextStepName
 }
 </script>
 
@@ -45,22 +43,21 @@ function formatNextStep(job: WorkQueueJob): string {
     <!-- Summary bar -->
     <div class="flex items-center justify-between text-xs text-(--ui-text-muted)">
       <span>
-        <span class="font-semibold text-(--ui-text-highlighted)">{{ totalParts }}</span> part{{ totalParts !== 1 ? 's' : '' }} awaiting action
+        <span class="font-semibold text-(--ui-text-highlighted)">{{ totalParts }}</span> part{{
+          totalParts !== 1 ? 's' : ''
+        }}
+        awaiting action
       </span>
       <span v-if="searchActive">
-        Showing <span class="font-semibold text-(--ui-text-highlighted)">{{ filteredParts }}</span> of {{ totalParts }}
+        Showing
+        <span class="font-semibold text-(--ui-text-highlighted)">{{ filteredParts }}</span> of
+        {{ totalParts }}
       </span>
     </div>
 
     <!-- Empty state -->
-    <div
-      v-if="jobs.length === 0"
-      class="text-center py-8 text-sm text-(--ui-text-muted)"
-    >
-      <UIcon
-        name="i-lucide-inbox"
-        class="size-8 mx-auto mb-2 opacity-40"
-      />
+    <div v-if="jobs.length === 0" class="text-center py-8 text-sm text-(--ui-text-muted)">
+      <UIcon name="i-lucide-inbox" class="size-8 mx-auto mb-2 opacity-40" />
       <p>No jobs currently assigned.</p>
     </div>
 
@@ -73,12 +70,10 @@ function formatNextStep(job: WorkQueueJob): string {
       <!-- Job header -->
       <div class="flex items-center justify-between px-3 py-2 bg-(--ui-bg-elevated)/50">
         <div class="flex items-center gap-2">
-          <span class="text-sm font-semibold text-(--ui-text-highlighted)">{{ entries[0]!.jobName }}</span>
-          <UBadge
-            color="primary"
-            variant="subtle"
-            size="xs"
-          >
+          <span class="text-sm font-semibold text-(--ui-text-highlighted)">{{
+            entries[0]!.jobName
+          }}</span>
+          <UBadge color="primary" variant="subtle" size="xs">
             {{ jobPartCount(entries) }} part{{ jobPartCount(entries) !== 1 ? 's' : '' }}
           </UBadge>
         </div>
@@ -97,28 +92,20 @@ function formatNextStep(job: WorkQueueJob): string {
             <div class="space-y-0.5">
               <div class="flex items-center gap-2 text-xs">
                 <span class="font-medium text-(--ui-text-highlighted)">{{ entry.stepName }}</span>
-                <span
-                  v-if="entry.stepLocation"
-                  class="text-(--ui-text-muted)"
-                >{{ formatLocation(entry.stepLocation) }}</span>
+                <span v-if="entry.stepLocation" class="text-(--ui-text-muted)">{{
+                  formatLocation(entry.stepLocation)
+                }}</span>
               </div>
               <div class="text-xs text-(--ui-text-muted)">
-                {{ entry.pathName }} · Step {{ entry.stepOrder + 1 }}/{{ entry.totalSteps }}
-                · Next: {{ formatNextStep(entry) }}
+                {{ entry.pathName }} · Step {{ entry.stepOrder + 1 }}/{{ entry.totalSteps }} · Next:
+                {{ formatNextStep(entry) }}
               </div>
             </div>
             <div class="flex items-center gap-2">
-              <UBadge
-                :color="entry.isFinalStep ? 'success' : 'neutral'"
-                variant="subtle"
-                size="xs"
-              >
+              <UBadge :color="entry.isFinalStep ? 'success' : 'neutral'" variant="subtle" size="xs">
                 {{ entry.partCount }}
               </UBadge>
-              <UIcon
-                name="i-lucide-chevron-right"
-                class="size-4 text-(--ui-text-muted)"
-              />
+              <UIcon name="i-lucide-chevron-right" class="size-4 text-(--ui-text-muted)" />
             </div>
           </div>
         </button>

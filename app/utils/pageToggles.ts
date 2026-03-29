@@ -5,4 +5,9 @@
  * This file makes the same utilities available to Nuxt's client-side
  * auto-import system (`app/utils/` is auto-imported by Nuxt).
  */
-export { DEFAULT_PAGE_TOGGLES, ROUTE_TOGGLE_MAP, ALWAYS_ENABLED_ROUTES, isPageEnabled } from '../../server/utils/pageToggles'
+export {
+  DEFAULT_PAGE_TOGGLES,
+  ROUTE_TOGGLE_MAP,
+  ALWAYS_ENABLED_ROUTES,
+  isPageEnabled,
+} from '../../server/utils/pageToggles'

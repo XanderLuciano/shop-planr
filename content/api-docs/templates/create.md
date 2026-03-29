@@ -1,12 +1,12 @@
 ---
-title: "Create Template"
-description: "Create a new route template with process steps"
-method: "POST"
-endpoint: "/api/templates"
-service: "templateService"
-category: "Templates"
-requestBody: "CreateTemplateInput"
-responseType: "TemplateRoute"
+title: 'Create Template'
+description: 'Create a new route template with process steps'
+method: 'POST'
+endpoint: '/api/templates'
+service: 'templateService'
+category: 'Templates'
+requestBody: 'CreateTemplateInput'
+responseType: 'TemplateRoute'
 errorCodes: [400, 500]
 navigation:
   order: 3
@@ -24,12 +24,12 @@ After creating a template, use the [Apply Template](/api-docs/templates/apply) e
 
 ### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | `string` | Yes | A human-readable name for the template (e.g. `"Standard CNC Machining"`). Must be a non-empty string. Leading and trailing whitespace is trimmed. |
-| `steps` | `array` | Yes | An ordered array of step definitions. Must contain at least one step. The array order determines the `order` field on each step. |
-| `steps[].name` | `string` | Yes | The name of the process step (e.g. `"CNC Milling"`, `"Inspection"`). |
-| `steps[].location` | `string` | No | The physical location where this step is performed (e.g. `"Bay A"`, `"QC Lab"`). |
+| Field              | Type     | Required | Description                                                                                                                                       |
+| ------------------ | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`             | `string` | Yes      | A human-readable name for the template (e.g. `"Standard CNC Machining"`). Must be a non-empty string. Leading and trailing whitespace is trimmed. |
+| `steps`            | `array`  | Yes      | An ordered array of step definitions. Must contain at least one step. The array order determines the `order` field on each step.                  |
+| `steps[].name`     | `string` | Yes      | The name of the process step (e.g. `"CNC Milling"`, `"Inspection"`).                                                                              |
+| `steps[].location` | `string` | No       | The physical location where this step is performed (e.g. `"Bay A"`, `"QC Lab"`).                                                                  |
 
 ## Response
 
@@ -37,34 +37,34 @@ After creating a template, use the [Apply Template](/api-docs/templates/apply) e
 
 Returned when the template is successfully created. The response contains the complete `TemplateRoute` object with server-generated fields.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Server-generated unique identifier (prefixed with `tmpl_`) |
-| `name` | `string` | The template name as provided (trimmed) |
-| `steps` | `TemplateStep[]` | The step definitions with server-assigned `order`, `optional`, and `dependencyType` |
-| `steps[].name` | `string` | Step name as provided |
-| `steps[].order` | `number` | Zero-based position assigned from array index |
-| `steps[].location` | `string \| undefined` | Location as provided, if any |
-| `steps[].optional` | `boolean` | Always `false` for newly created templates |
-| `steps[].dependencyType` | `'physical' \| 'preferred' \| 'completion_gate'` | Always `"physical"` for newly created templates |
-| `createdAt` | `string` | ISO 8601 timestamp of when the template was created |
-| `updatedAt` | `string` | ISO 8601 timestamp — same as `createdAt` for newly created templates |
+| Field                    | Type                                             | Description                                                                         |
+| ------------------------ | ------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `id`                     | `string`                                         | Server-generated unique identifier (prefixed with `tmpl_`)                          |
+| `name`                   | `string`                                         | The template name as provided (trimmed)                                             |
+| `steps`                  | `TemplateStep[]`                                 | The step definitions with server-assigned `order`, `optional`, and `dependencyType` |
+| `steps[].name`           | `string`                                         | Step name as provided                                                               |
+| `steps[].order`          | `number`                                         | Zero-based position assigned from array index                                       |
+| `steps[].location`       | `string \| undefined`                            | Location as provided, if any                                                        |
+| `steps[].optional`       | `boolean`                                        | Always `false` for newly created templates                                          |
+| `steps[].dependencyType` | `'physical' \| 'preferred' \| 'completion_gate'` | Always `"physical"` for newly created templates                                     |
+| `createdAt`              | `string`                                         | ISO 8601 timestamp of when the template was created                                 |
+| `updatedAt`              | `string`                                         | ISO 8601 timestamp — same as `createdAt` for newly created templates                |
 
 ### 400 Bad Request
 
 Returned when the request body fails validation.
 
-| Condition | Message |
-|-----------|---------|
-| `name` is missing or empty | `"name is required"` |
+| Condition                         | Message                               |
+| --------------------------------- | ------------------------------------- |
+| `name` is missing or empty        | `"name is required"`                  |
 | `steps` is missing or empty array | `"steps must have at least one item"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while persisting the template.
 
-| Condition | Message |
-|-----------|---------|
+| Condition              | Message                   |
+| ---------------------- | ------------------------- |
 | Database write failure | `"Internal Server Error"` |
 
 ## Examples

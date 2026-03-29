@@ -20,9 +20,9 @@ async function loadJobProgress() {
   progressLoading.value = true
   try {
     const results = await Promise.all(
-      jobs.value.map(job =>
+      jobs.value.map((job) =>
         $fetch<{ progress: JobProgress }>(`/api/jobs/${job.id}`)
-          .then(detail => detail.progress)
+          .then((detail) => detail.progress)
           .catch(() => null)
       )
     )
@@ -43,26 +43,26 @@ const summaryCards = computed(() => [
     title: 'Active Jobs',
     value: activeJobCount.value,
     icon: 'i-lucide-briefcase',
-    to: '/jobs'
+    to: '/jobs',
   },
   {
     title: 'Parts In Progress',
     value: totalInProgress.value,
     icon: 'i-lucide-activity',
-    to: '/jobs'
+    to: '/jobs',
   },
   {
     title: 'Completed Today',
     value: '—',
     icon: 'i-lucide-check-circle',
-    to: '/jobs'
+    to: '/jobs',
   },
   {
     title: 'Bottleneck Alerts',
     value: 0,
     icon: 'i-lucide-alert-triangle',
-    to: '/parts'
-  }
+    to: '/parts',
+  },
 ])
 
 onMounted(() => {
@@ -72,18 +72,10 @@ onMounted(() => {
 
 <template>
   <div class="p-4 space-y-4">
-    <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
-      Dashboard
-    </h1>
+    <h1 class="text-lg font-bold text-(--ui-text-highlighted)">Dashboard</h1>
 
-    <div
-      v-if="loading"
-      class="flex items-center gap-2 text-sm text-(--ui-text-muted)"
-    >
-      <UIcon
-        name="i-lucide-loader-2"
-        class="animate-spin size-4"
-      />
+    <div v-if="loading" class="flex items-center gap-2 text-sm text-(--ui-text-muted)">
+      <UIcon name="i-lucide-loader-2" class="animate-spin size-4" />
       Loading...
     </div>
 

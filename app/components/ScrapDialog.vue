@@ -8,13 +8,13 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  'scrapped': []
+  scrapped: []
 }>()
 
 const { scrapPart, loading, error } = useLifecycle()
 const { operatorId } = useOperatorIdentity()
 
-const scrapReasons: { label: string, value: ScrapReason }[] = [
+const scrapReasons: { label: string; value: ScrapReason }[] = [
   { label: 'Out of tolerance', value: 'out_of_tolerance' },
   { label: 'Process defect', value: 'process_defect' },
   { label: 'Damaged', value: 'damaged' },
@@ -77,15 +77,16 @@ function handleCancel() {
   <UModal v-model:open="isOpen">
     <template #content>
       <div class="p-6 space-y-4">
-        <h3 class="text-lg font-semibold text-(--ui-text-highlighted)">
-          Scrap Part
-        </h3>
+        <h3 class="text-lg font-semibold text-(--ui-text-highlighted)">Scrap Part</h3>
         <p class="text-sm text-(--ui-text-muted)">
-          This will permanently remove <span class="font-mono font-medium">{{ partId }}</span> from active production.
+          This will permanently remove <span class="font-mono font-medium">{{ partId }}</span> from
+          active production.
         </p>
 
         <div>
-          <label class="text-sm font-medium text-(--ui-text-highlighted) block mb-1">Scrap Reason</label>
+          <label class="text-sm font-medium text-(--ui-text-highlighted) block mb-1"
+            >Scrap Reason</label
+          >
           <USelect
             v-model="selectedReason"
             :items="scrapReasons"
@@ -97,7 +98,9 @@ function handleCancel() {
         </div>
 
         <div v-if="selectedReason === 'other'">
-          <label class="text-sm font-medium text-(--ui-text-highlighted) block mb-1">Explanation</label>
+          <label class="text-sm font-medium text-(--ui-text-highlighted) block mb-1"
+            >Explanation</label
+          >
           <UTextarea
             v-model="explanation"
             placeholder="Describe why this part is being scrapped..."
@@ -114,12 +117,7 @@ function handleCancel() {
 
         <div class="flex justify-end gap-2 pt-2">
           <UButton variant="ghost" label="Cancel" @click="handleCancel" />
-          <UButton
-            color="error"
-            label="Scrap"
-            :loading="loading"
-            @click="handleConfirm"
-          />
+          <UButton color="error" label="Scrap" :loading="loading" @click="handleConfirm" />
         </div>
       </div>
     </template>

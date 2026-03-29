@@ -29,14 +29,14 @@ interface StepStatusRecord {
 function canComplete(
   steps: StepConfig[],
   stepStatuses: StepStatusRecord[],
-  overriddenStepIds: Set<string>,
+  overriddenStepIds: Set<string>
 ): { canComplete: boolean; blockers: string[] } {
   const blockers: string[] = []
   for (const step of steps) {
     if (step.optional) continue
     if (overriddenStepIds.has(step.id)) continue
 
-    const status = stepStatuses.find(s => s.stepId === step.id)
+    const status = stepStatuses.find((s) => s.stepId === step.id)
     if (!status || (status.status !== 'completed' && status.status !== 'waived')) {
       blockers.push(step.id)
     }
@@ -49,10 +49,7 @@ function canComplete(
  * 'completion_gate' dependency can be bypassed (deferred) in flexible mode.
  * Physical dependencies block advancement entirely.
  */
-function canBypassStep(
-  step: StepConfig,
-  stepStatus: PartStepStatusValue | undefined,
-): boolean {
+function canBypassStep(step: StepConfig, stepStatus: PartStepStatusValue | undefined): boolean {
   // Physical dependencies cannot be bypassed unless already completed
   if (step.dependencyType === 'physical') {
     return stepStatus === 'completed'
@@ -81,9 +78,9 @@ describe('Property 16: Completion Gate Deferred Behavior', () => {
 
           // Completion_gate can be bypassed
           expect(canBypassStep(steps[gateStepIndex], gateStatus)).toBe(true)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -111,9 +108,9 @@ describe('Property 16: Completion Gate Deferred Behavior', () => {
 
           expect(result.canComplete).toBe(false)
           expect(result.blockers).toContain(`step-${gateStepIndex}`)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -132,7 +129,7 @@ describe('Property 16: Completion Gate Deferred Behavior', () => {
           }))
 
           // All steps completed including the gate step
-          const stepStatuses: StepStatusRecord[] = steps.map(step => ({
+          const stepStatuses: StepStatusRecord[] = steps.map((step) => ({
             stepId: step.id,
             status: 'completed',
           }))
@@ -141,9 +138,9 @@ describe('Property 16: Completion Gate Deferred Behavior', () => {
 
           expect(result.canComplete).toBe(true)
           expect(result.blockers).toHaveLength(0)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -171,9 +168,9 @@ describe('Property 16: Completion Gate Deferred Behavior', () => {
 
           expect(result.canComplete).toBe(true)
           expect(result.blockers).toHaveLength(0)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -181,7 +178,9 @@ describe('Property 16: Completion Gate Deferred Behavior', () => {
     fc.assert(
       fc.property(
         fc.constantFrom<'physical' | 'preferred' | 'completion_gate'>(
-          'physical', 'preferred', 'completion_gate',
+          'physical',
+          'preferred',
+          'completion_gate'
         ),
         (depType) => {
           const step: StepConfig = {
@@ -197,9 +196,9 @@ describe('Property 16: Completion Gate Deferred Behavior', () => {
           } else {
             expect(canBypass).toBe(true)
           }
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

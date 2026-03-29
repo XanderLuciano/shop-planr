@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
     if (templateId) {
       path = templateService.applyTemplate(templateId, {
         jobId: job.id,
-        goalQuantity: job.goalQuantity
+        goalQuantity: job.goalQuantity,
       })
     }
 

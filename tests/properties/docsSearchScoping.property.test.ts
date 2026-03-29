@@ -45,9 +45,7 @@ function collectMarkdownFiles(dir: string, base: string = dir): string[] {
  *      `api-docs/jobs/index.md` → `/api-docs/jobs`
  */
 function filePathToSlug(relativePath: string): string {
-  let slug = relativePath
-    .replace(/\.md$/, '')
-    .replace(/\\/g, '/') // normalise Windows separators
+  let slug = relativePath.replace(/\.md$/, '').replace(/\\/g, '/') // normalise Windows separators
 
   // index files resolve to the parent path
   if (slug.endsWith('/index')) {
@@ -106,8 +104,8 @@ describe('Property 7: Search result scoping', () => {
     const topLevelEntries = readdirSync(CONTENT_ROOT)
 
     // No stray .md files at content/ root (they would be in the default collection, not scoped)
-    const rootMdFiles = topLevelEntries.filter(entry =>
-      entry.endsWith('.md') && statSync(join(CONTENT_ROOT, entry)).isFile()
+    const rootMdFiles = topLevelEntries.filter(
+      (entry) => entry.endsWith('.md') && statSync(join(CONTENT_ROOT, entry)).isFile()
     )
     expect(
       rootMdFiles,

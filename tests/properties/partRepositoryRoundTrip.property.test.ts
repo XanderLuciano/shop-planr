@@ -32,23 +32,28 @@ function createTestDb() {
  */
 function seedPrerequisites(db: Database.Database, jobId: string, pathId: string) {
   const now = new Date().toISOString()
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO jobs (id, name, goal_quantity, created_at, updated_at)
     VALUES (?, 'Test Job', 10, ?, ?)
-  `).run(jobId, now, now)
+  `
+  ).run(jobId, now, now)
 
-  db.prepare(`
+  db.prepare(
+    `
     INSERT INTO paths (id, job_id, name, goal_quantity, advancement_mode, created_at, updated_at)
     VALUES (?, ?, 'Test Path', 10, 'strict', ?, ?)
-  `).run(pathId, jobId, now, now)
+  `
+  ).run(pathId, jobId, now, now)
 }
 
 // ---- Arbitraries ----
 
 const arbId = () => fc.stringMatching(/^[a-zA-Z0-9_-]{5,20}$/)
 const arbIsoDate = () =>
-  fc.integer({ min: new Date('2020-01-01').getTime(), max: new Date('2030-01-01').getTime() })
-    .map(ts => new Date(ts).toISOString())
+  fc
+    .integer({ min: new Date('2020-01-01').getTime(), max: new Date('2030-01-01').getTime() })
+    .map((ts) => new Date(ts).toISOString())
 
 const arbScrapReason = (): fc.Arbitrary<ScrapReason> =>
   fc.constantFrom('out_of_tolerance', 'process_defect', 'damaged', 'operator_error', 'other')
@@ -101,7 +106,7 @@ const arbPart = (jobId: string, pathId: string): fc.Arbitrary<Part> =>
   fc.oneof(
     arbPartInProgress(jobId, pathId),
     arbPartScrapped(jobId, pathId),
-    arbPartCompleted(jobId, pathId),
+    arbPartCompleted(jobId, pathId)
   )
 
 // ---- Helpers ----
@@ -159,7 +164,7 @@ describe('Property 3: Repository CRUD Round-Trip on Renamed Tables', () => {
         db.close()
         db = null as any
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -182,7 +187,7 @@ describe('Property 3: Repository CRUD Round-Trip on Renamed Tables', () => {
         db.close()
         db = null as any
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -215,9 +220,9 @@ describe('Property 3: Repository CRUD Round-Trip on Renamed Tables', () => {
 
           db.close()
           db = null as any
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

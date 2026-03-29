@@ -25,9 +25,7 @@ const pushingToJira = ref(false)
 const jiraPushResult = ref('')
 const jiraPushIsError = ref(false)
 
-const canPushToJira = computed(() =>
-  !!props.jiraTicketKey && !!props.jiraPushEnabled
-)
+const canPushToJira = computed(() => !!props.jiraTicketKey && !!props.jiraPushEnabled)
 
 async function onSubmit() {
   const trimmed = text.value.trim()
@@ -44,7 +42,7 @@ async function onSubmit() {
       stepId: props.stepId,
       partIds: props.partIds,
       text: trimmed,
-      userId: user.id
+      userId: user.id,
     })
 
     // Push to Jira if checked
@@ -87,10 +85,7 @@ async function onSubmit() {
     />
     <div class="flex items-center justify-between gap-2">
       <div class="flex items-center gap-2">
-        <p
-          v-if="localError || error"
-          class="text-xs text-red-500 truncate"
-        >
+        <p v-if="localError || error" class="text-xs text-red-500 truncate">
           {{ localError || error }}
         </p>
         <p
@@ -106,11 +101,7 @@ async function onSubmit() {
           v-if="canPushToJira"
           class="flex items-center gap-1.5 text-xs text-(--ui-text-muted) cursor-pointer"
         >
-          <input
-            v-model="pushToJira"
-            type="checkbox"
-            class="rounded size-3"
-          >
+          <input v-model="pushToJira" type="checkbox" class="rounded size-3" />
           Push to Jira
         </label>
         <UButton

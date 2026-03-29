@@ -13,19 +13,18 @@ export function usePartsView() {
     const all = jobs.value
     const q = searchQuery.value.trim().toLowerCase()
     if (!q) return all
-    return all.filter(job =>
-      job.jobName.toLowerCase().includes(q)
-      || job.pathName.toLowerCase().includes(q)
-      || job.stepName.toLowerCase().includes(q),
+    return all.filter(
+      (job) =>
+        job.jobName.toLowerCase().includes(q) ||
+        job.pathName.toLowerCase().includes(q) ||
+        job.stepName.toLowerCase().includes(q)
     )
   })
 
-  const totalParts = computed<number>(() =>
-    jobs.value.reduce((sum, j) => sum + j.partCount, 0),
-  )
+  const totalParts = computed<number>(() => jobs.value.reduce((sum, j) => sum + j.partCount, 0))
 
   const filteredParts = computed<number>(() =>
-    filteredJobs.value.reduce((sum, j) => sum + j.partCount, 0),
+    filteredJobs.value.reduce((sum, j) => sum + j.partCount, 0)
   )
 
   async function fetchAllWork(): Promise<void> {

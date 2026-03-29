@@ -24,17 +24,17 @@ const futureSteps = computed(() =>
       label: `${s.order + 1}. ${s.name}${s.location ? ` (${s.location})` : ''}`,
       value: s.order,
       step: s,
-    })),
+    }))
 )
 
 const bypassedSteps = computed(() => {
   if (selectedIndex.value <= props.currentStepIndex + 1) return []
   return props.steps
     .filter((_s, i) => i > props.currentStepIndex && i < selectedIndex.value)
-    .map(s => ({
+    .map((s) => ({
       stepId: s.id,
       stepName: s.name,
-      classification: s.optional ? 'skipped' as const : 'deferred' as const,
+      classification: s.optional ? ('skipped' as const) : ('deferred' as const),
       optional: s.optional,
     }))
 })
@@ -61,7 +61,9 @@ async function handleAdvance() {
 <template>
   <div class="space-y-3">
     <div>
-      <label class="text-xs font-semibold text-(--ui-text-highlighted) block mb-1">Advance to Step</label>
+      <label class="text-xs font-semibold text-(--ui-text-highlighted) block mb-1"
+        >Advance to Step</label
+      >
       <USelect
         v-model="selectedIndex"
         :items="futureSteps"
@@ -76,7 +78,9 @@ async function handleAdvance() {
       <p class="font-medium text-amber-600 dark:text-amber-400">
         {{ bypassedSteps.length }} step{{ bypassedSteps.length !== 1 ? 's' : '' }} will be bypassed:
       </p>
-      <div class="border border-amber-200 dark:border-amber-800 rounded-md divide-y divide-amber-200 dark:divide-amber-800">
+      <div
+        class="border border-amber-200 dark:border-amber-800 rounded-md divide-y divide-amber-200 dark:divide-amber-800"
+      >
         <div
           v-for="bp in bypassedSteps"
           :key="bp.stepId"
@@ -92,7 +96,10 @@ async function handleAdvance() {
           </UBadge>
         </div>
       </div>
-      <p v-if="bypassedSteps.some(b => b.classification === 'deferred')" class="text-amber-600 dark:text-amber-400">
+      <p
+        v-if="bypassedSteps.some((b) => b.classification === 'deferred')"
+        class="text-amber-600 dark:text-amber-400"
+      >
         ⚠ Required steps will be deferred and must be completed before final sign-off.
       </p>
     </div>

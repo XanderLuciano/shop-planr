@@ -18,7 +18,7 @@ function validateStrictAdvancement(
   currentStepIndex: number,
   targetStepIndex: number,
   totalSteps: number,
-  advancementMode: 'strict' | 'flexible' | 'per_step',
+  advancementMode: 'strict' | 'flexible' | 'per_step'
 ): { valid: boolean; error?: string } {
   // Forward-only check
   if (targetStepIndex <= currentStepIndex) {
@@ -33,7 +33,10 @@ function validateStrictAdvancement(
   // Strict mode: only N+1 allowed
   if (advancementMode === 'strict') {
     if (targetStepIndex !== currentStepIndex + 1) {
-      return { valid: false, error: 'Path is in strict mode — can only advance to the next sequential step' }
+      return {
+        valid: false,
+        error: 'Path is in strict mode — can only advance to the next sequential step',
+      }
     }
   }
 
@@ -58,7 +61,7 @@ describe('Property 11: Strict Advancement Mode Enforcement', () => {
             currentStepIndex,
             targetStepIndex,
             totalSteps,
-            'strict',
+            'strict'
           )
 
           if (targetStepIndex === currentStepIndex + 1) {
@@ -68,9 +71,9 @@ describe('Property 11: Strict Advancement Mode Enforcement', () => {
             // Everything else must be rejected
             expect(result.valid).toBe(false)
           }
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -87,13 +90,13 @@ describe('Property 11: Strict Advancement Mode Enforcement', () => {
             currentStepIndex,
             targetStepIndex,
             totalSteps,
-            'strict',
+            'strict'
           )
 
           expect(result.valid).toBe(true)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -113,15 +116,15 @@ describe('Property 11: Strict Advancement Mode Enforcement', () => {
               currentStepIndex,
               targetStepIndex,
               totalSteps,
-              'strict',
+              'strict'
             )
 
             expect(result.valid).toBe(false)
             expect(result.error).toContain('strict mode')
           }
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

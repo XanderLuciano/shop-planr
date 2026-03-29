@@ -1,11 +1,11 @@
 ---
-title: "Get Jira Ticket"
-description: "Retrieve a single Jira ticket by its issue key"
-method: "GET"
-endpoint: "/api/jira/tickets/:key"
-service: "jiraService"
-category: "Jira"
-responseType: "JiraTicket"
+title: 'Get Jira Ticket'
+description: 'Retrieve a single Jira ticket by its issue key'
+method: 'GET'
+endpoint: '/api/jira/tickets/:key'
+service: 'jiraService'
+category: 'Jira'
+responseType: 'JiraTicket'
 errorCodes: [400, 404, 502]
 navigation:
   order: 2
@@ -23,9 +23,9 @@ The raw Jira issue is normalized using the same field mapping logic as the list 
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `key` | `string` | Yes | The Jira issue key (e.g. `"PI-42"`, `"PROJ-123"`). Case-sensitive and must match the exact key in Jira. |
+| Parameter | Type     | Required | Description                                                                                             |
+| --------- | -------- | -------- | ------------------------------------------------------------------------------------------------------- |
+| `key`     | `string` | Yes      | The Jira issue key (e.g. `"PI-42"`, `"PROJ-123"`). Case-sensitive and must match the exact key in Jira. |
 
 ## Response
 
@@ -33,40 +33,40 @@ The raw Jira issue is normalized using the same field mapping logic as the list 
 
 Returns a single `JiraTicket` object with all normalized fields.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `key` | `string` | Jira issue key (e.g. `"PI-42"`) |
-| `summary` | `string` | Issue summary / title |
-| `status` | `string` | Current Jira status name (e.g. `"In Progress"`) |
-| `priority` | `string` | Priority name (e.g. `"High"`, `"Medium"`) |
-| `assignee` | `string` | Display name of the assignee, or empty string if unassigned |
-| `reporter` | `string` | Display name of the reporter |
-| `labels` | `string[]` | Array of Jira labels |
-| `partNumber` | `string \| null` | Part number from the configured custom field or parsed from summary |
-| `goalQuantity` | `number \| null` | Quantity from the configured custom field |
-| `epicLink` | `string \| null` | Epic link key from the configured custom field |
-| `createdAt` | `string` | ISO 8601 creation timestamp from Jira |
-| `updatedAt` | `string` | ISO 8601 last-updated timestamp from Jira |
-| `rawFields` | `object` | The raw Jira `fields` object |
+| Field          | Type             | Description                                                         |
+| -------------- | ---------------- | ------------------------------------------------------------------- |
+| `key`          | `string`         | Jira issue key (e.g. `"PI-42"`)                                     |
+| `summary`      | `string`         | Issue summary / title                                               |
+| `status`       | `string`         | Current Jira status name (e.g. `"In Progress"`)                     |
+| `priority`     | `string`         | Priority name (e.g. `"High"`, `"Medium"`)                           |
+| `assignee`     | `string`         | Display name of the assignee, or empty string if unassigned         |
+| `reporter`     | `string`         | Display name of the reporter                                        |
+| `labels`       | `string[]`       | Array of Jira labels                                                |
+| `partNumber`   | `string \| null` | Part number from the configured custom field or parsed from summary |
+| `goalQuantity` | `number \| null` | Quantity from the configured custom field                           |
+| `epicLink`     | `string \| null` | Epic link key from the configured custom field                      |
+| `createdAt`    | `string`         | ISO 8601 creation timestamp from Jira                               |
+| `updatedAt`    | `string`         | ISO 8601 last-updated timestamp from Jira                           |
+| `rawFields`    | `object`         | The raw Jira `fields` object                                        |
 
 ### 400 Bad Request
 
-| Condition | Message |
-|-----------|---------|
+| Condition                                | Message                             |
+| ---------------------------------------- | ----------------------------------- |
 | Jira integration is disabled in settings | `"Jira integration is not enabled"` |
 
 ### 404 Not Found
 
-| Condition | Message |
-|-----------|---------|
+| Condition                         | Message                                                      |
+| --------------------------------- | ------------------------------------------------------------ |
 | Ticket key does not exist in Jira | Jira API returns a 404, which is re-thrown as a server error |
 
 ### 502 Bad Gateway
 
-| Condition | Message |
-|-----------|---------|
+| Condition                                        | Message                                   |
+| ------------------------------------------------ | ----------------------------------------- |
 | Jira API unreachable or returned a non-OK status | `"Jira API error: {status} {statusText}"` |
-| Request timed out (10-second limit) | Abort error from the fetch signal |
+| Request timed out (10-second limit)              | Abort error from the fetch signal         |
 
 ## Examples
 

@@ -30,7 +30,7 @@ const linkedTicketKeys = computed(() => {
 })
 
 const unlinkedTickets = computed(() =>
-  tickets.value.filter(t => !linkedTicketKeys.value.has(t.key))
+  tickets.value.filter((t) => !linkedTicketKeys.value.has(t.key))
 )
 
 // Table columns
@@ -42,7 +42,7 @@ const columns = [
   { key: 'assignee', label: 'Assignee' },
   { key: 'partNumber', label: 'Part Number' },
   { key: 'goalQuantity', label: 'Qty' },
-  { key: 'actions', label: '' }
+  { key: 'actions', label: '' },
 ]
 
 function openLinkModal(ticket: JiraTicket) {
@@ -60,8 +60,11 @@ async function confirmLink() {
   try {
     await linkTicket({
       ticketKey: selectedTicket.value.key,
-      templateId: selectedTemplateId.value && selectedTemplateId.value !== '__none__' ? selectedTemplateId.value : undefined,
-      goalQuantity: overrideQuantity.value || undefined
+      templateId:
+        selectedTemplateId.value && selectedTemplateId.value !== '__none__'
+          ? selectedTemplateId.value
+          : undefined,
+      goalQuantity: overrideQuantity.value || undefined,
     })
     showLinkModal.value = false
     selectedTicket.value = null
@@ -85,17 +88,10 @@ onMounted(async () => {
   <div class="p-4 space-y-3 max-w-6xl">
     <!-- Jira disabled state -->
     <template v-if="!jiraEnabled">
-      <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
-        Jira Integration
-      </h1>
+      <h1 class="text-lg font-bold text-(--ui-text-highlighted)">Jira Integration</h1>
       <div class="py-12 text-center space-y-3">
-        <UIcon
-          name="i-lucide-plug-zap"
-          class="size-10 text-(--ui-text-muted) mx-auto"
-        />
-        <p class="text-sm text-(--ui-text-muted)">
-          Jira integration is currently disabled.
-        </p>
+        <UIcon name="i-lucide-plug-zap" class="size-10 text-(--ui-text-muted) mx-auto" />
+        <p class="text-sm text-(--ui-text-muted)">Jira integration is currently disabled.</p>
         <NuxtLink to="/settings">
           <UButton
             size="sm"
@@ -110,9 +106,7 @@ onMounted(async () => {
     <!-- Jira enabled state -->
     <template v-else>
       <div class="flex items-center justify-between">
-        <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
-          Jira Dashboard
-        </h1>
+        <h1 class="text-lg font-bold text-(--ui-text-highlighted)">Jira Dashboard</h1>
         <UButton
           icon="i-lucide-refresh-cw"
           label="Refresh"
@@ -138,10 +132,7 @@ onMounted(async () => {
         v-if="loading && !tickets.length"
         class="flex items-center gap-2 text-sm text-(--ui-text-muted)"
       >
-        <UIcon
-          name="i-lucide-loader-2"
-          class="animate-spin size-4"
-        />
+        <UIcon name="i-lucide-loader-2" class="animate-spin size-4" />
         Fetching Jira tickets...
       </div>
 
@@ -150,34 +141,27 @@ onMounted(async () => {
         v-else-if="!unlinkedTickets.length && !loading"
         class="py-8 text-center text-sm text-(--ui-text-muted)"
       >
-        No unlinked Jira tickets found. All open tickets are already linked to jobs, or there are no open tickets.
+        No unlinked Jira tickets found. All open tickets are already linked to jobs, or there are no
+        open tickets.
       </div>
 
       <!-- Ticket table -->
-      <div
-        v-else
-        class="space-y-2"
-      >
+      <div v-else class="space-y-2">
         <p class="text-xs text-(--ui-text-muted)">
-          {{ unlinkedTickets.length }} open ticket{{ unlinkedTickets.length !== 1 ? 's' : '' }} not yet linked to a job
+          {{ unlinkedTickets.length }} open ticket{{ unlinkedTickets.length !== 1 ? 's' : '' }} not
+          yet linked to a job
         </p>
-        <UTable
-          :data="unlinkedTickets"
-          :columns="columns"
-          class="text-xs"
-        >
+        <UTable :data="unlinkedTickets" :columns="columns" class="text-xs">
           <template #key-cell="{ row }">
-            <span class="font-mono text-xs font-medium text-(--ui-color-primary-500)">{{ row.original.key }}</span>
+            <span class="font-mono text-xs font-medium text-(--ui-color-primary-500)">{{
+              row.original.key
+            }}</span>
           </template>
           <template #summary-cell="{ row }">
             <span class="text-xs truncate max-w-xs block">{{ row.original.summary }}</span>
           </template>
           <template #status-cell="{ row }">
-            <UBadge
-              size="xs"
-              variant="subtle"
-              color="neutral"
-            >
+            <UBadge size="xs" variant="subtle" color="neutral">
               {{ row.original.status || '—' }}
             </UBadge>
           </template>
@@ -208,26 +192,16 @@ onMounted(async () => {
 
     <!-- Link modal -->
     <USlideover v-model:open="showLinkModal">
-      <template #title>
-        Link Ticket to Job
-      </template>
+      <template #title> Link Ticket to Job </template>
       <template #body>
-        <div
-          v-if="selectedTicket"
-          class="space-y-4 p-1"
-        >
+        <div v-if="selectedTicket" class="space-y-4 p-1">
           <!-- Ticket info -->
           <div class="space-y-1.5">
-            <div class="text-xs text-(--ui-text-muted)">
-              Ticket
-            </div>
+            <div class="text-xs text-(--ui-text-muted)">Ticket</div>
             <div class="text-sm font-medium text-(--ui-text-highlighted)">
               {{ selectedTicket.key }} — {{ selectedTicket.summary }}
             </div>
-            <div
-              v-if="selectedTicket.partNumber"
-              class="text-xs text-(--ui-text-muted)"
-            >
+            <div v-if="selectedTicket.partNumber" class="text-xs text-(--ui-text-muted)">
               Part: <span class="font-mono">{{ selectedTicket.partNumber }}</span>
             </div>
           </div>
@@ -236,10 +210,15 @@ onMounted(async () => {
 
           <!-- Template selector -->
           <div class="space-y-1">
-            <label class="text-xs font-medium text-(--ui-text-muted)">Apply Template (optional)</label>
+            <label class="text-xs font-medium text-(--ui-text-muted)"
+              >Apply Template (optional)</label
+            >
             <USelect
               v-model="selectedTemplateId"
-              :items="[{ label: 'No template', value: '__none__' }, ...templates.map(t => ({ label: t.name, value: t.id }))]"
+              :items="[
+                { label: 'No template', value: '__none__' },
+                ...templates.map((t) => ({ label: t.name, value: t.id })),
+              ]"
               size="sm"
               placeholder="Select a template..."
             />
@@ -264,20 +243,12 @@ onMounted(async () => {
             </p>
           </div>
 
-          <p
-            v-if="linkError"
-            class="text-xs text-red-500"
-          >
+          <p v-if="linkError" class="text-xs text-red-500">
             {{ linkError }}
           </p>
 
           <div class="flex gap-2 justify-end pt-2">
-            <UButton
-              variant="ghost"
-              size="sm"
-              label="Cancel"
-              @click="showLinkModal = false"
-            />
+            <UButton variant="ghost" size="sm" label="Cancel" @click="showLinkModal = false" />
             <UButton
               size="sm"
               label="Create Job"

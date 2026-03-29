@@ -1,12 +1,12 @@
 ---
-title: "Update BOM"
-description: "Update an existing bill of materials without version tracking"
-method: "PUT"
-endpoint: "/api/bom/:id"
-service: "bomService"
-category: "BOM"
-requestBody: "Partial<CreateBomInput>"
-responseType: "BOM"
+title: 'Update BOM'
+description: 'Update an existing bill of materials without version tracking'
+method: 'PUT'
+endpoint: '/api/bom/:id'
+service: 'bomService'
+category: 'BOM'
+requestBody: 'Partial<CreateBomInput>'
+responseType: 'BOM'
 errorCodes: [400, 404, 500]
 navigation:
   order: 4
@@ -26,19 +26,19 @@ When updating `entries`, the entire entries array is replaced. There is no mecha
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` | Yes | The unique identifier of the BOM to update (e.g. `"bom_abc123"`) |
+| Parameter | Type     | Required | Description                                                      |
+| --------- | -------- | -------- | ---------------------------------------------------------------- |
+| `id`      | `string` | Yes      | The unique identifier of the BOM to update (e.g. `"bom_abc123"`) |
 
 ### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | `string` | No | Updated BOM name. Must be non-empty if provided. Leading and trailing whitespace is trimmed. |
-| `entries` | `array` | No | Updated array of part entries. Replaces the entire existing entries array. |
-| `entries[].partType` | `string` | Yes (if entries provided) | Part type name or identifier. |
-| `entries[].requiredQuantityPerBuild` | `number` | Yes (if entries provided) | Quantity needed per build. |
-| `entries[].contributingJobIds` | `string[]` | Yes (if entries provided) | Job IDs that supply this part. |
+| Field                                | Type       | Required                  | Description                                                                                  |
+| ------------------------------------ | ---------- | ------------------------- | -------------------------------------------------------------------------------------------- |
+| `name`                               | `string`   | No                        | Updated BOM name. Must be non-empty if provided. Leading and trailing whitespace is trimmed. |
+| `entries`                            | `array`    | No                        | Updated array of part entries. Replaces the entire existing entries array.                   |
+| `entries[].partType`                 | `string`   | Yes (if entries provided) | Part type name or identifier.                                                                |
+| `entries[].requiredQuantityPerBuild` | `number`   | Yes (if entries provided) | Quantity needed per build.                                                                   |
+| `entries[].contributingJobIds`       | `string[]` | Yes (if entries provided) | Job IDs that supply this part.                                                               |
 
 ## Response
 
@@ -46,41 +46,41 @@ When updating `entries`, the entire entries array is replaced. There is no mecha
 
 Returned when the BOM is successfully updated. The response contains the complete updated `BOM` object.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | The BOM's unique identifier (unchanged) |
-| `name` | `string` | The BOM name (updated or unchanged) |
-| `entries` | `BomEntry[]` | The entries (updated or unchanged) |
-| `entries[].id` | `string \| undefined` | Entry ID, if assigned |
-| `entries[].bomId` | `string \| undefined` | Parent BOM ID reference |
-| `entries[].partType` | `string` | Part type name |
-| `entries[].requiredQuantityPerBuild` | `number` | Required quantity per build |
-| `entries[].contributingJobIds` | `string[]` | Contributing job IDs |
-| `createdAt` | `string` | Original creation timestamp (unchanged) |
-| `updatedAt` | `string` | ISO 8601 timestamp of this update |
+| Field                                | Type                  | Description                             |
+| ------------------------------------ | --------------------- | --------------------------------------- |
+| `id`                                 | `string`              | The BOM's unique identifier (unchanged) |
+| `name`                               | `string`              | The BOM name (updated or unchanged)     |
+| `entries`                            | `BomEntry[]`          | The entries (updated or unchanged)      |
+| `entries[].id`                       | `string \| undefined` | Entry ID, if assigned                   |
+| `entries[].bomId`                    | `string \| undefined` | Parent BOM ID reference                 |
+| `entries[].partType`                 | `string`              | Part type name                          |
+| `entries[].requiredQuantityPerBuild` | `number`              | Required quantity per build             |
+| `entries[].contributingJobIds`       | `string[]`            | Contributing job IDs                    |
+| `createdAt`                          | `string`              | Original creation timestamp (unchanged) |
+| `updatedAt`                          | `string`              | ISO 8601 timestamp of this update       |
 
 ### 400 Bad Request
 
 Returned when the request body fails validation.
 
-| Condition | Message |
-|-----------|---------|
+| Condition                    | Message              |
+| ---------------------------- | -------------------- |
 | `name` is provided but empty | `"name is required"` |
 
 ### 404 Not Found
 
 Returned when no BOM exists with the given ID.
 
-| Condition | Message |
-|-----------|---------|
+| Condition          | Message                       |
+| ------------------ | ----------------------------- |
 | BOM does not exist | `"BOM not found: bom_abc123"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while persisting the update.
 
-| Condition | Message |
-|-----------|---------|
+| Condition              | Message                   |
+| ---------------------- | ------------------------- |
 | Database write failure | `"Internal Server Error"` |
 
 ## Examples

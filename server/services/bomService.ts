@@ -9,11 +9,14 @@ import { generateId } from '../utils/idGenerator'
 import { assertNonEmpty, assertNonEmptyArray } from '../utils/validation'
 import { NotFoundError } from '../utils/errors'
 
-export function createBomService(repos: {
-  bom: BomRepository
-  parts: PartRepository
-  bomVersions?: BomVersionRepository
-}, auditService?: AuditService) {
+export function createBomService(
+  repos: {
+    bom: BomRepository
+    parts: PartRepository
+    bomVersions?: BomVersionRepository
+  },
+  auditService?: AuditService
+) {
   return {
     createBom(input: CreateBomInput): BOM {
       assertNonEmpty(input.name, 'name')
@@ -23,13 +26,13 @@ export function createBomService(repos: {
       return repos.bom.create({
         id: generateId('bom'),
         name: input.name.trim(),
-        entries: input.entries.map(e => ({
+        entries: input.entries.map((e) => ({
           partType: e.partType,
           requiredQuantityPerBuild: e.requiredQuantityPerBuild,
-          contributingJobIds: e.contributingJobIds
+          contributingJobIds: e.contributingJobIds,
         })),
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       })
     },
 
@@ -58,10 +61,10 @@ export function createBomService(repos: {
       const partial: Partial<BOM> = { updatedAt: new Date().toISOString() }
       if (input.name !== undefined) partial.name = input.name.trim()
       if (input.entries !== undefined) {
-        partial.entries = input.entries.map(e => ({
+        partial.entries = input.entries.map((e) => ({
           partType: e.partType,
           requiredQuantityPerBuild: e.requiredQuantityPerBuild,
-          contributingJobIds: e.contributingJobIds
+          contributingJobIds: e.contributingJobIds,
         }))
       }
 
@@ -81,7 +84,7 @@ export function createBomService(repos: {
             requiredQuantityPerBuild: entry.requiredQuantityPerBuild,
             totalCompleted: 0,
             totalInProgress: 0,
-            totalOutstanding: 0
+            totalOutstanding: 0,
           }
         }
 
@@ -92,7 +95,7 @@ export function createBomService(repos: {
           const total = repos.parts.countByJobId(jobId)
           const completed = repos.parts.countCompletedByJobId(jobId)
           totalCompleted += completed
-          totalInProgress += (total - completed)
+          totalInProgress += total - completed
         }
 
         const totalOutstanding = Math.max(0, entry.requiredQuantityPerBuild - totalCompleted)
@@ -102,14 +105,14 @@ export function createBomService(repos: {
           requiredQuantityPerBuild: entry.requiredQuantityPerBuild,
           totalCompleted,
           totalInProgress,
-          totalOutstanding
+          totalOutstanding,
         }
       })
 
       return {
         bomId: bom.id,
         bomName: bom.name,
-        entries
+        entries,
       }
     },
 
@@ -148,7 +151,7 @@ export function createBomService(repos: {
 
       // Update the BOM entries
       const updated = repos.bom.update(bomId, {
-        entries: input.entries.map(e => ({
+        entries: input.entries.map((e) => ({
           partType: e.partType,
           requiredQuantityPerBuild: e.requiredQuantityPerBuild,
           contributingJobIds: e.contributingJobIds,

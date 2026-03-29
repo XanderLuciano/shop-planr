@@ -9,32 +9,21 @@ const props = defineProps<{
 <template>
   <UCard :ui="{ body: 'p-4 sm:p-4' }">
     <template #header>
-      <p class="text-sm font-semibold text-(--ui-text-highlighted)">
-        Job Progress
-      </p>
+      <p class="text-sm font-semibold text-(--ui-text-highlighted)">Job Progress</p>
     </template>
 
-    <div
-      v-if="!props.jobs.length"
-      class="text-sm text-(--ui-text-muted) py-4 text-center"
-    >
+    <div v-if="!props.jobs.length" class="text-sm text-(--ui-text-muted) py-4 text-center">
       No active jobs
     </div>
 
-    <div
-      v-else
-      class="flex flex-col gap-3"
-    >
+    <div v-else class="flex flex-col gap-3">
       <NuxtLink
         v-for="job in props.jobs"
         :key="job.jobId"
         :to="`/jobs/${encodeURIComponent(job.jobId)}`"
         class="flex items-center gap-3 hover:bg-(--ui-bg-elevated)/50 rounded px-1 -mx-1 py-0.5 transition-colors"
       >
-        <span
-          class="text-xs text-(--ui-text-muted) w-32 truncate shrink-0"
-          :title="job.jobName"
-        >
+        <span class="text-xs text-(--ui-text-muted) w-32 truncate shrink-0" :title="job.jobName">
           {{ job.jobName }}
         </span>
 
@@ -49,7 +38,13 @@ const props = defineProps<{
           <div
             v-if="job.goalQuantity > 0 && job.inProgressParts > 0"
             class="h-full bg-blue-500 transition-all"
-            :style="{ width: Math.min((job.inProgressParts / job.goalQuantity) * 100, 100 - Math.min((job.completedParts / job.goalQuantity) * 100, 100)) + '%' }"
+            :style="{
+              width:
+                Math.min(
+                  (job.inProgressParts / job.goalQuantity) * 100,
+                  100 - Math.min((job.completedParts / job.goalQuantity) * 100, 100)
+                ) + '%',
+            }"
           />
         </div>
 

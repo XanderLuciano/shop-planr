@@ -1,7 +1,7 @@
 ---
-title: "Users API"
-description: "Kiosk-mode user profiles — create and manage shop floor operators"
-icon: "i-lucide-users"
+title: 'Users API'
+description: 'Kiosk-mode user profiles — create and manage shop floor operators'
+icon: 'i-lucide-users'
 navigation:
   order: 10
 ---
@@ -43,11 +43,11 @@ The optional `department` field is a free-text string for organizational groupin
 
 ## Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | [`/api/users`](/api-docs/users/list) | List all active users |
-| `POST` | [`/api/users`](/api-docs/users/create) | Create a new user |
-| `PUT` | [`/api/users/:id`](/api-docs/users/update) | Update an existing user |
+| Method | Path                                       | Description             |
+| ------ | ------------------------------------------ | ----------------------- |
+| `GET`  | [`/api/users`](/api-docs/users/list)       | List all active users   |
+| `POST` | [`/api/users`](/api-docs/users/create)     | Create a new user       |
+| `PUT`  | [`/api/users/:id`](/api-docs/users/update) | Update an existing user |
 
 ## Related
 

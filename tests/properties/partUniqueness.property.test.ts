@@ -37,17 +37,19 @@ function setupServices(db: Database.default.Database) {
     paths: new SQLitePathRepository(db),
     parts: new SQLitePartRepository(db),
     certs: new SQLiteCertRepository(db),
-    audit: new SQLiteAuditRepository(db)
+    audit: new SQLiteAuditRepository(db),
   }
 
   const partIdGenerator = createSequentialPartIdGenerator({
     getCounter: () => {
-      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
+      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as
+        | { value: number }
+        | undefined
       return row?.value ?? 0
     },
     setCounter: (v: number) => {
       db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-    }
+    },
   })
 
   const auditService = createAuditService({ audit: repos.audit })
@@ -73,13 +75,10 @@ describe('Property 2: Part ID Uniqueness', () => {
     fc.assert(
       fc.property(
         // Generate 1-3 jobs, each with 1-3 paths, each with 1-20 parts
-        fc.array(
-          fc.array(
-            fc.integer({ min: 1, max: 20 }),
-            { minLength: 1, maxLength: 3 }
-          ),
-          { minLength: 1, maxLength: 3 }
-        ),
+        fc.array(fc.array(fc.integer({ min: 1, max: 20 }), { minLength: 1, maxLength: 3 }), {
+          minLength: 1,
+          maxLength: 3,
+        }),
         (jobPathQuantities) => {
           db = createTestDb()
           const { jobService, pathService, partService } = setupServices(db)
@@ -89,7 +88,7 @@ describe('Property 2: Part ID Uniqueness', () => {
           for (let j = 0; j < jobPathQuantities.length; j++) {
             const job = jobService.createJob({
               name: `Job ${j}`,
-              goalQuantity: 100
+              goalQuantity: 100,
             })
 
             for (let p = 0; p < jobPathQuantities[j].length; p++) {
@@ -98,7 +97,7 @@ describe('Property 2: Part ID Uniqueness', () => {
                 jobId: job.id,
                 name: `Path ${p}`,
                 goalQuantity: quantity,
-                steps: [{ name: 'OP1' }, { name: 'OP2' }]
+                steps: [{ name: 'OP1' }, { name: 'OP2' }],
               })
 
               const parts = partService.batchCreateParts(

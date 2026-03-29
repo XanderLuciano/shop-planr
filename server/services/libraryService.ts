@@ -16,7 +16,7 @@ export function createLibraryService(repos: { library: LibraryRepository }) {
 
       // Check for duplicates
       const existing = repos.library.listProcesses()
-      if (existing.some(e => e.name === trimmed)) {
+      if (existing.some((e) => e.name === trimmed)) {
         throw new ValidationError('Process name already exists')
       }
 
@@ -43,7 +43,7 @@ export function createLibraryService(repos: { library: LibraryRepository }) {
 
       // Check for duplicates
       const existing = repos.library.listLocations()
-      if (existing.some(e => e.name === trimmed)) {
+      if (existing.some((e) => e.name === trimmed)) {
         throw new ValidationError('Location name already exists')
       }
 

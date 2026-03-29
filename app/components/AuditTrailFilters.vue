@@ -6,7 +6,7 @@ const emit = defineEmits<{
   'update:filters': [filters: AuditFilters]
 }>()
 
-const actionTypes: { label: string, value: AuditAction | '__all__' }[] = [
+const actionTypes: { label: string; value: AuditAction | '__all__' }[] = [
   { label: 'All Actions', value: '__all__' },
   { label: 'Cert Attached', value: 'cert_attached' },
   { label: 'Part Created', value: 'part_created' },
@@ -33,7 +33,8 @@ const endDate = ref('')
 
 function emitFilters() {
   const filters: AuditFilters = {}
-  if (selectedAction.value && selectedAction.value !== '__all__') filters.action = selectedAction.value as AuditAction
+  if (selectedAction.value && selectedAction.value !== '__all__')
+    filters.action = selectedAction.value as AuditAction
   if (userId.value.trim()) filters.userId = userId.value.trim()
   if (partId.value.trim()) filters.partId = partId.value.trim()
   if (jobId.value.trim()) filters.jobId = jobId.value.trim()
@@ -56,7 +57,9 @@ watch([selectedAction, userId, partId, jobId, startDate, endDate], emitFilters)
 </script>
 
 <template>
-  <div class="flex flex-wrap items-end gap-3 p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/30">
+  <div
+    class="flex flex-wrap items-end gap-3 p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/30"
+  >
     <div>
       <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Action Type</label>
       <USelect

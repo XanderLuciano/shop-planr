@@ -32,7 +32,7 @@ function rowToDomain(row: AuditRow): AuditEntry {
     fromStepId: row.from_step_id ?? undefined,
     toStepId: row.to_step_id ?? undefined,
     batchQuantity: row.batch_quantity ?? undefined,
-    metadata: row.metadata ? JSON.parse(row.metadata) : undefined
+    metadata: row.metadata ? JSON.parse(row.metadata) : undefined,
   }
 }
 
@@ -44,31 +44,35 @@ export class SQLiteAuditRepository implements AuditRepository {
   }
 
   create(entry: AuditEntry): AuditEntry {
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO audit_entries (id, action, user_id, timestamp, part_id, cert_id, job_id, path_id, step_id, from_step_id, to_step_id, batch_quantity, metadata)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      entry.id,
-      entry.action,
-      entry.userId,
-      entry.timestamp,
-      entry.partId ?? null,
-      entry.certId ?? null,
-      entry.jobId ?? null,
-      entry.pathId ?? null,
-      entry.stepId ?? null,
-      entry.fromStepId ?? null,
-      entry.toStepId ?? null,
-      entry.batchQuantity ?? null,
-      entry.metadata ? JSON.stringify(entry.metadata) : null
-    )
+    `
+      )
+      .run(
+        entry.id,
+        entry.action,
+        entry.userId,
+        entry.timestamp,
+        entry.partId ?? null,
+        entry.certId ?? null,
+        entry.jobId ?? null,
+        entry.pathId ?? null,
+        entry.stepId ?? null,
+        entry.fromStepId ?? null,
+        entry.toStepId ?? null,
+        entry.batchQuantity ?? null,
+        entry.metadata ? JSON.stringify(entry.metadata) : null
+      )
     return entry
   }
 
   listByPartId(partId: string): AuditEntry[] {
-    const rows = this.db.prepare(
-      'SELECT * FROM audit_entries WHERE part_id = ? ORDER BY timestamp ASC'
-    ).all(partId) as AuditRow[]
+    const rows = this.db
+      .prepare('SELECT * FROM audit_entries WHERE part_id = ? ORDER BY timestamp ASC')
+      .all(partId) as AuditRow[]
     return rows.map(rowToDomain)
   }
 
@@ -78,18 +82,18 @@ export class SQLiteAuditRepository implements AuditRepository {
   }
 
   listByJobId(jobId: string): AuditEntry[] {
-    const rows = this.db.prepare(
-      'SELECT * FROM audit_entries WHERE job_id = ? ORDER BY timestamp ASC'
-    ).all(jobId) as AuditRow[]
+    const rows = this.db
+      .prepare('SELECT * FROM audit_entries WHERE job_id = ? ORDER BY timestamp ASC')
+      .all(jobId) as AuditRow[]
     return rows.map(rowToDomain)
   }
 
-  list(options?: { limit?: number, offset?: number }): AuditEntry[] {
+  list(options?: { limit?: number; offset?: number }): AuditEntry[] {
     const limit = options?.limit ?? 100
     const offset = options?.offset ?? 0
-    const rows = this.db.prepare(
-      'SELECT * FROM audit_entries ORDER BY timestamp DESC LIMIT ? OFFSET ?'
-    ).all(limit, offset) as AuditRow[]
+    const rows = this.db
+      .prepare('SELECT * FROM audit_entries ORDER BY timestamp DESC LIMIT ? OFFSET ?')
+      .all(limit, offset) as AuditRow[]
     return rows.map(rowToDomain)
   }
 }

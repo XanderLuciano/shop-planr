@@ -13,13 +13,13 @@ function createMockUserRepo(): UserRepository {
     }),
     getById: vi.fn((id: string) => store.get(id) ?? null),
     list: vi.fn(() => [...store.values()]),
-    listActive: vi.fn(() => [...store.values()].filter(u => u.active)),
+    listActive: vi.fn(() => [...store.values()].filter((u) => u.active)),
     update: vi.fn((id: string, partial: Partial<ShopUser>) => {
       const existing = store.get(id)!
       const updated = { ...existing, ...partial }
       store.set(id, updated)
       return updated
-    })
+    }),
   }
 }
 

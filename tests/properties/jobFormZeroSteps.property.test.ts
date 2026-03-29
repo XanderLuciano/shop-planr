@@ -53,13 +53,11 @@ describe('Property 6: Validation rejects paths with zero steps', () => {
           expect(result.valid).toBe(false)
 
           // Must have an error referencing the zero-step path's steps field
-          const stepsError = result.errors.find(
-            e => e.field === `paths[${actualZeroIdx}].steps`,
-          )
+          const stepsError = result.errors.find((e) => e.field === `paths[${actualZeroIdx}].steps`)
           expect(stepsError).toBeDefined()
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

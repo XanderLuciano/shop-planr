@@ -1,11 +1,11 @@
 ---
-title: "Get All Queue Items"
-description: "Retrieve all items in the operator queue as a flat list"
-method: "GET"
-endpoint: "/api/operator/queue/_all"
-service: "jobService, pathService, serialService"
-category: "Operator"
-responseType: "WorkQueueResponse"
+title: 'Get All Queue Items'
+description: 'Retrieve all items in the operator queue as a flat list'
+method: 'GET'
+endpoint: '/api/operator/queue/_all'
+service: 'jobService, pathService, serialService'
+category: 'Operator'
+responseType: 'WorkQueueResponse'
 errorCodes: [500]
 navigation:
   order: 3
@@ -13,7 +13,7 @@ navigation:
 
 # Get All Queue Items
 
-::endpoint-card{method="GET" path="/api/operator/queue/_all"}
+::endpoint-card{method="GET" path="/api/operator/queue/\_all"}
 
 Retrieves all items in the operator queue as a flat (ungrouped) list. Unlike the grouped work queue endpoint, this returns every active step/job/path combination without operator grouping, making it suitable for the "All" tab in the Parts View page.
 
@@ -31,35 +31,35 @@ No request body or query parameters.
 
 Returns a `WorkQueueResponse` object.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `operatorId` | `string` | Always `"_all"` for this endpoint |
-| `jobs` | `WorkQueueJob[]` | Array of all queue items |
-| `totalParts` | `number` | Total count of in-progress parts across all items |
+| Field        | Type             | Description                                       |
+| ------------ | ---------------- | ------------------------------------------------- |
+| `operatorId` | `string`         | Always `"_all"` for this endpoint                 |
+| `jobs`       | `WorkQueueJob[]` | Array of all queue items                          |
+| `totalParts` | `number`         | Total count of in-progress parts across all items |
 
 #### WorkQueueJob Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `jobId` | `string` | Job ID |
-| `jobName` | `string` | Job name |
-| `pathId` | `string` | Path ID |
-| `pathName` | `string` | Path name |
-| `stepId` | `string` | Step ID |
-| `stepName` | `string` | Step name |
-| `stepOrder` | `number` | Zero-based step index |
-| `stepLocation` | `string \| undefined` | Physical location |
-| `totalSteps` | `number` | Total steps in the path |
-| `serialIds` | `string[]` | Serial IDs at this step (may be empty for first steps) |
-| `partCount` | `number` | Count of serials at this step |
-| `nextStepName` | `string \| undefined` | Name of the next step |
-| `nextStepLocation` | `string \| undefined` | Location of the next step |
-| `isFinalStep` | `boolean` | Whether this is the last step |
+| Field              | Type                  | Description                                            |
+| ------------------ | --------------------- | ------------------------------------------------------ |
+| `jobId`            | `string`              | Job ID                                                 |
+| `jobName`          | `string`              | Job name                                               |
+| `pathId`           | `string`              | Path ID                                                |
+| `pathName`         | `string`              | Path name                                              |
+| `stepId`           | `string`              | Step ID                                                |
+| `stepName`         | `string`              | Step name                                              |
+| `stepOrder`        | `number`              | Zero-based step index                                  |
+| `stepLocation`     | `string \| undefined` | Physical location                                      |
+| `totalSteps`       | `number`              | Total steps in the path                                |
+| `serialIds`        | `string[]`            | Serial IDs at this step (may be empty for first steps) |
+| `partCount`        | `number`              | Count of serials at this step                          |
+| `nextStepName`     | `string \| undefined` | Name of the next step                                  |
+| `nextStepLocation` | `string \| undefined` | Location of the next step                              |
+| `isFinalStep`      | `boolean`             | Whether this is the last step                          |
 
 ### 500 Internal Server Error
 
-| Condition | Message |
-|-----------|---------|
+| Condition                | Message                   |
+| ------------------------ | ------------------------- |
 | Unexpected runtime error | `"Internal server error"` |
 
 ## Examples

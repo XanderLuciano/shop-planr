@@ -16,9 +16,15 @@ const STORAGE_KEY = 'shop_erp_operator_id'
 const store: Record<string, string> = {}
 const localStorageMock = {
   getItem: (key: string) => store[key] ?? null,
-  setItem: (key: string, value: string) => { store[key] = value },
-  removeItem: (key: string) => { delete store[key] },
-  clear: () => { Object.keys(store).forEach(k => delete store[k]) },
+  setItem: (key: string, value: string) => {
+    store[key] = value
+  },
+  removeItem: (key: string) => {
+    delete store[key]
+  },
+  clear: () => {
+    Object.keys(store).forEach((k) => delete store[k])
+  },
 }
 vi.stubGlobal('localStorage', localStorageMock)
 
@@ -53,9 +59,10 @@ function restoreOperator(activeUserIds: string[]): string | null {
 }
 
 /** Arbitrary for a ShopUser-style ID (prefix + alphanumeric) */
-const userIdArb = fc.string({ minLength: 1, maxLength: 30 })
-  .filter(s => s.trim().length > 0 && !s.includes('\0'))
-  .map(s => `user_${s.replace(/\s+/g, '_')}`)
+const userIdArb = fc
+  .string({ minLength: 1, maxLength: 30 })
+  .filter((s) => s.trim().length > 0 && !s.includes('\0'))
+  .map((s) => `user_${s.replace(/\s+/g, '_')}`)
 
 describe('Property 8: Operator selection localStorage round-trip', () => {
   beforeEach(() => {
@@ -72,7 +79,7 @@ describe('Property 8: Operator selection localStorage round-trip', () => {
         const stored = localStorage.getItem(STORAGE_KEY)
         expect(stored).toBe(userId)
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -92,9 +99,9 @@ describe('Property 8: Operator selection localStorage round-trip', () => {
           const restored = restoreOperator(activeUserIds)
 
           expect(restored).toBe(userId)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -110,15 +117,15 @@ describe('Property 8: Operator selection localStorage round-trip', () => {
           selectOperator(userId)
 
           // Active users list does NOT include the stored ID
-          const activeUserIds = otherUserIds.filter(id => id !== userId)
+          const activeUserIds = otherUserIds.filter((id) => id !== userId)
           const restored = restoreOperator(activeUserIds)
 
           expect(restored).toBeNull()
           // localStorage should be cleaned up
           expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -133,7 +140,7 @@ describe('Property 8: Operator selection localStorage round-trip', () => {
         clearOperator()
         expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

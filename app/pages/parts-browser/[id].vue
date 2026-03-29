@@ -69,11 +69,16 @@ const sortedSiblings = computed(() => {
 })
 
 const siblingTotalCount = computed(() => siblingParts.value.length)
-const siblingCompletedCount = computed(() =>
-  siblingParts.value.filter((s: any) => s.status === 'completed' || s.currentStepIndex === -1).length,
+const siblingCompletedCount = computed(
+  () =>
+    siblingParts.value.filter((s: any) => s.status === 'completed' || s.currentStepIndex === -1)
+      .length
 )
-const siblingInProgressCount = computed(() =>
-  siblingParts.value.filter((s: any) => s.status === 'in-progress' || (s.currentStepIndex >= 0 && s.status !== 'scrapped')).length,
+const siblingInProgressCount = computed(
+  () =>
+    siblingParts.value.filter(
+      (s: any) => s.status === 'in-progress' || (s.currentStepIndex >= 0 && s.status !== 'scrapped')
+    ).length
 )
 
 watch(activeTab, async (tab) => {
@@ -85,22 +90,28 @@ watch(activeTab, async (tab) => {
 
 // Computed states
 const isScrapped = computed(() => part.value?.status === 'scrapped')
-const isCompleted = computed(() => part.value?.status === 'completed' || part.value?.currentStepIndex === -1)
+const isCompleted = computed(
+  () => part.value?.status === 'completed' || part.value?.currentStepIndex === -1
+)
 const isForceCompleted = computed(() => part.value?.forceCompleted === true)
-const isInProgress = computed(() => part.value?.status === 'in_progress' || part.value?.status === 'in-progress' || (!isScrapped.value && !isCompleted.value && part.value?.currentStepIndex !== undefined && part.value.currentStepIndex >= 0))
+const isInProgress = computed(
+  () =>
+    part.value?.status === 'in_progress' ||
+    part.value?.status === 'in-progress' ||
+    (!isScrapped.value &&
+      !isCompleted.value &&
+      part.value?.currentStepIndex !== undefined &&
+      part.value.currentStepIndex >= 0)
+)
 
 const currentStep = computed(() => {
   if (!path.value || !part.value || part.value.currentStepIndex < 0) return null
   return path.value.steps[part.value.currentStepIndex] ?? null
 })
 
-const deferredSteps = computed(() =>
-  stepStatuses.value.filter(s => s.status === 'deferred'),
-)
+const deferredSteps = computed(() => stepStatuses.value.filter((s) => s.status === 'deferred'))
 
-const overriddenSteps = computed(() =>
-  overrides.value.filter(o => o.active),
-)
+const overriddenSteps = computed(() => overrides.value.filter((o) => o.active))
 
 // WorkQueueJob for ProcessAdvancementPanel
 const workQueueJob = computed<WorkQueueJob | null>(() => {
@@ -129,7 +140,7 @@ const workQueueJob = computed<WorkQueueJob | null>(() => {
 })
 
 function getStepDistribution(stepId: string) {
-  return distribution.value.find(d => d.stepId === stepId)
+  return distribution.value.find((d) => d.stepId === stepId)
 }
 
 function getAssigneeName(assignedTo?: string) {
@@ -138,13 +149,13 @@ function getAssigneeName(assignedTo?: string) {
 }
 
 function getStepStatusForStep(stepId: string): PartStepStatusView | undefined {
-  return stepStatuses.value.find(s => s.stepId === stepId)
+  return stepStatuses.value.find((s) => s.stepId === stepId)
 }
 
 function stepStatusBadge(stepId: string) {
   const ss = getStepStatusForStep(stepId)
   if (!ss) return null
-  const map: Record<string, { color: string, label: string }> = {
+  const map: Record<string, { color: string; label: string }> = {
     completed: { color: 'success', label: 'Completed' },
     in_progress: { color: 'info', label: 'In Progress' },
     pending: { color: 'neutral', label: 'Pending' },
@@ -156,7 +167,7 @@ function stepStatusBadge(stepId: string) {
 }
 
 function isStepOverridden(stepId: string): boolean {
-  return overrides.value.some(o => o.stepId === stepId && o.active)
+  return overrides.value.some((o) => o.stepId === stepId && o.active)
 }
 
 async function handleSaveNote() {
@@ -175,13 +186,17 @@ async function handleSaveNote() {
     noteText.value = ''
     toast.add({ title: 'Note created', color: 'success' })
   } catch (e: any) {
-    toast.add({ title: 'Failed to create note', description: e?.data?.message ?? e?.message ?? 'Failed to create note', color: 'error' })
+    toast.add({
+      title: 'Failed to create note',
+      description: e?.data?.message ?? e?.message ?? 'Failed to create note',
+      color: 'error',
+    })
   } finally {
     noteSaving.value = false
   }
 }
 
-async function handleAdvance(payload: { partIds: string[], note?: string }) {
+async function handleAdvance(payload: { partIds: string[]; note?: string }) {
   if (!part.value || !currentStep.value) return
   const { advancePart } = useParts()
   const { operatorId } = useOperatorIdentity()
@@ -206,33 +221,56 @@ async function handleAdvance(payload: { partIds: string[], note?: string }) {
     }
     await refreshAfterAdvance()
     await loadLifecycleData()
-    toast.add({ title: 'Part advanced', description: `${part.value!.id} moved forward`, color: 'success' })
+    toast.add({
+      title: 'Part advanced',
+      description: `${part.value!.id} moved forward`,
+      color: 'success',
+    })
   } catch (e: any) {
-    toast.add({ title: 'Advancement failed', description: e?.message ?? 'An error occurred', color: 'error' })
+    toast.add({
+      title: 'Advancement failed',
+      description: e?.message ?? 'An error occurred',
+      color: 'error',
+    })
   } finally {
     advanceLoading.value = false
   }
 }
 
 async function loadStepNotes() {
-  if (!currentStep.value) { stepNotes.value = []; return }
+  if (!currentStep.value) {
+    stepNotes.value = []
+    return
+  }
   try {
     stepNotes.value = await fetchNotesForStep(currentStep.value.id)
-  } catch { stepNotes.value = [] }
+  } catch {
+    stepNotes.value = []
+  }
 }
 
 async function loadLifecycleData() {
   try {
     stepStatuses.value = await getStepStatuses(partId)
-  } catch { stepStatuses.value = [] }
+  } catch {
+    stepStatuses.value = []
+  }
 
   try {
-    overrides.value = await $fetch<PartStepOverride[]>(`/api/parts/${encodeURIComponent(partId)}/overrides`)
-  } catch { overrides.value = [] }
+    overrides.value = await $fetch<PartStepOverride[]>(
+      `/api/parts/${encodeURIComponent(partId)}/overrides`
+    )
+  } catch {
+    overrides.value = []
+  }
 
   try {
-    certAttachments.value = await $fetch<CertAttachment[]>(`/api/parts/${encodeURIComponent(partId)}/cert-attachments`)
-  } catch { certAttachments.value = [] }
+    certAttachments.value = await $fetch<CertAttachment[]>(
+      `/api/parts/${encodeURIComponent(partId)}/cert-attachments`
+    )
+  } catch {
+    certAttachments.value = []
+  }
 }
 
 async function onDeferredCompleted() {
@@ -281,35 +319,49 @@ onMounted(async () => {
             variant="subtle"
             size="sm"
           >
-            {{ isScrapped ? 'Scrapped' : isForceCompleted ? 'Force Completed' : isCompleted ? 'Completed' : 'In Progress' }}
+            {{
+              isScrapped
+                ? 'Scrapped'
+                : isForceCompleted
+                  ? 'Force Completed'
+                  : isCompleted
+                    ? 'Completed'
+                    : 'In Progress'
+            }}
           </UBadge>
         </div>
-        <div class="text-xs text-(--ui-text-muted)">
-          {{ (job as any).name }} · {{ path.name }}
-        </div>
+        <div class="text-xs text-(--ui-text-muted)">{{ (job as any).name }} · {{ path.name }}</div>
       </div>
 
       <!-- Scrap indicator -->
-      <div v-if="isScrapped" class="flex items-center gap-2 px-3 py-2 rounded-md bg-red-500/10 text-red-600 text-sm">
+      <div
+        v-if="isScrapped"
+        class="flex items-center gap-2 px-3 py-2 rounded-md bg-red-500/10 text-red-600 text-sm"
+      >
         <UIcon name="i-lucide-alert-triangle" class="size-4" />
         <div>
           <span class="font-medium">Scrapped</span>
           <span v-if="part.scrapReason"> — {{ part.scrapReason.replace(/_/g, ' ') }}</span>
           <span v-if="part.scrapExplanation">: {{ part.scrapExplanation }}</span>
           <div v-if="part.scrappedAt" class="text-xs mt-0.5">
-            {{ part.scrappedBy ? `By ${part.scrappedBy}` : '' }} on {{ new Date(part.scrappedAt).toLocaleString() }}
+            {{ part.scrappedBy ? `By ${part.scrappedBy}` : '' }} on
+            {{ new Date(part.scrappedAt).toLocaleString() }}
           </div>
         </div>
       </div>
 
       <!-- Force-complete indicator -->
-      <div v-if="isForceCompleted && !isScrapped" class="flex items-center gap-2 px-3 py-2 rounded-md bg-amber-500/10 text-amber-600 text-sm">
+      <div
+        v-if="isForceCompleted && !isScrapped"
+        class="flex items-center gap-2 px-3 py-2 rounded-md bg-amber-500/10 text-amber-600 text-sm"
+      >
         <UIcon name="i-lucide-shield-check" class="size-4" />
         <div>
           <span class="font-medium">Force completed</span>
           <span v-if="part.forceCompletedReason"> — {{ part.forceCompletedReason }}</span>
           <div v-if="part.forceCompletedAt" class="text-xs mt-0.5">
-            {{ part.forceCompletedBy ? `By ${part.forceCompletedBy}` : '' }} on {{ new Date(part.forceCompletedAt).toLocaleString() }}
+            {{ part.forceCompletedBy ? `By ${part.forceCompletedBy}` : '' }} on
+            {{ new Date(part.forceCompletedAt).toLocaleString() }}
           </div>
         </div>
       </div>
@@ -320,9 +372,11 @@ onMounted(async () => {
           v-for="tab in tabs"
           :key="tab.value"
           class="px-3 py-1.5 text-sm font-medium transition-colors border-b-2 -mb-px"
-          :class="activeTab === tab.value
-            ? 'border-(--ui-primary) text-(--ui-text-highlighted)'
-            : 'border-transparent text-(--ui-text-muted) hover:text-(--ui-text-highlighted)'"
+          :class="
+            activeTab === tab.value
+              ? 'border-(--ui-primary) text-(--ui-text-highlighted)'
+              : 'border-transparent text-(--ui-text-muted) hover:text-(--ui-text-highlighted)'
+          "
           @click="activeTab = tab.value"
         >
           {{ tab.label }}
@@ -334,26 +388,36 @@ onMounted(async () => {
         <!-- SectionCard: Routing -->
         <SectionCard title="Routing" icon="i-lucide-route">
           <!-- Step list -->
-          <div class="border border-(--ui-border) rounded-md overflow-hidden divide-y divide-(--ui-border)">
+          <div
+            class="border border-(--ui-border) rounded-md overflow-hidden divide-y divide-(--ui-border)"
+          >
             <div
               v-for="(step, index) in path.steps"
               :key="step.id"
               class="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer transition-colors hover:bg-(--ui-primary)/5"
               :class="{
-                'bg-(--ui-primary)/10 border-l-2 border-l-(--ui-primary)': part.currentStepIndex === index,
+                'bg-(--ui-primary)/10 border-l-2 border-l-(--ui-primary)':
+                  part.currentStepIndex === index,
                 'bg-(--ui-bg-elevated)/30': part.currentStepIndex !== index,
               }"
               @click="navigateTo(`/parts/step/${encodeURIComponent(step.id)}`)"
             >
               <!-- Step order -->
-              <div class="flex items-center justify-center size-6 rounded-full text-xs font-bold shrink-0"
-                :class="index < part.currentStepIndex || isCompleted
-                  ? 'bg-green-500/20 text-green-600'
-                  : part.currentStepIndex === index
-                    ? 'bg-(--ui-primary)/20 text-(--ui-primary)'
-                    : 'bg-(--ui-bg-elevated) text-(--ui-text-muted)'"
+              <div
+                class="flex items-center justify-center size-6 rounded-full text-xs font-bold shrink-0"
+                :class="
+                  index < part.currentStepIndex || isCompleted
+                    ? 'bg-green-500/20 text-green-600'
+                    : part.currentStepIndex === index
+                      ? 'bg-(--ui-primary)/20 text-(--ui-primary)'
+                      : 'bg-(--ui-bg-elevated) text-(--ui-text-muted)'
+                "
               >
-                <UIcon v-if="index < part.currentStepIndex || isCompleted" name="i-lucide-check" class="size-3.5" />
+                <UIcon
+                  v-if="index < part.currentStepIndex || isCompleted"
+                  name="i-lucide-check"
+                  class="size-3.5"
+                />
                 <span v-else>{{ step.order }}</span>
               </div>
 
@@ -361,24 +425,41 @@ onMounted(async () => {
               <div class="flex-1 min-w-0">
                 <div class="font-medium text-(--ui-text-highlighted) flex items-center gap-1.5">
                   {{ step.name }}
-                  <UBadge v-if="step.optional" color="neutral" variant="subtle" size="xs">Optional</UBadge>
-                  <UBadge v-if="isStepOverridden(step.id)" color="info" variant="subtle" size="xs">Override</UBadge>
+                  <UBadge v-if="step.optional" color="neutral" variant="subtle" size="xs"
+                    >Optional</UBadge
+                  >
+                  <UBadge v-if="isStepOverridden(step.id)" color="info" variant="subtle" size="xs"
+                    >Override</UBadge
+                  >
                 </div>
-                <div v-if="step.location" class="text-xs text-(--ui-text-muted)">📍 {{ step.location }}</div>
+                <div v-if="step.location" class="text-xs text-(--ui-text-muted)">
+                  📍 {{ step.location }}
+                </div>
                 <!-- Step status badge -->
                 <div v-if="stepStatusBadge(step.id)" class="mt-0.5">
-                  <UBadge :color="(stepStatusBadge(step.id) as any).color" variant="subtle" size="xs">
+                  <UBadge
+                    :color="(stepStatusBadge(step.id) as any).color"
+                    variant="subtle"
+                    size="xs"
+                  >
                     {{ (stepStatusBadge(step.id) as any).label }}
                   </UBadge>
                 </div>
               </div>
 
               <!-- Assigned user -->
-              <div class="text-xs text-(--ui-text-muted) shrink-0">{{ getAssigneeName(step.assignedTo) }}</div>
+              <div class="text-xs text-(--ui-text-muted) shrink-0">
+                {{ getAssigneeName(step.assignedTo) }}
+              </div>
 
               <!-- Distribution count -->
               <div class="shrink-0">
-                <UBadge v-if="getStepDistribution(step.id)" variant="subtle" color="neutral" size="xs">
+                <UBadge
+                  v-if="getStepDistribution(step.id)"
+                  variant="subtle"
+                  color="neutral"
+                  size="xs"
+                >
                   {{ getStepDistribution(step.id)!.partCount }} parts
                 </UBadge>
               </div>
@@ -386,22 +467,33 @@ onMounted(async () => {
           </div>
 
           <!-- Completed state -->
-          <div v-if="isCompleted && !isScrapped && !isForceCompleted" class="flex items-center gap-2 px-3 py-2 rounded-md bg-green-500/10 text-green-600 text-sm mt-4">
+          <div
+            v-if="isCompleted && !isScrapped && !isForceCompleted"
+            class="flex items-center gap-2 px-3 py-2 rounded-md bg-green-500/10 text-green-600 text-sm mt-4"
+          >
             <UIcon name="i-lucide-check" class="size-4" />
             This part has completed all process steps.
           </div>
 
           <!-- Step overrides display -->
           <div v-if="overriddenSteps.length" class="space-y-2 mt-4">
-            <h4 class="text-sm font-semibold text-(--ui-text-highlighted) flex items-center gap-1.5">
+            <h4
+              class="text-sm font-semibold text-(--ui-text-highlighted) flex items-center gap-1.5"
+            >
               <UIcon name="i-lucide-shuffle" class="size-4" />
               Step Overrides ({{ overriddenSteps.length }})
             </h4>
             <div class="border border-(--ui-border) rounded-md divide-y divide-(--ui-border)">
-              <div v-for="ov in overriddenSteps" :key="ov.id" class="px-3 py-2 flex items-center justify-between text-sm">
+              <div
+                v-for="ov in overriddenSteps"
+                :key="ov.id"
+                class="px-3 py-2 flex items-center justify-between text-sm"
+              >
                 <div>
                   <span class="text-(--ui-text-highlighted)">Step {{ ov.stepId }}</span>
-                  <span v-if="ov.reason" class="text-xs text-(--ui-text-muted) ml-2">{{ ov.reason }}</span>
+                  <span v-if="ov.reason" class="text-xs text-(--ui-text-muted) ml-2">{{
+                    ov.reason
+                  }}</span>
                 </div>
                 <span class="text-xs text-(--ui-text-muted)">by {{ ov.createdBy }}</span>
               </div>
@@ -429,17 +521,30 @@ onMounted(async () => {
           />
 
           <!-- Attached certificates list -->
-          <div v-if="certAttachments.length" class="space-y-2" :class="{ 'mt-4': isInProgress && currentStep }">
+          <div
+            v-if="certAttachments.length"
+            class="space-y-2"
+            :class="{ 'mt-4': isInProgress && currentStep }"
+          >
             <div class="border border-(--ui-border) rounded-md divide-y divide-(--ui-border)">
-              <div v-for="att in certAttachments" :key="`${att.certId}-${att.stepId}`" class="px-3 py-2 flex items-center justify-between text-sm">
+              <div
+                v-for="att in certAttachments"
+                :key="`${att.certId}-${att.stepId}`"
+                class="px-3 py-2 flex items-center justify-between text-sm"
+              >
                 <span class="font-mono text-(--ui-text-highlighted)">{{ att.certId }}</span>
-                <span class="text-xs text-(--ui-text-muted)">{{ new Date(att.attachedAt).toLocaleString() }} by {{ att.attachedBy }}</span>
+                <span class="text-xs text-(--ui-text-muted)"
+                  >{{ new Date(att.attachedAt).toLocaleString() }} by {{ att.attachedBy }}</span
+                >
               </div>
             </div>
           </div>
 
           <!-- Empty state -->
-          <div v-if="!certAttachments.length && !isInProgress" class="text-sm text-(--ui-text-muted)">
+          <div
+            v-if="!certAttachments.length && !isInProgress"
+            class="text-sm text-(--ui-text-muted)"
+          >
             No certificates attached
           </div>
         </SectionCard>
@@ -481,7 +586,10 @@ onMounted(async () => {
                   size="sm"
                   variant="outline"
                   :disabled="noteSaving"
-                  @click="showNoteForm = false; noteText = ''"
+                  @click="
+                    showNoteForm = false
+                    noteText = ''
+                  "
                 />
               </div>
             </div>
@@ -489,7 +597,11 @@ onMounted(async () => {
         </SectionCard>
 
         <!-- SectionCard: Advance Process (conditional) -->
-        <SectionCard v-if="isInProgress && workQueueJob" title="Advance Process" icon="i-lucide-arrow-right-circle">
+        <SectionCard
+          v-if="isInProgress && workQueueJob"
+          title="Advance Process"
+          icon="i-lucide-arrow-right-circle"
+        >
           <ProcessAdvancementPanel
             :job="workQueueJob"
             :loading="advanceLoading"
@@ -503,26 +615,61 @@ onMounted(async () => {
       <!-- Siblings Tab -->
       <div v-if="activeTab === 'siblings'" class="space-y-3">
         <div class="flex gap-4 text-xs text-(--ui-text-muted)">
-          <span>Total: <span class="font-medium text-(--ui-text-highlighted)">{{ siblingTotalCount }}</span></span>
-          <span>Completed: <span class="font-medium text-green-600">{{ siblingCompletedCount }}</span></span>
-          <span>In Progress: <span class="font-medium text-amber-600">{{ siblingInProgressCount }}</span></span>
+          <span
+            >Total:
+            <span class="font-medium text-(--ui-text-highlighted)">{{
+              siblingTotalCount
+            }}</span></span
+          >
+          <span
+            >Completed:
+            <span class="font-medium text-green-600">{{ siblingCompletedCount }}</span></span
+          >
+          <span
+            >In Progress:
+            <span class="font-medium text-amber-600">{{ siblingInProgressCount }}</span></span
+          >
         </div>
 
         <div class="border border-(--ui-border) rounded-md overflow-hidden">
           <table class="w-full text-sm">
             <thead>
               <tr class="bg-(--ui-bg-elevated)/50 text-xs text-(--ui-text-muted)">
-                <th class="px-3 py-2 text-left cursor-pointer hover:text-(--ui-text-highlighted) select-none" @click="toggleSiblingsSort('id')">
-                  Identifier <span v-if="siblingsSortColumn === 'id'">{{ siblingsSortDirection === 'asc' ? '↑' : '↓' }}</span>
+                <th
+                  class="px-3 py-2 text-left cursor-pointer hover:text-(--ui-text-highlighted) select-none"
+                  @click="toggleSiblingsSort('id')"
+                >
+                  Identifier
+                  <span v-if="siblingsSortColumn === 'id'">{{
+                    siblingsSortDirection === 'asc' ? '↑' : '↓'
+                  }}</span>
                 </th>
-                <th class="px-3 py-2 text-left cursor-pointer hover:text-(--ui-text-highlighted) select-none" @click="toggleSiblingsSort('currentStepName')">
-                  Current Step <span v-if="siblingsSortColumn === 'currentStepName'">{{ siblingsSortDirection === 'asc' ? '↑' : '↓' }}</span>
+                <th
+                  class="px-3 py-2 text-left cursor-pointer hover:text-(--ui-text-highlighted) select-none"
+                  @click="toggleSiblingsSort('currentStepName')"
+                >
+                  Current Step
+                  <span v-if="siblingsSortColumn === 'currentStepName'">{{
+                    siblingsSortDirection === 'asc' ? '↑' : '↓'
+                  }}</span>
                 </th>
-                <th class="px-3 py-2 text-left cursor-pointer hover:text-(--ui-text-highlighted) select-none" @click="toggleSiblingsSort('status')">
-                  Status <span v-if="siblingsSortColumn === 'status'">{{ siblingsSortDirection === 'asc' ? '↑' : '↓' }}</span>
+                <th
+                  class="px-3 py-2 text-left cursor-pointer hover:text-(--ui-text-highlighted) select-none"
+                  @click="toggleSiblingsSort('status')"
+                >
+                  Status
+                  <span v-if="siblingsSortColumn === 'status'">{{
+                    siblingsSortDirection === 'asc' ? '↑' : '↓'
+                  }}</span>
                 </th>
-                <th class="px-3 py-2 text-left cursor-pointer hover:text-(--ui-text-highlighted) select-none" @click="toggleSiblingsSort('createdAt')">
-                  Created <span v-if="siblingsSortColumn === 'createdAt'">{{ siblingsSortDirection === 'asc' ? '↑' : '↓' }}</span>
+                <th
+                  class="px-3 py-2 text-left cursor-pointer hover:text-(--ui-text-highlighted) select-none"
+                  @click="toggleSiblingsSort('createdAt')"
+                >
+                  Created
+                  <span v-if="siblingsSortColumn === 'createdAt'">{{
+                    siblingsSortDirection === 'asc' ? '↑' : '↓'
+                  }}</span>
                 </th>
               </tr>
             </thead>
@@ -531,24 +678,44 @@ onMounted(async () => {
                 v-for="sib in sortedSiblings"
                 :key="sib.id"
                 class="cursor-pointer transition-colors"
-                :class="sib.id === partId ? 'bg-(--ui-primary)/10 font-medium' : 'hover:bg-(--ui-bg-elevated)/50'"
+                :class="
+                  sib.id === partId
+                    ? 'bg-(--ui-primary)/10 font-medium'
+                    : 'hover:bg-(--ui-bg-elevated)/50'
+                "
                 @click="navigateTo(`/parts-browser/${encodeURIComponent(sib.id)}`)"
               >
                 <td class="px-3 py-2 text-(--ui-text-highlighted)">{{ sib.id }}</td>
                 <td class="px-3 py-2">{{ sib.currentStepName }}</td>
                 <td class="px-3 py-2">
                   <UBadge
-                    :color="sib.status === 'completed' ? 'success' : sib.status === 'scrapped' ? 'error' : 'warning'"
+                    :color="
+                      sib.status === 'completed'
+                        ? 'success'
+                        : sib.status === 'scrapped'
+                          ? 'error'
+                          : 'warning'
+                    "
                     variant="subtle"
                     size="xs"
                   >
-                    {{ sib.status === 'completed' ? 'Completed' : sib.status === 'scrapped' ? 'Scrapped' : 'In Progress' }}
+                    {{
+                      sib.status === 'completed'
+                        ? 'Completed'
+                        : sib.status === 'scrapped'
+                          ? 'Scrapped'
+                          : 'In Progress'
+                    }}
                   </UBadge>
                 </td>
-                <td class="px-3 py-2 text-(--ui-text-muted)">{{ new Date(sib.createdAt).toLocaleDateString() }}</td>
+                <td class="px-3 py-2 text-(--ui-text-muted)">
+                  {{ new Date(sib.createdAt).toLocaleDateString() }}
+                </td>
               </tr>
               <tr v-if="sortedSiblings.length === 0">
-                <td colspan="4" class="px-3 py-6 text-center text-(--ui-text-muted)">No sibling parts found.</td>
+                <td colspan="4" class="px-3 py-6 text-center text-(--ui-text-muted)">
+                  No sibling parts found.
+                </td>
               </tr>
             </tbody>
           </table>

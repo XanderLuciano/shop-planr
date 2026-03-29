@@ -43,7 +43,7 @@ function createTestRepoSet(): RepositorySet {
     settings: new SQLiteSettingsRepository(db),
     notes: new SQLiteNoteRepository(db),
     users: new SQLiteUserRepository(db),
-    _db: db
+    _db: db,
   } as unknown as RepositorySet
 }
 
@@ -61,19 +61,30 @@ describe('Service Factory (getServices pattern)', () => {
   it('wires all services together and they are callable', () => {
     const auditService = createAuditService({ audit: repos.audit })
     const userService = createUserService({ users: repos.users })
-    const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts })
+    const jobService = createJobService({
+      jobs: repos.jobs,
+      paths: repos.paths,
+      parts: repos.parts,
+    })
     const pathService = createPathService({ paths: repos.paths, parts: repos.parts })
-    const templateService = createTemplateService({ templates: repos.templates, paths: repos.paths })
+    const templateService = createTemplateService({
+      templates: repos.templates,
+      paths: repos.paths,
+    })
     const bomService = createBomService({ bom: repos.bom, parts: repos.parts })
 
     const partIdGenerator = createSequentialPartIdGenerator({
       getCounter: () => {
-        const row = repos._db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
+        const row = repos._db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as
+          | { value: number }
+          | undefined
         return row?.value ?? 0
       },
       setCounter: (v: number) => {
-        repos._db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-      }
+        repos._db
+          .prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)')
+          .run('part', v)
+      },
     })
 
     const partService = createPartService(
@@ -83,12 +94,15 @@ describe('Service Factory (getServices pattern)', () => {
     )
     const certService = createCertService({ certs: repos.certs }, auditService)
     const noteService = createNoteService({ notes: repos.notes }, auditService)
-    const settingsService = createSettingsService({ settings: repos.settings }, {
-      jiraBaseUrl: 'https://jira.example.com',
-      jiraProjectKey: 'PI',
-      jiraUsername: '',
-      jiraApiToken: ''
-    })
+    const settingsService = createSettingsService(
+      { settings: repos.settings },
+      {
+        jiraBaseUrl: 'https://jira.example.com',
+        jiraProjectKey: 'PI',
+        jiraUsername: '',
+        jiraApiToken: '',
+      }
+    )
 
     // Verify all services are defined
     expect(auditService).toBeDefined()
@@ -105,17 +119,25 @@ describe('Service Factory (getServices pattern)', () => {
 
   it('services work end-to-end: create job → path → parts → advance', () => {
     const auditService = createAuditService({ audit: repos.audit })
-    const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts })
+    const jobService = createJobService({
+      jobs: repos.jobs,
+      paths: repos.paths,
+      parts: repos.parts,
+    })
     const pathService = createPathService({ paths: repos.paths, parts: repos.parts })
 
     const partIdGenerator = createSequentialPartIdGenerator({
       getCounter: () => {
-        const row = repos._db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
+        const row = repos._db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as
+          | { value: number }
+          | undefined
         return row?.value ?? 0
       },
       setCounter: (v: number) => {
-        repos._db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-      }
+        repos._db
+          .prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)')
+          .run('part', v)
+      },
     })
 
     const partService = createPartService(
@@ -135,8 +157,8 @@ describe('Service Factory (getServices pattern)', () => {
       goalQuantity: 5,
       steps: [
         { name: 'Machining', location: 'Shop Floor' },
-        { name: 'Inspection', location: 'QC Lab' }
-      ]
+        { name: 'Inspection', location: 'QC Lab' },
+      ],
     })
     expect(path.steps).toHaveLength(2)
 
@@ -168,12 +190,16 @@ describe('Service Factory (getServices pattern)', () => {
   it('Part ID generator persists counter across calls', () => {
     const partIdGenerator = createSequentialPartIdGenerator({
       getCounter: () => {
-        const row = repos._db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
+        const row = repos._db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as
+          | { value: number }
+          | undefined
         return row?.value ?? 0
       },
       setCounter: (v: number) => {
-        repos._db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-      }
+        repos._db
+          .prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)')
+          .run('part', v)
+      },
     })
 
     expect(partIdGenerator.next()).toBe('part_00001')

@@ -30,7 +30,7 @@ function isAddNoteButtonVisible(status: PartStatus): boolean {
 const partStatusArb: fc.Arbitrary<PartStatus> = fc.constantFrom(
   'in_progress' as const,
   'completed' as const,
-  'scrapped' as const,
+  'scrapped' as const
 )
 
 // --- Tests ---
@@ -46,7 +46,7 @@ describe('Property 1: Add Note button visibility matches part status', () => {
           expect(visible).toBe(false)
         }
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

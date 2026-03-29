@@ -9,14 +9,16 @@ import type { ContentNavigationItem } from '@nuxt/content'
 export function useDocsNavigation() {
   const route = useRoute()
 
-  const { data: navigation } = useAsyncData(
-    'docs-navigation',
-    () => queryCollectionNavigation('docs', ['icon', 'method', 'endpoint'])
+  const { data: navigation } = useAsyncData('docs-navigation', () =>
+    queryCollectionNavigation('docs', ['icon', 'method', 'endpoint'])
   )
 
   const currentCategory = computed<string | null>(() => {
     // Extract category from route path: /api-docs/jobs/create → "jobs"
-    const segments = route.path.replace(/^\/api-docs\/?/, '').split('/').filter(Boolean)
+    const segments = route.path
+      .replace(/^\/api-docs\/?/, '')
+      .split('/')
+      .filter(Boolean)
     return segments.length > 0 ? segments[0] : null
   })
 
@@ -27,6 +29,6 @@ export function useDocsNavigation() {
   return {
     navigation: navigation as Ref<ContentNavigationItem[] | null>,
     currentCategory,
-    isActive
+    isActive,
   }
 }

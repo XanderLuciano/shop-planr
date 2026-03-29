@@ -1,11 +1,11 @@
 ---
-title: "List Jira Tickets"
-description: "Retrieve open Jira tickets from the connected project"
-method: "GET"
-endpoint: "/api/jira/tickets"
-service: "jiraService"
-category: "Jira"
-responseType: "FetchTicketsResult"
+title: 'List Jira Tickets'
+description: 'Retrieve open Jira tickets from the connected project'
+method: 'GET'
+endpoint: '/api/jira/tickets'
+service: 'jiraService'
+category: 'Jira'
+responseType: 'FetchTicketsResult'
 errorCodes: [400, 502]
 navigation:
   order: 1
@@ -31,34 +31,34 @@ No request body or query parameters. The project key and authentication credenti
 
 Returns a `FetchTicketsResult` object containing the ticket array, an optional error message, and a cache indicator.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `tickets` | `JiraTicket[]` | Array of normalized Jira tickets (may be empty) |
-| `error` | `string \| null` | Error message if the Jira API call failed, `null` on success |
-| `fromCache` | `boolean` | `true` if the tickets were served from cache due to a Jira API failure |
+| Field       | Type             | Description                                                            |
+| ----------- | ---------------- | ---------------------------------------------------------------------- |
+| `tickets`   | `JiraTicket[]`   | Array of normalized Jira tickets (may be empty)                        |
+| `error`     | `string \| null` | Error message if the Jira API call failed, `null` on success           |
+| `fromCache` | `boolean`        | `true` if the tickets were served from cache due to a Jira API failure |
 
 #### JiraTicket Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `key` | `string` | Jira issue key (e.g. `"PI-42"`) |
-| `summary` | `string` | Issue summary / title |
-| `status` | `string` | Current Jira status name (e.g. `"In Progress"`, `"To Do"`) |
-| `priority` | `string` | Priority name (e.g. `"High"`, `"Medium"`) |
-| `assignee` | `string` | Display name of the assignee, or empty string if unassigned |
-| `reporter` | `string` | Display name of the reporter |
-| `labels` | `string[]` | Array of Jira labels |
-| `partNumber` | `string \| null` | Part number extracted from the configured custom field or parsed from the summary |
-| `goalQuantity` | `number \| null` | Quantity from the configured custom field, or `null` if not set |
-| `epicLink` | `string \| null` | Epic link key from the configured custom field |
-| `createdAt` | `string` | ISO 8601 creation timestamp from Jira |
-| `updatedAt` | `string` | ISO 8601 last-updated timestamp from Jira |
-| `rawFields` | `object` | The raw Jira `fields` object for advanced use cases |
+| Field          | Type             | Description                                                                       |
+| -------------- | ---------------- | --------------------------------------------------------------------------------- |
+| `key`          | `string`         | Jira issue key (e.g. `"PI-42"`)                                                   |
+| `summary`      | `string`         | Issue summary / title                                                             |
+| `status`       | `string`         | Current Jira status name (e.g. `"In Progress"`, `"To Do"`)                        |
+| `priority`     | `string`         | Priority name (e.g. `"High"`, `"Medium"`)                                         |
+| `assignee`     | `string`         | Display name of the assignee, or empty string if unassigned                       |
+| `reporter`     | `string`         | Display name of the reporter                                                      |
+| `labels`       | `string[]`       | Array of Jira labels                                                              |
+| `partNumber`   | `string \| null` | Part number extracted from the configured custom field or parsed from the summary |
+| `goalQuantity` | `number \| null` | Quantity from the configured custom field, or `null` if not set                   |
+| `epicLink`     | `string \| null` | Epic link key from the configured custom field                                    |
+| `createdAt`    | `string`         | ISO 8601 creation timestamp from Jira                                             |
+| `updatedAt`    | `string`         | ISO 8601 last-updated timestamp from Jira                                         |
+| `rawFields`    | `object`         | The raw Jira `fields` object for advanced use cases                               |
 
 ### 400 Bad Request
 
-| Condition | Message |
-|-----------|---------|
+| Condition                                | Message                             |
+| ---------------------------------------- | ----------------------------------- |
 | Jira integration is disabled in settings | `"Jira integration is not enabled"` |
 
 ### 502 Bad Gateway

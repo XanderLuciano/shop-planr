@@ -32,6 +32,6 @@ export function computeProgressBar(input: ProgressBarInput): ProgressBarComputed
     inProgressPercent,
     displayPercent,
     completedWidth,
-    inProgressWidth
+    inProgressWidth,
   }
 }

@@ -5,18 +5,26 @@ import type { PartStepStatusRepository } from '../repositories/interfaces/partSt
 import type { PartStepOverrideRepository } from '../repositories/interfaces/partStepOverrideRepository'
 import type { AuditService } from './auditService'
 import type { PartStepStatus, PartStepOverride, Part, ProcessStep } from '../types/domain'
-import type { ScrapPartInput, AdvanceToStepInput, ForceCompleteInput, WaiveStepInput } from '../types/api'
+import type {
+  ScrapPartInput,
+  AdvanceToStepInput,
+  ForceCompleteInput,
+  WaiveStepInput,
+} from '../types/api'
 import type { AdvancementResult } from '../types/computed'
 import { generateId } from '../utils/idGenerator'
 import { NotFoundError, ValidationError } from '../utils/errors'
 
-export function createLifecycleService(repos: {
-  parts: PartRepository
-  paths: PathRepository
-  jobs: JobRepository
-  partStepStatuses: PartStepStatusRepository
-  partStepOverrides: PartStepOverrideRepository
-}, auditService: AuditService) {
+export function createLifecycleService(
+  repos: {
+    parts: PartRepository
+    paths: PathRepository
+    jobs: JobRepository
+    partStepStatuses: PartStepStatusRepository
+    partStepOverrides: PartStepOverrideRepository
+  },
+  auditService: AuditService
+) {
   /**
    * Creates part_step_statuses rows for all steps in the path.
    * First step gets 'in_progress', rest get 'pending'.
@@ -59,7 +67,7 @@ export function createLifecycleService(repos: {
 
     const stepStatuses = repos.partStepStatuses.listByPartId(partId)
     const activeOverrides = repos.partStepOverrides.listActiveByPartId(partId)
-    const overriddenStepIds = new Set(activeOverrides.map(o => o.stepId))
+    const overriddenStepIds = new Set(activeOverrides.map((o) => o.stepId))
 
     const blockers: string[] = []
 
@@ -71,7 +79,7 @@ export function createLifecycleService(repos: {
       if (overriddenStepIds.has(step.id)) continue
 
       // Find the status for this step
-      const status = stepStatuses.find(s => s.stepId === step.id)
+      const status = stepStatuses.find((s) => s.stepId === step.id)
 
       // If no status record or status is not completed/waived, it's a blocker
       if (!status || (status.status !== 'completed' && status.status !== 'waived')) {
@@ -175,7 +183,9 @@ export function createLifecycleService(repos: {
       if (mode === 'strict') {
         // Strict: only N+1 allowed (or completion at totalSteps)
         if (targetStepIndex !== currentStepIndex + 1) {
-          throw new ValidationError('Path is in strict mode — can only advance to the next sequential step')
+          throw new ValidationError(
+            'Path is in strict mode — can only advance to the next sequential step'
+          )
         }
       }
 
@@ -189,7 +199,7 @@ export function createLifecycleService(repos: {
 
       // Get active overrides for this part
       const activeOverrides = repos.partStepOverrides.listActiveByPartId(partId)
-      const overriddenStepIds = new Set(activeOverrides.map(o => o.stepId))
+      const overriddenStepIds = new Set(activeOverrides.map((o) => o.stepId))
 
       // 4. For per_step mode, check dependency types of intermediate steps
       // For all modes (flexible and per_step), check physical dependencies
@@ -211,7 +221,9 @@ export function createLifecycleService(repos: {
       // 5. Classify and update bypassed steps
       for (const { step } of bypassed) {
         const isEffectivelyOptional = step.optional || overriddenStepIds.has(step.id)
-        const classification: 'skipped' | 'deferred' = isEffectivelyOptional ? 'skipped' : 'deferred'
+        const classification: 'skipped' | 'deferred' = isEffectivelyOptional
+          ? 'skipped'
+          : 'deferred'
 
         // Update part_step_statuses for bypassed step
         repos.partStepStatuses.updateByPartAndStep(partId, step.id, {
@@ -319,14 +331,14 @@ export function createLifecycleService(repos: {
       // Collect incomplete required step IDs
       const stepStatuses = repos.partStepStatuses.listByPartId(partId)
       const activeOverrides = repos.partStepOverrides.listActiveByPartId(partId)
-      const overriddenStepIds = new Set(activeOverrides.map(o => o.stepId))
+      const overriddenStepIds = new Set(activeOverrides.map((o) => o.stepId))
 
       const incompleteStepIds: string[] = []
       for (const step of path.steps) {
         if (step.optional) continue
         if (overriddenStepIds.has(step.id)) continue
 
-        const status = stepStatuses.find(s => s.stepId === step.id)
+        const status = stepStatuses.find((s) => s.stepId === step.id)
         if (!status || (status.status !== 'completed' && status.status !== 'waived')) {
           incompleteStepIds.push(step.id)
         }
@@ -370,7 +382,9 @@ export function createLifecycleService(repos: {
       if (!stepStatus) throw new NotFoundError('PartStepStatus', `${partId}/${stepId}`)
 
       if (stepStatus.status !== 'deferred') {
-        throw new ValidationError('Can only complete deferred steps — step status is: ' + stepStatus.status)
+        throw new ValidationError(
+          'Can only complete deferred steps — step status is: ' + stepStatus.status
+        )
       }
 
       const now = new Date().toISOString()
@@ -408,7 +422,7 @@ export function createLifecycleService(repos: {
       // Verify the step is required (not optional)
       const path = repos.paths.getById(part.pathId)
       if (!path) throw new NotFoundError('Path', part.pathId)
-      const step = path.steps.find(s => s.id === stepId)
+      const step = path.steps.find((s) => s.id === stepId)
       if (!step) throw new NotFoundError('ProcessStep', stepId)
       if (step.optional) {
         throw new ValidationError('Can only waive required steps — this step is optional')
@@ -435,7 +449,12 @@ export function createLifecycleService(repos: {
       return updated
     },
 
-    createStepOverride(partIds: string[], stepId: string, reason: string, userId: string): PartStepOverride[] {
+    createStepOverride(
+      partIds: string[],
+      stepId: string,
+      reason: string,
+      userId: string
+    ): PartStepOverride[] {
       const overrides: PartStepOverride[] = []
       const now = new Date().toISOString()
 
@@ -513,7 +532,9 @@ export function createLifecycleService(repos: {
     // ---- Backward-compatible aliases (deprecated) ----
 
     /** @deprecated Use `scrapPart` instead. */
-    get scrapSerial() { return this.scrapPart },
+    get scrapSerial() {
+      return this.scrapPart
+    },
     /** @deprecated Use `advanceToStep` with partId instead. */
     // advanceToStep already uses partId param name
   }

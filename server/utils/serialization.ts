@@ -12,24 +12,24 @@
 import { ValidationError } from './errors'
 
 // ---- Domain type identifiers for deserialization ----
-export type DomainType
-  = | 'Job'
-    | 'Path'
-    | 'ProcessStep'
-    | 'Part'
-    | 'SerialNumber' // @deprecated backward-compatible alias for 'Part'
-    | 'Certificate'
-    | 'CertAttachment'
-    | 'TemplateRoute'
-    | 'TemplateStep'
-    | 'BOM'
-    | 'BomEntry'
-    | 'AuditEntry'
-    | 'ShopUser'
-    | 'StepNote'
-    | 'AppSettings'
-    | 'JiraConnectionSettings'
-    | 'JiraFieldMapping'
+export type DomainType =
+  | 'Job'
+  | 'Path'
+  | 'ProcessStep'
+  | 'Part'
+  | 'SerialNumber' // @deprecated backward-compatible alias for 'Part'
+  | 'Certificate'
+  | 'CertAttachment'
+  | 'TemplateRoute'
+  | 'TemplateStep'
+  | 'BOM'
+  | 'BomEntry'
+  | 'AuditEntry'
+  | 'ShopUser'
+  | 'StepNote'
+  | 'AppSettings'
+  | 'JiraConnectionSettings'
+  | 'JiraFieldMapping'
 
 /**
  * Serialize a domain object to a compact JSON string.
@@ -58,7 +58,9 @@ export function deserialize<T = unknown>(json: string, type: DomainType): T {
   }
 
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-    throw new ValidationError(`Deserialization error: expected an object, got ${Array.isArray(parsed) ? 'array' : typeof parsed}`)
+    throw new ValidationError(
+      `Deserialization error: expected an object, got ${Array.isArray(parsed) ? 'array' : typeof parsed}`
+    )
   }
 
   const obj = parsed as Record<string, unknown>
@@ -75,49 +77,69 @@ export function deserialize<T = unknown>(json: string, type: DomainType): T {
 
 function requireString(obj: Record<string, unknown>, field: string, typeName: string): void {
   if (typeof obj[field] !== 'string') {
-    throw new ValidationError(`Deserialization error: ${typeName}.${field} — expected string, got ${typeof obj[field]}`)
+    throw new ValidationError(
+      `Deserialization error: ${typeName}.${field} — expected string, got ${typeof obj[field]}`
+    )
   }
 }
 
 function requireNumber(obj: Record<string, unknown>, field: string, typeName: string): void {
   if (typeof obj[field] !== 'number' || !Number.isFinite(obj[field] as number)) {
-    throw new ValidationError(`Deserialization error: ${typeName}.${field} — expected number, got ${typeof obj[field]}`)
+    throw new ValidationError(
+      `Deserialization error: ${typeName}.${field} — expected number, got ${typeof obj[field]}`
+    )
   }
 }
 
 function requireBoolean(obj: Record<string, unknown>, field: string, typeName: string): void {
   if (typeof obj[field] !== 'boolean') {
-    throw new ValidationError(`Deserialization error: ${typeName}.${field} — expected boolean, got ${typeof obj[field]}`)
+    throw new ValidationError(
+      `Deserialization error: ${typeName}.${field} — expected boolean, got ${typeof obj[field]}`
+    )
   }
 }
 
 function requireArray(obj: Record<string, unknown>, field: string, typeName: string): void {
   if (!Array.isArray(obj[field])) {
-    throw new ValidationError(`Deserialization error: ${typeName}.${field} — expected array, got ${typeof obj[field]}`)
+    throw new ValidationError(
+      `Deserialization error: ${typeName}.${field} — expected array, got ${typeof obj[field]}`
+    )
   }
 }
 
 function optionalString(obj: Record<string, unknown>, field: string, typeName: string): void {
   if (obj[field] !== undefined && obj[field] !== null && typeof obj[field] !== 'string') {
-    throw new ValidationError(`Deserialization error: ${typeName}.${field} — expected string or null, got ${typeof obj[field]}`)
+    throw new ValidationError(
+      `Deserialization error: ${typeName}.${field} — expected string or null, got ${typeof obj[field]}`
+    )
   }
 }
 
 function optionalNumber(obj: Record<string, unknown>, field: string, typeName: string): void {
-  if (obj[field] !== undefined && obj[field] !== null && (typeof obj[field] !== 'number' || !Number.isFinite(obj[field] as number))) {
-    throw new ValidationError(`Deserialization error: ${typeName}.${field} — expected number or null, got ${typeof obj[field]}`)
+  if (
+    obj[field] !== undefined &&
+    obj[field] !== null &&
+    (typeof obj[field] !== 'number' || !Number.isFinite(obj[field] as number))
+  ) {
+    throw new ValidationError(
+      `Deserialization error: ${typeName}.${field} — expected number or null, got ${typeof obj[field]}`
+    )
   }
 }
 
 function optionalArray(obj: Record<string, unknown>, field: string, typeName: string): void {
   if (obj[field] !== undefined && obj[field] !== null && !Array.isArray(obj[field])) {
-    throw new ValidationError(`Deserialization error: ${typeName}.${field} — expected array or null, got ${typeof obj[field]}`)
+    throw new ValidationError(
+      `Deserialization error: ${typeName}.${field} — expected array or null, got ${typeof obj[field]}`
+    )
   }
 }
 
 function optionalBoolean(obj: Record<string, unknown>, field: string, typeName: string): void {
   if (obj[field] !== undefined && obj[field] !== null && typeof obj[field] !== 'boolean') {
-    throw new ValidationError(`Deserialization error: ${typeName}.${field} — expected boolean or null, got ${typeof obj[field]}`)
+    throw new ValidationError(
+      `Deserialization error: ${typeName}.${field} — expected boolean or null, got ${typeof obj[field]}`
+    )
   }
 }
 
@@ -176,7 +198,9 @@ const validators: Record<DomainType, (obj: Record<string, unknown>) => void> = {
     requireString(obj, 'type', 'Certificate')
     const certType = obj.type as string
     if (certType !== 'material' && certType !== 'process') {
-      throw new ValidationError('Deserialization error: Certificate.type — must be "material" or "process"')
+      throw new ValidationError(
+        'Deserialization error: Certificate.type — must be "material" or "process"'
+      )
     }
     requireString(obj, 'name', 'Certificate')
     requireString(obj, 'createdAt', 'Certificate')
@@ -256,7 +280,9 @@ const validators: Record<DomainType, (obj: Record<string, unknown>) => void> = {
   AppSettings(obj) {
     requireString(obj, 'id', 'AppSettings')
     if (typeof obj.jiraConnection !== 'object' || obj.jiraConnection === null) {
-      throw new ValidationError('Deserialization error: AppSettings.jiraConnection — expected object')
+      throw new ValidationError(
+        'Deserialization error: AppSettings.jiraConnection — expected object'
+      )
     }
     requireArray(obj, 'jiraFieldMappings', 'AppSettings')
     requireString(obj, 'updatedAt', 'AppSettings')
@@ -277,5 +303,5 @@ const validators: Record<DomainType, (obj: Record<string, unknown>) => void> = {
     requireString(obj, 'label', 'JiraFieldMapping')
     requireString(obj, 'shopErpField', 'JiraFieldMapping')
     requireBoolean(obj, 'isDefault', 'JiraFieldMapping')
-  }
+  },
 }

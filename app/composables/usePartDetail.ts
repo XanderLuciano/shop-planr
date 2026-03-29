@@ -22,7 +22,9 @@ export function usePartDetail(partId: string) {
       // Fetch job and path+distribution in parallel
       const [jobData, pathData] = await Promise.all([
         $fetch<Job>(`/api/jobs/${encodeURIComponent(partData.jobId)}`),
-        $fetch<Path & { distribution: StepDistribution[] }>(`/api/paths/${encodeURIComponent(partData.pathId)}`),
+        $fetch<Path & { distribution: StepDistribution[] }>(
+          `/api/paths/${encodeURIComponent(partData.pathId)}`
+        ),
       ])
 
       job.value = jobData
@@ -41,7 +43,7 @@ export function usePartDetail(partId: string) {
       // Fetch all enriched parts and filter by pathId client-side
       const all = await $fetch<any[]>('/api/parts')
       siblingParts.value = all.filter(
-        (s: any) => s.jobId === part.value!.jobId && s.pathId === part.value!.pathId,
+        (s: any) => s.jobId === part.value!.jobId && s.pathId === part.value!.pathId
       )
     } catch (e: any) {
       // Non-critical — don't overwrite main error
@@ -54,7 +56,9 @@ export function usePartDetail(partId: string) {
     try {
       const [partData, pathData] = await Promise.all([
         $fetch<Part>(`/api/parts/${encodeURIComponent(partId)}`),
-        $fetch<Path & { distribution: StepDistribution[] }>(`/api/paths/${encodeURIComponent(part.value.pathId)}`),
+        $fetch<Path & { distribution: StepDistribution[] }>(
+          `/api/paths/${encodeURIComponent(part.value.pathId)}`
+        ),
       ])
       part.value = partData
       path.value = pathData

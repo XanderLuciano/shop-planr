@@ -26,7 +26,7 @@ describe('Property 1: Step view routes are always enabled', () => {
       fc.property(arbPageToggles, arbStepId, (toggles, stepId) => {
         expect(isPageEnabled(toggles, '/parts/step/' + stepId)).toBe(true)
       }),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 
@@ -40,7 +40,7 @@ describe('Property 1: Step view routes are always enabled', () => {
       fc.property(arbPageToggles, (toggles) => {
         expect(isPageEnabled(toggles, '/parts/step')).toBe(true)
       }),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 
@@ -54,7 +54,7 @@ describe('Property 1: Step view routes are always enabled', () => {
       fc.property(arbPageToggles, (toggles) => {
         expect(isPageEnabled(toggles, '/parts/step/')).toBe(true)
       }),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 })

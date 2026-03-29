@@ -53,7 +53,7 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
           stepOrder: step.order,
           stepLocation: step.location,
           totalSteps,
-          partIds: parts.map(s => s.id),
+          partIds: parts.map((s) => s.id),
           partCount: parts.length,
           nextStepName: nextStep?.name,
           nextStepLocation: nextStep?.location,
@@ -67,7 +67,6 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
   const totalParts = queueJobs.reduce((sum, j) => sum + j.partCount, 0)
   return { operatorId: '_all', jobs: queueJobs, totalParts }
 }
-
 
 /** Replicates GET /api/operator/step/[stepId] */
 function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
@@ -101,7 +100,7 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
           stepOrder: step.order,
           stepLocation: step.location,
           totalSteps,
-          partIds: parts.map(s => s.id),
+          partIds: parts.map((s) => s.id),
           partCount: parts.length,
           previousStepId: prevStep?.id,
           previousStepName: prevStep?.name,
@@ -125,7 +124,7 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
 /** Replicates GET /api/operator/work-queue */
 function aggregateGroupedWork(
   ctx: TestContext,
-  userService: ReturnType<typeof createUserService>,
+  userService: ReturnType<typeof createUserService>
 ): WorkQueueGroupedResponse {
   const { jobService, pathService, partService } = ctx
   const jobs = jobService.listJobs()
@@ -152,7 +151,7 @@ function aggregateGroupedWork(
             stepOrder: step.order,
             stepLocation: step.location,
             totalSteps,
-            partIds: parts.map(s => s.id),
+            partIds: parts.map((s) => s.id),
             partCount: parts.length,
             nextStepName: nextStep?.name,
             nextStepLocation: nextStep?.location,
@@ -180,9 +179,7 @@ function aggregateGroupedWork(
   const groups: OperatorGroup[] = []
   for (const [operatorId, groupJobs] of groupMap) {
     const totalParts = groupJobs.reduce((sum, j) => sum + j.partCount, 0)
-    const operatorName = operatorId
-      ? (userNameMap.get(operatorId) ?? operatorId)
-      : 'Unassigned'
+    const operatorName = operatorId ? (userNameMap.get(operatorId) ?? operatorId) : 'Unassigned'
     groups.push({ operatorId, operatorName, jobs: groupJobs, totalParts })
   }
 
@@ -219,7 +216,7 @@ describe('Operator View Redesign Integration', () => {
     })
     const parts1 = partService.batchCreateParts(
       { jobId: job1.id, pathId: path1.id, quantity: 4 },
-      'op1',
+      'op1'
     )
     // Advance first 2 parts to Deburring (step 1)
     partService.advancePart(parts1[0].id, 'op1')
@@ -236,10 +233,7 @@ describe('Operator View Redesign Integration', () => {
         { name: 'Machining', location: 'CNC Bay 2' },
       ],
     })
-    partService.batchCreateParts(
-      { jobId: job2.id, pathId: path2.id, quantity: 3 },
-      'op1',
-    )
+    partService.batchCreateParts({ jobId: job2.id, pathId: path2.id, quantity: 3 }, 'op1')
 
     const response = aggregateAllWork(ctx)
 
@@ -249,9 +243,7 @@ describe('Operator View Redesign Integration', () => {
     expect(response.operatorId).toBe('_all')
 
     // Verify job1 step 0 (Milling) — 2 remaining parts
-    const milling = response.jobs.find(
-      j => j.jobId === job1.id && j.stepOrder === 0,
-    )!
+    const milling = response.jobs.find((j) => j.jobId === job1.id && j.stepOrder === 0)!
     expect(milling).toBeDefined()
     expect(milling.stepName).toBe('Milling')
     expect(milling.stepLocation).toBe('CNC Bay 1')
@@ -263,18 +255,14 @@ describe('Operator View Redesign Integration', () => {
     expect(milling.isFinalStep).toBe(false)
 
     // Verify job1 step 1 (Deburring) — 2 advanced parts
-    const deburring = response.jobs.find(
-      j => j.jobId === job1.id && j.stepOrder === 1,
-    )!
+    const deburring = response.jobs.find((j) => j.jobId === job1.id && j.stepOrder === 1)!
     expect(deburring).toBeDefined()
     expect(deburring.stepName).toBe('Deburring')
     expect(deburring.partCount).toBe(2)
     expect(deburring.nextStepName).toBe('Inspection')
 
     // Verify job2 step 0 (Receiving) — 3 parts
-    const receiving = response.jobs.find(
-      j => j.jobId === job2.id && j.stepOrder === 0,
-    )!
+    const receiving = response.jobs.find((j) => j.jobId === job2.id && j.stepOrder === 0)!
     expect(receiving).toBeDefined()
     expect(receiving.stepName).toBe('Receiving')
     expect(receiving.partCount).toBe(3)
@@ -301,7 +289,7 @@ describe('Operator View Redesign Integration', () => {
     })
     const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 5 },
-      'op1',
+      'op1'
     )
 
     // Advance 3 parts to Grinding (step 1)
@@ -332,7 +320,7 @@ describe('Operator View Redesign Integration', () => {
     // Verify part IDs — exactly the 3 advanced parts
     expect(wqJob.partCount).toBe(3)
     expect(wqJob.partIds).toHaveLength(3)
-    const advancedIds = new Set(parts.slice(0, 3).map(s => s.id))
+    const advancedIds = new Set(parts.slice(0, 3).map((s) => s.id))
     for (const sid of wqJob.partIds) {
       expect(advancedIds.has(sid)).toBe(true)
     }
@@ -394,7 +382,7 @@ describe('Operator View Redesign Integration', () => {
     // Create 6 parts, advance some
     const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 6 },
-      'op1',
+      'op1'
     )
     // Advance 3 to Welding (step 1)
     for (let i = 0; i < 3; i++) {
@@ -410,7 +398,7 @@ describe('Operator View Redesign Integration', () => {
     expect(response.groups).toHaveLength(3)
 
     // Mike's group: step 0 (Cutting) with 3 parts
-    const mikeGroup = response.groups.find(g => g.operatorId === mike.id)!
+    const mikeGroup = response.groups.find((g) => g.operatorId === mike.id)!
     expect(mikeGroup).toBeDefined()
     expect(mikeGroup.operatorName).toBe('Mike Johnson')
     expect(mikeGroup.jobs).toHaveLength(1)
@@ -419,7 +407,7 @@ describe('Operator View Redesign Integration', () => {
     expect(mikeGroup.totalParts).toBe(3)
 
     // Sarah's group: step 1 (Welding) with 2 parts
-    const sarahGroup = response.groups.find(g => g.operatorId === sarah.id)!
+    const sarahGroup = response.groups.find((g) => g.operatorId === sarah.id)!
     expect(sarahGroup).toBeDefined()
     expect(sarahGroup.operatorName).toBe('Sarah Chen')
     expect(sarahGroup.jobs).toHaveLength(1)
@@ -428,7 +416,7 @@ describe('Operator View Redesign Integration', () => {
     expect(sarahGroup.totalParts).toBe(2)
 
     // Unassigned group: step 2 (Painting) with 1 part
-    const unassignedGroup = response.groups.find(g => g.operatorId === null)!
+    const unassignedGroup = response.groups.find((g) => g.operatorId === null)!
     expect(unassignedGroup).toBeDefined()
     expect(unassignedGroup.operatorName).toBe('Unassigned')
     expect(unassignedGroup.jobs).toHaveLength(1)
@@ -456,7 +444,7 @@ describe('Operator View Redesign Integration', () => {
     })
     const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 4 },
-      'op1',
+      'op1'
     )
 
     // All 4 at step 0 (Prep)

@@ -9,7 +9,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  advance: [payload: { partIds: string[], note?: string }]
+  advance: [payload: { partIds: string[]; note?: string }]
   cancel: []
 }>()
 
@@ -25,12 +25,18 @@ const scrapTargetId = ref<string | null>(null)
 const showForceCompleteDialog = ref(false)
 const forceCompleteTargetId = ref<string | null>(null)
 
-watch(selectedParts, (sel) => {
-  quantity.value = sel.size
-  validateQuantity()
-}, { deep: true })
+watch(
+  selectedParts,
+  (sel) => {
+    quantity.value = sel.size
+    validateQuantity()
+  },
+  { deep: true }
+)
 
-watch(quantity, () => { validateQuantity() })
+watch(quantity, () => {
+  validateQuantity()
+})
 
 function validateQuantity() {
   if (quantity.value > props.job.partCount) {
@@ -93,13 +99,17 @@ function openForceComplete(partId: string) {
   showForceCompleteDialog.value = true
 }
 
-onMounted(() => { selectAll() })
+onMounted(() => {
+  selectAll()
+})
 </script>
 
 <template>
   <div class="space-y-4">
     <!-- Destination info -->
-    <div class="text-xs px-2 py-1.5 rounded-md bg-(--ui-bg-elevated)/50 border border-(--ui-border)">
+    <div
+      class="text-xs px-2 py-1.5 rounded-md bg-(--ui-bg-elevated)/50 border border-(--ui-border)"
+    >
       <span class="text-(--ui-text-muted)">Advancing to:</span>
       <span class="ml-1 font-medium text-(--ui-text-highlighted)">{{ formatDestination() }}</span>
     </div>
@@ -115,19 +125,40 @@ onMounted(() => { selectAll() })
           <UButton size="xs" variant="ghost" label="None" @click="selectNone" />
         </div>
       </div>
-      <div class="max-h-40 overflow-y-auto border border-(--ui-border) rounded-md divide-y divide-(--ui-border)">
+      <div
+        class="max-h-40 overflow-y-auto border border-(--ui-border) rounded-md divide-y divide-(--ui-border)"
+      >
         <div
           v-for="partId in job.partIds"
           :key="partId"
           class="flex items-center justify-between px-2 py-1.5 hover:bg-(--ui-bg-elevated)/30"
         >
           <label class="flex items-center gap-2 cursor-pointer text-xs flex-1">
-            <input type="checkbox" :checked="selectedParts.has(partId)" class="rounded" @change="togglePart(partId)">
+            <input
+              type="checkbox"
+              :checked="selectedParts.has(partId)"
+              class="rounded"
+              @change="togglePart(partId)"
+            />
             <span class="font-mono">{{ partId }}</span>
           </label>
           <div class="flex items-center gap-0.5 shrink-0">
-            <UButton size="xs" variant="ghost" color="error" icon="i-lucide-trash-2" title="Scrap" @click="openScrap(partId)" />
-            <UButton size="xs" variant="ghost" color="warning" icon="i-lucide-shield-check" title="Force Complete" @click="openForceComplete(partId)" />
+            <UButton
+              size="xs"
+              variant="ghost"
+              color="error"
+              icon="i-lucide-trash-2"
+              title="Scrap"
+              @click="openScrap(partId)"
+            />
+            <UButton
+              size="xs"
+              variant="ghost"
+              color="warning"
+              icon="i-lucide-shield-check"
+              title="Force Complete"
+              @click="openForceComplete(partId)"
+            />
           </div>
         </div>
       </div>
@@ -137,7 +168,15 @@ onMounted(() => { selectAll() })
     <div>
       <label class="text-xs font-semibold text-(--ui-text-highlighted) block mb-1">Quantity</label>
       <div class="flex items-center gap-2">
-      <UInput v-model.number="quantity" type="number" :min="1" :max="job.partCount" size="sm" class="w-24" @blur="selectByQuantity" />
+        <UInput
+          v-model.number="quantity"
+          type="number"
+          :min="1"
+          :max="job.partCount"
+          size="sm"
+          class="w-24"
+          @blur="selectByQuantity"
+        />
         <span class="text-xs text-(--ui-text-muted)">of {{ job.partCount }} available</span>
       </div>
       <p v-if="validationError" class="text-xs text-(--ui-error) mt-1">{{ validationError }}</p>
@@ -145,14 +184,24 @@ onMounted(() => { selectAll() })
 
     <!-- Optional note -->
     <div>
-      <label class="text-xs font-semibold text-(--ui-text-highlighted) block mb-1">Note (optional)</label>
-      <UTextarea v-model="note" placeholder="Add observations or issues..." :maxlength="1000" :rows="2" size="sm" />
+      <label class="text-xs font-semibold text-(--ui-text-highlighted) block mb-1"
+        >Note (optional)</label
+      >
+      <UTextarea
+        v-model="note"
+        placeholder="Add observations or issues..."
+        :maxlength="1000"
+        :rows="2"
+        size="sm"
+      />
       <div class="text-xs text-(--ui-text-muted) text-right mt-0.5">{{ note.length }}/1000</div>
     </div>
 
     <!-- Existing notes -->
     <div v-if="notes && notes.length">
-      <span class="text-xs font-semibold text-(--ui-text-highlighted) block mb-1">Previous Notes</span>
+      <span class="text-xs font-semibold text-(--ui-text-highlighted) block mb-1"
+        >Previous Notes</span
+      >
       <StepNoteList :notes="notes" />
     </div>
 
@@ -161,14 +210,20 @@ onMounted(() => { selectAll() })
       <UButton
         :loading="loading"
         :disabled="!!validationError || selectedParts.size === 0"
-        size="sm" color="primary" label="Advance" icon="i-lucide-arrow-right"
+        size="sm"
+        color="primary"
+        label="Advance"
+        icon="i-lucide-arrow-right"
         @click="handleAdvance"
       />
       <UButton size="sm" variant="ghost" label="Cancel" @click="emit('cancel')" />
     </div>
 
     <!-- Success message -->
-    <div v-if="successMessage" class="text-xs text-(--ui-success) bg-(--ui-success)/10 px-2 py-1.5 rounded-md">
+    <div
+      v-if="successMessage"
+      class="text-xs text-(--ui-success) bg-(--ui-success)/10 px-2 py-1.5 rounded-md"
+    >
       {{ successMessage }}
     </div>
 

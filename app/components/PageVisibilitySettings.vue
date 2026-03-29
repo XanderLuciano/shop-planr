@@ -44,30 +44,16 @@ function onToggle(key: keyof PageToggles, value: boolean) {
       :class="page.alwaysOn ? 'opacity-60' : ''"
     >
       <div class="flex items-center gap-2.5">
-        <UIcon
-          :name="page.icon"
-          class="size-4 text-(--ui-text-muted)"
-        />
+        <UIcon :name="page.icon" class="size-4 text-(--ui-text-muted)" />
         <span class="text-sm text-(--ui-text-highlighted)">{{ page.label }}</span>
-        <UBadge
-          v-if="page.alwaysOn"
-          size="xs"
-          color="neutral"
-          variant="subtle"
-        >
-          Always on
-        </UBadge>
+        <UBadge v-if="page.alwaysOn" size="xs" color="neutral" variant="subtle"> Always on </UBadge>
       </div>
       <USwitch
         v-if="!page.alwaysOn && page.key"
         :model-value="props.toggles[page.key]"
         @update:model-value="onToggle(page.key!, $event as boolean)"
       />
-      <USwitch
-        v-else
-        :model-value="true"
-        disabled
-      />
+      <USwitch v-else :model-value="true" disabled />
     </div>
   </div>
 </template>

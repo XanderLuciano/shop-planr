@@ -40,17 +40,19 @@ function setupServices(db: InstanceType<typeof Database>) {
     paths: new SQLitePathRepository(db),
     parts: new SQLitePartRepository(db),
     certs: new SQLiteCertRepository(db),
-    audit: new SQLiteAuditRepository(db)
+    audit: new SQLiteAuditRepository(db),
   }
 
   const partIdGenerator = createSequentialPartIdGenerator({
     getCounter: () => {
-      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
+      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as
+        | { value: number }
+        | undefined
       return row?.value ?? 0
     },
     setCounter: (v: number) => {
       db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-    }
+    },
   })
 
   const auditService = createAuditService({ audit: repos.audit })
@@ -78,7 +80,7 @@ describe('Property 10: Batch Certificate Application Idempotence', () => {
       fc.property(
         fc.record({
           partCount: fc.integer({ min: 1, max: 10 }),
-          certType: fc.constantFrom('material' as const, 'process' as const)
+          certType: fc.constantFrom('material' as const, 'process' as const),
         }),
         ({ partCount, certType }) => {
           db = createTestDb()
@@ -90,7 +92,7 @@ describe('Property 10: Batch Certificate Application Idempotence', () => {
             jobId: job.id,
             name: 'Main Path',
             goalQuantity: partCount,
-            steps: [{ name: 'OP1' }, { name: 'OP2' }]
+            steps: [{ name: 'OP1' }, { name: 'OP2' }],
           })
           const stepId = path.steps[0].id
 
@@ -105,19 +107,22 @@ describe('Property 10: Batch Certificate Application Idempotence', () => {
 
           // First application: attach cert to each part at step via repository batchAttach
           const now = new Date().toISOString()
-          const attachments = parts.map(s => ({
+          const attachments = parts.map((s) => ({
             partId: s.id,
             certId: cert.id,
             stepId,
             attachedAt: now,
-            attachedBy: 'user_test'
+            attachedBy: 'user_test',
           }))
           const firstResult = repos.certs.batchAttach(attachments)
 
           // Snapshot state after first application
           const attachmentsAfterFirst: Record<string, string[]> = {}
           for (const s of parts) {
-            attachmentsAfterFirst[s.id] = certService.getCertsForPart(s.id).map(a => a.certId).sort()
+            attachmentsAfterFirst[s.id] = certService
+              .getCertsForPart(s.id)
+              .map((a) => a.certId)
+              .sort()
           }
           const auditCountBefore = repos.audit.list().length
 
@@ -127,7 +132,10 @@ describe('Property 10: Batch Certificate Application Idempotence', () => {
           // Snapshot state after second application
           const attachmentsAfterSecond: Record<string, string[]> = {}
           for (const s of parts) {
-            attachmentsAfterSecond[s.id] = certService.getCertsForPart(s.id).map(a => a.certId).sort()
+            attachmentsAfterSecond[s.id] = certService
+              .getCertsForPart(s.id)
+              .map((a) => a.certId)
+              .sort()
           }
 
           // ASSERT: cert attachments are identical after second application
@@ -135,7 +143,7 @@ describe('Property 10: Batch Certificate Application Idempotence', () => {
 
           // ASSERT: each part has exactly one attachment for this cert
           for (const s of parts) {
-            const certs = certService.getCertsForPart(s.id).filter(a => a.certId === cert.id)
+            const certs = certService.getCertsForPart(s.id).filter((a) => a.certId === cert.id)
             expect(certs.length).toBe(1)
           }
 

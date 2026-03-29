@@ -11,9 +11,13 @@ const emit = defineEmits<{
 
 const rows = ref<JiraFieldMapping[]>([])
 
-watch(() => props.mappings, (m) => {
-  rows.value = m.map(r => ({ ...r }))
-}, { immediate: true, deep: true })
+watch(
+  () => props.mappings,
+  (m) => {
+    rows.value = m.map((r) => ({ ...r }))
+  },
+  { immediate: true, deep: true }
+)
 
 let nextId = 100
 
@@ -23,7 +27,7 @@ function addRow() {
     jiraFieldId: '',
     label: '',
     shopErpField: '',
-    isDefault: false
+    isDefault: false,
   })
 }
 
@@ -32,7 +36,9 @@ function removeRow(index: number) {
 }
 
 function onSave() {
-  const valid = rows.value.filter(r => r.jiraFieldId.trim() && r.label.trim() && r.shopErpField.trim())
+  const valid = rows.value.filter(
+    (r) => r.jiraFieldId.trim() && r.label.trim() && r.shopErpField.trim()
+  )
   emit('save', valid)
 }
 </script>
@@ -43,27 +49,15 @@ function onSave() {
       <table class="w-full text-xs">
         <thead>
           <tr class="text-left text-(--ui-text-muted) border-b border-(--ui-border)">
-            <th class="py-1.5 pr-2 font-medium">
-              Jira Field ID
-            </th>
-            <th class="py-1.5 pr-2 font-medium">
-              Label
-            </th>
-            <th class="py-1.5 pr-2 font-medium">
-              SHOP_ERP Field
-            </th>
-            <th class="py-1.5 pr-2 font-medium w-16">
-              Default
-            </th>
+            <th class="py-1.5 pr-2 font-medium">Jira Field ID</th>
+            <th class="py-1.5 pr-2 font-medium">Label</th>
+            <th class="py-1.5 pr-2 font-medium">SHOP_ERP Field</th>
+            <th class="py-1.5 pr-2 font-medium w-16">Default</th>
             <th class="py-1.5 w-8" />
           </tr>
         </thead>
         <tbody>
-          <tr
-            v-for="(row, i) in rows"
-            :key="row.id"
-            class="border-b border-(--ui-border)/50"
-          >
+          <tr v-for="(row, i) in rows" :key="row.id" class="border-b border-(--ui-border)/50">
             <td class="py-1 pr-2">
               <UInput
                 v-model="row.jiraFieldId"
@@ -89,12 +83,7 @@ function onSave() {
               />
             </td>
             <td class="py-1 pr-2">
-              <UBadge
-                v-if="row.isDefault"
-                size="xs"
-                variant="subtle"
-                color="primary"
-              >
+              <UBadge v-if="row.isDefault" size="xs" variant="subtle" color="primary">
                 default
               </UBadge>
             </td>
@@ -112,26 +101,13 @@ function onSave() {
       </table>
     </div>
 
-    <div
-      v-if="!rows.length"
-      class="text-xs text-(--ui-text-muted) py-4 text-center"
-    >
+    <div v-if="!rows.length" class="text-xs text-(--ui-text-muted) py-4 text-center">
       No field mappings. Add one to map Jira fields to SHOP_ERP.
     </div>
 
     <div class="flex items-center justify-between">
-      <UButton
-        icon="i-lucide-plus"
-        size="xs"
-        variant="ghost"
-        label="Add Mapping"
-        @click="addRow"
-      />
-      <UButton
-        size="xs"
-        label="Save Mappings"
-        @click="onSave"
-      />
+      <UButton icon="i-lucide-plus" size="xs" variant="ghost" label="Add Mapping" @click="addRow" />
+      <UButton size="xs" label="Save Mappings" @click="onSave" />
     </div>
   </div>
 </template>

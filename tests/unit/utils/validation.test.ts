@@ -6,7 +6,7 @@ import {
   assertNonEmptyArray,
   assertOneOf,
   assertNonNegativeInteger,
-  assertDefined
+  assertDefined,
 } from '../../../server/utils/validation'
 
 describe('assertPositive', () => {
@@ -17,7 +17,9 @@ describe('assertPositive', () => {
 
   it('should throw for zero', () => {
     expect(() => assertPositive(0, 'goalQuantity')).toThrow(ValidationError)
-    expect(() => assertPositive(0, 'goalQuantity')).toThrow('goalQuantity must be greater than zero')
+    expect(() => assertPositive(0, 'goalQuantity')).toThrow(
+      'goalQuantity must be greater than zero'
+    )
   })
 
   it('should throw for negative numbers', () => {
@@ -58,7 +60,9 @@ describe('assertNonEmptyArray', () => {
 
   it('should throw for empty arrays', () => {
     expect(() => assertNonEmptyArray([], 'steps')).toThrow(ValidationError)
-    expect(() => assertNonEmptyArray([], 'Path steps')).toThrow('Path steps must have at least one item')
+    expect(() => assertNonEmptyArray([], 'Path steps')).toThrow(
+      'Path steps must have at least one item'
+    )
   })
 
   it('should throw for non-array values', () => {
@@ -72,8 +76,12 @@ describe('assertOneOf', () => {
   })
 
   it('should throw for disallowed values', () => {
-    expect(() => assertOneOf('invalid', ['material', 'process'] as const, 'type')).toThrow(ValidationError)
-    expect(() => assertOneOf('invalid', ['material', 'process'] as const, 'type')).toThrow('type must be one of: material, process')
+    expect(() => assertOneOf('invalid', ['material', 'process'] as const, 'type')).toThrow(
+      ValidationError
+    )
+    expect(() => assertOneOf('invalid', ['material', 'process'] as const, 'type')).toThrow(
+      'type must be one of: material, process'
+    )
   })
 })
 

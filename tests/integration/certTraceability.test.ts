@@ -21,7 +21,7 @@ describe('Certificate Traceability Integration', () => {
       jobId: job.id,
       name: 'Route',
       goalQuantity: 5,
-      steps: [{ name: 'Cut' }, { name: 'Inspect' }]
+      steps: [{ name: 'Cut' }, { name: 'Inspect' }],
     })
 
     const [part] = partService.batchCreateParts(
@@ -33,11 +33,11 @@ describe('Certificate Traceability Integration', () => {
     const matCert = certService.createCert({
       type: 'material',
       name: 'Steel 4140 Cert',
-      metadata: { grade: '4140', heatLot: 'HL-001' }
+      metadata: { grade: '4140', heatLot: 'HL-001' },
     })
     const procCert = certService.createCert({
       type: 'process',
-      name: 'Heat Treat Cert'
+      name: 'Heat Treat Cert',
     })
 
     expect(matCert.type).toBe('material')
@@ -50,7 +50,7 @@ describe('Certificate Traceability Integration', () => {
       stepId: path.steps[0].id,
       userId: 'qe1',
       jobId: job.id,
-      pathId: path.id
+      pathId: path.id,
     })
     expect(attachment.certId).toBe(matCert.id)
     expect(attachment.partId).toBe(part.id)
@@ -63,14 +63,14 @@ describe('Certificate Traceability Integration', () => {
       stepId: path.steps[1].id,
       userId: 'qe1',
       jobId: job.id,
-      pathId: path.id
+      pathId: path.id,
     })
 
     // Verify audit trail has cert attachment entries
     const auditEntries = auditService.listAuditEntries({ limit: 100 })
-    const certAudits = auditEntries.filter(a => a.action === 'cert_attached')
+    const certAudits = auditEntries.filter((a) => a.action === 'cert_attached')
     expect(certAudits).toHaveLength(2)
-    const certIds = certAudits.map(a => a.certId)
+    const certIds = certAudits.map((a) => a.certId)
     expect(certIds).toContain(matCert.id)
     expect(certIds).toContain(procCert.id)
     // All cert audits were performed by qe1
@@ -88,7 +88,7 @@ describe('Certificate Traceability Integration', () => {
       jobId: job.id,
       name: 'Route',
       goalQuantity: 5,
-      steps: [{ name: 'OP1' }, { name: 'OP2' }]
+      steps: [{ name: 'OP1' }, { name: 'OP2' }],
     })
 
     const parts = partService.batchCreateParts(
@@ -106,7 +106,7 @@ describe('Certificate Traceability Integration', () => {
         stepId: path.steps[0].id,
         userId: 'qe1',
         jobId: job.id,
-        pathId: path.id
+        pathId: path.id,
       })
     }
 
@@ -114,7 +114,7 @@ describe('Certificate Traceability Integration', () => {
     for (const part of parts) {
       const attachments = certService.getCertsForPart(part.id)
       expect(attachments.length).toBeGreaterThanOrEqual(1)
-      expect(attachments.some(a => a.certId === cert.id)).toBe(true)
+      expect(attachments.some((a) => a.certId === cert.id)).toBe(true)
     }
   })
 
@@ -127,7 +127,7 @@ describe('Certificate Traceability Integration', () => {
       jobId: job.id,
       name: 'Route',
       goalQuantity: 1,
-      steps: [{ name: 'Step A' }, { name: 'Step B' }, { name: 'Step C' }]
+      steps: [{ name: 'Step A' }, { name: 'Step B' }, { name: 'Step C' }],
     })
 
     const [part] = partService.batchCreateParts(
@@ -141,15 +141,24 @@ describe('Certificate Traceability Integration', () => {
 
     // Attach in order: cert1 at step 0, advance, cert2 at step 1, advance, cert3 at step 2
     certService.attachCertToPart({
-      certId: cert1.id, partId: part.id, stepId: path.steps[0].id, userId: 'qe1'
+      certId: cert1.id,
+      partId: part.id,
+      stepId: path.steps[0].id,
+      userId: 'qe1',
     })
     partService.advancePart(part.id, 'op1')
     certService.attachCertToPart({
-      certId: cert2.id, partId: part.id, stepId: path.steps[1].id, userId: 'qe1'
+      certId: cert2.id,
+      partId: part.id,
+      stepId: path.steps[1].id,
+      userId: 'qe1',
     })
     partService.advancePart(part.id, 'op1')
     certService.attachCertToPart({
-      certId: cert3.id, partId: part.id, stepId: path.steps[2].id, userId: 'qe1'
+      certId: cert3.id,
+      partId: part.id,
+      stepId: path.steps[2].id,
+      userId: 'qe1',
     })
 
     const certs = certService.getCertsForPart(part.id)
@@ -168,7 +177,7 @@ describe('Certificate Traceability Integration', () => {
       jobId: job.id,
       name: 'Route',
       goalQuantity: 1,
-      steps: [{ name: 'OP1' }, { name: 'OP2' }]
+      steps: [{ name: 'OP1' }, { name: 'OP2' }],
     })
 
     const [part] = partService.batchCreateParts(
@@ -178,7 +187,10 @@ describe('Certificate Traceability Integration', () => {
 
     const cert = certService.createCert({ type: 'material', name: 'Audit Cert' })
     certService.attachCertToPart({
-      certId: cert.id, partId: part.id, stepId: path.steps[0].id, userId: 'qe1'
+      certId: cert.id,
+      partId: part.id,
+      stepId: path.steps[0].id,
+      userId: 'qe1',
     })
     partService.advancePart(part.id, 'op1')
     partService.advancePart(part.id, 'op1') // completes
@@ -188,7 +200,7 @@ describe('Certificate Traceability Integration', () => {
 
     // Should have: cert_attached + part_advanced + part_completed = 3
     // (part_created is per-batch, not per-part, so it may not appear in part trail)
-    const actions = trail.map(e => e.action)
+    const actions = trail.map((e) => e.action)
     expect(actions).toContain('cert_attached')
     expect(actions).toContain('part_advanced')
     expect(actions).toContain('part_completed')
@@ -208,18 +220,20 @@ describe('Certificate Traceability Integration', () => {
       jobId: job.id,
       name: 'Route',
       goalQuantity: 1,
-      steps: [{ name: 'OP1' }]
+      steps: [{ name: 'OP1' }],
     })
     const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
       'op1'
     )
 
-    expect(() => certService.attachCertToPart({
-      certId: 'nonexistent-cert',
-      partId: part.id,
-      stepId: path.steps[0].id,
-      userId: 'qe1'
-    })).toThrow(/not found/i)
+    expect(() =>
+      certService.attachCertToPart({
+        certId: 'nonexistent-cert',
+        partId: part.id,
+        stepId: path.steps[0].id,
+        userId: 'qe1',
+      })
+    ).toThrow(/not found/i)
   })
 })

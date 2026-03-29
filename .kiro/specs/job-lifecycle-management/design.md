@@ -144,95 +144,95 @@ graph TD
 
 ### New Files
 
-| File | Type | Purpose |
-|------|------|---------|
-| `server/repositories/sqlite/migrations/004_lifecycle_management.sql` | Migration | Adds lifecycle columns, new tables, defaults for existing data |
-| `server/services/lifecycleService.ts` | Service | Scrap, force-complete, flexible advance, defer resolution, waivers |
-| `server/services/libraryService.ts` | Service | Process and Location library CRUD |
-| `server/repositories/interfaces/snStepStatusRepository.ts` | Interface | Per-SN step status CRUD |
-| `server/repositories/interfaces/snStepOverrideRepository.ts` | Interface | Per-SN step override CRUD |
-| `server/repositories/interfaces/libraryRepository.ts` | Interface | Process/Location library CRUD |
-| `server/repositories/interfaces/bomVersionRepository.ts` | Interface | BOM version snapshot storage |
-| `server/repositories/sqlite/snStepStatusRepository.ts` | Repo impl | SQLite implementation |
-| `server/repositories/sqlite/snStepOverrideRepository.ts` | Repo impl | SQLite implementation |
-| `server/repositories/sqlite/libraryRepository.ts` | Repo impl | SQLite implementation |
-| `server/repositories/sqlite/bomVersionRepository.ts` | Repo impl | SQLite implementation |
-| `server/api/serials/[id]/scrap.post.ts` | API Route | Scrap a serial number |
-| `server/api/serials/[id]/force-complete.post.ts` | API Route | Force-complete a serial number |
-| `server/api/serials/[id]/advance-to.post.ts` | API Route | Flexible advancement to any future step |
-| `server/api/serials/[id]/complete-deferred/[stepId].post.ts` | API Route | Complete a deferred step |
-| `server/api/serials/[id]/waive-step/[stepId].post.ts` | API Route | Waive a deferred required step (stretch) |
-| `server/api/serials/[id]/overrides.post.ts` | API Route | Create step overrides for a serial |
-| `server/api/serials/[id]/overrides/[stepId].delete.ts` | API Route | Reverse a step override |
-| `server/api/paths/[id]/advancement-mode.patch.ts` | API Route | Change path advancement mode |
-| `server/api/bom/[id]/edit.post.ts` | API Route | Edit BOM with version snapshot |
-| `server/api/bom/[id]/versions.get.ts` | API Route | List BOM version history |
-| `server/api/library/processes.get.ts` | API Route | List process library entries |
-| `server/api/library/processes.post.ts` | API Route | Add process library entry |
-| `server/api/library/processes/[id].delete.ts` | API Route | Remove process library entry |
-| `server/api/library/locations.get.ts` | API Route | List location library entries |
-| `server/api/library/locations.post.ts` | API Route | Add location library entry |
-| `server/api/library/locations/[id].delete.ts` | API Route | Remove location library entry |
-| `app/components/ScrapDialog.vue` | Component | Scrap confirmation with reason dropdown |
-| `app/components/ForceCompleteDialog.vue` | Component | Force-complete confirmation listing incomplete steps |
-| `app/components/DeferredStepsList.vue` | Component | List of deferred steps with complete/waive actions |
-| `app/components/StepOverridePanel.vue` | Component | Manage per-SN step overrides |
-| `app/components/AdvanceToStepDropdown.vue` | Component | Dropdown for flexible step advancement |
-| `app/components/BomVersionHistory.vue` | Component | Version history timeline for BOM edits |
-| `app/components/LibraryManager.vue` | Component | CRUD interface for process/location libraries |
-| `app/components/JobSerialNumbersTab.vue` | Component | Serial Numbers tab content for job detail |
-| `app/components/AdvancementModeSelector.vue` | Component | Dropdown to change a Path's advancement mode (strict/flexible/per_step) on the Job Routing tab |
-| `app/components/StepConfigPanel.vue` | Component | Inline panel on Job Routing tab to edit a step's optional flag and dependency type |
-| `app/components/ProcessLocationDropdown.vue` | Component | Searchable dropdown for process name/location selection from library, with "New" inline-add option — used in PathEditor and template editor |
-| `app/components/BonusBadge.vue` | Component | Visual "Bonus" indicator badge displayed on Serial Numbers created beyond the Job's Goal Quantity |
-| `app/composables/useLifecycle.ts` | Composable | API client for lifecycle operations |
-| `app/composables/useLibrary.ts` | Composable | API client for library CRUD |
-| `app/composables/useBomVersions.ts` | Composable | API client for BOM version history |
-| `app/components/PartDetailNotes.vue` | Component | Notes/defects section for the Part Detail page showing all notes for a serial |
-| `app/components/CertAttachButton.vue` | Component | Searchable cert dropdown + attach action for Part Detail page |
-| `app/components/CertDetailView.vue` | Component | Certificate detail view showing metadata and attached serials list |
-| `app/components/AuditTrailFilters.vue` | Component | Filter controls for audit trail (action type, user, serial, job, date range) |
-| `app/components/TemplateEditor.vue` | Component | Edit form for existing templates (add/remove/reorder steps with library dropdowns) |
-| `app/components/PathDeleteButton.vue` | Component | Delete button with confirmation for paths with zero serials |
-| `server/api/certs/[id]/attachments.get.ts` | API Route | List all serial attachments for a certificate |
-| `server/api/templates/[id].put.ts` | API Route | Update an existing template's steps |
+| File                                                                 | Type       | Purpose                                                                                                                                     |
+| -------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `server/repositories/sqlite/migrations/004_lifecycle_management.sql` | Migration  | Adds lifecycle columns, new tables, defaults for existing data                                                                              |
+| `server/services/lifecycleService.ts`                                | Service    | Scrap, force-complete, flexible advance, defer resolution, waivers                                                                          |
+| `server/services/libraryService.ts`                                  | Service    | Process and Location library CRUD                                                                                                           |
+| `server/repositories/interfaces/snStepStatusRepository.ts`           | Interface  | Per-SN step status CRUD                                                                                                                     |
+| `server/repositories/interfaces/snStepOverrideRepository.ts`         | Interface  | Per-SN step override CRUD                                                                                                                   |
+| `server/repositories/interfaces/libraryRepository.ts`                | Interface  | Process/Location library CRUD                                                                                                               |
+| `server/repositories/interfaces/bomVersionRepository.ts`             | Interface  | BOM version snapshot storage                                                                                                                |
+| `server/repositories/sqlite/snStepStatusRepository.ts`               | Repo impl  | SQLite implementation                                                                                                                       |
+| `server/repositories/sqlite/snStepOverrideRepository.ts`             | Repo impl  | SQLite implementation                                                                                                                       |
+| `server/repositories/sqlite/libraryRepository.ts`                    | Repo impl  | SQLite implementation                                                                                                                       |
+| `server/repositories/sqlite/bomVersionRepository.ts`                 | Repo impl  | SQLite implementation                                                                                                                       |
+| `server/api/serials/[id]/scrap.post.ts`                              | API Route  | Scrap a serial number                                                                                                                       |
+| `server/api/serials/[id]/force-complete.post.ts`                     | API Route  | Force-complete a serial number                                                                                                              |
+| `server/api/serials/[id]/advance-to.post.ts`                         | API Route  | Flexible advancement to any future step                                                                                                     |
+| `server/api/serials/[id]/complete-deferred/[stepId].post.ts`         | API Route  | Complete a deferred step                                                                                                                    |
+| `server/api/serials/[id]/waive-step/[stepId].post.ts`                | API Route  | Waive a deferred required step (stretch)                                                                                                    |
+| `server/api/serials/[id]/overrides.post.ts`                          | API Route  | Create step overrides for a serial                                                                                                          |
+| `server/api/serials/[id]/overrides/[stepId].delete.ts`               | API Route  | Reverse a step override                                                                                                                     |
+| `server/api/paths/[id]/advancement-mode.patch.ts`                    | API Route  | Change path advancement mode                                                                                                                |
+| `server/api/bom/[id]/edit.post.ts`                                   | API Route  | Edit BOM with version snapshot                                                                                                              |
+| `server/api/bom/[id]/versions.get.ts`                                | API Route  | List BOM version history                                                                                                                    |
+| `server/api/library/processes.get.ts`                                | API Route  | List process library entries                                                                                                                |
+| `server/api/library/processes.post.ts`                               | API Route  | Add process library entry                                                                                                                   |
+| `server/api/library/processes/[id].delete.ts`                        | API Route  | Remove process library entry                                                                                                                |
+| `server/api/library/locations.get.ts`                                | API Route  | List location library entries                                                                                                               |
+| `server/api/library/locations.post.ts`                               | API Route  | Add location library entry                                                                                                                  |
+| `server/api/library/locations/[id].delete.ts`                        | API Route  | Remove location library entry                                                                                                               |
+| `app/components/ScrapDialog.vue`                                     | Component  | Scrap confirmation with reason dropdown                                                                                                     |
+| `app/components/ForceCompleteDialog.vue`                             | Component  | Force-complete confirmation listing incomplete steps                                                                                        |
+| `app/components/DeferredStepsList.vue`                               | Component  | List of deferred steps with complete/waive actions                                                                                          |
+| `app/components/StepOverridePanel.vue`                               | Component  | Manage per-SN step overrides                                                                                                                |
+| `app/components/AdvanceToStepDropdown.vue`                           | Component  | Dropdown for flexible step advancement                                                                                                      |
+| `app/components/BomVersionHistory.vue`                               | Component  | Version history timeline for BOM edits                                                                                                      |
+| `app/components/LibraryManager.vue`                                  | Component  | CRUD interface for process/location libraries                                                                                               |
+| `app/components/JobSerialNumbersTab.vue`                             | Component  | Serial Numbers tab content for job detail                                                                                                   |
+| `app/components/AdvancementModeSelector.vue`                         | Component  | Dropdown to change a Path's advancement mode (strict/flexible/per_step) on the Job Routing tab                                              |
+| `app/components/StepConfigPanel.vue`                                 | Component  | Inline panel on Job Routing tab to edit a step's optional flag and dependency type                                                          |
+| `app/components/ProcessLocationDropdown.vue`                         | Component  | Searchable dropdown for process name/location selection from library, with "New" inline-add option — used in PathEditor and template editor |
+| `app/components/BonusBadge.vue`                                      | Component  | Visual "Bonus" indicator badge displayed on Serial Numbers created beyond the Job's Goal Quantity                                           |
+| `app/composables/useLifecycle.ts`                                    | Composable | API client for lifecycle operations                                                                                                         |
+| `app/composables/useLibrary.ts`                                      | Composable | API client for library CRUD                                                                                                                 |
+| `app/composables/useBomVersions.ts`                                  | Composable | API client for BOM version history                                                                                                          |
+| `app/components/PartDetailNotes.vue`                                 | Component  | Notes/defects section for the Part Detail page showing all notes for a serial                                                               |
+| `app/components/CertAttachButton.vue`                                | Component  | Searchable cert dropdown + attach action for Part Detail page                                                                               |
+| `app/components/CertDetailView.vue`                                  | Component  | Certificate detail view showing metadata and attached serials list                                                                          |
+| `app/components/AuditTrailFilters.vue`                               | Component  | Filter controls for audit trail (action type, user, serial, job, date range)                                                                |
+| `app/components/TemplateEditor.vue`                                  | Component  | Edit form for existing templates (add/remove/reorder steps with library dropdowns)                                                          |
+| `app/components/PathDeleteButton.vue`                                | Component  | Delete button with confirmation for paths with zero serials                                                                                 |
+| `server/api/certs/[id]/attachments.get.ts`                           | API Route  | List all serial attachments for a certificate                                                                                               |
+| `server/api/templates/[id].put.ts`                                   | API Route  | Update an existing template's steps                                                                                                         |
 
 ### Modified Files
 
-| File | Change |
-|------|--------|
-| `server/types/domain.ts` | Extend `SerialNumber` with `status`, `scrapReason`, `scrapStepId`, `forceCompleted`, `forceCompletedBy`, `forceCompletedAt`, `forceCompletedReason`. Extend `ProcessStep` with `optional`, `dependencyType`. Extend `TemplateStep` with `optional`, `dependencyType`. Extend `Path` with `advancementMode`. Extend `AuditAction` union with 9 new types. Add `SnStepStatus`, `SnStepOverride`, `BomVersion`, `ProcessLibraryEntry`, `LocationLibraryEntry` types. Add `ScrapReason` type. |
-| `server/types/api.ts` | Add `ScrapSerialInput`, `ForceCompleteInput`, `AdvanceToStepInput`, `CompleteDeferredStepInput`, `WaiveStepInput`, `CreateStepOverrideInput`, `EditBomInput`, `CreateLibraryEntryInput`, `UpdateAdvancementModeInput`. |
-| `server/types/computed.ts` | Extend `JobProgress` with `scrappedSerials`, `producedQuantity`, `orderedQuantity`. Extend `EnrichedSerial` with `status` (add `'scrapped'`), `scrapReason`, `forceCompleted`. Add `SnStepStatusView`, `AdvancementResult`. |
-| `server/services/serialService.ts` | Update `advanceSerial` to delegate to `lifecycleService` for non-sequential advances. Update `listAllSerialsEnriched` to include scrap/force-complete fields. |
-| `server/services/jobService.ts` | Update `computeJobProgress` to exclude scrapped serials from progress, support >100% for overproduction. |
-| `server/services/auditService.ts` | Add recording methods for all 9 new audit action types. |
-| `server/services/bomService.ts` | Add `editBom` method that creates version snapshots. |
-| `server/services/templateService.ts` | Copy `optional` and `dependencyType` fields when applying templates. |
-| `server/repositories/interfaces/serialRepository.ts` | Add `countScrappedByJobId(jobId)` method. |
-| `server/repositories/interfaces/pathRepository.ts` | Add `updateStep(stepId, partial)` method for updating optional/dependencyType. |
-| `server/repositories/interfaces/index.ts` | Export new repository interfaces. |
-| `server/repositories/factory.ts` | Wire new repository implementations. |
-| `server/utils/services.ts` | Wire `lifecycleService` and `libraryService`. |
-| `app/pages/jobs/[id].vue` | Add tabbed layout (Job Routing + Serial Numbers tabs), inline-editable goal quantity. |
-| `app/pages/jobs/index.vue` | Make job rows clickable → navigate to `/jobs/[id]`. |
-| `app/pages/index.vue` | Link Active Jobs section to jobs list, individual entries to job detail. |
-| `app/pages/serials/[id].vue` | Add deferred steps section, step override display, scrap/force-complete indicators. |
-| `app/pages/settings.vue` | Add Process Library and Location Library management sections. |
-| `app/pages/bom.vue` | Add version history view, edit BOM functionality. |
-| `app/components/ProcessAdvancementPanel.vue` | Add "Advance to Step" dropdown, "Skip" button for optional steps, scrap button. |
-| `app/components/StepTracker.vue` | Visual indicators for optional, dependency type, deferred/skipped/waived statuses. |
-| `app/components/PathEditor.vue` | Replace free-text step name/location inputs with `ProcessLocationDropdown` components; add optional toggle and dependency type selector per step. |
-| `app/pages/templates.vue` | Replace free-text step name/location inputs with `ProcessLocationDropdown` components; add optional toggle and dependency type selector per template step. Add "Edit" button per template that opens `TemplateEditor`. |
-| `app/pages/serials/[id].vue` | Add deferred steps section, step override display, scrap/force-complete indicators. Add `PartDetailNotes` section. Add `CertAttachButton` on Routing tab. Display attached certificates list. |
-| `app/pages/certs.vue` | Make certificate rows clickable → navigate to cert detail view. Add `CertDetailView` component. |
-| `app/pages/audit.vue` | Add `AuditTrailFilters` component above the audit log. Wire filter state to API queries. |
-| `app/pages/jobs/[id].vue` | Add tabbed layout, inline-editable goal quantity, `PathDeleteButton` on each path header. |
-| `app/composables/useAudit.ts` | Add filter parameters (action, userId, serialId, jobId, startDate, endDate) to `fetchEntries`. |
-| `server/services/certService.ts` | Add `getAttachmentsBySerialId` and `getAttachmentsByCertId` methods. |
-| `server/services/templateService.ts` | Add `updateTemplate` method for editing existing templates. Copy `optional` and `dependencyType` fields when applying templates. |
-| `server/repositories/interfaces/certRepository.ts` | Add `listAttachmentsByCertId(certId)` method. |
-| `server/repositories/interfaces/templateRepository.ts` | Add `update(id, partial)` method. |
+| File                                                   | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `server/types/domain.ts`                               | Extend `SerialNumber` with `status`, `scrapReason`, `scrapStepId`, `forceCompleted`, `forceCompletedBy`, `forceCompletedAt`, `forceCompletedReason`. Extend `ProcessStep` with `optional`, `dependencyType`. Extend `TemplateStep` with `optional`, `dependencyType`. Extend `Path` with `advancementMode`. Extend `AuditAction` union with 9 new types. Add `SnStepStatus`, `SnStepOverride`, `BomVersion`, `ProcessLibraryEntry`, `LocationLibraryEntry` types. Add `ScrapReason` type. |
+| `server/types/api.ts`                                  | Add `ScrapSerialInput`, `ForceCompleteInput`, `AdvanceToStepInput`, `CompleteDeferredStepInput`, `WaiveStepInput`, `CreateStepOverrideInput`, `EditBomInput`, `CreateLibraryEntryInput`, `UpdateAdvancementModeInput`.                                                                                                                                                                                                                                                                    |
+| `server/types/computed.ts`                             | Extend `JobProgress` with `scrappedSerials`, `producedQuantity`, `orderedQuantity`. Extend `EnrichedSerial` with `status` (add `'scrapped'`), `scrapReason`, `forceCompleted`. Add `SnStepStatusView`, `AdvancementResult`.                                                                                                                                                                                                                                                               |
+| `server/services/serialService.ts`                     | Update `advanceSerial` to delegate to `lifecycleService` for non-sequential advances. Update `listAllSerialsEnriched` to include scrap/force-complete fields.                                                                                                                                                                                                                                                                                                                             |
+| `server/services/jobService.ts`                        | Update `computeJobProgress` to exclude scrapped serials from progress, support >100% for overproduction.                                                                                                                                                                                                                                                                                                                                                                                  |
+| `server/services/auditService.ts`                      | Add recording methods for all 9 new audit action types.                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `server/services/bomService.ts`                        | Add `editBom` method that creates version snapshots.                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `server/services/templateService.ts`                   | Copy `optional` and `dependencyType` fields when applying templates.                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `server/repositories/interfaces/serialRepository.ts`   | Add `countScrappedByJobId(jobId)` method.                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `server/repositories/interfaces/pathRepository.ts`     | Add `updateStep(stepId, partial)` method for updating optional/dependencyType.                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `server/repositories/interfaces/index.ts`              | Export new repository interfaces.                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `server/repositories/factory.ts`                       | Wire new repository implementations.                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `server/utils/services.ts`                             | Wire `lifecycleService` and `libraryService`.                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `app/pages/jobs/[id].vue`                              | Add tabbed layout (Job Routing + Serial Numbers tabs), inline-editable goal quantity.                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `app/pages/jobs/index.vue`                             | Make job rows clickable → navigate to `/jobs/[id]`.                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `app/pages/index.vue`                                  | Link Active Jobs section to jobs list, individual entries to job detail.                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `app/pages/serials/[id].vue`                           | Add deferred steps section, step override display, scrap/force-complete indicators.                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `app/pages/settings.vue`                               | Add Process Library and Location Library management sections.                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `app/pages/bom.vue`                                    | Add version history view, edit BOM functionality.                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `app/components/ProcessAdvancementPanel.vue`           | Add "Advance to Step" dropdown, "Skip" button for optional steps, scrap button.                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `app/components/StepTracker.vue`                       | Visual indicators for optional, dependency type, deferred/skipped/waived statuses.                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `app/components/PathEditor.vue`                        | Replace free-text step name/location inputs with `ProcessLocationDropdown` components; add optional toggle and dependency type selector per step.                                                                                                                                                                                                                                                                                                                                         |
+| `app/pages/templates.vue`                              | Replace free-text step name/location inputs with `ProcessLocationDropdown` components; add optional toggle and dependency type selector per template step. Add "Edit" button per template that opens `TemplateEditor`.                                                                                                                                                                                                                                                                    |
+| `app/pages/serials/[id].vue`                           | Add deferred steps section, step override display, scrap/force-complete indicators. Add `PartDetailNotes` section. Add `CertAttachButton` on Routing tab. Display attached certificates list.                                                                                                                                                                                                                                                                                             |
+| `app/pages/certs.vue`                                  | Make certificate rows clickable → navigate to cert detail view. Add `CertDetailView` component.                                                                                                                                                                                                                                                                                                                                                                                           |
+| `app/pages/audit.vue`                                  | Add `AuditTrailFilters` component above the audit log. Wire filter state to API queries.                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `app/pages/jobs/[id].vue`                              | Add tabbed layout, inline-editable goal quantity, `PathDeleteButton` on each path header.                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `app/composables/useAudit.ts`                          | Add filter parameters (action, userId, serialId, jobId, startDate, endDate) to `fetchEntries`.                                                                                                                                                                                                                                                                                                                                                                                            |
+| `server/services/certService.ts`                       | Add `getAttachmentsBySerialId` and `getAttachmentsByCertId` methods.                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `server/services/templateService.ts`                   | Add `updateTemplate` method for editing existing templates. Copy `optional` and `dependencyType` fields when applying templates.                                                                                                                                                                                                                                                                                                                                                          |
+| `server/repositories/interfaces/certRepository.ts`     | Add `listAttachmentsByCertId(certId)` method.                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `server/repositories/interfaces/templateRepository.ts` | Add `update(id, partial)` method.                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 
 ### Key Interfaces
 
@@ -279,11 +279,16 @@ export function createLibraryService(repos: { library: LibraryRepository }) {
 #### API Input Types
 
 ```typescript
-export type ScrapReason = 'out_of_tolerance' | 'process_defect' | 'damaged' | 'operator_error' | 'other'
+export type ScrapReason =
+  | 'out_of_tolerance'
+  | 'process_defect'
+  | 'damaged'
+  | 'operator_error'
+  | 'other'
 
 export interface ScrapSerialInput {
   reason: ScrapReason
-  explanation?: string  // required when reason = 'other'
+  explanation?: string // required when reason = 'other'
   userId: string
 }
 
@@ -443,7 +448,13 @@ The step status backfill for existing serials requires application-level logic (
 
 ```typescript
 // SN Step Status — per-serial, per-step tracking
-export type SnStepStatusValue = 'pending' | 'in_progress' | 'completed' | 'skipped' | 'deferred' | 'waived'
+export type SnStepStatusValue =
+  | 'pending'
+  | 'in_progress'
+  | 'completed'
+  | 'skipped'
+  | 'deferred'
+  | 'waived'
 
 export interface SnStepStatus {
   id: string
@@ -470,7 +481,7 @@ export interface BomVersion {
   id: string
   bomId: string
   versionNumber: number
-  entriesSnapshot: BomEntry[]  // serialized as JSON TEXT in DB
+  entriesSnapshot: BomEntry[] // serialized as JSON TEXT in DB
   changeDescription?: string
   changedBy: string
   createdAt: string
@@ -490,7 +501,12 @@ export interface LocationLibraryEntry {
 }
 
 // Scrap reason enum
-export type ScrapReason = 'out_of_tolerance' | 'process_defect' | 'damaged' | 'operator_error' | 'other'
+export type ScrapReason =
+  | 'out_of_tolerance'
+  | 'process_defect'
+  | 'damaged'
+  | 'operator_error'
+  | 'other'
 ```
 
 ### Extended Domain Types
@@ -502,16 +518,16 @@ export interface SerialNumber {
   jobId: string
   pathId: string
   currentStepIndex: number
-  status: 'in_progress' | 'completed' | 'scrapped'  // NEW
-  scrapReason?: ScrapReason                           // NEW
-  scrapExplanation?: string                           // NEW
-  scrapStepId?: string                                // NEW
-  scrappedAt?: string                                 // NEW
-  scrappedBy?: string                                 // NEW
-  forceCompleted: boolean                             // NEW
-  forceCompletedBy?: string                           // NEW
-  forceCompletedAt?: string                           // NEW
-  forceCompletedReason?: string                       // NEW
+  status: 'in_progress' | 'completed' | 'scrapped' // NEW
+  scrapReason?: ScrapReason // NEW
+  scrapExplanation?: string // NEW
+  scrapStepId?: string // NEW
+  scrappedAt?: string // NEW
+  scrappedBy?: string // NEW
+  forceCompleted: boolean // NEW
+  forceCompletedBy?: string // NEW
+  forceCompletedAt?: string // NEW
+  forceCompletedReason?: string // NEW
   createdAt: string
   updatedAt: string
 }
@@ -523,8 +539,8 @@ export interface ProcessStep {
   order: number
   location?: string
   assignedTo?: string
-  optional: boolean           // NEW — default false
-  dependencyType: 'physical' | 'preferred' | 'completion_gate'  // NEW — default 'preferred'
+  optional: boolean // NEW — default false
+  dependencyType: 'physical' | 'preferred' | 'completion_gate' // NEW — default 'preferred'
 }
 
 // TemplateStep — extended
@@ -532,8 +548,8 @@ export interface TemplateStep {
   name: string
   order: number
   location?: string
-  optional: boolean           // NEW — default false
-  dependencyType: 'physical' | 'preferred' | 'completion_gate'  // NEW — default 'preferred'
+  optional: boolean // NEW — default false
+  dependencyType: 'physical' | 'preferred' | 'completion_gate' // NEW — default 'preferred'
 }
 
 // Path — extended
@@ -543,7 +559,7 @@ export interface Path {
   name: string
   goalQuantity: number
   steps: ProcessStep[]
-  advancementMode: 'strict' | 'flexible' | 'per_step'  // NEW — default 'strict'
+  advancementMode: 'strict' | 'flexible' | 'per_step' // NEW — default 'strict'
   createdAt: string
   updatedAt: string
 }
@@ -555,15 +571,15 @@ export type AuditAction =
   | 'serial_advanced'
   | 'serial_completed'
   | 'note_created'
-  | 'serial_scrapped'              // NEW
-  | 'serial_force_completed'       // NEW
-  | 'step_override_created'        // NEW
-  | 'step_override_reversed'       // NEW
-  | 'step_deferred'                // NEW
-  | 'step_skipped'                 // NEW
-  | 'deferred_step_completed'      // NEW
-  | 'step_waived'                  // NEW
-  | 'bom_edited'                   // NEW
+  | 'serial_scrapped' // NEW
+  | 'serial_force_completed' // NEW
+  | 'step_override_created' // NEW
+  | 'step_override_reversed' // NEW
+  | 'step_deferred' // NEW
+  | 'step_skipped' // NEW
+  | 'deferred_step_completed' // NEW
+  | 'step_waived' // NEW
+  | 'bom_edited' // NEW
 ```
 
 ### Extended Computed Types
@@ -577,10 +593,10 @@ export interface JobProgress {
   totalSerials: number
   completedSerials: number
   inProgressSerials: number
-  scrappedSerials: number          // NEW
-  producedQuantity: number         // NEW — total SNs created (including scrapped)
-  orderedQuantity: number          // NEW — same as goalQuantity
-  progressPercent: number          // CHANGED — completedCount / (goalQuantity - scrappedCount) * 100
+  scrappedSerials: number // NEW
+  producedQuantity: number // NEW — total SNs created (including scrapped)
+  orderedQuantity: number // NEW — same as goalQuantity
+  progressPercent: number // CHANGED — completedCount / (goalQuantity - scrappedCount) * 100
 }
 
 // EnrichedSerial — extended
@@ -593,9 +609,9 @@ export interface EnrichedSerial {
   currentStepIndex: number
   currentStepName: string
   assignedTo?: string
-  status: 'in-progress' | 'completed' | 'scrapped'  // CHANGED — added 'scrapped'
-  scrapReason?: string             // NEW
-  forceCompleted?: boolean         // NEW
+  status: 'in-progress' | 'completed' | 'scrapped' // CHANGED — added 'scrapped'
+  scrapReason?: string // NEW
+  forceCompleted?: boolean // NEW
   createdAt: string
 }
 
@@ -627,7 +643,11 @@ export interface SnStepStatusRepository {
   getBySerialAndStep(serialId: string, stepId: string): SnStepStatus | null
   listBySerialId(serialId: string): SnStepStatus[]
   update(id: string, partial: Partial<SnStepStatus>): SnStepStatus
-  updateBySerialAndStep(serialId: string, stepId: string, partial: Partial<SnStepStatus>): SnStepStatus
+  updateBySerialAndStep(
+    serialId: string,
+    stepId: string,
+    partial: Partial<SnStepStatus>
+  ): SnStepStatus
 }
 
 // SnStepOverrideRepository
@@ -658,138 +678,137 @@ export interface LibraryRepository {
 }
 ```
 
-
 ## Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+_A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
 
 ### Property 1: Scrap Exclusion from Progress (CP-1)
 
-*For any* Job with any mix of in-progress, completed, and scrapped Serial Numbers, the progress percentage shall equal `completedCount / (goalQuantity - scrappedCount) * 100`. Scrapped serials shall not appear in either the completed count or the in-progress count. This invariant holds after any sequence of scrap, advancement, and completion operations.
+_For any_ Job with any mix of in-progress, completed, and scrapped Serial Numbers, the progress percentage shall equal `completedCount / (goalQuantity - scrappedCount) * 100`. Scrapped serials shall not appear in either the completed count or the in-progress count. This invariant holds after any sequence of scrap, advancement, and completion operations.
 
 **Validates: Requirements 3.5, 3.8**
 
 ### Property 2: Step Status Conservation (CP-2)
 
-*For any* Serial Number on a Path, the total count of step statuses (pending + in_progress + completed + skipped + deferred + waived) shall equal the total number of Process Steps in the Path. No step status is lost or duplicated during any advancement, skip, defer, waiver, or completion operation.
+_For any_ Serial Number on a Path, the total count of step statuses (pending + in_progress + completed + skipped + deferred + waived) shall equal the total number of Process Steps in the Path. No step status is lost or duplicated during any advancement, skip, defer, waiver, or completion operation.
 
 **Validates: Requirements 11.1**
 
 ### Property 3: Deferred Step Blocks Normal Completion (CP-3)
 
-*For any* Serial Number with one or more deferred required steps (that are not overridden or waived), attempting normal completion (setting currentStepIndex to -1) shall be rejected. Only Force Complete can bypass this constraint. This holds regardless of the number of completed, skipped, or optional steps.
+_For any_ Serial Number with one or more deferred required steps (that are not overridden or waived), attempting normal completion (setting currentStepIndex to -1) shall be rejected. Only Force Complete can bypass this constraint. This holds regardless of the number of completed, skipped, or optional steps.
 
 **Validates: Requirements 4.7, 11.7**
 
 ### Property 4: Optional Skip and Waiver Allow Completion (CP-4)
 
-*For any* Serial Number where all required steps are either completed or waived, and only optional steps are skipped, normal completion shall succeed. The presence of skipped optional steps or waived required steps shall not prevent a Serial Number from reaching completed status.
+_For any_ Serial Number where all required steps are either completed or waived, and only optional steps are skipped, normal completion shall succeed. The presence of skipped optional steps or waived required steps shall not prevent a Serial Number from reaching completed status.
 
 **Validates: Requirements 4.6, 13.7**
 
 ### Property 5: Step Override Reversibility (CP-5)
 
-*For any* Step Override on a Serial Number where the overridden step has not yet been skipped or completed, reversing the override shall restore the step to its original required status. After reversal, the step shall behave identically to a step that was never overridden — it blocks completion if deferred and requires completion or waiver before final sign-off.
+_For any_ Step Override on a Serial Number where the overridden step has not yet been skipped or completed, reversing the override shall restore the step to its original required status. After reversal, the step shall behave identically to a step that was never overridden — it blocks completion if deferred and requires completion or waiver before final sign-off.
 
 **Validates: Requirements 9.4**
 
 ### Property 6: Scrap Immutability (CP-6)
 
-*For any* scrapped Serial Number, no advancement, completion, force-complete, or further scrap operation shall succeed. A scrapped serial's status is terminal. The only valid operations are read queries and audit trail lookup.
+_For any_ scrapped Serial Number, no advancement, completion, force-complete, or further scrap operation shall succeed. A scrapped serial's status is terminal. The only valid operations are read queries and audit trail lookup.
 
 **Validates: Requirements 3.6, 3.10, 3.11**
 
 ### Property 7: Physical Dependency Hard Block (CP-7)
 
-*For any* Process Step with dependency type "physical" and *for any* Serial Number that has not completed that step, advancement past that step shall be rejected regardless of the Path's Advancement Mode (strict, flexible, or per_step). This holds for all combinations of advancement mode and dependency type.
+_For any_ Process Step with dependency type "physical" and _for any_ Serial Number that has not completed that step, advancement past that step shall be rejected regardless of the Path's Advancement Mode (strict, flexible, or per_step). This holds for all combinations of advancement mode and dependency type.
 
 **Validates: Requirements 6.5, 12.2, 12.8**
 
 ### Property 8: Bonus Part Tracking Consistency (CP-8)
 
-*For any* Job, the Produced Quantity shall equal the count of all Serial Numbers (including scrapped). The Ordered Quantity shall equal the Job's Goal Quantity. `producedQuantity >= 0` and `orderedQuantity > 0` always hold. Bonus parts (SNs created after the count exceeds Goal Quantity) shall follow the same Path and step rules as non-bonus parts — no operation treats them differently.
+_For any_ Job, the Produced Quantity shall equal the count of all Serial Numbers (including scrapped). The Ordered Quantity shall equal the Job's Goal Quantity. `producedQuantity >= 0` and `orderedQuantity > 0` always hold. Bonus parts (SNs created after the count exceeds Goal Quantity) shall follow the same Path and step rules as non-bonus parts — no operation treats them differently.
 
 **Validates: Requirements 7.1, 7.3, 7.5**
 
 ### Property 9: BOM Version Immutability (CP-9)
 
-*For any* BOM Version, the version snapshot entries shall remain unchanged after creation. Editing the current BOM shall create a new version without modifying any previous version's data. Reading version N after any number of subsequent edits shall return the same entries as the initial read of version N.
+_For any_ BOM Version, the version snapshot entries shall remain unchanged after creation. Editing the current BOM shall create a new version without modifying any previous version's data. Reading version N after any number of subsequent edits shall return the same entries as the initial read of version N.
 
 **Validates: Requirements 10.2, 10.3**
 
 ### Property 10: Audit Trail Completeness for Lifecycle Actions (CP-10)
 
-*For any* scrap, force-complete, step-override creation, step-override reversal, defer, skip, waiver, deferred-step-completion, or BOM edit operation, exactly one Audit Trail entry with the corresponding action type shall be created. The count of lifecycle audit entries for a Serial Number shall equal the number of lifecycle operations performed on that Serial Number.
+_For any_ scrap, force-complete, step-override creation, step-override reversal, defer, skip, waiver, deferred-step-completion, or BOM edit operation, exactly one Audit Trail entry with the corresponding action type shall be created. The count of lifecycle audit entries for a Serial Number shall equal the number of lifecycle operations performed on that Serial Number.
 
 **Validates: Requirements 1.8, 3.4, 5.6, 6.8, 8.5, 9.5, 10.6, 13.4, 15.1–15.7**
 
 ### Property 11: Strict Advancement Mode Enforcement (CP-11)
 
-*For any* Path in "strict" Advancement Mode and *for any* Serial Number at step N, advancing shall only succeed for destination step N+1 (or completion at the final step). Any attempt to advance to step N+2 or beyond shall be rejected. This holds regardless of step dependency types or optional flags.
+_For any_ Path in "strict" Advancement Mode and _for any_ Serial Number at step N, advancing shall only succeed for destination step N+1 (or completion at the final step). Any attempt to advance to step N+2 or beyond shall be rejected. This holds regardless of step dependency types or optional flags.
 
 **Validates: Requirements 6.2**
 
 ### Property 12: Force Complete Audit Fidelity (CP-12)
 
-*For any* force-completed Serial Number, the Audit Trail entry with action `serial_force_completed` shall contain the exact set of step IDs that were incomplete (status "deferred" or "pending" for required steps) at the time of force completion. The set of incomplete steps in the audit metadata shall match the actual incomplete required steps at that moment.
+_For any_ force-completed Serial Number, the Audit Trail entry with action `serial_force_completed` shall contain the exact set of step IDs that were incomplete (status "deferred" or "pending" for required steps) at the time of force completion. The set of incomplete steps in the audit metadata shall match the actual incomplete required steps at that moment.
 
 **Validates: Requirements 8.4, 8.5**
 
 ### Property 13: Flexible Advancement Step Classification (CP-13)
 
-*For any* flexible advancement that bypasses intermediate steps, each bypassed optional step shall be classified as "skipped" and each bypassed required step shall be classified as "deferred". The union of skipped and deferred steps from the advancement shall equal the set of all bypassed steps. No bypassed step is left unclassified.
+_For any_ flexible advancement that bypasses intermediate steps, each bypassed optional step shall be classified as "skipped" and each bypassed required step shall be classified as "deferred". The union of skipped and deferred steps from the advancement shall equal the set of all bypassed steps. No bypassed step is left unclassified.
 
 **Validates: Requirements 5.3, 11.2, 11.3**
 
 ### Property 14: Template Field Propagation
 
-*For any* Template Route with steps that have `optional` and `dependencyType` values set, applying that template to create a Path shall produce Process Steps where each step's `optional` flag and `dependencyType` match the corresponding Template Step. The template's own steps shall remain unchanged after application.
+_For any_ Template Route with steps that have `optional` and `dependencyType` values set, applying that template to create a Path shall produce Process Steps where each step's `optional` flag and `dependencyType` match the corresponding Template Step. The template's own steps shall remain unchanged after application.
 
 **Validates: Requirements 4.3, 12.6**
 
 ### Property 15: Backward and Duplicate Advancement Rejection
 
-*For any* Serial Number at step N, attempting to advance to any step M where M <= N (including the current step and any previously completed step) shall be rejected. Advancement is strictly forward-only. This holds for all advancement modes.
+_For any_ Serial Number at step N, attempting to advance to any step M where M <= N (including the current step and any previously completed step) shall be rejected. Advancement is strictly forward-only. This holds for all advancement modes.
 
 **Validates: Requirements 5.7, 5.8**
 
 ### Property 16: Completion Gate Deferred Behavior
 
-*For any* Process Step with dependency type "completion_gate", a Serial Number may advance past it (marking it as deferred), but normal completion shall be blocked until the completion_gate step is completed or waived. Force Complete bypasses this constraint.
+_For any_ Process Step with dependency type "completion_gate", a Serial Number may advance past it (marking it as deferred), but normal completion shall be blocked until the completion_gate step is completed or waived. Force Complete bypasses this constraint.
 
 **Validates: Requirements 6.7, 12.4**
 
 ### Property 17: Library Entry Round-Trip
 
-*For any* process name or location name added to the respective library, listing the library shall include that entry. Removing an entry shall cause it to no longer appear in the list. Existing Process Steps referencing a removed library entry shall retain their current name values unchanged.
+_For any_ process name or location name added to the respective library, listing the library shall include that entry. Removing an entry shall cause it to no longer appear in the list. Existing Process Steps referencing a removed library entry shall retain their current name values unchanged.
 
 **Validates: Requirements 16.1, 16.2, 16.5, 16.7**
 
 ## Error Handling
 
-| Scenario | Layer | Behavior |
-|----------|-------|----------|
-| Scrap with missing reason | `lifecycleService` → API 400 | ValidationError: "Scrap reason is required" |
-| Scrap with "other" reason but no explanation | `lifecycleService` → API 400 | ValidationError: "Explanation is required when scrap reason is 'other'" |
-| Scrap already-scrapped serial | `lifecycleService` → API 400 | ValidationError: "Serial number is already scrapped" |
-| Scrap completed serial | `lifecycleService` → API 400 | ValidationError: "Cannot scrap a completed serial number" |
-| Advance scrapped serial | `lifecycleService` → API 400 | ValidationError: "Cannot advance a scrapped serial number" |
-| Advance past physical dependency | `lifecycleService` → API 400 | ValidationError: "Step [name] has a physical dependency and must be completed before advancing" |
-| Advance backward or to current step | `lifecycleService` → API 400 | ValidationError: "Cannot advance to a step at or before the current position" |
-| Advance to step N+2 in strict mode | `lifecycleService` → API 400 | ValidationError: "Path is in strict mode — can only advance to the next sequential step" |
-| Normal completion with deferred steps | `lifecycleService` → API 400 | ValidationError: "[N] required steps are still deferred: [names]. Complete these steps or use Force Complete." |
-| Force-complete serial with no incomplete steps | `lifecycleService` → API 400 | ValidationError: "Serial has no incomplete required steps — use normal completion" |
-| Override already-completed step | `lifecycleService` → API 400 | ValidationError: "Cannot override a step that has already been completed" |
-| Reverse override for already-skipped step | `lifecycleService` → API 400 | ValidationError: "Cannot reverse override — step has already been skipped" |
-| Waive non-deferred step | `lifecycleService` → API 400 | ValidationError: "Can only waive deferred required steps" |
-| Waive without reason or approver | `lifecycleService` → API 400 | ValidationError: "Waiver requires a reason and approver identity" |
-| BOM edit with empty entries | `bomService` → API 400 | ValidationError: "BOM must have at least one entry" |
-| Library entry with duplicate name | `libraryService` → API 400 | ValidationError: "Process/Location name already exists" |
-| Library entry with empty name | `libraryService` → API 400 | ValidationError: "Name is required" |
-| Migration failure | Migration runner | Transaction rollback, error logged, startup halted |
-| Serial not found | Any service → API 404 | NotFoundError: "SerialNumber not found" |
-| Path not found | Any service → API 404 | NotFoundError: "Path not found" |
-| Step not found | Any service → API 404 | NotFoundError: "ProcessStep not found" |
+| Scenario                                       | Layer                        | Behavior                                                                                                       |
+| ---------------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Scrap with missing reason                      | `lifecycleService` → API 400 | ValidationError: "Scrap reason is required"                                                                    |
+| Scrap with "other" reason but no explanation   | `lifecycleService` → API 400 | ValidationError: "Explanation is required when scrap reason is 'other'"                                        |
+| Scrap already-scrapped serial                  | `lifecycleService` → API 400 | ValidationError: "Serial number is already scrapped"                                                           |
+| Scrap completed serial                         | `lifecycleService` → API 400 | ValidationError: "Cannot scrap a completed serial number"                                                      |
+| Advance scrapped serial                        | `lifecycleService` → API 400 | ValidationError: "Cannot advance a scrapped serial number"                                                     |
+| Advance past physical dependency               | `lifecycleService` → API 400 | ValidationError: "Step [name] has a physical dependency and must be completed before advancing"                |
+| Advance backward or to current step            | `lifecycleService` → API 400 | ValidationError: "Cannot advance to a step at or before the current position"                                  |
+| Advance to step N+2 in strict mode             | `lifecycleService` → API 400 | ValidationError: "Path is in strict mode — can only advance to the next sequential step"                       |
+| Normal completion with deferred steps          | `lifecycleService` → API 400 | ValidationError: "[N] required steps are still deferred: [names]. Complete these steps or use Force Complete." |
+| Force-complete serial with no incomplete steps | `lifecycleService` → API 400 | ValidationError: "Serial has no incomplete required steps — use normal completion"                             |
+| Override already-completed step                | `lifecycleService` → API 400 | ValidationError: "Cannot override a step that has already been completed"                                      |
+| Reverse override for already-skipped step      | `lifecycleService` → API 400 | ValidationError: "Cannot reverse override — step has already been skipped"                                     |
+| Waive non-deferred step                        | `lifecycleService` → API 400 | ValidationError: "Can only waive deferred required steps"                                                      |
+| Waive without reason or approver               | `lifecycleService` → API 400 | ValidationError: "Waiver requires a reason and approver identity"                                              |
+| BOM edit with empty entries                    | `bomService` → API 400       | ValidationError: "BOM must have at least one entry"                                                            |
+| Library entry with duplicate name              | `libraryService` → API 400   | ValidationError: "Process/Location name already exists"                                                        |
+| Library entry with empty name                  | `libraryService` → API 400   | ValidationError: "Name is required"                                                                            |
+| Migration failure                              | Migration runner             | Transaction rollback, error logged, startup halted                                                             |
+| Serial not found                               | Any service → API 404        | NotFoundError: "SerialNumber not found"                                                                        |
+| Path not found                                 | Any service → API 404        | NotFoundError: "Path not found"                                                                                |
+| Step not found                                 | Any service → API 404        | NotFoundError: "ProcessStep not found"                                                                         |
 
 ### Error Recovery Patterns
 
@@ -806,31 +825,32 @@ Library: `fast-check` (already installed)
 Minimum iterations: 100 per property
 
 Each property test will be tagged with:
+
 ```
 Feature: job-lifecycle-management, Property {N}: {title}
 ```
 
 Property tests will live in `tests/properties/` following the existing pattern:
 
-| File | Properties |
-|------|-----------|
-| `scrapExclusion.property.test.ts` | P1: Scrap exclusion from progress |
-| `stepStatusConservation.property.test.ts` | P2: Step status conservation |
-| `deferredBlocksCompletion.property.test.ts` | P3: Deferred step blocks completion |
-| `optionalSkipCompletion.property.test.ts` | P4: Optional skip and waiver allow completion |
-| `stepOverrideReversibility.property.test.ts` | P5: Step override reversibility |
-| `scrapImmutability.property.test.ts` | P6: Scrap immutability |
-| `physicalDependencyBlock.property.test.ts` | P7: Physical dependency hard block |
-| `bonusPartTracking.property.test.ts` | P8: Bonus part tracking consistency |
-| `bomVersionImmutability.property.test.ts` | P9: BOM version immutability |
-| `lifecycleAuditCompleteness.property.test.ts` | P10: Audit trail completeness |
-| `strictModeEnforcement.property.test.ts` | P11: Strict advancement mode enforcement |
-| `forceCompleteAuditFidelity.property.test.ts` | P12: Force complete audit fidelity |
+| File                                                 | Properties                                    |
+| ---------------------------------------------------- | --------------------------------------------- |
+| `scrapExclusion.property.test.ts`                    | P1: Scrap exclusion from progress             |
+| `stepStatusConservation.property.test.ts`            | P2: Step status conservation                  |
+| `deferredBlocksCompletion.property.test.ts`          | P3: Deferred step blocks completion           |
+| `optionalSkipCompletion.property.test.ts`            | P4: Optional skip and waiver allow completion |
+| `stepOverrideReversibility.property.test.ts`         | P5: Step override reversibility               |
+| `scrapImmutability.property.test.ts`                 | P6: Scrap immutability                        |
+| `physicalDependencyBlock.property.test.ts`           | P7: Physical dependency hard block            |
+| `bonusPartTracking.property.test.ts`                 | P8: Bonus part tracking consistency           |
+| `bomVersionImmutability.property.test.ts`            | P9: BOM version immutability                  |
+| `lifecycleAuditCompleteness.property.test.ts`        | P10: Audit trail completeness                 |
+| `strictModeEnforcement.property.test.ts`             | P11: Strict advancement mode enforcement      |
+| `forceCompleteAuditFidelity.property.test.ts`        | P12: Force complete audit fidelity            |
 | `flexibleAdvancementClassification.property.test.ts` | P13: Flexible advancement step classification |
-| `templateFieldPropagation.property.test.ts` | P14: Template field propagation |
-| `backwardAdvancementRejection.property.test.ts` | P15: Backward advancement rejection |
-| `completionGateDeferred.property.test.ts` | P16: Completion gate deferred behavior |
-| `libraryRoundTrip.property.test.ts` | P17: Library entry round-trip |
+| `templateFieldPropagation.property.test.ts`          | P14: Template field propagation               |
+| `backwardAdvancementRejection.property.test.ts`      | P15: Backward advancement rejection           |
+| `completionGateDeferred.property.test.ts`            | P16: Completion gate deferred behavior        |
+| `libraryRoundTrip.property.test.ts`                  | P17: Library entry round-trip                 |
 
 ### Unit Tests
 

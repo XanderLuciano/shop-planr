@@ -21,12 +21,14 @@ interface EditableStep {
 }
 
 const steps = ref<EditableStep[]>(
-  props.template.steps.map((s): EditableStep => ({
-    name: s.name,
-    location: s.location ?? '',
-    optional: s.optional,
-    dependencyType: s.dependencyType,
-  })),
+  props.template.steps.map(
+    (s): EditableStep => ({
+      name: s.name,
+      location: s.location ?? '',
+      optional: s.optional,
+      dependencyType: s.dependencyType,
+    })
+  )
 )
 
 const dependencyOptions = [
@@ -53,7 +55,7 @@ function moveStep(index: number, direction: -1 | 1) {
 
 async function handleSave() {
   error.value = null
-  const validSteps = steps.value.filter(s => s.name.trim())
+  const validSteps = steps.value.filter((s) => s.name.trim())
   if (!validSteps.length) {
     error.value = 'At least one step is required'
     return
@@ -97,20 +99,12 @@ async function handleSave() {
       >
         <span class="text-xs text-(--ui-text-muted) w-6 shrink-0">{{ i + 1 }}.</span>
 
-        <ProcessLocationDropdown
-          v-model="step.name"
-          type="process"
-          class="flex-1"
-        />
+        <ProcessLocationDropdown v-model="step.name" type="process" class="flex-1" />
 
-        <ProcessLocationDropdown
-          v-model="step.location"
-          type="location"
-          class="flex-1"
-        />
+        <ProcessLocationDropdown v-model="step.location" type="location" class="flex-1" />
 
         <label class="flex items-center gap-1 text-xs shrink-0">
-          <input v-model="step.optional" type="checkbox" class="rounded">
+          <input v-model="step.optional" type="checkbox" class="rounded" />
           Opt
         </label>
 
@@ -124,9 +118,27 @@ async function handleSave() {
         />
 
         <div class="flex gap-0.5 shrink-0">
-          <UButton size="xs" variant="ghost" icon="i-lucide-chevron-up" :disabled="i === 0" @click="moveStep(i, -1)" />
-          <UButton size="xs" variant="ghost" icon="i-lucide-chevron-down" :disabled="i === steps.length - 1" @click="moveStep(i, 1)" />
-          <UButton size="xs" variant="ghost" color="error" icon="i-lucide-trash-2" @click="removeStep(i)" />
+          <UButton
+            size="xs"
+            variant="ghost"
+            icon="i-lucide-chevron-up"
+            :disabled="i === 0"
+            @click="moveStep(i, -1)"
+          />
+          <UButton
+            size="xs"
+            variant="ghost"
+            icon="i-lucide-chevron-down"
+            :disabled="i === steps.length - 1"
+            @click="moveStep(i, 1)"
+          />
+          <UButton
+            size="xs"
+            variant="ghost"
+            color="error"
+            icon="i-lucide-trash-2"
+            @click="removeStep(i)"
+          />
         </div>
       </div>
     </div>

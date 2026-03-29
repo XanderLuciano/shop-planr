@@ -52,7 +52,7 @@ describe('Step Override Workflow Integration', () => {
       userId: 'operator1',
     })
     // QC Check should be classified as 'skipped' because override makes it effectively optional
-    const qcBypass = result1.bypassed.find(b => b.stepName === 'QC Check')
+    const qcBypass = result1.bypassed.find((b) => b.stepName === 'QC Check')
     expect(qcBypass).toBeDefined()
     expect(qcBypass!.classification).toBe('skipped')
 
@@ -61,7 +61,7 @@ describe('Step Override Workflow Integration', () => {
       targetStepIndex: 2,
       userId: 'operator1',
     })
-    const qcBypass3 = result3.bypassed.find(b => b.stepName === 'QC Check')
+    const qcBypass3 = result3.bypassed.find((b) => b.stepName === 'QC Check')
     expect(qcBypass3).toBeDefined()
     expect(qcBypass3!.classification).toBe('deferred') // required → deferred
 
@@ -78,7 +78,7 @@ describe('Step Override Workflow Integration', () => {
       targetStepIndex: 2,
       userId: 'operator1',
     })
-    const qcBypass2 = result2.bypassed.find(b => b.stepName === 'QC Check')
+    const qcBypass2 = result2.bypassed.find((b) => b.stepName === 'QC Check')
     expect(qcBypass2).toBeDefined()
     expect(qcBypass2!.classification).toBe('deferred') // override reversed → required → deferred
   })
@@ -134,8 +134,8 @@ describe('Step Override Workflow Integration', () => {
 
     // Check audit
     const trail = auditService.getPartAuditTrail(part.id)
-    const createEntry = trail.find(e => e.action === 'step_override_created')
-    const reverseEntry = trail.find(e => e.action === 'step_override_reversed')
+    const createEntry = trail.find((e) => e.action === 'step_override_created')
+    const reverseEntry = trail.find((e) => e.action === 'step_override_reversed')
 
     expect(createEntry).toBeDefined()
     expect(reverseEntry).toBeDefined()

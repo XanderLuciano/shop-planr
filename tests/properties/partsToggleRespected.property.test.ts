@@ -34,7 +34,7 @@ describe('Property 2: Non-step /parts routes respect the parts toggle', () => {
       fc.property(arbPageToggles, (toggles) => {
         expect(isPageEnabled(toggles, '/parts')).toBe(toggles.parts)
       }),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 
@@ -50,7 +50,7 @@ describe('Property 2: Non-step /parts routes respect the parts toggle', () => {
         const route = '/parts/' + suffix
         expect(isPageEnabled(toggles, route)).toBe(toggles.parts)
       }),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 })

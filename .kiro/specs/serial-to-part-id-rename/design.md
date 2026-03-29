@@ -49,38 +49,38 @@ flowchart TD
 
 ### Rename Mapping Summary
 
-| Layer | Old Name | New Name |
-|-------|----------|----------|
-| DB table | `serials` | `parts` |
-| DB table | `sn_step_statuses` | `part_step_statuses` |
-| DB table | `sn_step_overrides` | `part_step_overrides` |
-| DB column | `serial_id` (in cert_attachments, audit_entries) | `part_id` |
-| Domain type | `SerialNumber` | `Part` |
-| Domain type | `SnStepStatus` | `PartStepStatus` |
-| Domain type | `SnStepOverride` | `PartStepOverride` |
-| Audit actions | `serial_created`, `serial_advanced`, etc. | `part_created`, `part_advanced`, etc. |
-| Repo interface | `SerialRepository` | `PartRepository` |
-| Repo interface | `SnStepStatusRepository` | `PartStepStatusRepository` |
-| Repo interface | `SnStepOverrideRepository` | `PartStepOverrideRepository` |
-| Repo set key | `serials` | `parts` |
-| Repo set key | `snStepStatuses` | `partStepStatuses` |
-| Repo set key | `snStepOverrides` | `partStepOverrides` |
-| Service file | `serialService.ts` | `partService.ts` |
-| Service factory | `createSerialService` | `createPartService` |
-| Service set key | `serialService` | `partService` |
-| API route dir | `/api/serials/` | `/api/parts/` |
-| API route | `/api/audit/serial/[id]` | `/api/audit/part/[id]` |
-| API route | `/api/notes/serial/[id]` | `/api/notes/part/[id]` |
-| Composable | `useSerials.ts` | `useParts.ts` (the batch/advance composable) |
-| Composable | `useSerialBrowser.ts` | `usePartBrowser.ts` |
-| Component | `SerialBatchForm.vue` | `PartBatchForm.vue` |
-| Component | `SerialCreationPanel.vue` | `PartCreationPanel.vue` |
-| Component | `JobSerialNumbersTab.vue` | `JobPartsTab.vue` |
-| Page dir | `app/pages/serials/` | `app/pages/parts-browser/` |
-| Page toggle | `serials` | `partsBrowser` |
-| Sidebar label | "Serials" | "Parts Browser" |
-| ID prefix | `SN-` (sequential) | `part_` (sequential) |
-| Counter key | `sn` | `part` |
+| Layer           | Old Name                                         | New Name                                     |
+| --------------- | ------------------------------------------------ | -------------------------------------------- |
+| DB table        | `serials`                                        | `parts`                                      |
+| DB table        | `sn_step_statuses`                               | `part_step_statuses`                         |
+| DB table        | `sn_step_overrides`                              | `part_step_overrides`                        |
+| DB column       | `serial_id` (in cert_attachments, audit_entries) | `part_id`                                    |
+| Domain type     | `SerialNumber`                                   | `Part`                                       |
+| Domain type     | `SnStepStatus`                                   | `PartStepStatus`                             |
+| Domain type     | `SnStepOverride`                                 | `PartStepOverride`                           |
+| Audit actions   | `serial_created`, `serial_advanced`, etc.        | `part_created`, `part_advanced`, etc.        |
+| Repo interface  | `SerialRepository`                               | `PartRepository`                             |
+| Repo interface  | `SnStepStatusRepository`                         | `PartStepStatusRepository`                   |
+| Repo interface  | `SnStepOverrideRepository`                       | `PartStepOverrideRepository`                 |
+| Repo set key    | `serials`                                        | `parts`                                      |
+| Repo set key    | `snStepStatuses`                                 | `partStepStatuses`                           |
+| Repo set key    | `snStepOverrides`                                | `partStepOverrides`                          |
+| Service file    | `serialService.ts`                               | `partService.ts`                             |
+| Service factory | `createSerialService`                            | `createPartService`                          |
+| Service set key | `serialService`                                  | `partService`                                |
+| API route dir   | `/api/serials/`                                  | `/api/parts/`                                |
+| API route       | `/api/audit/serial/[id]`                         | `/api/audit/part/[id]`                       |
+| API route       | `/api/notes/serial/[id]`                         | `/api/notes/part/[id]`                       |
+| Composable      | `useSerials.ts`                                  | `useParts.ts` (the batch/advance composable) |
+| Composable      | `useSerialBrowser.ts`                            | `usePartBrowser.ts`                          |
+| Component       | `SerialBatchForm.vue`                            | `PartBatchForm.vue`                          |
+| Component       | `SerialCreationPanel.vue`                        | `PartCreationPanel.vue`                      |
+| Component       | `JobSerialNumbersTab.vue`                        | `JobPartsTab.vue`                            |
+| Page dir        | `app/pages/serials/`                             | `app/pages/parts-browser/`                   |
+| Page toggle     | `serials`                                        | `partsBrowser`                               |
+| Sidebar label   | "Serials"                                        | "Parts Browser"                              |
+| ID prefix       | `SN-` (sequential)                               | `part_` (sequential)                         |
+| Counter key     | `sn`                                             | `part`                                       |
 
 ## Components and Interfaces
 
@@ -89,15 +89,18 @@ flowchart TD
 The migration must handle SQLite's limited ALTER TABLE support. For tables that need column renames (`cert_attachments`, `audit_entries`), the create-copy-drop-rename pattern is used. For table renames (`serials` → `parts`), SQLite's `ALTER TABLE RENAME TO` suffices since no column names change within the table itself.
 
 Tables requiring the full recreate pattern:
+
 - `cert_attachments` — column `serial_id` → `part_id`
 - `audit_entries` — column `serial_id` → `part_id`
 
 Tables using simple rename:
+
 - `serials` → `parts`
 - `sn_step_statuses` → `part_step_statuses`
 - `sn_step_overrides` → `part_step_overrides`
 
 Additional operations:
+
 - Drop and recreate all indexes referencing old names
 - Update `settings.page_toggles` JSON: replace `"serials"` key with `"partsBrowser"`
 - Update `counters` table: rename key `sn` → `part`
@@ -105,6 +108,7 @@ Additional operations:
 ### Domain Types (`server/types/`)
 
 **domain.ts changes:**
+
 - `SerialNumber` → `Part` (interface name only; all fields stay the same)
 - `SnStepStatus` → `PartStepStatus`
 - `SnStepOverride` → `PartStepOverride`
@@ -113,11 +117,13 @@ Additional operations:
 - `PageToggles.serials` → `PageToggles.partsBrowser`
 
 **api.ts changes:**
+
 - `BatchCreateSerialsInput` → `BatchCreatePartsInput`
 - `AdvanceSerialInput` → `AdvancePartInput`
 - `ScrapSerialInput` → `ScrapPartInput`
 
 **computed.ts changes:**
+
 - `EnrichedSerial` → `EnrichedPart`
 - `JobProgress` fields: `totalSerials` → `totalParts`, `completedSerials` → `completedParts`, `inProgressSerials` → `inProgressParts`, `scrappedSerials` → `scrappedParts`
 - `SnStepStatusView` → `PartStepStatusView`
@@ -298,46 +304,45 @@ interface PartStepStatusView { /* same fields as SnStepStatusView */ }
 
 ### ID Format
 
-| Period | Format | Example |
-|--------|--------|---------|
-| Before migration | `SN-NNNNN` | `SN-00042` |
-| After migration | `part_NNNNN` | `part_00042` |
-| Backward compat | Both formats valid | Lookup by either prefix works |
-
+| Period           | Format             | Example                       |
+| ---------------- | ------------------ | ----------------------------- |
+| Before migration | `SN-NNNNN`         | `SN-00042`                    |
+| After migration  | `part_NNNNN`       | `part_00042`                  |
+| Backward compat  | Both formats valid | Lookup by either prefix works |
 
 ## Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+_A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
 
 Since this is a pure refactoring, the core correctness guarantee is behavioral equivalence: the system must behave identically before and after the rename, with the sole exception of ID prefix format and backward compatibility for existing IDs.
 
 ### Property 1: Migration Data Preservation
 
-*For any* set of records (parts, step statuses, step overrides, cert attachments, audit entries) inserted before migration 006, after the migration completes, querying the renamed tables should return the exact same data with no loss or corruption — row counts match and all field values are identical.
+_For any_ set of records (parts, step statuses, step overrides, cert attachments, audit entries) inserted before migration 006, after the migration completes, querying the renamed tables should return the exact same data with no loss or corruption — row counts match and all field values are identical.
 
 **Validates: Requirements 1.6**
 
 ### Property 2: Audit Actions Use Renamed Values
 
-*For any* lifecycle operation (create parts, advance part, complete part, scrap part, force-complete part), the resulting audit entry's `action` field should use the `part_`-prefixed string (e.g., `part_created`, `part_advanced`, `part_completed`, `part_scrapped`, `part_force_completed`) rather than the old `serial_`-prefixed string.
+_For any_ lifecycle operation (create parts, advance part, complete part, scrap part, force-complete part), the resulting audit entry's `action` field should use the `part_`-prefixed string (e.g., `part_created`, `part_advanced`, `part_completed`, `part_scrapped`, `part_force_completed`) rather than the old `serial_`-prefixed string.
 
 **Validates: Requirements 2.7, 4.5**
 
 ### Property 3: Repository CRUD Round-Trip on Renamed Tables
 
-*For any* valid Part object, creating it via the `PartRepository` and then reading it back by ID should return an equivalent object — verifying that all SQL queries correctly reference the renamed `parts` table and columns.
+_For any_ valid Part object, creating it via the `PartRepository` and then reading it back by ID should return an equivalent object — verifying that all SQL queries correctly reference the renamed `parts` table and columns.
 
 **Validates: Requirements 3.5**
 
 ### Property 4: ID Generator Produces `part_`-Prefixed Sequential IDs
 
-*For any* positive integer counter value, the sequential ID generator should produce an ID matching the pattern `part_NNNNN` (where N is a zero-padded digit), and generating a batch of `n` IDs should produce exactly `n` unique IDs all matching this pattern with strictly increasing numeric suffixes.
+_For any_ positive integer counter value, the sequential ID generator should produce an ID matching the pattern `part_NNNNN` (where N is a zero-padded digit), and generating a batch of `n` IDs should produce exactly `n` unique IDs all matching this pattern with strictly increasing numeric suffixes.
 
 **Validates: Requirements 4.6, 8.1**
 
 ### Property 5: Dual ID Prefix Compatibility
 
-*For any* part record, regardless of whether its ID uses the legacy `SN-` prefix or the new `part_` prefix, the repository and service layers should successfully look up, update, and perform lifecycle operations on that record without error.
+_For any_ part record, regardless of whether its ID uses the legacy `SN-` prefix or the new `part_` prefix, the repository and service layers should successfully look up, update, and perform lifecycle operations on that record without error.
 
 **Validates: Requirements 8.2, 8.3, 8.4**
 
@@ -370,13 +375,13 @@ This refactoring requires both unit/integration tests and property-based tests:
 
 ### Test File Plan
 
-| Test File | Type | Properties Covered |
-|-----------|------|-------------------|
-| `tests/properties/migrationDataPreservation.property.test.ts` | PBT | Property 1 |
-| `tests/properties/partAuditActions.property.test.ts` | PBT | Property 2 |
-| `tests/properties/partRepositoryRoundTrip.property.test.ts` | PBT | Property 3 |
-| `tests/properties/partIdGenerator.property.test.ts` | PBT | Property 4 |
-| `tests/properties/dualIdPrefixCompat.property.test.ts` | PBT | Property 5 |
+| Test File                                                     | Type | Properties Covered |
+| ------------------------------------------------------------- | ---- | ------------------ |
+| `tests/properties/migrationDataPreservation.property.test.ts` | PBT  | Property 1         |
+| `tests/properties/partAuditActions.property.test.ts`          | PBT  | Property 2         |
+| `tests/properties/partRepositoryRoundTrip.property.test.ts`   | PBT  | Property 3         |
+| `tests/properties/partIdGenerator.property.test.ts`           | PBT  | Property 4         |
+| `tests/properties/dualIdPrefixCompat.property.test.ts`        | PBT  | Property 5         |
 
 ### Existing Test Updates
 

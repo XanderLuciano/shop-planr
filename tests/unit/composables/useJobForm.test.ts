@@ -198,7 +198,12 @@ describe('useJobForm', () => {
 
     it('sets submitting=true during execution and false after', async () => {
       let resolveCreate: (v: any) => void
-      mockCreateJob.mockImplementation(() => new Promise((r) => { resolveCreate = r }))
+      mockCreateJob.mockImplementation(
+        () =>
+          new Promise((r) => {
+            resolveCreate = r
+          })
+      )
 
       const { jobDraft, submitting, submit } = useJobForm('create')
       jobDraft.value.name = 'Job'
@@ -220,10 +225,21 @@ describe('useJobForm', () => {
   describe('edit mode submission with path changes', () => {
     it('calls deletePath, updatePath, and createPath in correct order', async () => {
       const existingPaths: Path[] = [
-        makePath('job-1', { id: 'path-keep', name: 'Keep Path', steps: [makeStep({ id: 's1', name: 'Step 1' })] }),
-        makePath('job-1', { id: 'path-remove', name: 'Remove Path', steps: [makeStep({ id: 's2', name: 'Step 2' })] }),
+        makePath('job-1', {
+          id: 'path-keep',
+          name: 'Keep Path',
+          steps: [makeStep({ id: 's1', name: 'Step 1' })],
+        }),
+        makePath('job-1', {
+          id: 'path-remove',
+          name: 'Remove Path',
+          steps: [makeStep({ id: 's2', name: 'Step 2' })],
+        }),
       ]
-      const existingJob = makeExistingJob({ id: 'job-1', name: 'Edit Job', goalQuantity: 50 }, existingPaths)
+      const existingJob = makeExistingJob(
+        { id: 'job-1', name: 'Edit Job', goalQuantity: 50 },
+        existingPaths
+      )
 
       mockUpdateJob.mockResolvedValue({})
       mockDeletePath.mockResolvedValue(undefined)
@@ -231,14 +247,20 @@ describe('useJobForm', () => {
       mockCreatePath.mockResolvedValue({})
 
       const callOrder: string[] = []
-      mockDeletePath.mockImplementation(async () => { callOrder.push('deletePath') })
-      mockUpdatePath.mockImplementation(async () => { callOrder.push('updatePath') })
-      mockCreatePath.mockImplementation(async () => { callOrder.push('createPath') })
+      mockDeletePath.mockImplementation(async () => {
+        callOrder.push('deletePath')
+      })
+      mockUpdatePath.mockImplementation(async () => {
+        callOrder.push('updatePath')
+      })
+      mockCreatePath.mockImplementation(async () => {
+        callOrder.push('createPath')
+      })
 
       const { pathDrafts, submit } = useJobForm('edit', existingJob)
 
       // Remove the second path (path-remove)
-      const removeIdx = pathDrafts.value.findIndex(d => d._existingId === 'path-remove')
+      const removeIdx = pathDrafts.value.findIndex((d) => d._existingId === 'path-remove')
       pathDrafts.value.splice(removeIdx, 1)
 
       // Modify the first path (path-keep) — change its name
@@ -250,7 +272,15 @@ describe('useJobForm', () => {
         name: 'New Path',
         goalQuantity: 10,
         advancementMode: 'flexible',
-        steps: [{ _clientId: 'new-step-id', name: 'New Step', location: '', optional: false, dependencyType: 'preferred' }],
+        steps: [
+          {
+            _clientId: 'new-step-id',
+            name: 'New Step',
+            location: '',
+            optional: false,
+            dependencyType: 'preferred',
+          },
+        ],
       })
 
       const jobId = await submit()
@@ -262,12 +292,17 @@ describe('useJobForm', () => {
       expect(callOrder).toEqual(['deletePath', 'updatePath', 'createPath'])
 
       expect(mockDeletePath).toHaveBeenCalledWith('path-remove')
-      expect(mockUpdatePath).toHaveBeenCalledWith('path-keep', expect.objectContaining({ name: 'Updated Path' }))
-      expect(mockCreatePath).toHaveBeenCalledWith(expect.objectContaining({
-        jobId: 'job-1',
-        name: 'New Path',
-        advancementMode: 'flexible',
-      }))
+      expect(mockUpdatePath).toHaveBeenCalledWith(
+        'path-keep',
+        expect.objectContaining({ name: 'Updated Path' })
+      )
+      expect(mockCreatePath).toHaveBeenCalledWith(
+        expect.objectContaining({
+          jobId: 'job-1',
+          name: 'New Path',
+          advancementMode: 'flexible',
+        })
+      )
     })
   })
 

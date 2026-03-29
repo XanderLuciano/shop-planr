@@ -25,7 +25,7 @@ export function useOperatorIdentity() {
   }
 
   function selectOperator(userId: string): void {
-    const user = activeUsers.value.find(u => u.id === userId)
+    const user = activeUsers.value.find((u) => u.id === userId)
     operatorId.value = userId
     operatorName.value = user?.name ?? null
     if (isBrowser()) {
@@ -48,7 +48,7 @@ export function useOperatorIdentity() {
     if (isBrowser()) {
       const storedId = localStorage.getItem(STORAGE_KEY)
       if (storedId) {
-        const found = activeUsers.value.find(u => u.id === storedId)
+        const found = activeUsers.value.find((u) => u.id === storedId)
         if (found) {
           operatorId.value = found.id
           operatorName.value = found.name

@@ -17,8 +17,8 @@ export interface JobProgress {
   completedParts: number
   inProgressParts: number
   scrappedParts: number
-  producedQuantity: number         // total parts created (including scrapped)
-  orderedQuantity: number          // same as goalQuantity
+  producedQuantity: number // total parts created (including scrapped)
+  orderedQuantity: number // same as goalQuantity
   /** completedCount / (goalQuantity - scrappedCount) * 100 */
   progressPercent: number
 }

@@ -16,7 +16,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
       id: generateId('aud'),
       action,
       timestamp: new Date().toISOString(),
-      ...fields
+      ...fields,
     })
   }
 
@@ -37,7 +37,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
         certId: params.certId,
         stepId: params.stepId,
         jobId: params.jobId,
-        pathId: params.pathId
+        pathId: params.pathId,
       })
     },
 
@@ -51,7 +51,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
         userId: params.userId,
         jobId: params.jobId,
         pathId: params.pathId,
-        batchQuantity: params.batchQuantity
+        batchQuantity: params.batchQuantity,
       })
     },
 
@@ -71,7 +71,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
         jobId: params.jobId,
         pathId: params.pathId,
         fromStepId: params.fromStepId,
-        toStepId: params.toStepId
+        toStepId: params.toStepId,
       })
     },
 
@@ -89,7 +89,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
         partId: resolvePartId(params),
         jobId: params.jobId,
         pathId: params.pathId,
-        fromStepId: params.fromStepId
+        fromStepId: params.fromStepId,
       })
     },
 
@@ -107,7 +107,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
         jobId: params.jobId,
         pathId: params.pathId,
         stepId: params.stepId,
-        partId: resolvePartId(params)
+        partId: resolvePartId(params),
       })
     },
 
@@ -163,7 +163,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
         jobId: params.jobId,
         pathId: params.pathId,
         stepId: params.stepId,
-        metadata: params.metadata
+        metadata: params.metadata,
       })
     },
 
@@ -181,7 +181,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
         partId: resolvePartId(params),
         jobId: params.jobId,
         pathId: params.pathId,
-        metadata: params.metadata
+        metadata: params.metadata,
       })
     },
 
@@ -279,7 +279,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
       return repos.audit.listByJobId(jobId)
     },
 
-    listAuditEntries(options?: { limit?: number, offset?: number }): AuditEntry[] {
+    listAuditEntries(options?: { limit?: number; offset?: number }): AuditEntry[] {
       return repos.audit.list(options)
     },
 

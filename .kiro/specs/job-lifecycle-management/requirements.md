@@ -65,15 +65,15 @@ The Job Lifecycle Management feature set extends Shop Planr's serial number trac
 1. THE SHOP_ERP SHALL enhance the existing job detail page at `/jobs/[id]` — the current routing interface (paths, step tracker, serial batch creation, step assignments, notes) becomes the "Job Routing" tab, and a new "Serial Numbers" tab SHALL be added alongside it.
 2. THE SHOP_ERP SHALL make each Job row in the Jobs list page (`/jobs`) clickable, navigating to the job detail page (`/jobs/[id]`) for that Job.
 3. THE SHOP_ERP SHALL make the "Active Jobs" section on the Dashboard page link to the Jobs list page, and each individual Job progress entry on the Dashboard SHALL link to that Job's detail page (`/jobs/[id]`).
-3. THE Job Routing tab SHALL display all Paths belonging to the Job, each showing its ordered sequence of Process Steps with visual status indicators (complete, in-progress, pending).
-4. THE Job Routing tab SHALL display the count of Serial Numbers at each Process Step and the count of completed Serial Numbers for each Path.
-5. WHEN a user clicks a Process Step on the Job Routing tab, THE SHOP_ERP SHALL navigate to the Process Advancement screen for that step's Job, Path, and step context.
-6. THE Job Routing tab SHALL display the Job's Goal Quantity as an inline-editable field, so that a planner can increase or decrease the target mid-run. Updating the Goal Quantity SHALL immediately recalculate the Job's progress percentage.
-7. THE Serial Numbers tab SHALL display all Serial Numbers for the Job across all Paths, showing: SN identifier, Path name, current step name, and status (in-progress, completed, scrapped).
-8. THE Serial Numbers tab SHALL provide filter controls for status (in-progress, completed, scrapped, all), Path, and current step name.
-9. THE Serial Numbers tab SHALL provide sort controls for SN identifier, status, current step, and created date.
-10. WHEN a user clicks a Serial Number row on the Serial Numbers tab, THE SHOP_ERP SHALL navigate to the Part Detail page for that Serial Number.
-11. THE Serial Numbers tab SHALL display quick-action buttons for each SN: advance (if in-progress), scrap (if in-progress), and view detail.
+4. THE Job Routing tab SHALL display all Paths belonging to the Job, each showing its ordered sequence of Process Steps with visual status indicators (complete, in-progress, pending).
+5. THE Job Routing tab SHALL display the count of Serial Numbers at each Process Step and the count of completed Serial Numbers for each Path.
+6. WHEN a user clicks a Process Step on the Job Routing tab, THE SHOP_ERP SHALL navigate to the Process Advancement screen for that step's Job, Path, and step context.
+7. THE Job Routing tab SHALL display the Job's Goal Quantity as an inline-editable field, so that a planner can increase or decrease the target mid-run. Updating the Goal Quantity SHALL immediately recalculate the Job's progress percentage.
+8. THE Serial Numbers tab SHALL display all Serial Numbers for the Job across all Paths, showing: SN identifier, Path name, current step name, and status (in-progress, completed, scrapped).
+9. THE Serial Numbers tab SHALL provide filter controls for status (in-progress, completed, scrapped, all), Path, and current step name.
+10. THE Serial Numbers tab SHALL provide sort controls for SN identifier, status, current step, and created date.
+11. WHEN a user clicks a Serial Number row on the Serial Numbers tab, THE SHOP_ERP SHALL navigate to the Part Detail page for that Serial Number.
+12. THE Serial Numbers tab SHALL display quick-action buttons for each SN: advance (if in-progress), scrap (if in-progress), and view detail.
 
 ### Requirement 3: Scrap Tracking
 

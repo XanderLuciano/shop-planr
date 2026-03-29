@@ -1,7 +1,7 @@
 ---
-title: "Jira API"
-description: "Optional Jira integration — ticket lookup, linking, push, and comments"
-icon: "i-lucide-ticket"
+title: 'Jira API'
+description: 'Optional Jira integration — ticket lookup, linking, push, and comments'
+icon: 'i-lucide-ticket'
 navigation:
   order: 8
 ---
@@ -17,7 +17,7 @@ The Jira API provides optional, bidirectional integration between Shop Planr and
 Jira integration is **off by default** and controlled by two independent toggles in [App Settings](/api-docs/settings):
 
 1. **`enabled`** — Master switch. When `false`, all Jira endpoints return `400 Jira integration is not enabled`. Ticket fetching and linking require only this toggle.
-2. **`pushEnabled`** — Controls write operations back to Jira. The push and comment endpoints require *both* `enabled` and `pushEnabled` to be `true`.
+2. **`pushEnabled`** — Controls write operations back to Jira. The push and comment endpoints require _both_ `enabled` and `pushEnabled` to be `true`.
 
 ### Ticket Normalization
 
@@ -52,13 +52,13 @@ Individual step notes can also be pushed as Jira comments, formatted as `{StepNa
 
 ## Endpoints
 
-| Method | Path | Description | Auth Required |
-|--------|------|-------------|---------------|
-| `GET` | [`/api/jira/tickets`](/api-docs/jira/tickets) | List open Jira tickets from the configured project | `enabled` |
-| `GET` | [`/api/jira/tickets/:key`](/api-docs/jira/ticket-detail) | Get a single Jira ticket by key | `enabled` |
-| `POST` | [`/api/jira/link`](/api-docs/jira/link) | Link a Jira ticket to a new production job | `enabled` |
-| `POST` | [`/api/jira/push`](/api-docs/jira/push) | Push a description table to the linked Jira ticket | `enabled` + `pushEnabled` |
-| `POST` | [`/api/jira/comment`](/api-docs/jira/comment) | Push a comment summary or individual note to Jira | `enabled` + `pushEnabled` |
+| Method | Path                                                     | Description                                        | Auth Required             |
+| ------ | -------------------------------------------------------- | -------------------------------------------------- | ------------------------- |
+| `GET`  | [`/api/jira/tickets`](/api-docs/jira/tickets)            | List open Jira tickets from the configured project | `enabled`                 |
+| `GET`  | [`/api/jira/tickets/:key`](/api-docs/jira/ticket-detail) | Get a single Jira ticket by key                    | `enabled`                 |
+| `POST` | [`/api/jira/link`](/api-docs/jira/link)                  | Link a Jira ticket to a new production job         | `enabled`                 |
+| `POST` | [`/api/jira/push`](/api-docs/jira/push)                  | Push a description table to the linked Jira ticket | `enabled` + `pushEnabled` |
+| `POST` | [`/api/jira/comment`](/api-docs/jira/comment)            | Push a comment summary or individual note to Jira  | `enabled` + `pushEnabled` |
 
 ## Related
 

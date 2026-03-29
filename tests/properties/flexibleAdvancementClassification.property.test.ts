@@ -34,7 +34,7 @@ function classifyBypassedSteps(
   currentStepIndex: number,
   targetStepIndex: number,
   steps: StepConfig[],
-  overriddenStepIds: Set<string>,
+  overriddenStepIds: Set<string>
 ): BypassClassification[] {
   const result: BypassClassification[] = []
 
@@ -56,16 +56,13 @@ function classifyBypassedSteps(
 
 /** Generate a path with random optional/required steps */
 function stepsArb(count: number): fc.Arbitrary<StepConfig[]> {
-  return fc.array(
-    fc.boolean(),
-    { minLength: count, maxLength: count },
-  ).map(optionals =>
+  return fc.array(fc.boolean(), { minLength: count, maxLength: count }).map((optionals) =>
     optionals.map((optional, i) => ({
       id: `step-${i}`,
       name: `Step ${i}`,
       order: i,
       optional,
-    })),
+    }))
   )
 }
 
@@ -99,20 +96,20 @@ describe('Property 13: Flexible Advancement Step Classification', () => {
             currentStepIndex,
             targetStepIndex,
             steps,
-            new Set(),
+            new Set()
           )
 
           for (const c of classifications) {
-            const step = steps.find(s => s.id === c.stepId)!
+            const step = steps.find((s) => s.id === c.stepId)!
             if (step.optional) {
               expect(c.classification).toBe('skipped')
             } else {
               expect(c.classification).toBe('deferred')
             }
           }
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -140,7 +137,7 @@ describe('Property 13: Flexible Advancement Step Classification', () => {
             currentStepIndex,
             targetStepIndex,
             steps,
-            new Set(),
+            new Set()
           )
 
           // Expected bypassed step indices
@@ -150,7 +147,7 @@ describe('Property 13: Flexible Advancement Step Classification', () => {
           }
 
           // Classification IDs should match exactly
-          const classifiedIds = new Set(classifications.map(c => c.stepId))
+          const classifiedIds = new Set(classifications.map((c) => c.stepId))
           expect(classifiedIds.size).toBe(expectedBypassedIds.size)
           for (const id of expectedBypassedIds) {
             expect(classifiedIds.has(id)).toBe(true)
@@ -160,53 +157,50 @@ describe('Property 13: Flexible Advancement Step Classification', () => {
           for (const c of classifications) {
             expect(['skipped', 'deferred']).toContain(c.classification)
           }
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
   it('overridden required steps are classified as skipped (effectively optional)', () => {
     fc.assert(
-      fc.property(
-        fc.integer({ min: 4, max: 10 }),
-        (totalSteps) => {
-          const currentStepIndex = 0
-          const targetStepIndex = totalSteps // advance to completion
+      fc.property(fc.integer({ min: 4, max: 10 }), (totalSteps) => {
+        const currentStepIndex = 0
+        const targetStepIndex = totalSteps // advance to completion
 
-          // All steps are required (not optional)
-          const steps: StepConfig[] = Array.from({ length: totalSteps }, (_, i) => ({
-            id: `step-${i}`,
-            name: `Step ${i}`,
-            order: i,
-            optional: false,
-          }))
+        // All steps are required (not optional)
+        const steps: StepConfig[] = Array.from({ length: totalSteps }, (_, i) => ({
+          id: `step-${i}`,
+          name: `Step ${i}`,
+          order: i,
+          optional: false,
+        }))
 
-          // Override some steps (every other bypassed step)
-          const overriddenStepIds = new Set<string>()
-          for (let i = currentStepIndex + 1; i < targetStepIndex && i < totalSteps; i++) {
-            if (i % 2 === 0) {
-              overriddenStepIds.add(`step-${i}`)
-            }
+        // Override some steps (every other bypassed step)
+        const overriddenStepIds = new Set<string>()
+        for (let i = currentStepIndex + 1; i < targetStepIndex && i < totalSteps; i++) {
+          if (i % 2 === 0) {
+            overriddenStepIds.add(`step-${i}`)
           }
+        }
 
-          const classifications = classifyBypassedSteps(
-            currentStepIndex,
-            targetStepIndex,
-            steps,
-            overriddenStepIds,
-          )
+        const classifications = classifyBypassedSteps(
+          currentStepIndex,
+          targetStepIndex,
+          steps,
+          overriddenStepIds
+        )
 
-          for (const c of classifications) {
-            if (overriddenStepIds.has(c.stepId)) {
-              expect(c.classification).toBe('skipped')
-            } else {
-              expect(c.classification).toBe('deferred')
-            }
+        for (const c of classifications) {
+          if (overriddenStepIds.has(c.stepId)) {
+            expect(c.classification).toBe('skipped')
+          } else {
+            expect(c.classification).toBe('deferred')
           }
-        },
-      ),
-      { numRuns: 100 },
+        }
+      }),
+      { numRuns: 100 }
     )
   })
 })

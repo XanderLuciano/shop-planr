@@ -37,17 +37,19 @@ function setupServices(db: Database.default.Database) {
     paths: new SQLitePathRepository(db),
     parts: new SQLitePartRepository(db),
     certs: new SQLiteCertRepository(db),
-    audit: new SQLiteAuditRepository(db)
+    audit: new SQLiteAuditRepository(db),
   }
 
   const partIdGenerator = createSequentialPartIdGenerator({
     getCounter: () => {
-      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
+      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as
+        | { value: number }
+        | undefined
       return row?.value ?? 0
     },
     setCounter: (v: number) => {
       db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-    }
+    },
   })
 
   const auditService = createAuditService({ audit: repos.audit })
@@ -79,10 +81,10 @@ describe('Property 4: Process Step Count Conservation', () => {
           advanceOps: fc.array(
             fc.record({
               partIndex: fc.nat(),
-              times: fc.integer({ min: 1, max: 6 })
+              times: fc.integer({ min: 1, max: 6 }),
             }),
             { minLength: 0, maxLength: 15 }
-          )
+          ),
         }),
         ({ stepCount, partQuantity, advanceOps }) => {
           db = createTestDb()
@@ -90,13 +92,13 @@ describe('Property 4: Process Step Count Conservation', () => {
 
           const job = jobService.createJob({ name: 'Test Job', goalQuantity: 100 })
           const steps = Array.from({ length: stepCount }, (_, i) => ({
-            name: `Step ${i}`
+            name: `Step ${i}`,
           }))
           const path = pathService.createPath({
             jobId: job.id,
             name: 'Route',
             goalQuantity: partQuantity,
-            steps
+            steps,
           })
 
           const parts = partService.batchCreateParts(

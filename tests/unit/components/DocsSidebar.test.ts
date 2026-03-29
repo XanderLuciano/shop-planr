@@ -58,38 +58,54 @@ const DocsSidebar = defineComponent({
       h('nav', { 'aria-label': 'Documentation sidebar' }, [
         isEmpty.value
           ? h('div', { class: 'empty-state' }, 'No documentation available.')
-          : h('ul', { class: 'nav-tree' },
-            sortedNavigation.value.map(category =>
-              h('li', { key: category.path, class: 'category' }, [
-                h('button', {
-                  class: `category-header ${isActive(category.path) ? 'active' : ''}`,
-                  onClick: () => toggleCategory(category.path),
-                }, [
-                  category.icon ? h('span', { class: 'icon' }, category.icon) : null,
-                  h('span', { class: 'title' }, category.title),
-                ]),
-                category.children?.length && isExpanded(category.path)
-                  ? h('ul', { class: 'children' },
-                    sortByOrder(category.children).map(child =>
-                      h('li', { key: child.path }, [
-                        h('a', {
-                          href: child.path,
-                          class: `child-link ${isActive(child.path) ? 'active' : ''}`,
-                        }, [
-                          child.method
-                            ? h('span', {
-                              class: `method-badge ${getMethodColor(child.method).bg} ${getMethodColor(child.method).text}`,
-                            }, child.method)
-                            : null,
-                          h('span', { class: 'child-title' }, child.title),
-                        ]),
-                      ]),
-                    ),
-                  )
-                  : null,
-              ]),
+          : h(
+              'ul',
+              { class: 'nav-tree' },
+              sortedNavigation.value.map((category) =>
+                h('li', { key: category.path, class: 'category' }, [
+                  h(
+                    'button',
+                    {
+                      class: `category-header ${isActive(category.path) ? 'active' : ''}`,
+                      onClick: () => toggleCategory(category.path),
+                    },
+                    [
+                      category.icon ? h('span', { class: 'icon' }, category.icon) : null,
+                      h('span', { class: 'title' }, category.title),
+                    ]
+                  ),
+                  category.children?.length && isExpanded(category.path)
+                    ? h(
+                        'ul',
+                        { class: 'children' },
+                        sortByOrder(category.children).map((child) =>
+                          h('li', { key: child.path }, [
+                            h(
+                              'a',
+                              {
+                                href: child.path,
+                                class: `child-link ${isActive(child.path) ? 'active' : ''}`,
+                              },
+                              [
+                                child.method
+                                  ? h(
+                                      'span',
+                                      {
+                                        class: `method-badge ${getMethodColor(child.method).bg} ${getMethodColor(child.method).text}`,
+                                      },
+                                      child.method
+                                    )
+                                  : null,
+                                h('span', { class: 'child-title' }, child.title),
+                              ]
+                            ),
+                          ])
+                        )
+                      )
+                    : null,
+                ])
+              )
             ),
-          ),
       ])
   },
 })
@@ -188,7 +204,7 @@ describe('DocsSidebar', () => {
       const wrapper = mount(DocsSidebar, {
         props: { navigation: sampleNavigation, currentPath: '/api-docs/jobs/list' },
       })
-      const titles = wrapper.findAll('.category-header .title').map(t => t.text())
+      const titles = wrapper.findAll('.category-header .title').map((t) => t.text())
       expect(titles).toEqual(['Jobs API', 'Paths API', 'Serials API'])
     })
 
@@ -196,7 +212,7 @@ describe('DocsSidebar', () => {
       const wrapper = mount(DocsSidebar, {
         props: { navigation: sampleNavigation, currentPath: '/api-docs/jobs/list' },
       })
-      const childTitles = wrapper.findAll('.children .child-title').map(t => t.text())
+      const childTitles = wrapper.findAll('.children .child-title').map((t) => t.text())
       // Jobs children sorted: List (1), Get (2), Create (3)
       expect(childTitles[0]).toBe('List Jobs')
       expect(childTitles[1]).toBe('Get Job')
@@ -228,7 +244,7 @@ describe('DocsSidebar', () => {
       const wrapper = mount(DocsSidebar, {
         props: { navigation: sampleNavigation, currentPath: '/api-docs/jobs/list' },
       })
-      const createLink = wrapper.findAll('.child-link').find(l => l.text().includes('Create Job'))
+      const createLink = wrapper.findAll('.child-link').find((l) => l.text().includes('Create Job'))
       expect(createLink?.classes()).not.toContain('active')
     })
   })
@@ -248,7 +264,7 @@ describe('DocsSidebar', () => {
       const wrapper = mount(DocsSidebar, {
         props: { navigation: sampleNavigation, currentPath: '/api-docs/jobs/list' },
       })
-      const getBadge = wrapper.findAll('.method-badge').find(b => b.text() === 'GET')
+      const getBadge = wrapper.findAll('.method-badge').find((b) => b.text() === 'GET')
       expect(getBadge).toBeDefined()
       const classes = getBadge!.classes().join(' ')
       expect(classes).toContain('green')
@@ -258,21 +274,21 @@ describe('DocsSidebar', () => {
       const wrapper = mount(DocsSidebar, {
         props: { navigation: sampleNavigation, currentPath: '/api-docs/jobs/list' },
       })
-      const postBadge = wrapper.findAll('.method-badge').find(b => b.text() === 'POST')
+      const postBadge = wrapper.findAll('.method-badge').find((b) => b.text() === 'POST')
       expect(postBadge).toBeDefined()
       const classes = postBadge!.classes().join(' ')
       expect(classes).toContain('blue')
     })
 
     it('does not render badge when child has no method', () => {
-      const navWithNoMethod: NavItem[] = [{
-        title: 'Overview',
-        path: '/api-docs/overview',
-        order: 1,
-        children: [
-          { title: 'Getting Started', path: '/api-docs/overview/start', order: 1 },
-        ],
-      }]
+      const navWithNoMethod: NavItem[] = [
+        {
+          title: 'Overview',
+          path: '/api-docs/overview',
+          order: 1,
+          children: [{ title: 'Getting Started', path: '/api-docs/overview/start', order: 1 }],
+        },
+      ]
       const wrapper = mount(DocsSidebar, {
         props: { navigation: navWithNoMethod, currentPath: '/api-docs/overview/start' },
       })

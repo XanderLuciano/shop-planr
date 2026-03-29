@@ -1,11 +1,11 @@
 ---
-title: "List BOM Versions"
-description: "Retrieve the version history of a bill of materials"
-method: "GET"
-endpoint: "/api/bom/:id/versions"
-service: "bomService"
-category: "BOM"
-responseType: "BomVersion[]"
+title: 'List BOM Versions'
+description: 'Retrieve the version history of a bill of materials'
+method: 'GET'
+endpoint: '/api/bom/:id/versions'
+service: 'bomService'
+category: 'BOM'
+responseType: 'BomVersion[]'
 errorCodes: [404, 500]
 navigation:
   order: 6
@@ -23,9 +23,9 @@ Use this endpoint to display a BOM change log, compare versions side-by-side, or
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` | Yes | The unique identifier of the BOM (e.g. `"bom_abc123"`) |
+| Parameter | Type     | Required | Description                                            |
+| --------- | -------- | -------- | ------------------------------------------------------ |
+| `id`      | `string` | Yes      | The unique identifier of the BOM (e.g. `"bom_abc123"`) |
 
 ## Response
 
@@ -33,33 +33,33 @@ Use this endpoint to display a BOM change log, compare versions side-by-side, or
 
 Returns an array of `BomVersion` objects ordered by version number. If the BOM exists but has never been edited via the versioned edit endpoint, returns an empty array `[]`.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Unique identifier for the version record (prefixed with `bomv_`) |
-| `bomId` | `string` | The parent BOM ID |
-| `versionNumber` | `number` | Auto-incrementing version number (starts at 1) |
-| `entriesSnapshot` | `BomEntry[]` | The BOM entries as they were **before** the edit that created this version |
-| `entriesSnapshot[].partType` | `string` | Part type name |
-| `entriesSnapshot[].requiredQuantityPerBuild` | `number` | Required quantity at that point in time |
-| `entriesSnapshot[].contributingJobIds` | `string[]` | Contributing job IDs at that point in time |
-| `changeDescription` | `string \| undefined` | The change description provided when the edit was made |
-| `changedBy` | `string` | The user ID who made the edit |
-| `createdAt` | `string` | ISO 8601 timestamp of when the version was created |
+| Field                                        | Type                  | Description                                                                |
+| -------------------------------------------- | --------------------- | -------------------------------------------------------------------------- |
+| `id`                                         | `string`              | Unique identifier for the version record (prefixed with `bomv_`)           |
+| `bomId`                                      | `string`              | The parent BOM ID                                                          |
+| `versionNumber`                              | `number`              | Auto-incrementing version number (starts at 1)                             |
+| `entriesSnapshot`                            | `BomEntry[]`          | The BOM entries as they were **before** the edit that created this version |
+| `entriesSnapshot[].partType`                 | `string`              | Part type name                                                             |
+| `entriesSnapshot[].requiredQuantityPerBuild` | `number`              | Required quantity at that point in time                                    |
+| `entriesSnapshot[].contributingJobIds`       | `string[]`            | Contributing job IDs at that point in time                                 |
+| `changeDescription`                          | `string \| undefined` | The change description provided when the edit was made                     |
+| `changedBy`                                  | `string`              | The user ID who made the edit                                              |
+| `createdAt`                                  | `string`              | ISO 8601 timestamp of when the version was created                         |
 
 ### 404 Not Found
 
 Returned when no BOM exists with the given ID.
 
-| Condition | Message |
-|-----------|---------|
+| Condition          | Message                       |
+| ------------------ | ----------------------------- |
 | BOM does not exist | `"BOM not found: bom_abc123"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while querying the database.
 
-| Condition | Message |
-|-----------|---------|
+| Condition             | Message                   |
+| --------------------- | ------------------------- |
 | Database read failure | `"Internal Server Error"` |
 
 ## Examples

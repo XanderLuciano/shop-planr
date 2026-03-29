@@ -40,7 +40,10 @@ async function toggleExpand(bom: BOM) {
   }
 }
 
-async function onSave(payload: { name: string, entries: { partType: string, requiredQuantityPerBuild: number, contributingJobIds: string[] }[] }) {
+async function onSave(payload: {
+  name: string
+  entries: { partType: string; requiredQuantityPerBuild: number; contributingJobIds: string[] }[]
+}) {
   formSaving.value = true
   try {
     await createBom(payload)
@@ -52,7 +55,13 @@ async function onSave(payload: { name: string, entries: { partType: string, requ
   }
 }
 
-async function onEditSave(bomId: string, payload: { name: string, entries: { partType: string, requiredQuantityPerBuild: number, contributingJobIds: string[] }[] }) {
+async function onEditSave(
+  bomId: string,
+  payload: {
+    name: string
+    entries: { partType: string; requiredQuantityPerBuild: number; contributingJobIds: string[] }[]
+  }
+) {
   editSaving.value = true
   editError.value = ''
   try {
@@ -85,7 +94,13 @@ onMounted(async () => {
   <div class="p-4 space-y-3 max-w-4xl">
     <div class="flex items-center justify-between">
       <h1 class="text-lg font-bold text-(--ui-text-highlighted)">Bill of Materials</h1>
-      <UButton v-if="!showForm" icon="i-lucide-plus" label="New BOM" size="sm" @click="showForm = true" />
+      <UButton
+        v-if="!showForm"
+        icon="i-lucide-plus"
+        label="New BOM"
+        size="sm"
+        @click="showForm = true"
+      />
     </div>
 
     <!-- Create form -->
@@ -98,13 +113,20 @@ onMounted(async () => {
     </div>
 
     <!-- Empty state -->
-    <div v-else-if="!boms.length && !showForm" class="text-sm text-(--ui-text-muted) py-8 text-center">
+    <div
+      v-else-if="!boms.length && !showForm"
+      class="text-sm text-(--ui-text-muted) py-8 text-center"
+    >
       No BOMs defined yet. Create a BOM to track sub-assembly part requirements.
     </div>
 
     <!-- BOM list -->
     <div v-else class="space-y-2">
-      <div v-for="b in boms" :key="b.id" class="border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50">
+      <div
+        v-for="b in boms"
+        :key="b.id"
+        class="border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50"
+      >
         <!-- Header row -->
         <button
           class="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-(--ui-bg-elevated) transition-colors cursor-pointer"
@@ -118,11 +140,19 @@ onMounted(async () => {
           </div>
           <div class="flex items-center gap-1 shrink-0">
             <UButton
-              size="xs" variant="ghost" color="neutral" icon="i-lucide-pencil" title="Edit"
+              size="xs"
+              variant="ghost"
+              color="neutral"
+              icon="i-lucide-pencil"
+              title="Edit"
               @click.stop="editingBomId = editingBomId === b.id ? null : b.id"
             />
             <UButton
-              size="xs" variant="ghost" color="neutral" icon="i-lucide-history" title="Version History"
+              size="xs"
+              variant="ghost"
+              color="neutral"
+              icon="i-lucide-history"
+              title="Version History"
               @click.stop="toggleVersions(b.id)"
             />
             <UIcon
@@ -149,8 +179,14 @@ onMounted(async () => {
         </div>
 
         <!-- Expanded summary -->
-        <div v-if="expandedId === b.id && editingBomId !== b.id" class="px-3 pb-3 border-t border-(--ui-border-muted)">
-          <div v-if="summaryLoading === b.id" class="flex items-center gap-2 py-2 text-xs text-(--ui-text-muted)">
+        <div
+          v-if="expandedId === b.id && editingBomId !== b.id"
+          class="px-3 pb-3 border-t border-(--ui-border-muted)"
+        >
+          <div
+            v-if="summaryLoading === b.id"
+            class="flex items-center gap-2 py-2 text-xs text-(--ui-text-muted)"
+          >
             <UIcon name="i-lucide-loader-2" class="animate-spin size-3" />
             Loading summary...
           </div>
@@ -165,12 +201,19 @@ onMounted(async () => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="entry in summaries[b.id]!.entries" :key="entry.partType" class="border-b border-(--ui-border-muted) last:border-0">
+              <tr
+                v-for="entry in summaries[b.id]!.entries"
+                :key="entry.partType"
+                class="border-b border-(--ui-border-muted) last:border-0"
+              >
                 <td class="py-1 text-(--ui-text-highlighted)">{{ entry.partType }}</td>
                 <td class="py-1 text-right">{{ entry.requiredQuantityPerBuild }}</td>
                 <td class="py-1 text-right text-green-500">{{ entry.totalCompleted }}</td>
                 <td class="py-1 text-right text-blue-500">{{ entry.totalInProgress }}</td>
-                <td class="py-1 text-right" :class="entry.totalOutstanding > 0 ? 'text-amber-500' : 'text-(--ui-text-muted)'">
+                <td
+                  class="py-1 text-right"
+                  :class="entry.totalOutstanding > 0 ? 'text-amber-500' : 'text-(--ui-text-muted)'"
+                >
                   {{ entry.totalOutstanding }}
                 </td>
               </tr>

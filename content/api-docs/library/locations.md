@@ -1,11 +1,11 @@
 ---
-title: "List & Create Locations"
-description: "Retrieve all location library entries or create a new one"
-method: "GET"
-endpoint: "/api/library/locations"
-service: "libraryService"
-category: "Library"
-responseType: "LocationLibraryEntry[]"
+title: 'List & Create Locations'
+description: 'Retrieve all location library entries or create a new one'
+method: 'GET'
+endpoint: '/api/library/locations'
+service: 'libraryService'
+category: 'Library'
+responseType: 'LocationLibraryEntry[]'
 errorCodes: [400, 500]
 navigation:
   order: 3
@@ -29,16 +29,16 @@ No request body or query parameters.
 
 Returns an array of `LocationLibraryEntry` objects. May be empty if no entries exist.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Unique entry identifier (e.g. `"lloc_a1b2c3"`) |
-| `name` | `string` | Location name |
-| `createdAt` | `string` | ISO 8601 creation timestamp |
+| Field       | Type     | Description                                    |
+| ----------- | -------- | ---------------------------------------------- |
+| `id`        | `string` | Unique entry identifier (e.g. `"lloc_a1b2c3"`) |
+| `name`      | `string` | Location name                                  |
+| `createdAt` | `string` | ISO 8601 creation timestamp                    |
 
 #### 500 Internal Server Error
 
-| Condition | Message |
-|-----------|---------|
+| Condition             | Message                   |
+| --------------------- | ------------------------- |
 | Database read failure | `"Internal Server Error"` |
 
 ### Examples
@@ -94,9 +94,9 @@ Creates a new entry in the location library. The name must be unique (exact matc
 
 #### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | `string` | Yes | The location name to add. Must be non-empty. Trimmed of leading/trailing whitespace. Must not duplicate an existing entry. |
+| Field  | Type     | Required | Description                                                                                                                |
+| ------ | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `name` | `string` | Yes      | The location name to add. Must be non-empty. Trimmed of leading/trailing whitespace. Must not duplicate an existing entry. |
 
 ### Response
 
@@ -104,24 +104,24 @@ Creates a new entry in the location library. The name must be unique (exact matc
 
 Returns the newly created `LocationLibraryEntry` object.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Server-generated unique identifier (e.g. `"lloc_m3n4o5"`) |
-| `name` | `string` | The trimmed location name |
-| `createdAt` | `string` | ISO 8601 creation timestamp |
+| Field       | Type     | Description                                               |
+| ----------- | -------- | --------------------------------------------------------- |
+| `id`        | `string` | Server-generated unique identifier (e.g. `"lloc_m3n4o5"`) |
+| `name`      | `string` | The trimmed location name                                 |
+| `createdAt` | `string` | ISO 8601 creation timestamp                               |
 
 #### 400 Bad Request
 
-| Condition | Message |
-|-----------|---------|
-| `name` is missing or empty | `"name is required"` |
-| `name` is only whitespace | `"name is required"` |
+| Condition                                             | Message                          |
+| ----------------------------------------------------- | -------------------------------- |
+| `name` is missing or empty                            | `"name is required"`             |
+| `name` is only whitespace                             | `"name is required"`             |
 | `name` already exists in the library (after trimming) | `"Location name already exists"` |
 
 #### 500 Internal Server Error
 
-| Condition | Message |
-|-----------|---------|
+| Condition              | Message                   |
+| ---------------------- | ------------------------- |
 | Database write failure | `"Internal Server Error"` |
 
 ### Examples

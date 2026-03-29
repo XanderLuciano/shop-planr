@@ -55,19 +55,8 @@ function cancelDelete() {
     </template>
     <template v-else-if="confirming">
       <span class="text-xs text-(--ui-error)">Delete "{{ pathName }}"?</span>
-      <UButton
-        size="xs"
-        color="error"
-        label="Yes"
-        :loading="loading"
-        @click="handleDelete"
-      />
-      <UButton
-        size="xs"
-        variant="ghost"
-        label="No"
-        @click="cancelDelete"
-      />
+      <UButton size="xs" color="error" label="Yes" :loading="loading" @click="handleDelete" />
+      <UButton size="xs" variant="ghost" label="No" @click="cancelDelete" />
     </template>
     <template v-else>
       <UButton

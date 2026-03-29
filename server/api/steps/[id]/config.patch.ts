@@ -7,7 +7,10 @@ export default defineEventHandler(async (event) => {
 
   const update: Record<string, unknown> = {}
   if (typeof body.optional === 'boolean') update.optional = body.optional
-  if (body.dependencyType && ['physical', 'preferred', 'completion_gate'].includes(body.dependencyType)) {
+  if (
+    body.dependencyType &&
+    ['physical', 'preferred', 'completion_gate'].includes(body.dependencyType)
+  ) {
     update.dependencyType = body.dependencyType
   }
 

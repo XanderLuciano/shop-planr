@@ -176,7 +176,9 @@ describe('partNoteAdd — pure logic', () => {
   // Additional: Error message extraction
   describe('extractErrorMessage', () => {
     it('prefers data.message', () => {
-      expect(extractErrorMessage({ data: { message: 'Bad request' }, message: 'Generic' })).toBe('Bad request')
+      expect(extractErrorMessage({ data: { message: 'Bad request' }, message: 'Generic' })).toBe(
+        'Bad request'
+      )
     })
 
     it('falls back to message', () => {

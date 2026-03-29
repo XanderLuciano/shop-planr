@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     }
 
     const body = await readBody(event)
-    const { jobId, noteId } = body as { jobId: string, noteId?: string }
+    const { jobId, noteId } = body as { jobId: string; noteId?: string }
 
     if (!jobId) {
       throw new ValidationError('jobId is required')

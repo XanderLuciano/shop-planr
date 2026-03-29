@@ -27,10 +27,10 @@ describe('Flexible Advancement Integration', () => {
       name: 'Flexible Path',
       goalQuantity: 5,
       steps: [
-        { name: 'Cut' },       // step 0 — required (default)
-        { name: 'Deburr' },    // step 1 — will be made optional
-        { name: 'Weld' },      // step 2 — required
-        { name: 'Inspect' },   // step 3 — required
+        { name: 'Cut' }, // step 0 — required (default)
+        { name: 'Deburr' }, // step 1 — will be made optional
+        { name: 'Weld' }, // step 2 — required
+        { name: 'Inspect' }, // step 3 — required
       ],
     })
 
@@ -56,14 +56,14 @@ describe('Flexible Advancement Integration', () => {
     // 5. Verify bypassed step classifications
     expect(result.bypassed).toHaveLength(2)
 
-    const step1Bypass = result.bypassed.find(b => b.stepName === 'Deburr')
-    const step2Bypass = result.bypassed.find(b => b.stepName === 'Weld')
+    const step1Bypass = result.bypassed.find((b) => b.stepName === 'Deburr')
+    const step2Bypass = result.bypassed.find((b) => b.stepName === 'Weld')
 
     expect(step1Bypass).toBeDefined()
-    expect(step1Bypass!.classification).toBe('skipped')  // optional → skipped
+    expect(step1Bypass!.classification).toBe('skipped') // optional → skipped
 
     expect(step2Bypass).toBeDefined()
-    expect(step2Bypass!.classification).toBe('deferred')  // required → deferred
+    expect(step2Bypass!.classification).toBe('deferred') // required → deferred
 
     // 6. Verify part is now at step 3
     expect(result.serial.currentStepIndex).toBe(3)

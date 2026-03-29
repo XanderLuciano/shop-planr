@@ -26,10 +26,9 @@ function isSaveDisabled(noteText: string, noteSaving: boolean = false): boolean 
 
 // --- Generators ---
 
-const whitespaceOnlyArb = fc.array(
-  fc.constantFrom(' ', '\t', '\n', '\r'),
-  { minLength: 0, maxLength: 100 },
-).map(chars => chars.join(''))
+const whitespaceOnlyArb = fc
+  .array(fc.constantFrom(' ', '\t', '\n', '\r'), { minLength: 0, maxLength: 100 })
+  .map((chars) => chars.join(''))
 
 // --- Tests ---
 
@@ -39,19 +38,20 @@ describe('Property 5: Whitespace-only text disables Save', () => {
       fc.property(whitespaceOnlyArb, (text) => {
         expect(isSaveDisabled(text)).toBe(true)
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
   it('Save is enabled for any string with non-whitespace content (when not saving)', () => {
-    const nonWhitespaceArb = fc.string({ minLength: 1, maxLength: 200 })
-      .filter(s => s.trim().length > 0)
+    const nonWhitespaceArb = fc
+      .string({ minLength: 1, maxLength: 200 })
+      .filter((s) => s.trim().length > 0)
 
     fc.assert(
       fc.property(nonWhitespaceArb, (text) => {
         expect(isSaveDisabled(text, false)).toBe(false)
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

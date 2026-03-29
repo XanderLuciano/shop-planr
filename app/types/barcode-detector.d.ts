@@ -6,7 +6,7 @@
 
 interface DetectedBarcode {
   readonly boundingBox: DOMRectReadOnly
-  readonly cornerPoints: ReadonlyArray<{ x: number, y: number }>
+  readonly cornerPoints: ReadonlyArray<{ x: number; y: number }>
   readonly format: string
   readonly rawValue: string
 }

@@ -1,11 +1,11 @@
 ---
-title: "Get User Queue"
-description: "Retrieve queue items for a specific operator"
-method: "GET"
-endpoint: "/api/operator/queue/:userId"
-service: "jobService, pathService, serialService"
-category: "Operator"
-responseType: "WorkQueueResponse"
+title: 'Get User Queue'
+description: 'Retrieve queue items for a specific operator'
+method: 'GET'
+endpoint: '/api/operator/queue/:userId'
+service: 'jobService, pathService, serialService'
+category: 'Operator'
+responseType: 'WorkQueueResponse'
 errorCodes: [400, 500]
 navigation:
   order: 4
@@ -25,9 +25,9 @@ Note that this endpoint currently returns **all** queue items regardless of assi
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `userId` | `string` | Yes | The user ID to filter the queue for (e.g. `"user_a1b2c3"`). |
+| Parameter | Type     | Required | Description                                                 |
+| --------- | -------- | -------- | ----------------------------------------------------------- |
+| `userId`  | `string` | Yes      | The user ID to filter the queue for (e.g. `"user_a1b2c3"`). |
 
 ## Response
 
@@ -35,41 +35,41 @@ Note that this endpoint currently returns **all** queue items regardless of assi
 
 Returns a `WorkQueueResponse` object.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `operatorId` | `string` | The queried user ID |
-| `jobs` | `WorkQueueJob[]` | Array of queue items |
-| `totalParts` | `number` | Total count of in-progress parts |
+| Field        | Type             | Description                      |
+| ------------ | ---------------- | -------------------------------- |
+| `operatorId` | `string`         | The queried user ID              |
+| `jobs`       | `WorkQueueJob[]` | Array of queue items             |
+| `totalParts` | `number`         | Total count of in-progress parts |
 
 #### WorkQueueJob Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `jobId` | `string` | Job ID |
-| `jobName` | `string` | Job name |
-| `pathId` | `string` | Path ID |
-| `pathName` | `string` | Path name |
-| `stepId` | `string` | Step ID |
-| `stepName` | `string` | Step name |
-| `stepOrder` | `number` | Zero-based step index |
-| `stepLocation` | `string \| undefined` | Physical location |
-| `totalSteps` | `number` | Total steps in the path |
-| `serialIds` | `string[]` | Serial IDs at this step |
-| `partCount` | `number` | Count of serials at this step |
-| `nextStepName` | `string \| undefined` | Name of the next step |
-| `nextStepLocation` | `string \| undefined` | Location of the next step |
-| `isFinalStep` | `boolean` | Whether this is the last step |
+| Field              | Type                  | Description                   |
+| ------------------ | --------------------- | ----------------------------- |
+| `jobId`            | `string`              | Job ID                        |
+| `jobName`          | `string`              | Job name                      |
+| `pathId`           | `string`              | Path ID                       |
+| `pathName`         | `string`              | Path name                     |
+| `stepId`           | `string`              | Step ID                       |
+| `stepName`         | `string`              | Step name                     |
+| `stepOrder`        | `number`              | Zero-based step index         |
+| `stepLocation`     | `string \| undefined` | Physical location             |
+| `totalSteps`       | `number`              | Total steps in the path       |
+| `serialIds`        | `string[]`            | Serial IDs at this step       |
+| `partCount`        | `number`              | Count of serials at this step |
+| `nextStepName`     | `string \| undefined` | Name of the next step         |
+| `nextStepLocation` | `string \| undefined` | Location of the next step     |
+| `isFinalStep`      | `boolean`             | Whether this is the last step |
 
 ### 400 Bad Request
 
-| Condition | Message |
-|-----------|---------|
+| Condition           | Message                |
+| ------------------- | ---------------------- |
 | `userId` is missing | `"userId is required"` |
 
 ### 500 Internal Server Error
 
-| Condition | Message |
-|-----------|---------|
+| Condition                | Message                   |
+| ------------------------ | ------------------------- |
 | Unexpected runtime error | `"Internal Server Error"` |
 
 ## Examples

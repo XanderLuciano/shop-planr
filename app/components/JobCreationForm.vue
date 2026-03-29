@@ -102,7 +102,9 @@ function handleCancel() {
       <h3 class="text-lg font-semibold text-(--ui-text-highlighted)">Job Details</h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-(--ui-text-highlighted) mb-1">Job Name</label>
+          <label class="block text-sm font-medium text-(--ui-text-highlighted) mb-1"
+            >Job Name</label
+          >
           <UInput
             v-model="jobDraft.name"
             placeholder="Enter job name"
@@ -114,7 +116,9 @@ function handleCancel() {
           </p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-(--ui-text-highlighted) mb-1">Goal Quantity</label>
+          <label class="block text-sm font-medium text-(--ui-text-highlighted) mb-1"
+            >Goal Quantity</label
+          >
           <UInput
             v-model.number="jobDraft.goalQuantity"
             type="number"
@@ -123,7 +127,11 @@ function handleCancel() {
             :color="getFieldError('job.goalQuantity') ? 'error' : undefined"
             @update:model-value="clearFieldError('job.goalQuantity')"
           />
-          <p v-if="getFieldError('job.goalQuantity')" data-error class="text-xs text-(--ui-error) mt-1">
+          <p
+            v-if="getFieldError('job.goalQuantity')"
+            data-error
+            class="text-xs text-(--ui-error) mt-1"
+          >
             {{ getFieldError('job.goalQuantity') }}
           </p>
         </div>
@@ -135,7 +143,9 @@ function handleCancel() {
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold text-(--ui-text-highlighted) flex items-center gap-2">
           Paths
-          <UBadge v-if="pathDrafts.length" variant="subtle" size="sm">{{ pathDrafts.length }}</UBadge>
+          <UBadge v-if="pathDrafts.length" variant="subtle" size="sm">{{
+            pathDrafts.length
+          }}</UBadge>
         </h3>
         <UButton icon="i-lucide-plus" label="Add Path" size="sm" @click="addPath" />
       </div>
@@ -162,12 +172,18 @@ function handleCancel() {
                 :color="getFieldError(`paths[${pathIndex}].name`) ? 'error' : undefined"
                 @update:model-value="clearFieldError(`paths[${pathIndex}].name`)"
               />
-              <p v-if="getFieldError(`paths[${pathIndex}].name`)" data-error class="text-xs text-(--ui-error) mt-1">
+              <p
+                v-if="getFieldError(`paths[${pathIndex}].name`)"
+                data-error
+                class="text-xs text-(--ui-error) mt-1"
+              >
                 {{ getFieldError(`paths[${pathIndex}].name`) }}
               </p>
             </div>
             <div>
-              <label class="block text-xs font-medium text-(--ui-text-muted) mb-1">Goal Quantity</label>
+              <label class="block text-xs font-medium text-(--ui-text-muted) mb-1"
+                >Goal Quantity</label
+              >
               <UInput
                 v-model.number="path.goalQuantity"
                 type="number"
@@ -176,20 +192,38 @@ function handleCancel() {
                 :color="getFieldError(`paths[${pathIndex}].goalQuantity`) ? 'error' : undefined"
                 @update:model-value="clearFieldError(`paths[${pathIndex}].goalQuantity`)"
               />
-              <p v-if="getFieldError(`paths[${pathIndex}].goalQuantity`)" data-error class="text-xs text-(--ui-error) mt-1">
+              <p
+                v-if="getFieldError(`paths[${pathIndex}].goalQuantity`)"
+                data-error
+                class="text-xs text-(--ui-error) mt-1"
+              >
                 {{ getFieldError(`paths[${pathIndex}].goalQuantity`) }}
               </p>
             </div>
             <div>
-              <label class="block text-xs font-medium text-(--ui-text-muted) mb-1 flex items-center gap-1">
+              <label
+                class="block text-xs font-medium text-(--ui-text-muted) mb-1 flex items-center gap-1"
+              >
                 Advancement Mode
                 <UTooltip :ui="{ content: 'h-auto py-2 px-3', text: 'whitespace-normal' }">
-                  <UIcon name="i-lucide-info" class="size-3.5 text-(--ui-text-dimmed) cursor-help" />
+                  <UIcon
+                    name="i-lucide-info"
+                    class="size-3.5 text-(--ui-text-dimmed) cursor-help"
+                  />
                   <template #content>
                     <div class="text-xs space-y-1 max-w-64">
-                      <p><span class="font-semibold">Strict:</span> Parts must follow steps in exact order.</p>
-                      <p><span class="font-semibold">Flexible:</span> Parts can skip ahead, but skipped steps become deferred.</p>
-                      <p><span class="font-semibold">Per Step:</span> Each step's dependency type controls advancement.</p>
+                      <p>
+                        <span class="font-semibold">Strict:</span> Parts must follow steps in exact
+                        order.
+                      </p>
+                      <p>
+                        <span class="font-semibold">Flexible:</span> Parts can skip ahead, but
+                        skipped steps become deferred.
+                      </p>
+                      <p>
+                        <span class="font-semibold">Per Step:</span> Each step's dependency type
+                        controls advancement.
+                      </p>
                     </div>
                   </template>
                 </UTooltip>
@@ -215,27 +249,49 @@ function handleCancel() {
         <div v-if="templates.length > 0" class="flex items-center gap-2">
           <USelect
             :model-value="templateSelections[path._clientId] || '_placeholder'"
-            :items="[{ label: 'Apply Template...', value: '_placeholder', disabled: true }, ...templates.map((t: TemplateRoute) => ({ label: `${t.name} (${t.steps.length} steps)`, value: t.id }))]"
+            :items="[
+              { label: 'Apply Template...', value: '_placeholder', disabled: true },
+              ...templates.map((t: TemplateRoute) => ({
+                label: `${t.name} (${t.steps.length} steps)`,
+                value: t.id,
+              })),
+            ]"
             size="sm"
             class="w-64"
-            @update:model-value="(v: string) => { if (v !== '_placeholder') { templateSelections[path._clientId] = v; onTemplateSelect(path._clientId) } }"
+            @update:model-value="
+              (v: string) => {
+                if (v !== '_placeholder') {
+                  templateSelections[path._clientId] = v
+                  onTemplateSelect(path._clientId)
+                }
+              }
+            "
           />
         </div>
 
         <!-- Steps validation error -->
-        <p v-if="getFieldError(`paths[${pathIndex}].steps`)" data-error class="text-xs text-(--ui-error)">
+        <p
+          v-if="getFieldError(`paths[${pathIndex}].steps`)"
+          data-error
+          class="text-xs text-(--ui-error)"
+        >
           {{ getFieldError(`paths[${pathIndex}].steps`) }}
         </p>
 
         <!-- Step rows -->
         <div class="space-y-2">
-          <div class="text-xs font-medium text-(--ui-text-muted) grid grid-cols-[2rem_1fr_1fr_5rem_9rem_4.5rem_2rem] gap-2 px-1">
+          <div
+            class="text-xs font-medium text-(--ui-text-muted) grid grid-cols-[2rem_1fr_1fr_5rem_9rem_4.5rem_2rem] gap-2 px-1"
+          >
             <span>#</span>
             <span>Process</span>
             <span>Location</span>
             <span class="flex items-center gap-0.5">
               Optional
-              <UTooltip text="When checked, this step can be skipped without blocking part completion." :ui="{ content: 'h-auto py-2 px-3', text: 'whitespace-normal' }">
+              <UTooltip
+                text="When checked, this step can be skipped without blocking part completion."
+                :ui="{ content: 'h-auto py-2 px-3', text: 'whitespace-normal' }"
+              >
                 <UIcon name="i-lucide-info" class="size-3 text-(--ui-text-dimmed) cursor-help" />
               </UTooltip>
             </span>
@@ -245,9 +301,18 @@ function handleCancel() {
                 <UIcon name="i-lucide-info" class="size-3 text-(--ui-text-dimmed) cursor-help" />
                 <template #content>
                   <div class="text-xs space-y-1 max-w-64">
-                    <p><span class="font-semibold">Physical:</span> Previous step must complete first.</p>
-                    <p><span class="font-semibold">Preferred:</span> Recommended order, but skippable in flexible mode.</p>
-                    <p><span class="font-semibold">Completion Gate:</span> Must complete before part finishes, but can be deferred.</p>
+                    <p>
+                      <span class="font-semibold">Physical:</span> Previous step must complete
+                      first.
+                    </p>
+                    <p>
+                      <span class="font-semibold">Preferred:</span> Recommended order, but skippable
+                      in flexible mode.
+                    </p>
+                    <p>
+                      <span class="font-semibold">Completion Gate:</span> Must complete before part
+                      finishes, but can be deferred.
+                    </p>
                   </div>
                 </template>
               </UTooltip>
@@ -262,16 +327,27 @@ function handleCancel() {
             class="grid grid-cols-[2rem_1fr_1fr_5rem_9rem_4.5rem_2rem] gap-2 items-start"
           >
             <!-- Step order number -->
-            <span class="text-sm text-(--ui-text-muted) pt-1.5 text-center">{{ stepIndex + 1 }}</span>
+            <span class="text-sm text-(--ui-text-muted) pt-1.5 text-center">{{
+              stepIndex + 1
+            }}</span>
 
             <!-- Process name -->
             <div>
               <ProcessLocationDropdown
                 :model-value="step.name"
                 type="process"
-                @update:model-value="(v: string) => { step.name = v; clearFieldError(`paths[${pathIndex}].steps[${stepIndex}].name`) }"
+                @update:model-value="
+                  (v: string) => {
+                    step.name = v
+                    clearFieldError(`paths[${pathIndex}].steps[${stepIndex}].name`)
+                  }
+                "
               />
-              <p v-if="getFieldError(`paths[${pathIndex}].steps[${stepIndex}].name`)" data-error class="text-xs text-(--ui-error) mt-0.5">
+              <p
+                v-if="getFieldError(`paths[${pathIndex}].steps[${stepIndex}].name`)"
+                data-error
+                class="text-xs text-(--ui-error) mt-0.5"
+              >
                 {{ getFieldError(`paths[${pathIndex}].steps[${stepIndex}].name`) }}
               </p>
             </div>
@@ -281,25 +357,21 @@ function handleCancel() {
               <ProcessLocationDropdown
                 :model-value="step.location"
                 type="location"
-                @update:model-value="(v: string) => { step.location = v }"
+                @update:model-value="
+                  (v: string) => {
+                    step.location = v
+                  }
+                "
               />
             </div>
 
             <!-- Optional checkbox -->
             <div class="flex items-center justify-center pt-1.5">
-              <input
-                v-model="step.optional"
-                type="checkbox"
-                class="rounded"
-              >
+              <input v-model="step.optional" type="checkbox" class="rounded" />
             </div>
 
             <!-- Dependency type -->
-            <USelect
-              v-model="step.dependencyType"
-              :items="dependencyTypeOptions"
-              size="sm"
-            />
+            <USelect v-model="step.dependencyType" :items="dependencyTypeOptions" size="sm" />
 
             <!-- Move up/down -->
             <div class="flex items-center gap-0.5">
@@ -350,12 +422,7 @@ function handleCancel() {
         :disabled="submitting"
         @click="handleSubmit"
       />
-      <UButton
-        label="Cancel"
-        variant="outline"
-        :disabled="submitting"
-        @click="handleCancel"
-      />
+      <UButton label="Cancel" variant="outline" :disabled="submitting" @click="handleCancel" />
     </div>
   </div>
 </template>

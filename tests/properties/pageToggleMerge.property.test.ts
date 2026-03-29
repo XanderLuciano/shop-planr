@@ -20,7 +20,15 @@ import type { PageToggles } from '~/server/types/domain'
 
 /** All 9 valid toggle keys. */
 const ALL_KEYS: (keyof PageToggles)[] = [
-  'jobs', 'partsBrowser', 'parts', 'queue', 'templates', 'bom', 'certs', 'jira', 'audit',
+  'jobs',
+  'partsBrowser',
+  'parts',
+  'queue',
+  'templates',
+  'bom',
+  'certs',
+  'jira',
+  'audit',
 ]
 
 /** Arbitrary that produces a full PageToggles object with random booleans. */
@@ -44,7 +52,7 @@ const arbPartialToggles: fc.Arbitrary<Partial<PageToggles>> = arbPageToggles.cha
       partial[k] = full[k]
     }
     return partial
-  }),
+  })
 )
 
 /** Arbitrary that produces an object with unknown (non-toggle) keys. */
@@ -52,9 +60,9 @@ const arbUnknownKeys: fc.Arbitrary<Record<string, unknown>> = fc
   .array(
     fc.tuple(
       fc.stringMatching(/^[a-z]{3,10}$/).filter((s) => !VALID_TOGGLE_KEYS.has(s)),
-      fc.oneof(fc.boolean(), fc.integer(), fc.string()),
+      fc.oneof(fc.boolean(), fc.integer(), fc.string())
     ),
-    { minLength: 1, maxLength: 5 },
+    { minLength: 1, maxLength: 5 }
   )
   .map((pairs) => Object.fromEntries(pairs))
 
@@ -81,7 +89,7 @@ describe('Property 5: Partial update preservation', () => {
           expect(merged[key]).toBe(partial[key])
         }
       }),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 })
@@ -114,7 +122,7 @@ describe('Property 6: Unknown keys ignored in merge', () => {
           }
         }
       }),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 })
@@ -136,7 +144,7 @@ describe('Property 7: Missing keys default to true', () => {
               partial[k] = full[k]
             }
             return partial
-          }),
+          })
         ),
         (partialCurrent) => {
           // Merge with empty partial — no updates, just fill defaults
@@ -151,9 +159,9 @@ describe('Property 7: Missing keys default to true', () => {
               expect(merged[key]).toBe(true)
             }
           }
-        },
+        }
       ),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 })
@@ -173,7 +181,7 @@ describe('Property 8: Idempotent toggle', () => {
           expect(merged[key]).toBe(toggles[key])
         }
       }),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 })

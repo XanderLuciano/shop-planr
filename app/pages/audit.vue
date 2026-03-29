@@ -56,19 +56,32 @@ onMounted(async () => {
     <div v-if="error" class="text-xs text-red-500 bg-red-500/10 rounded px-3 py-2">{{ error }}</div>
 
     <!-- Loading initial -->
-    <div v-if="loading && !entries.length" class="flex items-center gap-2 text-sm text-(--ui-text-muted)">
+    <div
+      v-if="loading && !entries.length"
+      class="flex items-center gap-2 text-sm text-(--ui-text-muted)"
+    >
       <UIcon name="i-lucide-loader-2" class="animate-spin size-4" />
       Loading audit entries...
     </div>
 
     <!-- Entries -->
-    <div v-else class="border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50 overflow-x-auto">
+    <div
+      v-else
+      class="border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50 overflow-x-auto"
+    >
       <AuditLog :entries="entries" />
     </div>
 
     <!-- Load more -->
     <div v-if="hasMore && entries.length" class="flex justify-center pt-1">
-      <UButton label="Load More" variant="ghost" size="sm" icon="i-lucide-chevron-down" :loading="loadingMore" @click="loadMore" />
+      <UButton
+        label="Load More"
+        variant="ghost"
+        size="sm"
+        icon="i-lucide-chevron-down"
+        :loading="loadingMore"
+        @click="loadMore"
+      />
     </div>
   </div>
 </template>

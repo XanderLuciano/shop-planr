@@ -20,7 +20,7 @@ export interface PartBrowserFilters {
 export function searchParts(parts: EnrichedPart[], query: string): EnrichedPart[] {
   const q = query.trim().toLowerCase()
   if (!q) return parts
-  return parts.filter(s => s.id.toLowerCase().includes(q))
+  return parts.filter((s) => s.id.toLowerCase().includes(q))
 }
 
 /**
@@ -51,7 +51,7 @@ export function filterParts(parts: EnrichedPart[], filters: PartBrowserFilters):
 export function sortParts(
   parts: EnrichedPart[],
   column: string,
-  direction: 'asc' | 'desc',
+  direction: 'asc' | 'desc'
 ): EnrichedPart[] {
   const sorted = [...parts]
   const dir = direction === 'asc' ? 1 : -1

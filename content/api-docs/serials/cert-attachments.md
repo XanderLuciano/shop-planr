@@ -1,11 +1,11 @@
 ---
-title: "Get Cert Attachments"
-description: "Retrieve all certificate attachments for a serial number with step-level detail"
-method: "GET"
-endpoint: "/api/serials/:id/cert-attachments"
-service: "certService"
-category: "Serials"
-responseType: "CertAttachment[]"
+title: 'Get Cert Attachments'
+description: 'Retrieve all certificate attachments for a serial number with step-level detail'
+method: 'GET'
+endpoint: '/api/serials/:id/cert-attachments'
+service: 'certService'
+category: 'Serials'
+responseType: 'CertAttachment[]'
 errorCodes: [400, 500]
 navigation:
   order: 9
@@ -23,9 +23,9 @@ Unlike the [Get Serial](/api-docs/serials/get) endpoint (which returns full `Cer
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` | Yes | The unique identifier of the serial number (e.g. `"SN-00001"`) |
+| Parameter | Type     | Required | Description                                                    |
+| --------- | -------- | -------- | -------------------------------------------------------------- |
+| `id`      | `string` | Yes      | The unique identifier of the serial number (e.g. `"SN-00001"`) |
 
 ## Response
 
@@ -33,30 +33,30 @@ Unlike the [Get Serial](/api-docs/serials/get) endpoint (which returns full `Cer
 
 Returned when the request is successful. The response is always an array, even if no attachments exist (empty array `[]`).
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Unique identifier for the attachment record |
-| `serialId` | `string` | ID of the serial number |
-| `certId` | `string` | ID of the attached certificate |
-| `stepId` | `string` | ID of the process step where the certificate was attached |
-| `attachedAt` | `string` | ISO 8601 timestamp of when the attachment was created |
-| `attachedBy` | `string` | User ID of who performed the attachment |
+| Field        | Type     | Description                                               |
+| ------------ | -------- | --------------------------------------------------------- |
+| `id`         | `string` | Unique identifier for the attachment record               |
+| `serialId`   | `string` | ID of the serial number                                   |
+| `certId`     | `string` | ID of the attached certificate                            |
+| `stepId`     | `string` | ID of the process step where the certificate was attached |
+| `attachedAt` | `string` | ISO 8601 timestamp of when the attachment was created     |
+| `attachedBy` | `string` | User ID of who performed the attachment                   |
 
 ### 400 Bad Request
 
 Returned if the serial ID parameter is missing.
 
-| Condition | Message |
-|-----------|---------|
+| Condition                         | Message                   |
+| --------------------------------- | ------------------------- |
 | Serial ID is missing from the URL | `"Serial ID is required"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while fetching attachment records.
 
-| Condition | Message |
-|-----------|---------|
-| Database connection failure | `"Internal Server Error"` |
+| Condition                    | Message                   |
+| ---------------------------- | ------------------------- |
+| Database connection failure  | `"Internal Server Error"` |
 | Unexpected runtime exception | `"Internal Server Error"` |
 
 ## Examples

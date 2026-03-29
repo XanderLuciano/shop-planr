@@ -19,7 +19,7 @@ export function useNotes() {
     try {
       const note = await $fetch<StepNote>('/api/notes', {
         method: 'POST',
-        body: input
+        body: input,
       })
       notes.value = [note, ...notes.value]
       return note
@@ -67,6 +67,6 @@ export function useNotes() {
     error: readonly(error),
     createNote,
     fetchNotesForPart,
-    fetchNotesForStep
+    fetchNotesForStep,
   }
 }

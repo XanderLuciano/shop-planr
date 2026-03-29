@@ -19,7 +19,10 @@ import fc from 'fast-check'
  *   - Button: v-if="isInProgress && !showNoteForm"
  *   - Form:   v-if="showNoteForm"
  */
-function computeVisibility(isInProgress: boolean, showNoteForm: boolean): {
+function computeVisibility(
+  isInProgress: boolean,
+  showNoteForm: boolean
+): {
   buttonVisible: boolean
   formVisible: boolean
 } {
@@ -40,7 +43,7 @@ describe('Property 3: Add Note button and form are mutually exclusive', () => {
         // They must never both be true
         expect(buttonVisible && formVisible).toBe(false)
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -52,7 +55,7 @@ describe('Property 3: Add Note button and form are mutually exclusive', () => {
         expect(formVisible).toBe(true)
         expect(buttonVisible).toBe(false)
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

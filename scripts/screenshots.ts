@@ -48,7 +48,7 @@ async function main() {
     await page.goto(url, { waitUntil: 'networkidle2', timeout: 30_000 })
 
     if (spec.waitMs) {
-      await new Promise(r => setTimeout(r, spec.waitMs))
+      await new Promise((r) => setTimeout(r, spec.waitMs))
     }
 
     const file = resolve(OUTPUT_DIR, `${spec.name}.png`)

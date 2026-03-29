@@ -47,7 +47,9 @@ function setupServices(db: Database.default.Database) {
 
   const partIdGenerator = createSequentialPartIdGenerator({
     getCounter: () => {
-      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
+      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as
+        | { value: number }
+        | undefined
       return row?.value ?? 0
     },
     setCounter: (v: number) => {
@@ -61,7 +63,7 @@ function setupServices(db: Database.default.Database) {
   const partService = createPartService(
     { parts: repos.parts, paths: repos.paths, certs: repos.certs },
     auditService,
-    partIdGenerator,
+    partIdGenerator
   )
   const noteService = createNoteService({ notes: repos.notes }, auditService)
 
@@ -89,41 +91,38 @@ describe('Property 7: Note length validation', () => {
   it('rejects notes longer than 1000 characters', () => {
     fc.assert(
       fc.property(
-        fc.string({ minLength: 1001, maxLength: 2000 }).filter(s => s.trim().length > 1000),
+        fc.string({ minLength: 1001, maxLength: 2000 }).filter((s) => s.trim().length > 1000),
         (note) => {
           const result = validateNoteLength(note)
           expect(result).not.toBeNull()
           expect(result).toContain('1000')
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
   it('accepts notes of 1000 characters or fewer', () => {
     fc.assert(
-      fc.property(
-        fc.string({ minLength: 1, maxLength: 1000 }),
-        (note) => {
-          fc.pre(note.trim().length <= 1000)
-          const result = validateNoteLength(note)
-          expect(result).toBeNull()
-        },
-      ),
-      { numRuns: 100 },
+      fc.property(fc.string({ minLength: 1, maxLength: 1000 }), (note) => {
+        fc.pre(note.trim().length <= 1000)
+        const result = validateNoteLength(note)
+        expect(result).toBeNull()
+      }),
+      { numRuns: 100 }
     )
   })
 
   it('accepts empty or whitespace-only notes', () => {
     fc.assert(
       fc.property(
-        fc.nat({ max: 50 }).map(n => ' '.repeat(n)),
+        fc.nat({ max: 50 }).map((n) => ' '.repeat(n)),
         (note) => {
           const result = validateNoteLength(note)
           expect(result).toBeNull()
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -156,7 +155,7 @@ describe('Property 6: Note creation on advancement with non-empty text', () => {
   it('non-empty note creates a StepNote with matching partIds and text', () => {
     fc.assert(
       fc.property(
-        fc.string({ minLength: 1, maxLength: 200 }).filter(s => s.trim().length > 0),
+        fc.string({ minLength: 1, maxLength: 200 }).filter((s) => s.trim().length > 0),
         fc.integer({ min: 1, max: 5 }),
         (noteText, partCount) => {
           db = createTestDb()
@@ -172,10 +171,10 @@ describe('Property 6: Note creation on advancement with non-empty text', () => {
 
           const parts = partService.batchCreateParts(
             { jobId: job.id, pathId: path.id, quantity: partCount },
-            'user_test',
+            'user_test'
           )
 
-          const partIds = parts.map(s => s.id)
+          const partIds = parts.map((s) => s.id)
           const stepId = path.steps[0]!.id
 
           // Advance parts
@@ -205,16 +204,16 @@ describe('Property 6: Note creation on advancement with non-empty text', () => {
 
           db.close()
           db = null as any
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
   it('empty or whitespace-only note does not create a StepNote', () => {
     fc.assert(
       fc.property(
-        fc.nat({ max: 20 }).map(n => ' '.repeat(n)),
+        fc.nat({ max: 20 }).map((n) => ' '.repeat(n)),
         (noteText) => {
           db = createTestDb()
           const { jobService, pathService, partService, noteService } = setupServices(db)
@@ -229,10 +228,10 @@ describe('Property 6: Note creation on advancement with non-empty text', () => {
 
           const parts = partService.batchCreateParts(
             { jobId: job.id, pathId: path.id, quantity: 2 },
-            'user_test',
+            'user_test'
           )
 
-          const partIds = parts.map(s => s.id)
+          const partIds = parts.map((s) => s.id)
           const stepId = path.steps[0]!.id
 
           // Advance parts
@@ -259,9 +258,9 @@ describe('Property 6: Note creation on advancement with non-empty text', () => {
 
           db.close()
           db = null as any
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

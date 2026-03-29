@@ -1,12 +1,12 @@
 ---
-title: "Create User"
-description: "Create a new shop floor user profile"
-method: "POST"
-endpoint: "/api/users"
-service: "userService"
-category: "Users"
-requestBody: "{ name, department? }"
-responseType: "ShopUser"
+title: 'Create User'
+description: 'Create a new shop floor user profile'
+method: 'POST'
+endpoint: '/api/users'
+service: 'userService'
+category: 'Users'
+requestBody: '{ name, department? }'
+responseType: 'ShopUser'
 errorCodes: [400, 500]
 navigation:
   order: 2
@@ -26,10 +26,10 @@ There is no uniqueness constraint on `name`. Multiple users can share the same n
 
 ### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | `string` | Yes | Display name for the user. Must be a non-empty string. Leading and trailing whitespace is trimmed. Examples: `"Jane Smith"`, `"Operator 7"`. |
-| `department` | `string` | No | Department or team the user belongs to. Free-text, no validation. Examples: `"Assembly"`, `"Quality Control"`, `"CNC"`. |
+| Field        | Type     | Required | Description                                                                                                                                  |
+| ------------ | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`       | `string` | Yes      | Display name for the user. Must be a non-empty string. Leading and trailing whitespace is trimmed. Examples: `"Jane Smith"`, `"Operator 7"`. |
+| `department` | `string` | No       | Department or team the user belongs to. Free-text, no validation. Examples: `"Assembly"`, `"Quality Control"`, `"CNC"`.                      |
 
 ## Response
 
@@ -37,25 +37,25 @@ There is no uniqueness constraint on `name`. Multiple users can share the same n
 
 Returns the newly created `ShopUser` object with server-generated fields.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Server-generated unique identifier (e.g. `"user_a1b2c3"`) |
-| `name` | `string` | The trimmed display name as provided |
-| `department` | `string \| undefined` | Department, if provided |
-| `active` | `boolean` | Always `true` for newly created users |
-| `createdAt` | `string` | ISO 8601 timestamp of creation |
+| Field        | Type                  | Description                                               |
+| ------------ | --------------------- | --------------------------------------------------------- |
+| `id`         | `string`              | Server-generated unique identifier (e.g. `"user_a1b2c3"`) |
+| `name`       | `string`              | The trimmed display name as provided                      |
+| `department` | `string \| undefined` | Department, if provided                                   |
+| `active`     | `boolean`             | Always `true` for newly created users                     |
+| `createdAt`  | `string`              | ISO 8601 timestamp of creation                            |
 
 ### 400 Bad Request
 
-| Condition | Message |
-|-----------|---------|
+| Condition                  | Message              |
+| -------------------------- | -------------------- |
 | `name` is missing or empty | `"name is required"` |
-| `name` is only whitespace | `"name is required"` |
+| `name` is only whitespace  | `"name is required"` |
 
 ### 500 Internal Server Error
 
-| Condition | Message |
-|-----------|---------|
+| Condition              | Message                   |
+| ---------------------- | ------------------------- |
 | Database write failure | `"Internal Server Error"` |
 
 ## Examples

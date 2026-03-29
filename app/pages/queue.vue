@@ -54,9 +54,7 @@ const sortedGroups = computed<OperatorGroup[]>(() => {
 })
 
 // Total filtered parts across all visible groups
-const filteredParts = computed(() =>
-  filteredGroups.value.reduce((sum, g) => sum + g.totalParts, 0),
-)
+const filteredParts = computed(() => filteredGroups.value.reduce((sum, g) => sum + g.totalParts, 0))
 
 // Operator dropdown items
 const operatorMenuItems = computed<DropdownMenuItem[][]>(() => {
@@ -64,7 +62,7 @@ const operatorMenuItems = computed<DropdownMenuItem[][]>(() => {
     return [[{ label: 'No operators available', disabled: true }]]
   }
   return [
-    activeUsers.value.map((user: { id: string, name: string }) => ({
+    activeUsers.value.map((user: { id: string; name: string }) => ({
       label: user.name,
       icon: user.id === operatorId.value ? 'i-lucide-check' : 'i-lucide-user',
       onSelect() {
@@ -128,17 +126,11 @@ onMounted(async () => {
 <template>
   <div class="p-4 space-y-3 max-w-5xl">
     <div class="flex items-center justify-between">
-      <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
-        Work Queue
-      </h1>
+      <h1 class="text-lg font-bold text-(--ui-text-highlighted)">Work Queue</h1>
 
       <!-- Operator selector -->
       <div class="flex items-center gap-2">
-        <UDropdownMenu
-          :items="operatorMenuItems"
-          size="sm"
-          :content="{ align: 'end' }"
-        >
+        <UDropdownMenu :items="operatorMenuItems" size="sm" :content="{ align: 'end' }">
           <UButton
             size="sm"
             :variant="operatorId ? 'ghost' : 'soft'"
@@ -170,10 +162,7 @@ onMounted(async () => {
     />
 
     <!-- Error state -->
-    <div
-      v-if="queueError"
-      class="flex items-center gap-2 text-xs text-(--ui-error)"
-    >
+    <div v-if="queueError" class="flex items-center gap-2 text-xs text-(--ui-error)">
       <span>{{ queueError }}</span>
       <UButton
         size="xs"
@@ -185,14 +174,8 @@ onMounted(async () => {
     </div>
 
     <!-- Loading -->
-    <div
-      v-if="queueLoading"
-      class="flex items-center gap-2 text-sm text-(--ui-text-muted)"
-    >
-      <UIcon
-        name="i-lucide-loader-2"
-        class="animate-spin size-4"
-      />
+    <div v-if="queueLoading" class="flex items-center gap-2 text-sm text-(--ui-text-muted)">
+      <UIcon name="i-lucide-loader-2" class="animate-spin size-4" />
       Loading work queue...
     </div>
 
@@ -201,11 +184,14 @@ onMounted(async () => {
       <div class="flex items-center justify-between text-xs text-(--ui-text-muted)">
         <span>
           <span class="font-semibold text-(--ui-text-highlighted)">{{ totalParts }}</span>
-          part{{ totalParts !== 1 ? 's' : '' }} across
-          {{ filteredGroups.length }} operator{{ filteredGroups.length !== 1 ? 's' : '' }}
+          part{{ totalParts !== 1 ? 's' : '' }} across {{ filteredGroups.length }} operator{{
+            filteredGroups.length !== 1 ? 's' : ''
+          }}
         </span>
         <span v-if="searchQuery.trim().length > 0">
-          Showing <span class="font-semibold text-(--ui-text-highlighted)">{{ filteredParts }}</span> of {{ totalParts }}
+          Showing
+          <span class="font-semibold text-(--ui-text-highlighted)">{{ filteredParts }}</span> of
+          {{ totalParts }}
         </span>
       </div>
 
@@ -214,10 +200,7 @@ onMounted(async () => {
         v-if="sortedGroups.length === 0 && totalParts === 0"
         class="text-center py-12 text-sm text-(--ui-text-muted)"
       >
-        <UIcon
-          name="i-lucide-inbox"
-          class="size-8 mx-auto mb-2 opacity-40"
-        />
+        <UIcon name="i-lucide-inbox" class="size-8 mx-auto mb-2 opacity-40" />
         <p>No active work in the queue.</p>
       </div>
 
@@ -226,10 +209,7 @@ onMounted(async () => {
         v-else-if="sortedGroups.length === 0 && searchQuery.trim().length > 0"
         class="text-center py-8 text-sm text-(--ui-text-muted)"
       >
-        <UIcon
-          name="i-lucide-search-x"
-          class="size-8 mx-auto mb-2 opacity-40"
-        />
+        <UIcon name="i-lucide-search-x" class="size-8 mx-auto mb-2 opacity-40" />
         <p>No results matching "{{ searchQuery.trim() }}"</p>
       </div>
 
@@ -259,11 +239,7 @@ onMounted(async () => {
               selected
             </UBadge>
           </div>
-          <UBadge
-            color="neutral"
-            variant="subtle"
-            size="xs"
-          >
+          <UBadge color="neutral" variant="subtle" size="xs">
             {{ group.totalParts }} part{{ group.totalParts !== 1 ? 's' : '' }}
           </UBadge>
         </div>
@@ -281,27 +257,19 @@ onMounted(async () => {
               <div class="space-y-0.5">
                 <div class="flex items-center gap-2 text-xs">
                   <span class="font-medium text-(--ui-text-highlighted)">{{ job.stepName }}</span>
-                  <span
-                    v-if="job.stepLocation"
-                    class="text-(--ui-text-muted)"
-                  >{{ formatLocation(job.stepLocation) }}</span>
+                  <span v-if="job.stepLocation" class="text-(--ui-text-muted)">{{
+                    formatLocation(job.stepLocation)
+                  }}</span>
                 </div>
                 <div class="text-xs text-(--ui-text-muted)">
                   {{ formatStepInfo(job) }}
                 </div>
               </div>
               <div class="flex items-center gap-2">
-                <UBadge
-                  :color="job.isFinalStep ? 'success' : 'neutral'"
-                  variant="subtle"
-                  size="xs"
-                >
+                <UBadge :color="job.isFinalStep ? 'success' : 'neutral'" variant="subtle" size="xs">
                   {{ job.partCount }}
                 </UBadge>
-                <UIcon
-                  name="i-lucide-chevron-right"
-                  class="size-4 text-(--ui-text-muted)"
-                />
+                <UIcon name="i-lucide-chevron-right" class="size-4 text-(--ui-text-muted)" />
               </div>
             </div>
           </button>

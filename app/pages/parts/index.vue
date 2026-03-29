@@ -1,15 +1,8 @@
 <script setup lang="ts">
 import type { WorkQueueJob } from '~/server/types/computed'
 
-const {
-  loading,
-  error,
-  searchQuery,
-  filteredJobs,
-  totalParts,
-  filteredParts,
-  fetchAllWork,
-} = usePartsView()
+const { loading, error, searchQuery, filteredJobs, totalParts, filteredParts, fetchAllWork } =
+  usePartsView()
 
 // Debounced search
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
@@ -38,9 +31,7 @@ onMounted(async () => {
 <template>
   <div class="p-4 space-y-3 max-w-5xl">
     <div class="flex items-center justify-between">
-      <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
-        Active Parts
-      </h1>
+      <h1 class="text-lg font-bold text-(--ui-text-highlighted)">Active Parts</h1>
     </div>
 
     <!-- Search -->
@@ -53,10 +44,7 @@ onMounted(async () => {
     />
 
     <!-- Error state -->
-    <div
-      v-if="error"
-      class="flex items-center gap-2 text-xs text-(--ui-error)"
-    >
+    <div v-if="error" class="flex items-center gap-2 text-xs text-(--ui-error)">
       <span>{{ error }}</span>
       <UButton
         size="xs"
@@ -68,14 +56,8 @@ onMounted(async () => {
     </div>
 
     <!-- Loading -->
-    <div
-      v-if="loading"
-      class="flex items-center gap-2 text-sm text-(--ui-text-muted)"
-    >
-      <UIcon
-        name="i-lucide-loader-2"
-        class="animate-spin size-4"
-      />
+    <div v-if="loading" class="flex items-center gap-2 text-sm text-(--ui-text-muted)">
+      <UIcon name="i-lucide-loader-2" class="animate-spin size-4" />
       Loading active parts...
     </div>
 
@@ -84,10 +66,7 @@ onMounted(async () => {
       v-else-if="totalParts === 0 && !error"
       class="text-center py-12 text-sm text-(--ui-text-muted)"
     >
-      <UIcon
-        name="i-lucide-inbox"
-        class="size-8 mx-auto mb-2 opacity-40"
-      />
+      <UIcon name="i-lucide-inbox" class="size-8 mx-auto mb-2 opacity-40" />
       <p>No active parts awaiting action.</p>
     </div>
 

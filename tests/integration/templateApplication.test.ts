@@ -22,8 +22,8 @@ describe('Template Application Integration', () => {
       steps: [
         { name: 'Cut', location: 'Machine Shop' },
         { name: 'Deburr', location: 'Machine Shop' },
-        { name: 'Inspect', location: 'QC Lab' }
-      ]
+        { name: 'Inspect', location: 'QC Lab' },
+      ],
     })
     expect(template.steps).toHaveLength(3)
 
@@ -31,7 +31,7 @@ describe('Template Application Integration', () => {
     const job = jobService.createJob({ name: 'Template Test Job', goalQuantity: 10 })
     const path = templateService.applyTemplate(template.id, {
       jobId: job.id,
-      goalQuantity: 10
+      goalQuantity: 10,
     })
 
     // Verify path has same steps as template
@@ -50,22 +50,18 @@ describe('Template Application Integration', () => {
 
     const template = templateService.createTemplate({
       name: 'Coating Route',
-      steps: [
-        { name: 'Prep' },
-        { name: 'Coat' },
-        { name: 'Cure' }
-      ]
+      steps: [{ name: 'Prep' }, { name: 'Coat' }, { name: 'Cure' }],
     })
 
     const job = jobService.createJob({ name: 'Modify Test', goalQuantity: 5 })
     const path = templateService.applyTemplate(template.id, {
       jobId: job.id,
-      goalQuantity: 5
+      goalQuantity: 5,
     })
 
     // Snapshot template steps before modification
     const templateBefore = templateService.getTemplate(template.id)
-    const stepNamesBefore = templateBefore.steps.map(s => s.name)
+    const stepNamesBefore = templateBefore.steps.map((s) => s.name)
 
     // Modify the derived path: add a step, change order
     pathService.updatePath(path.id, {
@@ -74,8 +70,8 @@ describe('Template Application Integration', () => {
         { name: 'Sand' },
         { name: 'Coat' },
         { name: 'Cure' },
-        { name: 'Final QC' }
-      ]
+        { name: 'Final QC' },
+      ],
     })
 
     // Verify the path was updated
@@ -86,7 +82,7 @@ describe('Template Application Integration', () => {
 
     // Verify original template is unchanged
     const templateAfter = templateService.getTemplate(template.id)
-    const stepNamesAfter = templateAfter.steps.map(s => s.name)
+    const stepNamesAfter = templateAfter.steps.map((s) => s.name)
     expect(stepNamesAfter).toEqual(stepNamesBefore)
     expect(templateAfter.steps).toHaveLength(3)
   })
@@ -97,7 +93,7 @@ describe('Template Application Integration', () => {
 
     const template = templateService.createTemplate({
       name: 'Shared Template',
-      steps: [{ name: 'OP1' }, { name: 'OP2' }]
+      steps: [{ name: 'OP1' }, { name: 'OP2' }],
     })
 
     const job1 = jobService.createJob({ name: 'Job 1', goalQuantity: 5 })
@@ -105,11 +101,11 @@ describe('Template Application Integration', () => {
 
     const path1 = templateService.applyTemplate(template.id, {
       jobId: job1.id,
-      goalQuantity: 5
+      goalQuantity: 5,
     })
     const path2 = templateService.applyTemplate(template.id, {
       jobId: job2.id,
-      goalQuantity: 8
+      goalQuantity: 8,
     })
 
     // Paths have different IDs
@@ -120,7 +116,7 @@ describe('Template Application Integration', () => {
 
     // Modify path1 — path2 should be unaffected
     pathService.updatePath(path1.id, {
-      steps: [{ name: 'OP1' }, { name: 'OP2' }, { name: 'OP3' }]
+      steps: [{ name: 'OP1' }, { name: 'OP2' }, { name: 'OP3' }],
     })
 
     const path2After = pathService.getPath(path2.id)
@@ -133,15 +129,17 @@ describe('Template Application Integration', () => {
 
     const template = templateService.createTemplate({
       name: 'Doomed Template',
-      steps: [{ name: 'Step 1' }]
+      steps: [{ name: 'Step 1' }],
     })
 
     templateService.deleteTemplate(template.id)
 
     const job = jobService.createJob({ name: 'Test', goalQuantity: 5 })
-    expect(() => templateService.applyTemplate(template.id, {
-      jobId: job.id,
-      goalQuantity: 5
-    })).toThrow(/not found/i)
+    expect(() =>
+      templateService.applyTemplate(template.id, {
+        jobId: job.id,
+        goalQuantity: 5,
+      })
+    ).toThrow(/not found/i)
   })
 })

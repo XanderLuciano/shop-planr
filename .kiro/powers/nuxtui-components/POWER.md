@@ -1,9 +1,9 @@
 ---
-name: "nuxtui-components"
-displayName: "NuxtUI Components Reference"
-description: "Complete reference guide for NuxtUI 4.3.0 components with props, variants, and usage examples. Quick access to all 110+ components organized by category."
-keywords: ["nuxtui", "vue", "components", "ui", "tailwind", "props", "variants"]
-author: "@xanderr"
+name: 'nuxtui-components'
+displayName: 'NuxtUI Components Reference'
+description: 'Complete reference guide for NuxtUI 4.3.0 components with props, variants, and usage examples. Quick access to all 110+ components organized by category.'
+keywords: ['nuxtui', 'vue', 'components', 'ui', 'tailwind', 'props', 'variants']
+author: '@xanderr'
 ---
 
 # NuxtUI Components Reference
@@ -19,7 +19,9 @@ NuxtUI is built on Reka UI, Tailwind CSS, and Tailwind Variants, providing produ
 NuxtUI components are organized into the following categories:
 
 ### Layout
+
 Core structural components for organizing your application's layout:
+
 - **Container** - Responsive container with max-width constraints
 - **Main** - Main content area wrapper
 - **Header** - Application header component
@@ -27,7 +29,9 @@ Core structural components for organizing your application's layout:
 - **Footer Columns** - Multi-column footer layout
 
 ### Element
+
 Essential UI building blocks:
+
 - **Button** - Interactive button with variants and states
 - **Badge** - Status indicators and labels
 - **Avatar** - User profile images with fallbacks
@@ -42,7 +46,9 @@ Essential UI building blocks:
 - **Error** - Error state displays
 
 ### Form
+
 Comprehensive form components:
+
 - **Input** - Text input field
 - **Input Number** - Numeric input with controls
 - **Input Date** - Date picker input
@@ -65,7 +71,9 @@ Comprehensive form components:
 - **Field Group** - Group related fields
 
 ### Data
+
 Components for displaying and organizing data:
+
 - **Table** - Data tables with sorting
 - **Accordion** - Collapsible content sections
 - **Carousel** - Image/content carousel
@@ -75,7 +83,9 @@ Components for displaying and organizing data:
 - **Marquee** - Scrolling content
 
 ### Navigation
+
 Components for user navigation:
+
 - **Navigation Menu** - Main navigation menu
 - **Breadcrumb** - Breadcrumb navigation
 - **Pagination** - Page navigation
@@ -85,7 +95,9 @@ Components for user navigation:
 - **Command Palette** - Command search interface
 
 ### Overlay
+
 Floating UI elements:
+
 - **Modal** - Modal dialogs
 - **Drawer** - Side drawer panels
 - **Slideover** - Sliding overlay panels
@@ -99,7 +111,9 @@ Floating UI elements:
 - **Banner** - Banner notifications
 
 ### Page
+
 Pre-built marketing and content sections:
+
 - **Page** - Page wrapper
 - **Page Header** - Page header section
 - **Page Hero** - Hero section
@@ -117,7 +131,9 @@ Pre-built marketing and content sections:
 - **Page Aside** - Sidebar content
 
 ### Dashboard
+
 Specialized dashboard components:
+
 - **Dashboard Panel** - Resizable panels
 - **Dashboard Group** - Panel groups
 - **Dashboard Resize Handle** - Panel resize controls
@@ -130,7 +146,9 @@ Specialized dashboard components:
 - **Dashboard Search Button** - Search trigger button
 
 ### AI Chat
+
 Conversational interface components:
+
 - **Chat Messages** - Message list container
 - **Chat Message** - Individual message
 - **Chat Prompt** - Message input
@@ -138,7 +156,9 @@ Conversational interface components:
 - **Chat Palette** - Command palette for chat
 
 ### Editor
+
 Rich text editor components (4.3+):
+
 - **Editor** - Main editor component
 - **Editor Toolbar** - Formatting toolbar
 - **Editor Drag Handle** - Drag and drop handle
@@ -147,24 +167,32 @@ Rich text editor components (4.3+):
 - **Editor Suggestion Menu** - Content suggestions
 
 ### Content
+
 Documentation site components:
+
 - **Blog Posts** - Blog post list
 - **Blog Post** - Individual blog post
 - **Changelog Versions** - Changelog list
 - **Changelog Version** - Individual changelog entry
 
 ### Pricing
+
 Pricing page components:
+
 - **Pricing Plans** - Pricing plan grid
 - **Pricing Plan** - Individual pricing plan
 - **Pricing Table** - Feature comparison table
 
 ### Auth
+
 Authentication components:
+
 - **Auth Form** - Authentication form
 
 ### Utilities
+
 Utility components:
+
 - **Scroll Area** - Custom scrollbar area
 - **Collapsible** - Collapsible content
 - **Progress** - Progress indicators
@@ -173,7 +201,9 @@ Utility components:
 ## Common Props and Patterns
 
 ### Color Variants
+
 Most components support these color options:
+
 - `primary` - Primary brand color
 - `secondary` - Secondary brand color
 - `success` - Success/positive state
@@ -183,7 +213,9 @@ Most components support these color options:
 - `neutral` - Neutral/default state
 
 ### Visual Variants
+
 Common visual styles across components:
+
 - `solid` - Filled background
 - `outline` - Border only
 - `soft` - Subtle background
@@ -192,7 +224,9 @@ Common visual styles across components:
 - `link` - Link style (buttons only)
 
 ### Size Options
+
 Standard size scale:
+
 - `xs` - Extra small
 - `sm` - Small
 - `md` - Medium (default)
@@ -200,12 +234,14 @@ Standard size scale:
 - `xl` - Extra large
 
 Some components also support:
+
 - `3xs`, `2xs` - Micro sizes (Avatar)
 - `2xl`, `3xl` - Larger sizes (Avatar)
 
 ### Common Props
 
 **Button Component:**
+
 ```vue
 <UButton
   color="primary"
@@ -224,6 +260,7 @@ Some components also support:
 ```
 
 **Input Component:**
+
 ```vue
 <UInput
   v-model="value"
@@ -240,6 +277,7 @@ Some components also support:
 ```
 
 **Card Component:**
+
 ```vue
 <UCard variant="outline">
   <template #header>
@@ -255,6 +293,7 @@ Some components also support:
 ```
 
 **Badge Component:**
+
 ```vue
 <UBadge
   color="primary"
@@ -269,17 +308,13 @@ Some components also support:
 ```
 
 **Avatar Component:**
+
 ```vue
-<UAvatar
-  src="image-url"
-  alt="User name"
-  size="md"
-  :icon="'icon-name'"
-  :text="'AB'"
-/>
+<UAvatar src="image-url" alt="User name" size="md" :icon="'icon-name'" :text="'AB'" />
 ```
 
 **Select Component:**
+
 ```vue
 <USelect
   v-model="selected"
@@ -292,6 +327,7 @@ Some components also support:
 ```
 
 **Modal Component:**
+
 ```vue
 <UModal v-model="isOpen">
   <UCard>
@@ -311,23 +347,25 @@ Some components also support:
 ## Usage Patterns
 
 ### Form with Validation
+
 ```vue
 <template>
   <UForm :state="state" @submit="onSubmit">
     <UFormField label="Email" name="email">
       <UInput v-model="state.email" type="email" />
     </UFormField>
-    
+
     <UFormField label="Password" name="password">
       <UInput v-model="state.password" type="password" />
     </UFormField>
-    
+
     <UButton type="submit">Submit</UButton>
   </UForm>
 </template>
 ```
 
 ### Field Groups
+
 ```vue
 <UFieldGroup orientation="horizontal">
   <UInput placeholder="First" />
@@ -337,21 +375,19 @@ Some components also support:
 ```
 
 ### Data Table
+
 ```vue
-<UTable
-  :columns="columns"
-  :rows="rows"
-  :loading="loading"
-  @select="onSelect"
-/>
+<UTable :columns="columns" :rows="rows" :loading="loading" @select="onSelect" />
 ```
 
 ### Navigation Menu
+
 ```vue
 <UNavigationMenu :items="menuItems" />
 ```
 
 ### Toast Notifications
+
 ```vue
 <script setup>
 const toast = useToast()
@@ -360,7 +396,7 @@ function showToast() {
   toast.add({
     title: 'Success',
     description: 'Operation completed',
-    color: 'success'
+    color: 'success',
   })
 }
 </script>
@@ -371,11 +407,13 @@ function showToast() {
 ### By Use Case
 
 **Need a button?**
+
 - Basic action: `UButton`
 - Icon only: `UButton` with `square` prop
 - Link style: `UButton` with `variant="link"`
 
 **Need input?**
+
 - Text: `UInput`
 - Number: `UInputNumber`
 - Date: `UInputDate`
@@ -384,6 +422,7 @@ function showToast() {
 - With dropdown: `UInputMenu`
 
 **Need selection?**
+
 - Simple dropdown: `USelect`
 - Searchable: `USelectMenu`
 - Multiple options: `UCheckboxGroup`
@@ -391,6 +430,7 @@ function showToast() {
 - Toggle: `USwitch`
 
 **Need overlay?**
+
 - Full screen: `UModal`
 - Side panel: `UDrawer` or `USlideover`
 - Small popup: `UPopover`
@@ -399,6 +439,7 @@ function showToast() {
 - Dropdown: `UDropdownMenu`
 
 **Need data display?**
+
 - Tabular: `UTable`
 - Expandable: `UAccordion`
 - Hierarchical: `UTree`
@@ -406,6 +447,7 @@ function showToast() {
 - Slideshow: `UCarousel`
 
 **Need navigation?**
+
 - Main menu: `UNavigationMenu`
 - Tabs: `UTabs`
 - Steps: `UStepper`
@@ -421,15 +463,15 @@ export default defineAppConfig({
   ui: {
     button: {
       slots: {
-        base: 'custom-classes'
+        base: 'custom-classes',
       },
       variants: {
         color: {
-          custom: 'custom-color-classes'
-        }
-      }
-    }
-  }
+          custom: 'custom-color-classes',
+        },
+      },
+    },
+  },
 })
 ```
 
@@ -440,8 +482,8 @@ Or override per instance using the `ui` prop:
   :ui="{
     base: 'custom-classes',
     variant: {
-      solid: 'custom-solid-classes'
-    }
+      solid: 'custom-solid-classes',
+    },
   }"
 >
   Custom Button
@@ -451,6 +493,7 @@ Or override per instance using the `ui` prop:
 ## Local Component Definitions
 
 Your project has local TypeScript definitions for all components in `.nuxt/ui/` directory. These files contain:
+
 - Available slots
 - Variant options
 - Size scales
@@ -476,22 +519,27 @@ Example: `.nuxt/ui/button.ts` contains the complete Button component configurati
 ## Troubleshooting
 
 ### Component not found
+
 **Problem:** Component not auto-imported
 **Solution:** Ensure `@nuxt/ui` is in your `nuxt.config.ts` modules array
 
 ### Styling not applied
+
 **Problem:** Custom styles not working
 **Solution:** Check Tailwind CSS configuration and ensure classes are not being purged
 
 ### TypeScript errors
+
 **Problem:** Props not recognized
 **Solution:** Run `nuxt prepare` to regenerate type definitions
 
 ### Icons not showing
+
 **Problem:** Icons not displaying
 **Solution:** Install required icon collections: `@iconify-json/lucide` or others
 
 ### Dark mode issues
+
 **Problem:** Colors not switching in dark mode
 **Solution:** Ensure `@nuxtjs/color-mode` is configured properly
 
@@ -506,19 +554,22 @@ Example: `.nuxt/ui/button.ts` contains the complete Button component configurati
 ## Quick Reference
 
 ### Installation
+
 ```bash
 npm install @nuxt/ui
 ```
 
 ### Configuration
+
 ```typescript
 // nuxt.config.ts
 export default defineNuxtConfig({
-  modules: ['@nuxt/ui']
+  modules: ['@nuxt/ui'],
 })
 ```
 
 ### Import (auto-imported in Nuxt)
+
 ```vue
 <template>
   <UButton>Click me</UButton>

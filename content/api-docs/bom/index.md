@@ -1,7 +1,7 @@
 ---
-title: "BOM API"
-description: "Bill of materials management — part roll-ups, versioned editing, and production tracking"
-icon: "i-lucide-layers"
+title: 'BOM API'
+description: 'Bill of materials management — part roll-ups, versioned editing, and production tracking'
+icon: 'i-lucide-layers'
 navigation:
   order: 6
 ---
@@ -46,14 +46,14 @@ The `GET /api/bom/:id` endpoint returns a `summary` object alongside the BOM dat
 
 ## Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | [`/api/bom`](/api-docs/bom/list) | List all BOMs |
-| `GET` | [`/api/bom/:id`](/api-docs/bom/get) | Get a BOM by ID with production summary |
-| `POST` | [`/api/bom`](/api-docs/bom/create) | Create a new BOM |
-| `PUT` | [`/api/bom/:id`](/api-docs/bom/update) | Update a BOM (simple, no version) |
-| `POST` | [`/api/bom/:id/edit`](/api-docs/bom/edit) | Edit a BOM (versioned, with change tracking) |
-| `GET` | [`/api/bom/:id/versions`](/api-docs/bom/versions) | Get the version history of a BOM |
+| Method | Path                                              | Description                                  |
+| ------ | ------------------------------------------------- | -------------------------------------------- |
+| `GET`  | [`/api/bom`](/api-docs/bom/list)                  | List all BOMs                                |
+| `GET`  | [`/api/bom/:id`](/api-docs/bom/get)               | Get a BOM by ID with production summary      |
+| `POST` | [`/api/bom`](/api-docs/bom/create)                | Create a new BOM                             |
+| `PUT`  | [`/api/bom/:id`](/api-docs/bom/update)            | Update a BOM (simple, no version)            |
+| `POST` | [`/api/bom/:id/edit`](/api-docs/bom/edit)         | Edit a BOM (versioned, with change tracking) |
+| `GET`  | [`/api/bom/:id/versions`](/api-docs/bom/versions) | Get the version history of a BOM             |
 
 ## Related APIs
 

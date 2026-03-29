@@ -13,9 +13,7 @@ const waiveReason = ref('')
 const waiveStepId = ref<string | null>(null)
 const actionError = ref<string | null>(null)
 
-const deferredSteps = computed(() =>
-  props.steps.filter(s => s.status === 'deferred'),
-)
+const deferredSteps = computed(() => props.steps.filter((s) => s.status === 'deferred'))
 
 async function handleComplete(stepId: string) {
   actionError.value = null
@@ -70,24 +68,23 @@ async function confirmWaive() {
       Deferred Steps ({{ deferredSteps.length }})
     </h4>
 
-    <div class="border border-amber-200 dark:border-amber-800 rounded-md divide-y divide-amber-200 dark:divide-amber-800">
+    <div
+      class="border border-amber-200 dark:border-amber-800 rounded-md divide-y divide-amber-200 dark:divide-amber-800"
+    >
       <div
         v-for="step in deferredSteps"
         :key="step.stepId"
         class="px-3 py-2 flex items-center justify-between gap-2"
       >
         <div class="flex items-center gap-2 min-w-0">
-          <span class="text-sm font-medium text-(--ui-text-highlighted) truncate">{{ step.stepName }}</span>
+          <span class="text-sm font-medium text-(--ui-text-highlighted) truncate">{{
+            step.stepName
+          }}</span>
           <UBadge color="warning" variant="subtle" size="xs">Deferred</UBadge>
         </div>
 
         <div v-if="waiveStepId === step.stepId" class="flex items-center gap-2">
-          <UInput
-            v-model="waiveReason"
-            placeholder="Waive reason..."
-            size="xs"
-            class="w-40"
-          />
+          <UInput v-model="waiveReason" placeholder="Waive reason..." size="xs" class="w-40" />
           <UButton size="xs" label="Confirm" :loading="loading" @click="confirmWaive" />
           <UButton size="xs" variant="ghost" label="Cancel" @click="cancelWaive" />
         </div>

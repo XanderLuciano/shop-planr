@@ -13,17 +13,26 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  save: [payload: { name: string, entries: { partType: string, requiredQuantityPerBuild: number, contributingJobIds: string[] }[] }]
+  save: [
+    payload: {
+      name: string
+      entries: {
+        partType: string
+        requiredQuantityPerBuild: number
+        contributingJobIds: string[]
+      }[]
+    },
+  ]
   cancel: []
 }>()
 
 const name = ref(props.bom?.name ?? '')
 const entries = ref<EntryDraft[]>(
   props.bom?.entries.length
-    ? props.bom.entries.map(e => ({
+    ? props.bom.entries.map((e) => ({
         partType: e.partType,
         requiredQuantityPerBuild: e.requiredQuantityPerBuild,
-        contributingJobIds: [...e.contributingJobIds]
+        contributingJobIds: [...e.contributingJobIds],
       }))
     : [{ partType: '', requiredQuantityPerBuild: null, contributingJobIds: [] }]
 )
@@ -39,7 +48,7 @@ function removeEntry(index: number) {
 }
 
 function jobOptions() {
-  return props.jobs.map(j => ({ label: j.name, value: j.id }))
+  return props.jobs.map((j) => ({ label: j.name, value: j.id }))
 }
 
 function onSubmit() {
@@ -48,7 +57,7 @@ function onSubmit() {
     formError.value = 'BOM name is required'
     return
   }
-  const valid = entries.value.filter(e => e.partType.trim())
+  const valid = entries.value.filter((e) => e.partType.trim())
   if (!valid.length) {
     formError.value = 'At least one entry with a part type is required'
     return
@@ -61,11 +70,11 @@ function onSubmit() {
   }
   emit('save', {
     name: name.value.trim(),
-    entries: valid.map(e => ({
+    entries: valid.map((e) => ({
       partType: e.partType.trim(),
       requiredQuantityPerBuild: e.requiredQuantityPerBuild!,
-      contributingJobIds: e.contributingJobIds
-    }))
+      contributingJobIds: e.contributingJobIds,
+    })),
   })
 }
 </script>
@@ -78,12 +87,7 @@ function onSubmit() {
 
     <div>
       <label class="block text-xs text-(--ui-text-muted) mb-0.5">BOM Name</label>
-      <UInput
-        v-model="name"
-        size="sm"
-        placeholder="e.g. Main Assembly"
-        class="max-w-sm"
-      />
+      <UInput v-model="name" size="sm" placeholder="e.g. Main Assembly" class="max-w-sm" />
     </div>
 
     <div>
@@ -106,11 +110,7 @@ function onSubmit() {
           <div class="flex items-center gap-2">
             <div class="flex-1">
               <label class="block text-xs text-(--ui-text-muted) mb-0.5">Part Type</label>
-              <UInput
-                v-model="entry.partType"
-                size="sm"
-                placeholder="e.g. Bracket"
-              />
+              <UInput v-model="entry.partType" size="sm" placeholder="e.g. Bracket" />
             </div>
             <div class="w-32">
               <label class="block text-xs text-(--ui-text-muted) mb-0.5">Qty / Build</label>
@@ -147,25 +147,13 @@ function onSubmit() {
       </div>
     </div>
 
-    <p
-      v-if="formError"
-      class="text-xs text-red-500"
-    >
+    <p v-if="formError" class="text-xs text-red-500">
       {{ formError }}
     </p>
 
     <div class="flex gap-2 justify-end">
-      <UButton
-        variant="ghost"
-        size="xs"
-        label="Cancel"
-        @click="emit('cancel')"
-      />
-      <UButton
-        size="xs"
-        :label="bom ? 'Update BOM' : 'Create BOM'"
-        @click="onSubmit"
-      />
+      <UButton variant="ghost" size="xs" label="Cancel" @click="emit('cancel')" />
+      <UButton size="xs" :label="bom ? 'Update BOM' : 'Create BOM'" @click="onSubmit" />
     </div>
   </div>
 </template>

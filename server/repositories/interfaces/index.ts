@@ -9,6 +9,9 @@ export type { SettingsRepository } from './settingsRepository'
 export type { NoteRepository } from './noteRepository'
 export type { UserRepository } from './userRepository'
 export type { PartStepStatusRepository, SnStepStatusRepository } from './partStepStatusRepository'
-export type { PartStepOverrideRepository, SnStepOverrideRepository } from './partStepOverrideRepository'
+export type {
+  PartStepOverrideRepository,
+  SnStepOverrideRepository,
+} from './partStepOverrideRepository'
 export type { BomVersionRepository } from './bomVersionRepository'
 export type { LibraryRepository } from './libraryRepository'

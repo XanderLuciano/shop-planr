@@ -46,7 +46,7 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
           stepOrder: step.order,
           stepLocation: step.location,
           totalSteps,
-          partIds: parts.map(s => s.id),
+          partIds: parts.map((s) => s.id),
           partCount: parts.length,
           nextStepName: nextStep?.name,
           nextStepLocation: nextStep?.location,
@@ -68,20 +68,23 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
 
 /** Arbitrary for a single job with one path, random steps, and random parts with advancements */
 const jobPathConfigArb = fc.record({
-  jobName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
-  pathName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
+  jobName: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
+  pathName: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
   stepCount: fc.integer({ min: 1, max: 5 }),
   partCount: fc.integer({ min: 1, max: 8 }),
   stepLocations: fc.array(
-    fc.option(fc.string({ minLength: 1, maxLength: 15 }).filter(s => s.trim().length > 0), { nil: undefined }),
-    { minLength: 5, maxLength: 5 },
+    fc.option(
+      fc.string({ minLength: 1, maxLength: 15 }).filter((s) => s.trim().length > 0),
+      { nil: undefined }
+    ),
+    { minLength: 5, maxLength: 5 }
   ),
   advancementSpecs: fc.array(
     fc.record({
       partIndex: fc.integer({ min: 0, max: 7 }),
       advanceTimes: fc.integer({ min: 0, max: 4 }),
     }),
-    { minLength: 0, maxLength: 8 },
+    { minLength: 0, maxLength: 8 }
   ),
   targetStepIndex: fc.integer({ min: 0, max: 4 }),
 })
@@ -176,7 +179,7 @@ describe('Preservation — Step 1 Disabled After Advance', () => {
 
           const parts = partService.batchCreateParts(
             { jobId: job.id, pathId: path.id, quantity: config.partCount },
-            'user_test',
+            'user_test'
           )
 
           for (const s of parts) {
@@ -191,7 +194,7 @@ describe('Preservation — Step 1 Disabled After Advance', () => {
           for (const spec of config.advancementSpecs) {
             if (spec.partIndex >= parts.length) continue
             const part = parts[spec.partIndex]
-            const tracked = allTrackedParts.find(t => t.id === part.id)!
+            const tracked = allTrackedParts.find((t) => t.id === part.id)!
 
             for (let i = 0; i < spec.advanceTimes; i++) {
               if (tracked.currentStepIndex === -1) break
@@ -212,7 +215,7 @@ describe('Preservation — Step 1 Disabled After Advance', () => {
         // Find steps that have active parts (parts.length > 0)
         const stepsWithActiveParts = allStepRecords.filter((rec) => {
           return allTrackedParts.some(
-            s => s.pathId === rec.pathId && s.currentStepIndex === rec.stepOrder,
+            (s) => s.pathId === rec.pathId && s.currentStepIndex === rec.stepOrder
           )
         })
 
@@ -235,8 +238,10 @@ describe('Preservation — Step 1 Disabled After Advance', () => {
 
         // Verify partIds matches expected parts at this step
         const expectedPartIds = allTrackedParts
-          .filter(s => s.pathId === targetStep.pathId && s.currentStepIndex === targetStep.stepOrder)
-          .map(s => s.id)
+          .filter(
+            (s) => s.pathId === targetStep.pathId && s.currentStepIndex === targetStep.stepOrder
+          )
+          .map((s) => s.id)
 
         expect(job.partIds.length).toBe(expectedPartIds.length)
         expect(new Set(job.partIds)).toEqual(new Set(expectedPartIds))
@@ -267,7 +272,7 @@ describe('Preservation — Step 1 Disabled After Advance', () => {
         ctx.cleanup()
         ctx = null as any
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -282,48 +287,44 @@ describe('Preservation — Step 1 Disabled After Advance', () => {
    */
   it('Property 5: Invalid step IDs return null (MUST PASS)', () => {
     fc.assert(
-      fc.property(
-        jobPathConfigArb,
-        fakeStepIdArb,
-        (config, fakeStepId) => {
-          ctx = createTestContext()
-          const { jobService, pathService, partService } = ctx
+      fc.property(jobPathConfigArb, fakeStepIdArb, (config, fakeStepId) => {
+        ctx = createTestContext()
+        const { jobService, pathService, partService } = ctx
 
-          // Create at least one job/path so the DB isn't empty
-          const job = jobService.createJob({
-            name: config.jobName,
-            goalQuantity: Math.max(config.partCount, 1),
-          })
+        // Create at least one job/path so the DB isn't empty
+        const job = jobService.createJob({
+          name: config.jobName,
+          goalQuantity: Math.max(config.partCount, 1),
+        })
 
-          const steps = Array.from({ length: config.stepCount }, (_, i) => ({
-            name: `Step-${i}`,
-            location: config.stepLocations[i],
-          }))
+        const steps = Array.from({ length: config.stepCount }, (_, i) => ({
+          name: `Step-${i}`,
+          location: config.stepLocations[i],
+        }))
 
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: config.pathName,
-            goalQuantity: Math.max(config.partCount, 1),
-            steps,
-          })
+        const path = pathService.createPath({
+          jobId: job.id,
+          name: config.pathName,
+          goalQuantity: Math.max(config.partCount, 1),
+          steps,
+        })
 
-          // Create parts so the DB has real data
-          partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: config.partCount },
-            'user_test',
-          )
+        // Create parts so the DB has real data
+        partService.batchCreateParts(
+          { jobId: job.id, pathId: path.id, quantity: config.partCount },
+          'user_test'
+        )
 
-          // Call lookupStep with a fake step ID that doesn't exist
-          const result = lookupStep(ctx, fakeStepId)
+        // Call lookupStep with a fake step ID that doesn't exist
+        const result = lookupStep(ctx, fakeStepId)
 
-          // Invalid step ID → must return null (404)
-          expect(result, `Fake step ID "${fakeStepId}" should return null`).toBeNull()
+        // Invalid step ID → must return null (404)
+        expect(result, `Fake step ID "${fakeStepId}" should return null`).toBeNull()
 
-          ctx.cleanup()
-          ctx = null as any
-        },
-      ),
-      { numRuns: 100 },
+        ctx.cleanup()
+        ctx = null as any
+      }),
+      { numRuns: 100 }
     )
   })
 })

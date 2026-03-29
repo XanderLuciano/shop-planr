@@ -1,6 +1,6 @@
 ---
 inclusion: auto
-description: "Layer boundaries and separation of concerns: components, composables, API routes, services, repositories, and migration rules."
+description: 'Layer boundaries and separation of concerns: components, composables, API routes, services, repositories, and migration rules.'
 ---
 
 # Separation of Concerns — SHOP_ERP

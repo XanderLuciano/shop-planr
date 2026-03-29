@@ -44,8 +44,9 @@ function formAfterSuccess(_state: NoteFormState): NoteFormState {
 
 // --- Generators ---
 
-const validNoteTextArb = fc.string({ minLength: 1, maxLength: 200 })
-  .filter(s => s.trim().length > 0)
+const validNoteTextArb = fc
+  .string({ minLength: 1, maxLength: 200 })
+  .filter((s) => s.trim().length > 0)
 
 // --- Tests ---
 
@@ -62,7 +63,7 @@ describe('Property 7: Successful save resets form state', () => {
         expect(after.noteText).toBe('')
         expect(after.noteSaving).toBe(false)
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

@@ -33,10 +33,22 @@ export class SQLitePartStepOverrideRepository implements PartStepOverrideReposit
   }
 
   create(override: PartStepOverride): PartStepOverride {
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO part_step_overrides (id, part_id, step_id, active, reason, created_by, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(override.id, override.partId, override.stepId, override.active ? 1 : 0, override.reason ?? null, override.createdBy, override.createdAt)
+    `
+      )
+      .run(
+        override.id,
+        override.partId,
+        override.stepId,
+        override.active ? 1 : 0,
+        override.reason ?? null,
+        override.createdBy,
+        override.createdAt
+      )
     return override
   }
 
@@ -47,43 +59,59 @@ export class SQLitePartStepOverrideRepository implements PartStepOverrideReposit
     `)
     this.db.transaction(() => {
       for (const o of overrides) {
-        insert.run(o.id, o.partId, o.stepId, o.active ? 1 : 0, o.reason ?? null, o.createdBy, o.createdAt)
+        insert.run(
+          o.id,
+          o.partId,
+          o.stepId,
+          o.active ? 1 : 0,
+          o.reason ?? null,
+          o.createdBy,
+          o.createdAt
+        )
       }
     })()
     return overrides
   }
 
   getByPartAndStep(partId: string, stepId: string): PartStepOverride | null {
-    const row = this.db.prepare(
-      'SELECT * FROM part_step_overrides WHERE part_id = ? AND step_id = ?'
-    ).get(partId, stepId) as PartStepOverrideRow | undefined
+    const row = this.db
+      .prepare('SELECT * FROM part_step_overrides WHERE part_id = ? AND step_id = ?')
+      .get(partId, stepId) as PartStepOverrideRow | undefined
     return row ? rowToDomain(row) : null
   }
 
   listByPartId(partId: string): PartStepOverride[] {
-    const rows = this.db.prepare(
-      'SELECT * FROM part_step_overrides WHERE part_id = ? ORDER BY created_at ASC'
-    ).all(partId) as PartStepOverrideRow[]
+    const rows = this.db
+      .prepare('SELECT * FROM part_step_overrides WHERE part_id = ? ORDER BY created_at ASC')
+      .all(partId) as PartStepOverrideRow[]
     return rows.map(rowToDomain)
   }
 
   listActiveByPartId(partId: string): PartStepOverride[] {
-    const rows = this.db.prepare(
-      'SELECT * FROM part_step_overrides WHERE part_id = ? AND active = 1 ORDER BY created_at ASC'
-    ).all(partId) as PartStepOverrideRow[]
+    const rows = this.db
+      .prepare(
+        'SELECT * FROM part_step_overrides WHERE part_id = ? AND active = 1 ORDER BY created_at ASC'
+      )
+      .all(partId) as PartStepOverrideRow[]
     return rows.map(rowToDomain)
   }
 
   update(id: string, partial: Partial<PartStepOverride>): PartStepOverride {
-    const row = this.db.prepare('SELECT * FROM part_step_overrides WHERE id = ?').get(id) as PartStepOverrideRow | undefined
+    const row = this.db.prepare('SELECT * FROM part_step_overrides WHERE id = ?').get(id) as
+      | PartStepOverrideRow
+      | undefined
     if (!row) throw new NotFoundError('PartStepOverride', id)
 
     const existing = rowToDomain(row)
     const updated: PartStepOverride = { ...existing, ...partial, id }
 
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       UPDATE part_step_overrides SET active = ?, reason = ? WHERE id = ?
-    `).run(updated.active ? 1 : 0, updated.reason ?? null, id)
+    `
+      )
+      .run(updated.active ? 1 : 0, updated.reason ?? null, id)
     return updated
   }
 

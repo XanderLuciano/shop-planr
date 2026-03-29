@@ -20,15 +20,13 @@ const reason = ref('')
 const validationError = ref<string | null>(null)
 
 const stepOptions = computed(() =>
-  props.steps.map(s => ({
+  props.steps.map((s) => ({
     label: `${s.order + 1}. ${s.name}`,
     value: s.id,
-  })),
+  }))
 )
 
-const activeOverrides = computed(() =>
-  props.overrides.filter(o => o.active),
-)
+const activeOverrides = computed(() => props.overrides.filter((o) => o.active))
 
 function togglePart(id: string) {
   const idx = selectedParts.value.indexOf(id)
@@ -101,9 +99,11 @@ async function handleReverse(override: PartStepOverride) {
             <span class="font-mono text-xs">{{ ov.partId }}</span>
             <span class="text-(--ui-text-muted) mx-1">→</span>
             <span class="text-(--ui-text-highlighted)">
-              {{ steps.find(s => s.id === ov.stepId)?.name ?? ov.stepId }}
+              {{ steps.find((s) => s.id === ov.stepId)?.name ?? ov.stepId }}
             </span>
-            <span v-if="ov.reason" class="text-xs text-(--ui-text-muted) ml-1">({{ ov.reason }})</span>
+            <span v-if="ov.reason" class="text-xs text-(--ui-text-muted) ml-1"
+              >({{ ov.reason }})</span
+            >
           </div>
           <UButton
             size="xs"
@@ -123,7 +123,9 @@ async function handleReverse(override: PartStepOverride) {
 
       <div>
         <label class="text-xs text-(--ui-text-muted) block mb-1">Parts</label>
-        <div class="max-h-32 overflow-y-auto border border-(--ui-border) rounded-md divide-y divide-(--ui-border)">
+        <div
+          class="max-h-32 overflow-y-auto border border-(--ui-border) rounded-md divide-y divide-(--ui-border)"
+        >
           <label
             v-for="sid in partIds"
             :key="sid"
@@ -134,7 +136,7 @@ async function handleReverse(override: PartStepOverride) {
               :checked="selectedParts.includes(sid)"
               class="rounded"
               @change="togglePart(sid)"
-            >
+            />
             <span class="font-mono">{{ sid }}</span>
           </label>
         </div>
@@ -160,12 +162,7 @@ async function handleReverse(override: PartStepOverride) {
       <p v-if="validationError" class="text-xs text-(--ui-error)">{{ validationError }}</p>
       <p v-if="error" class="text-xs text-(--ui-error)">{{ error }}</p>
 
-      <UButton
-        size="sm"
-        label="Create Override"
-        :loading="loading"
-        @click="handleCreate"
-      />
+      <UButton size="sm" label="Create Override" :loading="loading" @click="handleCreate" />
     </div>
   </div>
 </template>

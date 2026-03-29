@@ -9,7 +9,10 @@ import type { Job, Part } from '../../../server/types/domain'
 function createMockJobRepo(): JobRepository {
   const store = new Map<string, Job>()
   return {
-    create: vi.fn((job: Job) => { store.set(job.id, job); return job }),
+    create: vi.fn((job: Job) => {
+      store.set(job.id, job)
+      return job
+    }),
     getById: vi.fn((id: string) => store.get(id) ?? null),
     list: vi.fn(() => [...store.values()]),
     update: vi.fn((id: string, partial: Partial<Job>) => {
@@ -18,7 +21,7 @@ function createMockJobRepo(): JobRepository {
       store.set(id, updated)
       return updated
     }),
-    delete: vi.fn((id: string) => store.delete(id))
+    delete: vi.fn((id: string) => store.delete(id)),
   }
 }
 
@@ -28,7 +31,7 @@ function createMockPathRepo(): PathRepository {
     getById: vi.fn(),
     listByJobId: vi.fn(() => []),
     update: vi.fn(),
-    delete: vi.fn()
+    delete: vi.fn(),
   } as unknown as PathRepository
 }
 
@@ -42,9 +45,13 @@ function createMockPartRepo(parts: Part[] = []): PartRepository {
     listByJobId: vi.fn(() => parts),
     listByStepIndex: vi.fn(),
     update: vi.fn(),
-    countByJobId: vi.fn((jobId: string) => parts.filter(s => s.jobId === jobId).length),
-    countCompletedByJobId: vi.fn((jobId: string) => parts.filter(s => s.jobId === jobId && s.currentStepIndex === -1).length),
-    countScrappedByJobId: vi.fn((jobId: string) => parts.filter(s => s.jobId === jobId && s.status === 'scrapped').length),
+    countByJobId: vi.fn((jobId: string) => parts.filter((s) => s.jobId === jobId).length),
+    countCompletedByJobId: vi.fn(
+      (jobId: string) => parts.filter((s) => s.jobId === jobId && s.currentStepIndex === -1).length
+    ),
+    countScrappedByJobId: vi.fn(
+      (jobId: string) => parts.filter((s) => s.jobId === jobId && s.status === 'scrapped').length
+    ),
     listAll: vi.fn(() => parts),
   }
 }
@@ -82,7 +89,7 @@ describe('JobService', () => {
         name: 'Jira Job',
         goalQuantity: 5,
         jiraTicketKey: 'PI-123',
-        jiraTicketSummary: 'Some ticket'
+        jiraTicketSummary: 'Some ticket',
       })
       expect(job.jiraTicketKey).toBe('PI-123')
       expect(job.jiraTicketSummary).toBe('Some ticket')
@@ -186,11 +193,56 @@ describe('JobService', () => {
 
       // Rebuild service with parts that reference this job
       const parts: Part[] = [
-        { id: 'p1', jobId: job.id, pathId: 'p1', currentStepIndex: 0, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'p2', jobId: job.id, pathId: 'p1', currentStepIndex: 1, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'p3', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'p4', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'p5', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' }
+        {
+          id: 'p1',
+          jobId: job.id,
+          pathId: 'p1',
+          currentStepIndex: 0,
+          status: 'in_progress',
+          forceCompleted: false,
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          id: 'p2',
+          jobId: job.id,
+          pathId: 'p1',
+          currentStepIndex: 1,
+          status: 'in_progress',
+          forceCompleted: false,
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          id: 'p3',
+          jobId: job.id,
+          pathId: 'p1',
+          currentStepIndex: -1,
+          status: 'completed',
+          forceCompleted: false,
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          id: 'p4',
+          jobId: job.id,
+          pathId: 'p1',
+          currentStepIndex: -1,
+          status: 'completed',
+          forceCompleted: false,
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          id: 'p5',
+          jobId: job.id,
+          pathId: 'p1',
+          currentStepIndex: -1,
+          status: 'completed',
+          forceCompleted: false,
+          createdAt: '',
+          updatedAt: '',
+        },
       ]
       const partRepoWithData = createMockPartRepo(parts)
       const svc = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepoWithData })
@@ -206,9 +258,36 @@ describe('JobService', () => {
       const job = service.createJob({ name: 'Over Job', goalQuantity: 2 })
 
       const parts: Part[] = [
-        { id: 'p1', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'p2', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'p3', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' }
+        {
+          id: 'p1',
+          jobId: job.id,
+          pathId: 'p1',
+          currentStepIndex: -1,
+          status: 'completed',
+          forceCompleted: false,
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          id: 'p2',
+          jobId: job.id,
+          pathId: 'p1',
+          currentStepIndex: -1,
+          status: 'completed',
+          forceCompleted: false,
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          id: 'p3',
+          jobId: job.id,
+          pathId: 'p1',
+          currentStepIndex: -1,
+          status: 'completed',
+          forceCompleted: false,
+          createdAt: '',
+          updatedAt: '',
+        },
       ]
       const partRepoWithData = createMockPartRepo(parts)
       const svc = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepoWithData })
@@ -232,9 +311,36 @@ describe('JobService', () => {
       const job = service.createJob({ name: 'Parts Job', goalQuantity: 10 })
 
       const parts: Part[] = [
-        { id: 'p1', jobId: job.id, pathId: 'p1', currentStepIndex: 0, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'p2', jobId: job.id, pathId: 'p2', currentStepIndex: 1, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'p3', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' }
+        {
+          id: 'p1',
+          jobId: job.id,
+          pathId: 'p1',
+          currentStepIndex: 0,
+          status: 'in_progress',
+          forceCompleted: false,
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          id: 'p2',
+          jobId: job.id,
+          pathId: 'p2',
+          currentStepIndex: 1,
+          status: 'in_progress',
+          forceCompleted: false,
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          id: 'p3',
+          jobId: job.id,
+          pathId: 'p1',
+          currentStepIndex: -1,
+          status: 'completed',
+          forceCompleted: false,
+          createdAt: '',
+          updatedAt: '',
+        },
       ]
       const partRepoWithData = createMockPartRepo(parts)
       const svc = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepoWithData })

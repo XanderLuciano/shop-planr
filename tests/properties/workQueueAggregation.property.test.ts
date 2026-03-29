@@ -46,7 +46,9 @@ function setupServices(db: Database.default.Database) {
 
   const partIdGenerator = createSequentialPartIdGenerator({
     getCounter: () => {
-      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
+      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as
+        | { value: number }
+        | undefined
       return row?.value ?? 0
     },
     setCounter: (v: number) => {
@@ -60,7 +62,7 @@ function setupServices(db: Database.default.Database) {
   const partService = createPartService(
     { parts: repos.parts, paths: repos.paths, certs: repos.certs },
     auditService,
-    partIdGenerator,
+    partIdGenerator
   )
 
   return { jobService, pathService, partService }
@@ -72,7 +74,7 @@ function setupServices(db: Database.default.Database) {
  */
 function aggregateWorkQueue(
   services: ReturnType<typeof setupServices>,
-  userId: string,
+  userId: string
 ): WorkQueueResponse {
   const { jobService, pathService, partService } = services
   const jobs = jobService.listJobs()
@@ -102,7 +104,7 @@ function aggregateWorkQueue(
           stepOrder: step.order,
           stepLocation: step.location,
           totalSteps,
-          partIds: parts.map(s => s.id),
+          partIds: parts.map((s) => s.id),
           partCount: parts.length,
           nextStepName: nextStep?.name,
           nextStepLocation: nextStep?.location,
@@ -120,8 +122,8 @@ function aggregateWorkQueue(
 
 /** Arbitrary for a single job/path/part configuration */
 const jobPathConfigArb = fc.record({
-  jobName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
-  pathName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
+  jobName: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
+  pathName: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
   stepCount: fc.integer({ min: 1, max: 5 }),
   partCount: fc.integer({ min: 0, max: 8 }),
   /** How many parts to advance (and by how many steps each) */
@@ -132,7 +134,7 @@ const jobPathConfigArb = fc.record({
       /** How many times to advance this part */
       advanceTimes: fc.integer({ min: 0, max: 6 }),
     }),
-    { minLength: 0, maxLength: 10 },
+    { minLength: 0, maxLength: 10 }
   ),
 })
 
@@ -185,7 +187,7 @@ describe('Property 1: Queue aggregation correctness', () => {
 
           const parts = partService.batchCreateParts(
             { jobId: job.id, pathId: path.id, quantity: config.partCount },
-            'user_test',
+            'user_test'
           )
 
           // Initialize tracking — all start at step 0
@@ -197,7 +199,7 @@ describe('Property 1: Queue aggregation correctness', () => {
           for (const spec of config.advancementSpecs) {
             if (spec.partIndex >= parts.length) continue
             const part = parts[spec.partIndex]
-            const tracked = allParts.find(t => t.id === part.id)!
+            const tracked = allParts.find((t) => t.id === part.id)!
 
             for (let i = 0; i < spec.advanceTimes; i++) {
               if (tracked.currentStepIndex === -1) break // already completed
@@ -220,9 +222,7 @@ describe('Property 1: Queue aggregation correctness', () => {
 
         // Collect all active parts (currentStepIndex >= 0)
         const expectedActiveIds = new Set(
-          allParts
-            .filter(s => s.currentStepIndex >= 0)
-            .map(s => s.id),
+          allParts.filter((s) => s.currentStepIndex >= 0).map((s) => s.id)
         )
 
         // Collect all part IDs from the response
@@ -246,7 +246,7 @@ describe('Property 1: Queue aggregation correctness', () => {
         // 4. Each part is in the correct group (matching pathId and stepOrder)
         for (const job of response.jobs) {
           for (const partId of job.partIds) {
-            const tracked = allParts.find(t => t.id === partId)!
+            const tracked = allParts.find((t) => t.id === partId)!
             expect(tracked.pathId).toBe(job.pathId)
             expect(tracked.currentStepIndex).toBe(job.stepOrder)
           }
@@ -255,7 +255,7 @@ describe('Property 1: Queue aggregation correctness', () => {
         db.close()
         db = null as any
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })
@@ -310,7 +310,7 @@ describe('Property 2: Queue structural invariants', () => {
 
           const parts = partService.batchCreateParts(
             { jobId: job.id, pathId: path.id, quantity: config.partCount },
-            'user_test',
+            'user_test'
           )
 
           // Apply advancements
@@ -346,14 +346,14 @@ describe('Property 2: Queue structural invariants', () => {
         expect(response.totalParts).toBe(sumPartCount)
 
         // (d) No two jobs share the same jobId + pathId + stepOrder combination
-        const groupKeys = response.jobs.map(j => `${j.jobId}|${j.pathId}|${j.stepOrder}`)
+        const groupKeys = response.jobs.map((j) => `${j.jobId}|${j.pathId}|${j.stepOrder}`)
         const uniqueKeys = new Set(groupKeys)
         expect(uniqueKeys.size).toBe(groupKeys.length)
 
         db.close()
         db = null as any
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

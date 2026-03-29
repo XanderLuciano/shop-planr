@@ -1,19 +1,24 @@
 <script setup lang="ts">
 import { computeProgressBar } from '~/utils/progressBar'
 
-const props = withDefaults(defineProps<{
-  completed: number
-  goal: number
-  inProgress?: number
-}>(), {
-  inProgress: 0
-})
+const props = withDefaults(
+  defineProps<{
+    completed: number
+    goal: number
+    inProgress?: number
+  }>(),
+  {
+    inProgress: 0,
+  }
+)
 
-const progress = computed(() => computeProgressBar({
-  completed: props.completed,
-  goal: props.goal,
-  inProgress: props.inProgress
-}))
+const progress = computed(() =>
+  computeProgressBar({
+    completed: props.completed,
+    goal: props.goal,
+    inProgress: props.inProgress,
+  })
+)
 </script>
 
 <template>

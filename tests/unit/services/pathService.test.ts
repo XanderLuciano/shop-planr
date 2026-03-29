@@ -8,16 +8,19 @@ import type { Path, Part } from '../../../server/types/domain'
 function createMockPathRepo(): PathRepository {
   const store = new Map<string, Path>()
   return {
-    create: vi.fn((path: Path) => { store.set(path.id, path); return path }),
+    create: vi.fn((path: Path) => {
+      store.set(path.id, path)
+      return path
+    }),
     getById: vi.fn((id: string) => store.get(id) ?? null),
-    listByJobId: vi.fn((jobId: string) => [...store.values()].filter(p => p.jobId === jobId)),
+    listByJobId: vi.fn((jobId: string) => [...store.values()].filter((p) => p.jobId === jobId)),
     update: vi.fn((id: string, partial: Partial<Path>) => {
       const existing = store.get(id)!
       const updated = { ...existing, ...partial }
       store.set(id, updated)
       return updated
     }),
-    delete: vi.fn((id: string) => store.delete(id))
+    delete: vi.fn((id: string) => store.delete(id)),
   }
 }
 
@@ -27,16 +30,16 @@ function createMockPartRepo(parts: Part[] = []): PartRepository {
     createBatch: vi.fn(),
     getById: vi.fn(),
     getByIdentifier: vi.fn(),
-    listByPathId: vi.fn((pathId: string) => parts.filter(s => s.pathId === pathId)),
+    listByPathId: vi.fn((pathId: string) => parts.filter((s) => s.pathId === pathId)),
     listByJobId: vi.fn(),
     listByStepIndex: vi.fn((pathId: string, stepIndex: number) =>
-      parts.filter(s => s.pathId === pathId && s.currentStepIndex === stepIndex)
+      parts.filter((s) => s.pathId === pathId && s.currentStepIndex === stepIndex)
     ),
     update: vi.fn(),
     countByJobId: vi.fn(),
     countCompletedByJobId: vi.fn(),
     countScrappedByJobId: vi.fn(() => 0),
-    listAll: vi.fn(() => [])
+    listAll: vi.fn(() => []),
   }
 }
 
@@ -57,7 +60,7 @@ describe('PathService', () => {
         jobId: 'job_1',
         name: 'Main Route',
         goalQuantity: 50,
-        steps: [{ name: 'Machining' }, { name: 'Inspection' }]
+        steps: [{ name: 'Machining' }, { name: 'Inspection' }],
       })
       expect(path.id).toMatch(/^path_/)
       expect(path.jobId).toBe('job_1')
@@ -77,7 +80,7 @@ describe('PathService', () => {
         jobId: 'job_1',
         name: '  Trimmed  ',
         goalQuantity: 10,
-        steps: [{ name: 'Step 1' }]
+        steps: [{ name: 'Step 1' }],
       })
       expect(path.name).toBe('Trimmed')
     })
@@ -87,34 +90,52 @@ describe('PathService', () => {
         jobId: 'job_1',
         name: 'Route',
         goalQuantity: 10,
-        steps: [{ name: 'Coating', location: 'Vendor - Anodize Co.' }]
+        steps: [{ name: 'Coating', location: 'Vendor - Anodize Co.' }],
       })
       expect(path.steps[0].location).toBe('Vendor - Anodize Co.')
     })
 
     it('throws ValidationError for empty name', () => {
-      expect(() => service.createPath({
-        jobId: 'job_1', name: '', goalQuantity: 10, steps: [{ name: 'S1' }]
-      })).toThrow(ValidationError)
+      expect(() =>
+        service.createPath({
+          jobId: 'job_1',
+          name: '',
+          goalQuantity: 10,
+          steps: [{ name: 'S1' }],
+        })
+      ).toThrow(ValidationError)
     })
 
     it('throws ValidationError for zero goalQuantity', () => {
-      expect(() => service.createPath({
-        jobId: 'job_1', name: 'Route', goalQuantity: 0, steps: [{ name: 'S1' }]
-      })).toThrow(ValidationError)
+      expect(() =>
+        service.createPath({
+          jobId: 'job_1',
+          name: 'Route',
+          goalQuantity: 0,
+          steps: [{ name: 'S1' }],
+        })
+      ).toThrow(ValidationError)
     })
 
     it('throws ValidationError for empty steps array', () => {
-      expect(() => service.createPath({
-        jobId: 'job_1', name: 'Route', goalQuantity: 10, steps: []
-      })).toThrow(ValidationError)
+      expect(() =>
+        service.createPath({
+          jobId: 'job_1',
+          name: 'Route',
+          goalQuantity: 10,
+          steps: [],
+        })
+      ).toThrow(ValidationError)
     })
   })
 
   describe('getPath', () => {
     it('returns existing path', () => {
       const created = service.createPath({
-        jobId: 'job_1', name: 'Route', goalQuantity: 10, steps: [{ name: 'S1' }]
+        jobId: 'job_1',
+        name: 'Route',
+        goalQuantity: 10,
+        steps: [{ name: 'S1' }],
       })
       const found = service.getPath(created.id)
       expect(found.id).toBe(created.id)
@@ -141,7 +162,10 @@ describe('PathService', () => {
   describe('updatePath', () => {
     it('updates name', () => {
       const path = service.createPath({
-        jobId: 'job_1', name: 'Old', goalQuantity: 10, steps: [{ name: 'S1' }]
+        jobId: 'job_1',
+        name: 'Old',
+        goalQuantity: 10,
+        steps: [{ name: 'S1' }],
       })
       const updated = service.updatePath(path.id, { name: 'New' })
       expect(updated.name).toBe('New')
@@ -149,7 +173,10 @@ describe('PathService', () => {
 
     it('updates goalQuantity', () => {
       const path = service.createPath({
-        jobId: 'job_1', name: 'Route', goalQuantity: 10, steps: [{ name: 'S1' }]
+        jobId: 'job_1',
+        name: 'Route',
+        goalQuantity: 10,
+        steps: [{ name: 'S1' }],
       })
       const updated = service.updatePath(path.id, { goalQuantity: 25 })
       expect(updated.goalQuantity).toBe(25)
@@ -157,11 +184,13 @@ describe('PathService', () => {
 
     it('updates steps with new IDs and ordering', () => {
       const path = service.createPath({
-        jobId: 'job_1', name: 'Route', goalQuantity: 10,
-        steps: [{ name: 'S1' }, { name: 'S2' }]
+        jobId: 'job_1',
+        name: 'Route',
+        goalQuantity: 10,
+        steps: [{ name: 'S1' }, { name: 'S2' }],
       })
       const updated = service.updatePath(path.id, {
-        steps: [{ name: 'A' }, { name: 'B' }, { name: 'C' }]
+        steps: [{ name: 'A' }, { name: 'B' }, { name: 'C' }],
       })
       expect(updated.steps).toHaveLength(3)
       expect(updated.steps[0].name).toBe('A')
@@ -172,7 +201,10 @@ describe('PathService', () => {
 
     it('sets updatedAt on update', () => {
       const path = service.createPath({
-        jobId: 'job_1', name: 'Route', goalQuantity: 10, steps: [{ name: 'S1' }]
+        jobId: 'job_1',
+        name: 'Route',
+        goalQuantity: 10,
+        steps: [{ name: 'S1' }],
       })
       const updated = service.updatePath(path.id, { name: 'Changed' })
       expect(updated.updatedAt).toBeTruthy()
@@ -184,21 +216,30 @@ describe('PathService', () => {
 
     it('throws ValidationError for empty name update', () => {
       const path = service.createPath({
-        jobId: 'job_1', name: 'Route', goalQuantity: 10, steps: [{ name: 'S1' }]
+        jobId: 'job_1',
+        name: 'Route',
+        goalQuantity: 10,
+        steps: [{ name: 'S1' }],
       })
       expect(() => service.updatePath(path.id, { name: '' })).toThrow(ValidationError)
     })
 
     it('throws ValidationError for empty steps update', () => {
       const path = service.createPath({
-        jobId: 'job_1', name: 'Route', goalQuantity: 10, steps: [{ name: 'S1' }]
+        jobId: 'job_1',
+        name: 'Route',
+        goalQuantity: 10,
+        steps: [{ name: 'S1' }],
       })
       expect(() => service.updatePath(path.id, { steps: [] })).toThrow(ValidationError)
     })
 
     it('throws ValidationError for zero goalQuantity update', () => {
       const path = service.createPath({
-        jobId: 'job_1', name: 'Route', goalQuantity: 10, steps: [{ name: 'S1' }]
+        jobId: 'job_1',
+        name: 'Route',
+        goalQuantity: 10,
+        steps: [{ name: 'S1' }],
       })
       expect(() => service.updatePath(path.id, { goalQuantity: 0 })).toThrow(ValidationError)
     })
@@ -207,15 +248,45 @@ describe('PathService', () => {
   describe('getStepDistribution', () => {
     it('returns distribution with part counts per step', () => {
       const path = service.createPath({
-        jobId: 'job_1', name: 'Route', goalQuantity: 10,
-        steps: [{ name: 'Machining' }, { name: 'Inspection' }, { name: 'Coating' }]
+        jobId: 'job_1',
+        name: 'Route',
+        goalQuantity: 10,
+        steps: [{ name: 'Machining' }, { name: 'Inspection' }, { name: 'Coating' }],
       })
 
       const parts: Part[] = [
-        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' },
-        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' },
-        { id: 'p3', jobId: 'job_1', pathId: path.id, currentStepIndex: 1, createdAt: '', updatedAt: '' },
-        { id: 'p4', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, createdAt: '', updatedAt: '' }
+        {
+          id: 'p1',
+          jobId: 'job_1',
+          pathId: path.id,
+          currentStepIndex: 0,
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          id: 'p2',
+          jobId: 'job_1',
+          pathId: path.id,
+          currentStepIndex: 0,
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          id: 'p3',
+          jobId: 'job_1',
+          pathId: path.id,
+          currentStepIndex: 1,
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          id: 'p4',
+          jobId: 'job_1',
+          pathId: path.id,
+          currentStepIndex: -1,
+          createdAt: '',
+          updatedAt: '',
+        },
       ]
       const partRepoWithData = createMockPartRepo(parts)
       const svc = createPathService({ paths: pathRepo, parts: partRepoWithData })
@@ -235,38 +306,70 @@ describe('PathService', () => {
       expect(dist[0].completedCount).toBe(0)
       expect(dist[1].completedCount).toBe(0)
       expect(dist[2].completedCount).toBe(0)
-      expect(dist.every(d => d.completedCount === 0)).toBe(true)
+      expect(dist.every((d) => d.completedCount === 0)).toBe(true)
     })
 
     it('returns no bottleneck when all steps have zero parts', () => {
       const path = service.createPath({
-        jobId: 'job_1', name: 'Route', goalQuantity: 10,
-        steps: [{ name: 'S1' }, { name: 'S2' }]
+        jobId: 'job_1',
+        name: 'Route',
+        goalQuantity: 10,
+        steps: [{ name: 'S1' }, { name: 'S2' }],
       })
       const dist = service.getStepDistribution(path.id)
-      expect(dist.every(d => !d.isBottleneck)).toBe(true)
-      expect(dist.every(d => d.partCount === 0)).toBe(true)
-      expect(dist.every(d => d.completedCount === 0)).toBe(true)
+      expect(dist.every((d) => !d.isBottleneck)).toBe(true)
+      expect(dist.every((d) => d.partCount === 0)).toBe(true)
+      expect(dist.every((d) => d.completedCount === 0)).toBe(true)
     })
 
     it('has completedCount 0 on all entries even when completed parts exist', () => {
       const path = service.createPath({
-        jobId: 'job_1', name: 'Route', goalQuantity: 10,
-        steps: [{ name: 'S1' }, { name: 'S2' }, { name: 'S3' }]
+        jobId: 'job_1',
+        name: 'Route',
+        goalQuantity: 10,
+        steps: [{ name: 'S1' }, { name: 'S2' }, { name: 'S3' }],
       })
 
       const parts: Part[] = [
-        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' },
-        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, createdAt: '', updatedAt: '' },
-        { id: 'p3', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, createdAt: '', updatedAt: '' },
-        { id: 'p4', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, createdAt: '', updatedAt: '' }
+        {
+          id: 'p1',
+          jobId: 'job_1',
+          pathId: path.id,
+          currentStepIndex: 0,
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          id: 'p2',
+          jobId: 'job_1',
+          pathId: path.id,
+          currentStepIndex: -1,
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          id: 'p3',
+          jobId: 'job_1',
+          pathId: path.id,
+          currentStepIndex: -1,
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          id: 'p4',
+          jobId: 'job_1',
+          pathId: path.id,
+          currentStepIndex: -1,
+          createdAt: '',
+          updatedAt: '',
+        },
       ]
       const partRepoWithData = createMockPartRepo(parts)
       const svc = createPathService({ paths: pathRepo, parts: partRepoWithData })
 
       const dist = svc.getStepDistribution(path.id)
       // Even with 3 completed parts, every distribution entry should have completedCount === 0
-      expect(dist.every(d => d.completedCount === 0)).toBe(true)
+      expect(dist.every((d) => d.completedCount === 0)).toBe(true)
     })
 
     it('throws NotFoundError for missing path', () => {
@@ -275,13 +378,29 @@ describe('PathService', () => {
 
     it('marks multiple steps as bottleneck when tied', () => {
       const path = service.createPath({
-        jobId: 'job_1', name: 'Route', goalQuantity: 10,
-        steps: [{ name: 'S1' }, { name: 'S2' }]
+        jobId: 'job_1',
+        name: 'Route',
+        goalQuantity: 10,
+        steps: [{ name: 'S1' }, { name: 'S2' }],
       })
 
       const parts: Part[] = [
-        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' },
-        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepIndex: 1, createdAt: '', updatedAt: '' }
+        {
+          id: 'p1',
+          jobId: 'job_1',
+          pathId: path.id,
+          currentStepIndex: 0,
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          id: 'p2',
+          jobId: 'job_1',
+          pathId: path.id,
+          currentStepIndex: 1,
+          createdAt: '',
+          updatedAt: '',
+        },
       ]
       const partRepoWithData = createMockPartRepo(parts)
       const svc = createPathService({ paths: pathRepo, parts: partRepoWithData })
@@ -295,15 +414,45 @@ describe('PathService', () => {
   describe('getPathCompletedCount', () => {
     it('returns correct count of parts with currentStepIndex === -1', () => {
       const path = service.createPath({
-        jobId: 'job_1', name: 'Route', goalQuantity: 10,
-        steps: [{ name: 'S1' }, { name: 'S2' }]
+        jobId: 'job_1',
+        name: 'Route',
+        goalQuantity: 10,
+        steps: [{ name: 'S1' }, { name: 'S2' }],
       })
 
       const parts: Part[] = [
-        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' },
-        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, createdAt: '', updatedAt: '' },
-        { id: 'p3', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, createdAt: '', updatedAt: '' },
-        { id: 'p4', jobId: 'job_1', pathId: path.id, currentStepIndex: 1, createdAt: '', updatedAt: '' }
+        {
+          id: 'p1',
+          jobId: 'job_1',
+          pathId: path.id,
+          currentStepIndex: 0,
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          id: 'p2',
+          jobId: 'job_1',
+          pathId: path.id,
+          currentStepIndex: -1,
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          id: 'p3',
+          jobId: 'job_1',
+          pathId: path.id,
+          currentStepIndex: -1,
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          id: 'p4',
+          jobId: 'job_1',
+          pathId: path.id,
+          currentStepIndex: 1,
+          createdAt: '',
+          updatedAt: '',
+        },
       ]
       const partRepoWithData = createMockPartRepo(parts)
       const svc = createPathService({ paths: pathRepo, parts: partRepoWithData })
@@ -313,13 +462,29 @@ describe('PathService', () => {
 
     it('returns 0 when no parts are completed', () => {
       const path = service.createPath({
-        jobId: 'job_1', name: 'Route', goalQuantity: 10,
-        steps: [{ name: 'S1' }, { name: 'S2' }]
+        jobId: 'job_1',
+        name: 'Route',
+        goalQuantity: 10,
+        steps: [{ name: 'S1' }, { name: 'S2' }],
       })
 
       const parts: Part[] = [
-        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' },
-        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepIndex: 1, createdAt: '', updatedAt: '' }
+        {
+          id: 'p1',
+          jobId: 'job_1',
+          pathId: path.id,
+          currentStepIndex: 0,
+          createdAt: '',
+          updatedAt: '',
+        },
+        {
+          id: 'p2',
+          jobId: 'job_1',
+          pathId: path.id,
+          currentStepIndex: 1,
+          createdAt: '',
+          updatedAt: '',
+        },
       ]
       const partRepoWithData = createMockPartRepo(parts)
       const svc = createPathService({ paths: pathRepo, parts: partRepoWithData })
@@ -335,7 +500,10 @@ describe('PathService', () => {
   describe('deletePath', () => {
     it('deletes a path when no parts are attached', () => {
       const path = service.createPath({
-        jobId: 'job_1', name: 'Route', goalQuantity: 10, steps: [{ name: 'S1' }]
+        jobId: 'job_1',
+        name: 'Route',
+        goalQuantity: 10,
+        steps: [{ name: 'S1' }],
       })
       const result = service.deletePath(path.id)
       expect(result).toBe(true)
@@ -344,11 +512,21 @@ describe('PathService', () => {
 
     it('throws ValidationError when parts are attached to the path', () => {
       const path = service.createPath({
-        jobId: 'job_1', name: 'Route', goalQuantity: 10, steps: [{ name: 'S1' }]
+        jobId: 'job_1',
+        name: 'Route',
+        goalQuantity: 10,
+        steps: [{ name: 'S1' }],
       })
 
       const parts: Part[] = [
-        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' }
+        {
+          id: 'p1',
+          jobId: 'job_1',
+          pathId: path.id,
+          currentStepIndex: 0,
+          createdAt: '',
+          updatedAt: '',
+        },
       ]
       const partRepoWithData = createMockPartRepo(parts)
       const svc = createPathService({ paths: pathRepo, parts: partRepoWithData })

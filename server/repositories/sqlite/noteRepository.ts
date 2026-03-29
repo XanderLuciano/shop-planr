@@ -26,7 +26,7 @@ function rowToDomain(row: NoteRow): StepNote {
     createdBy: row.created_by,
     createdAt: row.created_at,
     pushedToJira: row.pushed_to_jira === 1,
-    jiraCommentId: row.jira_comment_id ?? undefined
+    jiraCommentId: row.jira_comment_id ?? undefined,
   }
 }
 
@@ -38,50 +38,60 @@ export class SQLiteNoteRepository implements NoteRepository {
   }
 
   create(note: StepNote): StepNote {
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO step_notes (id, job_id, path_id, step_id, serial_ids, text, created_by, created_at, pushed_to_jira, jira_comment_id)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      note.id,
-      note.jobId,
-      note.pathId,
-      note.stepId,
-      JSON.stringify(note.partIds),
-      note.text,
-      note.createdBy,
-      note.createdAt,
-      note.pushedToJira ? 1 : 0,
-      note.jiraCommentId ?? null
-    )
+    `
+      )
+      .run(
+        note.id,
+        note.jobId,
+        note.pathId,
+        note.stepId,
+        JSON.stringify(note.partIds),
+        note.text,
+        note.createdBy,
+        note.createdAt,
+        note.pushedToJira ? 1 : 0,
+        note.jiraCommentId ?? null
+      )
     return note
   }
 
   getById(id: string): StepNote | null {
-    const row = this.db.prepare('SELECT * FROM step_notes WHERE id = ?').get(id) as NoteRow | undefined
+    const row = this.db.prepare('SELECT * FROM step_notes WHERE id = ?').get(id) as
+      | NoteRow
+      | undefined
     return row ? rowToDomain(row) : null
   }
 
   listByPartId(partId: string): StepNote[] {
     // Use json_each to search within the JSON array of serial_ids
-    const rows = this.db.prepare(`
+    const rows = this.db
+      .prepare(
+        `
       SELECT DISTINCT sn.* FROM step_notes sn, json_each(sn.serial_ids) je
       WHERE je.value = ?
       ORDER BY sn.created_at ASC
-    `).all(partId) as NoteRow[]
+    `
+      )
+      .all(partId) as NoteRow[]
     return rows.map(rowToDomain)
   }
 
   listByStepId(stepId: string): StepNote[] {
-    const rows = this.db.prepare(
-      'SELECT * FROM step_notes WHERE step_id = ? ORDER BY created_at ASC'
-    ).all(stepId) as NoteRow[]
+    const rows = this.db
+      .prepare('SELECT * FROM step_notes WHERE step_id = ? ORDER BY created_at ASC')
+      .all(stepId) as NoteRow[]
     return rows.map(rowToDomain)
   }
 
   listByJobId(jobId: string): StepNote[] {
-    const rows = this.db.prepare(
-      'SELECT * FROM step_notes WHERE job_id = ? ORDER BY created_at ASC'
-    ).all(jobId) as NoteRow[]
+    const rows = this.db
+      .prepare('SELECT * FROM step_notes WHERE job_id = ? ORDER BY created_at ASC')
+      .all(jobId) as NoteRow[]
     return rows.map(rowToDomain)
   }
 }

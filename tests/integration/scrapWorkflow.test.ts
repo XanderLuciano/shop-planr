@@ -60,8 +60,7 @@ describe('Scrap Workflow Integration', () => {
     expect(progress.progressPercent).toBe(50)
 
     // 7. Verify advancement blocked on scrapped part
-    expect(() => partService.advancePart(parts[2].id, 'operator1'))
-      .toThrow()
+    expect(() => partService.advancePart(parts[2].id, 'operator1')).toThrow()
 
     // 8. Verify re-scrap blocked
     expect(() =>
@@ -73,7 +72,7 @@ describe('Scrap Workflow Integration', () => {
 
     // 9. Verify audit entry exists for scrap
     const auditTrail = auditService.getPartAuditTrail(parts[2].id)
-    const scrapEntry = auditTrail.find(e => e.action === 'part_scrapped')
+    const scrapEntry = auditTrail.find((e) => e.action === 'part_scrapped')
     expect(scrapEntry).toBeDefined()
     expect(scrapEntry!.partId).toBe(parts[2].id)
     expect(scrapEntry!.metadata).toMatchObject({ reason: 'damaged' })

@@ -55,7 +55,7 @@ describe('BOM Version History Integration', () => {
     expect(versions).toHaveLength(2)
 
     // 5. Verify version 1 contains the original entries (snapshot before first edit)
-    const v1 = versions.find(v => v.versionNumber === 1)
+    const v1 = versions.find((v) => v.versionNumber === 1)
     expect(v1).toBeDefined()
     expect(v1!.entriesSnapshot).toHaveLength(2)
     expect(v1!.entriesSnapshot[0].partType).toBe('Bracket')
@@ -66,7 +66,7 @@ describe('BOM Version History Integration', () => {
     expect(v1!.changedBy).toBe('engineer1')
 
     // 6. Verify version 2 contains the entries after first edit (snapshot before second edit)
-    const v2 = versions.find(v => v.versionNumber === 2)
+    const v2 = versions.find((v) => v.versionNumber === 2)
     expect(v2).toBeDefined()
     expect(v2!.entriesSnapshot).toHaveLength(3)
     expect(v2!.entriesSnapshot[0].partType).toBe('Bracket')
@@ -76,7 +76,7 @@ describe('BOM Version History Integration', () => {
 
     // 7. Verify version 1 is unchanged after edit 2 (immutability)
     const versionsAfter = bomService.listBomVersions(bom.id)
-    const v1After = versionsAfter.find(v => v.versionNumber === 1)
+    const v1After = versionsAfter.find((v) => v.versionNumber === 1)
     expect(v1After!.entriesSnapshot).toHaveLength(2)
     expect(v1After!.entriesSnapshot[0].requiredQuantityPerBuild).toBe(4)
     expect(v1After!.entriesSnapshot[1].requiredQuantityPerBuild).toBe(12)
@@ -98,7 +98,7 @@ describe('BOM Version History Integration', () => {
     })
 
     const entries = auditService.listAuditEntries()
-    const bomEditEntry = entries.find(e => e.action === 'bom_edited')
+    const bomEditEntry = entries.find((e) => e.action === 'bom_edited')
     expect(bomEditEntry).toBeDefined()
     expect(bomEditEntry!.metadata).toMatchObject({
       bomId: bom.id,

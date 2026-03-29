@@ -30,14 +30,20 @@ export class SQLiteLibraryRepository implements LibraryRepository {
   }
 
   listProcesses(): ProcessLibraryEntry[] {
-    const rows = this.db.prepare('SELECT * FROM process_library ORDER BY name ASC').all() as ProcessRow[]
+    const rows = this.db
+      .prepare('SELECT * FROM process_library ORDER BY name ASC')
+      .all() as ProcessRow[]
     return rows.map(processRowToDomain)
   }
 
   createProcess(entry: ProcessLibraryEntry): ProcessLibraryEntry {
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO process_library (id, name, created_at) VALUES (?, ?, ?)
-    `).run(entry.id, entry.name, entry.createdAt)
+    `
+      )
+      .run(entry.id, entry.name, entry.createdAt)
     return entry
   }
 
@@ -47,14 +53,20 @@ export class SQLiteLibraryRepository implements LibraryRepository {
   }
 
   listLocations(): LocationLibraryEntry[] {
-    const rows = this.db.prepare('SELECT * FROM location_library ORDER BY name ASC').all() as LocationRow[]
+    const rows = this.db
+      .prepare('SELECT * FROM location_library ORDER BY name ASC')
+      .all() as LocationRow[]
     return rows.map(locationRowToDomain)
   }
 
   createLocation(entry: LocationLibraryEntry): LocationLibraryEntry {
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO location_library (id, name, created_at) VALUES (?, ?, ?)
-    `).run(entry.id, entry.name, entry.createdAt)
+    `
+      )
+      .run(entry.id, entry.name, entry.createdAt)
     return entry
   }
 

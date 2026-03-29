@@ -15,9 +15,20 @@ import { join, resolve } from 'path'
 const CONTENT_DIR = resolve(__dirname, '../../content/api-docs')
 
 const EXPECTED_DOMAINS = [
-  'jobs', 'paths', 'serials', 'certs', 'templates', 'bom',
-  'audit', 'jira', 'settings', 'users', 'notes', 'operator',
-  'steps', 'library'
+  'jobs',
+  'paths',
+  'serials',
+  'certs',
+  'templates',
+  'bom',
+  'audit',
+  'jira',
+  'settings',
+  'users',
+  'notes',
+  'operator',
+  'steps',
+  'library',
 ] as const
 
 /**
@@ -74,7 +85,7 @@ function parseFrontmatter(content: string): Record<string, unknown> {
 /** Get all subdirectories in content/api-docs/ */
 function getSubdirectories(): string[] {
   if (!existsSync(CONTENT_DIR)) return []
-  return readdirSync(CONTENT_DIR).filter(entry => {
+  return readdirSync(CONTENT_DIR).filter((entry) => {
     const fullPath = join(CONTENT_DIR, entry)
     return statSync(fullPath).isDirectory()
   })
@@ -88,10 +99,7 @@ describe('Property 2: Content directory structure completeness', () => {
 
   it('all 14 expected service domains have subdirectories', () => {
     for (const domain of EXPECTED_DOMAINS) {
-      expect(
-        subdirectories,
-        `Missing subdirectory for service domain: ${domain}`
-      ).toContain(domain)
+      expect(subdirectories, `Missing subdirectory for service domain: ${domain}`).toContain(domain)
     }
   })
 
@@ -108,20 +116,33 @@ describe('Property 2: Content directory structure completeness', () => {
 
         // title: non-empty string
         expect(typeof fm.title, `${subdir}/index.md: title must be a string`).toBe('string')
-        expect((fm.title as string).length, `${subdir}/index.md: title must be non-empty`).toBeGreaterThan(0)
+        expect(
+          (fm.title as string).length,
+          `${subdir}/index.md: title must be non-empty`
+        ).toBeGreaterThan(0)
 
         // description: non-empty string
-        expect(typeof fm.description, `${subdir}/index.md: description must be a string`).toBe('string')
-        expect((fm.description as string).length, `${subdir}/index.md: description must be non-empty`).toBeGreaterThan(0)
+        expect(typeof fm.description, `${subdir}/index.md: description must be a string`).toBe(
+          'string'
+        )
+        expect(
+          (fm.description as string).length,
+          `${subdir}/index.md: description must be non-empty`
+        ).toBeGreaterThan(0)
 
         // icon: non-empty string
         expect(typeof fm.icon, `${subdir}/index.md: icon must be a string`).toBe('string')
-        expect((fm.icon as string).length, `${subdir}/index.md: icon must be non-empty`).toBeGreaterThan(0)
+        expect(
+          (fm.icon as string).length,
+          `${subdir}/index.md: icon must be non-empty`
+        ).toBeGreaterThan(0)
 
         // navigation.order: number
         const nav = fm.navigation as Record<string, unknown> | undefined
         expect(nav, `${subdir}/index.md: navigation must exist`).toBeDefined()
-        expect(typeof nav!.order, `${subdir}/index.md: navigation.order must be a number`).toBe('number')
+        expect(typeof nav!.order, `${subdir}/index.md: navigation.order must be a number`).toBe(
+          'number'
+        )
       }),
       { numRuns: subdirectories.length * 3 }
     )

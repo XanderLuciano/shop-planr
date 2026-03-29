@@ -29,21 +29,25 @@ import type { Path } from '~/server/types/domain'
 
 const processStepArb = fc.record({
   id: fc.uuid(),
-  name: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
+  name: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
   order: fc.constant(0),
   location: fc.option(fc.string({ minLength: 1, maxLength: 20 }), { nil: undefined }),
   optional: fc.boolean(),
-  dependencyType: fc.constantFrom('physical' as const, 'preferred' as const, 'completion_gate' as const),
+  dependencyType: fc.constantFrom(
+    'physical' as const,
+    'preferred' as const,
+    'completion_gate' as const
+  ),
 })
 
 const originalPathArb = fc.record({
   id: fc.uuid(),
   jobId: fc.uuid(),
-  name: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
+  name: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
   goalQuantity: fc.integer({ min: 1, max: 1000 }),
-  steps: fc.array(processStepArb, { minLength: 1, maxLength: 4 }).map(steps =>
-    steps.map((s, i) => ({ ...s, order: i })),
-  ),
+  steps: fc
+    .array(processStepArb, { minLength: 1, maxLength: 4 })
+    .map((steps) => steps.map((s, i) => ({ ...s, order: i }))),
   advancementMode: fc.constantFrom('strict' as const, 'flexible' as const, 'per_step' as const),
   createdAt: fc.constant('2024-01-01T00:00:00Z'),
   updatedAt: fc.constant('2024-01-01T00:00:00Z'),
@@ -54,18 +58,22 @@ function existingDraftArb(existingId: string): fc.Arbitrary<PathDraft> {
   return fc.record({
     _clientId: fc.uuid(),
     _existingId: fc.constant(existingId),
-    name: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
+    name: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
     goalQuantity: fc.integer({ min: 1, max: 1000 }),
     advancementMode: fc.constantFrom('strict' as const, 'flexible' as const, 'per_step' as const),
     steps: fc.array(
       fc.record({
         _clientId: fc.uuid(),
-        name: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
+        name: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
         location: fc.string({ minLength: 0, maxLength: 20 }),
         optional: fc.boolean(),
-        dependencyType: fc.constantFrom('physical' as const, 'preferred' as const, 'completion_gate' as const),
+        dependencyType: fc.constantFrom(
+          'physical' as const,
+          'preferred' as const,
+          'completion_gate' as const
+        ),
       }),
-      { minLength: 1, maxLength: 4 },
+      { minLength: 1, maxLength: 4 }
     ),
   })
 }
@@ -73,18 +81,22 @@ function existingDraftArb(existingId: string): fc.Arbitrary<PathDraft> {
 // A brand-new draft (no _existingId)
 const newDraftArb: fc.Arbitrary<PathDraft> = fc.record({
   _clientId: fc.uuid(),
-  name: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
+  name: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
   goalQuantity: fc.integer({ min: 1, max: 1000 }),
   advancementMode: fc.constantFrom('strict' as const, 'flexible' as const, 'per_step' as const),
   steps: fc.array(
     fc.record({
       _clientId: fc.uuid(),
-      name: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
+      name: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
       location: fc.string({ minLength: 0, maxLength: 20 }),
       optional: fc.boolean(),
-      dependencyType: fc.constantFrom('physical' as const, 'preferred' as const, 'completion_gate' as const),
+      dependencyType: fc.constantFrom(
+        'physical' as const,
+        'preferred' as const,
+        'completion_gate' as const
+      ),
     }),
-    { minLength: 1, maxLength: 4 },
+    { minLength: 1, maxLength: 4 }
   ),
 })
 
@@ -108,7 +120,7 @@ describe('Property 10: Edit diff correctly classifies path changes', () => {
                 name: orig.name + '-modified',
                 goalQuantity: orig.goalQuantity,
                 advancementMode: orig.advancementMode,
-                steps: orig.steps.map(s => ({
+                steps: orig.steps.map((s) => ({
                   _clientId: `step-client-${s.id}`,
                   name: s.name,
                   location: s.location ?? '',
@@ -124,11 +136,11 @@ describe('Property 10: Edit diff correctly classifies path changes', () => {
 
           // Deletes: originals whose IDs are NOT in any draft's _existingId
           const draftExistingIds = new Set(
-            allDrafts.filter(d => d._existingId).map(d => d._existingId!),
+            allDrafts.filter((d) => d._existingId).map((d) => d._existingId!)
           )
           for (const del of result.toDelete) {
             expect(draftExistingIds.has(del.id)).toBe(false)
-            expect(originals.find(o => o.id === del.id)).toBeDefined()
+            expect(originals.find((o) => o.id === del.id)).toBeDefined()
           }
 
           // Creates: drafts without _existingId
@@ -140,13 +152,13 @@ describe('Property 10: Edit diff correctly classifies path changes', () => {
           // Updates: drafts with _existingId that differ from original
           for (const upd of result.toUpdate) {
             expect(upd._existingId).toBeDefined()
-            expect(originals.find(o => o.id === upd._existingId)).toBeDefined()
+            expect(originals.find((o) => o.id === upd._existingId)).toBeDefined()
           }
 
           // No overlaps: delete IDs, update existingIds, and create clientIds are disjoint
-          const deleteIds = new Set(result.toDelete.map(d => d.id))
-          const updateIds = new Set(result.toUpdate.map(d => d._existingId!))
-          const createClientIds = new Set(result.toCreate.map(d => d._clientId))
+          const deleteIds = new Set(result.toDelete.map((d) => d.id))
+          const updateIds = new Set(result.toUpdate.map((d) => d._existingId!))
+          const createClientIds = new Set(result.toCreate.map((d) => d._clientId))
 
           // Delete and update IDs should not overlap
           for (const uid of updateIds) {
@@ -157,9 +169,9 @@ describe('Property 10: Edit diff correctly classifies path changes', () => {
           for (const c of result.toCreate) {
             expect(c._existingId).toBeUndefined()
           }
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

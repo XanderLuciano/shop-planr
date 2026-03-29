@@ -11,13 +11,13 @@
 
 ## Commands
 
-| Command | What it does |
-|---------|-------------|
-| `npm run test` | `vitest run` — single pass, all tests (824 tests, 143 files) |
-| `npm run test:watch` | `vitest` — watch mode |
-| `npx vitest run tests/properties` | Property tests only |
-| `npx vitest run tests/unit` | Unit tests only |
-| `npx vitest run tests/integration` | Integration tests only |
+| Command                            | What it does                                                 |
+| ---------------------------------- | ------------------------------------------------------------ |
+| `npm run test`                     | `vitest run` — single pass, all tests (824 tests, 143 files) |
+| `npm run test:watch`               | `vitest` — watch mode                                        |
+| `npx vitest run tests/properties`  | Property tests only                                          |
+| `npx vitest run tests/unit`        | Unit tests only                                              |
+| `npx vitest run tests/integration` | Integration tests only                                       |
 
 ## Test File Organization
 
@@ -74,6 +74,7 @@ tests/
 ```
 
 Optional property tests (skipped for MVP):
+
 - CP-9: BOM Roll-Up Consistency (`bomRollUp.property.test.ts`)
 - CP-13: Jira Ticket Filtering (`jiraFiltering.property.test.ts`)
 
@@ -120,18 +121,18 @@ No shared state between tests.
 
 ## 13 Correctness Properties
 
-| # | Property | Validates |
-|---|----------|-----------|
-| 1 | Job Part Count Invariant | Req 1.4, 7.5 |
-| 2 | Serial Number Uniqueness | Req 4.1, 4.2 |
-| 3 | Sequential Step Advancement | Req 3.1, 3.2, 3.3 |
-| 4 | Process Step Count Conservation | Req 3.4, 2.4, 7.4 |
-| 5 | Domain Object Round-Trip Serialization | Req 12.1, 12.2, 12.3, 12.5 |
-| 6 | Audit Trail Immutability + Completeness | Req 5.4, 13.1–13.5 |
-| 7 | Progress Bar Accuracy | Req 1.3, 1.5, 7.1, 7.6 |
-| 8 | Template Route Independence | Req 8.2, 8.3, 8.4 |
-| 9 | BOM Roll-Up Consistency | Req 11.2, 11.3, 11.5 |
-| 10 | Batch Cert Application Idempotence | Req 5.3, 5.6 |
-| 11 | Invalid Input Rejection | Req 1.6, 2.6, 4.6, 5.5 |
-| 12 | Malformed JSON Error Reporting | Req 12.4 |
-| 13 | Jira Ticket Filtering | Req 9.1, 9.5 |
+| #   | Property                                | Validates                  |
+| --- | --------------------------------------- | -------------------------- |
+| 1   | Job Part Count Invariant                | Req 1.4, 7.5               |
+| 2   | Serial Number Uniqueness                | Req 4.1, 4.2               |
+| 3   | Sequential Step Advancement             | Req 3.1, 3.2, 3.3          |
+| 4   | Process Step Count Conservation         | Req 3.4, 2.4, 7.4          |
+| 5   | Domain Object Round-Trip Serialization  | Req 12.1, 12.2, 12.3, 12.5 |
+| 6   | Audit Trail Immutability + Completeness | Req 5.4, 13.1–13.5         |
+| 7   | Progress Bar Accuracy                   | Req 1.3, 1.5, 7.1, 7.6     |
+| 8   | Template Route Independence             | Req 8.2, 8.3, 8.4          |
+| 9   | BOM Roll-Up Consistency                 | Req 11.2, 11.3, 11.5       |
+| 10  | Batch Cert Application Idempotence      | Req 5.3, 5.6               |
+| 11  | Invalid Input Rejection                 | Req 1.6, 2.6, 4.6, 5.5     |
+| 12  | Malformed JSON Error Reporting          | Req 12.4                   |
+| 13  | Jira Ticket Filtering                   | Req 9.1, 9.5               |

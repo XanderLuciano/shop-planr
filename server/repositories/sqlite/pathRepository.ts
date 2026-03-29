@@ -54,9 +54,25 @@ export class SQLitePathRepository implements PathRepository {
     `)
 
     this.db.transaction(() => {
-      insertPath.run(path.id, path.jobId, path.name, path.goalQuantity, path.advancementMode ?? 'strict', path.createdAt, path.updatedAt)
+      insertPath.run(
+        path.id,
+        path.jobId,
+        path.name,
+        path.goalQuantity,
+        path.advancementMode ?? 'strict',
+        path.createdAt,
+        path.updatedAt
+      )
       for (const step of path.steps) {
-        insertStep.run(step.id, path.id, step.name, step.order, step.location ?? null, step.optional ? 1 : 0, step.dependencyType ?? 'preferred')
+        insertStep.run(
+          step.id,
+          path.id,
+          step.name,
+          step.order,
+          step.location ?? null,
+          step.optional ? 1 : 0,
+          step.dependencyType ?? 'preferred'
+        )
       }
     })()
 
@@ -67,9 +83,9 @@ export class SQLitePathRepository implements PathRepository {
     const row = this.db.prepare('SELECT * FROM paths WHERE id = ?').get(id) as PathRow | undefined
     if (!row) return null
 
-    const stepRows = this.db.prepare(
-      'SELECT * FROM process_steps WHERE path_id = ? ORDER BY step_order ASC'
-    ).all(id) as StepRow[]
+    const stepRows = this.db
+      .prepare('SELECT * FROM process_steps WHERE path_id = ? ORDER BY step_order ASC')
+      .all(id) as StepRow[]
 
     return {
       id: row.id,
@@ -84,14 +100,14 @@ export class SQLitePathRepository implements PathRepository {
   }
 
   listByJobId(jobId: string): Path[] {
-    const rows = this.db.prepare(
-      'SELECT * FROM paths WHERE job_id = ? ORDER BY created_at ASC'
-    ).all(jobId) as PathRow[]
+    const rows = this.db
+      .prepare('SELECT * FROM paths WHERE job_id = ? ORDER BY created_at ASC')
+      .all(jobId) as PathRow[]
 
     return rows.map((row) => {
-      const stepRows = this.db.prepare(
-        'SELECT * FROM process_steps WHERE path_id = ? ORDER BY step_order ASC'
-      ).all(row.id) as StepRow[]
+      const stepRows = this.db
+        .prepare('SELECT * FROM process_steps WHERE path_id = ? ORDER BY step_order ASC')
+        .all(row.id) as StepRow[]
 
       return {
         id: row.id,
@@ -114,15 +130,13 @@ export class SQLitePathRepository implements PathRepository {
       ...existing,
       ...partial,
       id,
-      updatedAt: partial.updatedAt ?? new Date().toISOString()
+      updatedAt: partial.updatedAt ?? new Date().toISOString(),
     }
 
     const updatePathStmt = this.db.prepare(`
       UPDATE paths SET name = ?, goal_quantity = ?, advancement_mode = ?, updated_at = ? WHERE id = ?
     `)
-    const setTempOrderStmt = this.db.prepare(
-      'UPDATE process_steps SET step_order = ? WHERE id = ?'
-    )
+    const setTempOrderStmt = this.db.prepare('UPDATE process_steps SET step_order = ? WHERE id = ?')
     const updateStepStmt = this.db.prepare(`
       UPDATE process_steps SET name = ?, step_order = ?, location = ?, optional = ?, dependency_type = ? WHERE id = ?
     `)
@@ -130,21 +144,25 @@ export class SQLitePathRepository implements PathRepository {
       INSERT INTO process_steps (id, path_id, name, step_order, location, optional, dependency_type)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `)
-    const deleteStepStmt = this.db.prepare(
-      'DELETE FROM process_steps WHERE id = ?'
-    )
+    const deleteStepStmt = this.db.prepare('DELETE FROM process_steps WHERE id = ?')
 
     this.db.transaction(() => {
       // Phase 0: Update path-level fields
-      updatePathStmt.run(updated.name, updated.goalQuantity, updated.advancementMode, updated.updatedAt, id)
+      updatePathStmt.run(
+        updated.name,
+        updated.goalQuantity,
+        updated.advancementMode,
+        updated.updatedAt,
+        id
+      )
 
       if (partial.steps) {
         // Phase 1: Identify steps to update, insert, and delete
-        const existingIds = new Set(existing.steps.map(s => s.id))
-        const newIds = new Set(updated.steps.map(s => s.id))
-        const stepsToUpdate = updated.steps.filter(s => existingIds.has(s.id))
-        const stepsToInsert = updated.steps.filter(s => !existingIds.has(s.id))
-        const idsToDelete = [...existingIds].filter(stepId => !newIds.has(stepId))
+        const existingIds = new Set(existing.steps.map((s) => s.id))
+        const newIds = new Set(updated.steps.map((s) => s.id))
+        const stepsToUpdate = updated.steps.filter((s) => existingIds.has(s.id))
+        const stepsToInsert = updated.steps.filter((s) => !existingIds.has(s.id))
+        const idsToDelete = [...existingIds].filter((stepId) => !newIds.has(stepId))
 
         // Phase 2: Guard — check FK dependents before any deletes
         for (const stepId of idsToDelete) {
@@ -167,12 +185,27 @@ export class SQLitePathRepository implements PathRepository {
 
         // Phase 5: Update existing steps in place with new field values and correct order
         for (const step of stepsToUpdate) {
-          updateStepStmt.run(step.name, step.order, step.location ?? null, step.optional ? 1 : 0, step.dependencyType ?? 'preferred', step.id)
+          updateStepStmt.run(
+            step.name,
+            step.order,
+            step.location ?? null,
+            step.optional ? 1 : 0,
+            step.dependencyType ?? 'preferred',
+            step.id
+          )
         }
 
         // Phase 6: Insert new steps
         for (const step of stepsToInsert) {
-          insertStepStmt.run(step.id, id, step.name, step.order, step.location ?? null, step.optional ? 1 : 0, step.dependencyType ?? 'preferred')
+          insertStepStmt.run(
+            step.id,
+            id,
+            step.name,
+            step.order,
+            step.location ?? null,
+            step.optional ? 1 : 0,
+            step.dependencyType ?? 'preferred'
+          )
         }
       }
     })()
@@ -186,44 +219,52 @@ export class SQLitePathRepository implements PathRepository {
   }
 
   getStepById(stepId: string): ProcessStep | null {
-    const row = this.db.prepare('SELECT * FROM process_steps WHERE id = ?').get(stepId) as StepRow | undefined
+    const row = this.db.prepare('SELECT * FROM process_steps WHERE id = ?').get(stepId) as
+      | StepRow
+      | undefined
     return row ? stepRowToDomain(row) : null
   }
 
   updateStepAssignment(stepId: string, userId: string | null): ProcessStep {
     this.db.prepare('UPDATE process_steps SET assigned_to = ? WHERE id = ?').run(userId, stepId)
-    const row = this.db.prepare('SELECT * FROM process_steps WHERE id = ?').get(stepId) as StepRow | undefined
+    const row = this.db.prepare('SELECT * FROM process_steps WHERE id = ?').get(stepId) as
+      | StepRow
+      | undefined
     if (!row) throw new NotFoundError('ProcessStep', stepId)
     return stepRowToDomain(row)
   }
 
   updateStep(stepId: string, partial: Partial<ProcessStep>): ProcessStep {
-    const row = this.db.prepare('SELECT * FROM process_steps WHERE id = ?').get(stepId) as StepRow | undefined
+    const row = this.db.prepare('SELECT * FROM process_steps WHERE id = ?').get(stepId) as
+      | StepRow
+      | undefined
     if (!row) throw new NotFoundError('ProcessStep', stepId)
 
     const existing = stepRowToDomain(row)
     const updated: ProcessStep = { ...existing, ...partial, id: stepId }
 
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       UPDATE process_steps SET name = ?, step_order = ?, location = ?, assigned_to = ?, optional = ?, dependency_type = ? WHERE id = ?
-    `).run(
-      updated.name, updated.order, updated.location ?? null, updated.assignedTo ?? null,
-      updated.optional ? 1 : 0, updated.dependencyType ?? 'preferred', stepId,
-    )
+    `
+      )
+      .run(
+        updated.name,
+        updated.order,
+        updated.location ?? null,
+        updated.assignedTo ?? null,
+        updated.optional ? 1 : 0,
+        updated.dependencyType ?? 'preferred',
+        stepId
+      )
     return updated
   }
 
   hasStepDependents(stepId: string): boolean {
-    const tables = [
-      'cert_attachments',
-      'step_notes',
-      'part_step_statuses',
-      'part_step_overrides',
-    ]
+    const tables = ['cert_attachments', 'step_notes', 'part_step_statuses', 'part_step_overrides']
     for (const table of tables) {
-      const row = this.db.prepare(
-        `SELECT 1 FROM ${table} WHERE step_id = ? LIMIT 1`
-      ).get(stepId)
+      const row = this.db.prepare(`SELECT 1 FROM ${table} WHERE step_id = ? LIMIT 1`).get(stepId)
       if (row) return true
     }
     return false

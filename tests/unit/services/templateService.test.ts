@@ -8,7 +8,10 @@ import type { TemplateRoute, Path } from '../../../server/types/domain'
 function createMockTemplateRepo(): TemplateRepository {
   const store = new Map<string, TemplateRoute>()
   return {
-    create: vi.fn((t: TemplateRoute) => { store.set(t.id, t); return t }),
+    create: vi.fn((t: TemplateRoute) => {
+      store.set(t.id, t)
+      return t
+    }),
     getById: vi.fn((id: string) => store.get(id) ?? null),
     list: vi.fn(() => [...store.values()]),
     update: vi.fn((id: string, partial: Partial<TemplateRoute>) => {
@@ -17,23 +20,26 @@ function createMockTemplateRepo(): TemplateRepository {
       store.set(id, updated)
       return updated
     }),
-    delete: vi.fn((id: string) => store.delete(id))
+    delete: vi.fn((id: string) => store.delete(id)),
   }
 }
 
 function createMockPathRepo(): PathRepository {
   const store = new Map<string, Path>()
   return {
-    create: vi.fn((p: Path) => { store.set(p.id, p); return p }),
+    create: vi.fn((p: Path) => {
+      store.set(p.id, p)
+      return p
+    }),
     getById: vi.fn((id: string) => store.get(id) ?? null),
-    listByJobId: vi.fn((jobId: string) => [...store.values()].filter(p => p.jobId === jobId)),
+    listByJobId: vi.fn((jobId: string) => [...store.values()].filter((p) => p.jobId === jobId)),
     update: vi.fn((id: string, partial: Partial<Path>) => {
       const existing = store.get(id)!
       const updated = { ...existing, ...partial }
       store.set(id, updated)
       return updated
     }),
-    delete: vi.fn((id: string) => store.delete(id))
+    delete: vi.fn((id: string) => store.delete(id)),
   }
 }
 
@@ -52,7 +58,7 @@ describe('TemplateService', () => {
     it('creates a template with generated ID, ordered steps, and timestamps', () => {
       const tmpl = service.createTemplate({
         name: 'Standard Route',
-        steps: [{ name: 'Machining' }, { name: 'Inspection' }, { name: 'Coating' }]
+        steps: [{ name: 'Machining' }, { name: 'Inspection' }, { name: 'Coating' }],
       })
       expect(tmpl.id).toMatch(/^tmpl_/)
       expect(tmpl.name).toBe('Standard Route')
@@ -68,7 +74,7 @@ describe('TemplateService', () => {
     it('trims whitespace from name', () => {
       const tmpl = service.createTemplate({
         name: '  Trimmed  ',
-        steps: [{ name: 'S1' }]
+        steps: [{ name: 'S1' }],
       })
       expect(tmpl.name).toBe('Trimmed')
     })
@@ -76,34 +82,44 @@ describe('TemplateService', () => {
     it('assigns optional location to steps', () => {
       const tmpl = service.createTemplate({
         name: 'Route',
-        steps: [{ name: 'Coating', location: 'Vendor - Anodize Co.' }]
+        steps: [{ name: 'Coating', location: 'Vendor - Anodize Co.' }],
       })
       expect(tmpl.steps[0].location).toBe('Vendor - Anodize Co.')
     })
 
     it('throws ValidationError for empty name', () => {
-      expect(() => service.createTemplate({
-        name: '', steps: [{ name: 'S1' }]
-      })).toThrow(ValidationError)
+      expect(() =>
+        service.createTemplate({
+          name: '',
+          steps: [{ name: 'S1' }],
+        })
+      ).toThrow(ValidationError)
     })
 
     it('throws ValidationError for whitespace-only name', () => {
-      expect(() => service.createTemplate({
-        name: '   ', steps: [{ name: 'S1' }]
-      })).toThrow(ValidationError)
+      expect(() =>
+        service.createTemplate({
+          name: '   ',
+          steps: [{ name: 'S1' }],
+        })
+      ).toThrow(ValidationError)
     })
 
     it('throws ValidationError for empty steps array', () => {
-      expect(() => service.createTemplate({
-        name: 'Route', steps: []
-      })).toThrow(ValidationError)
+      expect(() =>
+        service.createTemplate({
+          name: 'Route',
+          steps: [],
+        })
+      ).toThrow(ValidationError)
     })
   })
 
   describe('getTemplate', () => {
     it('returns existing template', () => {
       const created = service.createTemplate({
-        name: 'Route', steps: [{ name: 'S1' }]
+        name: 'Route',
+        steps: [{ name: 'S1' }],
       })
       const found = service.getTemplate(created.id)
       expect(found.id).toBe(created.id)
@@ -148,13 +164,13 @@ describe('TemplateService', () => {
         steps: [
           { name: 'Machining', location: 'Shop Floor' },
           { name: 'Inspection' },
-          { name: 'Coating', location: 'Vendor - Anodize Co.' }
-        ]
+          { name: 'Coating', location: 'Vendor - Anodize Co.' },
+        ],
       })
 
       const path = service.applyTemplate(tmpl.id, {
         jobId: 'job_1',
-        goalQuantity: 50
+        goalQuantity: 50,
       })
 
       expect(path.id).toMatch(/^path_/)
@@ -177,13 +193,13 @@ describe('TemplateService', () => {
     it('uses custom pathName when provided', () => {
       const tmpl = service.createTemplate({
         name: 'Standard Route',
-        steps: [{ name: 'S1' }]
+        steps: [{ name: 'S1' }],
       })
 
       const path = service.applyTemplate(tmpl.id, {
         jobId: 'job_1',
         pathName: 'Custom Path Name',
-        goalQuantity: 10
+        goalQuantity: 10,
       })
 
       expect(path.name).toBe('Custom Path Name')
@@ -192,12 +208,12 @@ describe('TemplateService', () => {
     it('defaults path name to template name when pathName not provided', () => {
       const tmpl = service.createTemplate({
         name: 'My Template',
-        steps: [{ name: 'S1' }]
+        steps: [{ name: 'S1' }],
       })
 
       const path = service.applyTemplate(tmpl.id, {
         jobId: 'job_1',
-        goalQuantity: 10
+        goalQuantity: 10,
       })
 
       expect(path.name).toBe('My Template')
@@ -206,7 +222,7 @@ describe('TemplateService', () => {
     it('generates new step IDs distinct from any previous apply', () => {
       const tmpl = service.createTemplate({
         name: 'Route',
-        steps: [{ name: 'S1' }, { name: 'S2' }]
+        steps: [{ name: 'S1' }, { name: 'S2' }],
       })
 
       const path1 = service.applyTemplate(tmpl.id, { jobId: 'job_1', goalQuantity: 10 })
@@ -225,7 +241,7 @@ describe('TemplateService', () => {
     it('leaves original template unchanged after apply', () => {
       const tmpl = service.createTemplate({
         name: 'Original',
-        steps: [{ name: 'S1', location: 'Loc1' }, { name: 'S2' }]
+        steps: [{ name: 'S1', location: 'Loc1' }, { name: 'S2' }],
       })
 
       const templateBefore = JSON.parse(JSON.stringify(service.getTemplate(tmpl.id)))
@@ -237,20 +253,27 @@ describe('TemplateService', () => {
     })
 
     it('throws NotFoundError when template does not exist', () => {
-      expect(() => service.applyTemplate('nonexistent', {
-        jobId: 'job_1', goalQuantity: 10
-      })).toThrow(NotFoundError)
+      expect(() =>
+        service.applyTemplate('nonexistent', {
+          jobId: 'job_1',
+          goalQuantity: 10,
+        })
+      ).toThrow(NotFoundError)
     })
 
     it('throws NotFoundError when template has been deleted', () => {
       const tmpl = service.createTemplate({
-        name: 'Route', steps: [{ name: 'S1' }]
+        name: 'Route',
+        steps: [{ name: 'S1' }],
       })
       service.deleteTemplate(tmpl.id)
 
-      expect(() => service.applyTemplate(tmpl.id, {
-        jobId: 'job_1', goalQuantity: 10
-      })).toThrow(NotFoundError)
+      expect(() =>
+        service.applyTemplate(tmpl.id, {
+          jobId: 'job_1',
+          goalQuantity: 10,
+        })
+      ).toThrow(NotFoundError)
     })
   })
 })

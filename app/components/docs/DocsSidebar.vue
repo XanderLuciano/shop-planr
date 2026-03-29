@@ -60,7 +60,7 @@ const isEmpty = computed(() => !props.navigation || props.navigation.length === 
               ? 'bg-(--ui-color-primary-50) dark:bg-(--ui-color-primary-950)/30'
               : isInCategory(category.path)
                 ? 'bg-(--ui-bg-elevated)/40'
-                : 'hover:bg-(--ui-bg-elevated)/60'
+                : 'hover:bg-(--ui-bg-elevated)/60',
           ]"
         >
           <NuxtLink
@@ -71,7 +71,7 @@ const isEmpty = computed(() => !props.navigation || props.navigation.length === 
                 ? 'text-(--ui-color-primary-500)'
                 : isInCategory(category.path)
                   ? 'text-(--ui-text-highlighted)'
-                  : 'text-(--ui-text)'
+                  : 'text-(--ui-text)',
             ]"
           >
             <UIcon
@@ -99,14 +99,17 @@ const isEmpty = computed(() => !props.navigation || props.navigation.length === 
           v-if="category.children?.length && isExpanded(category.path)"
           class="mt-0.5 ml-3 space-y-0.5 border-l border-(--ui-border) pl-2"
         >
-          <li v-for="child in sortByOrder(category.children).filter(c => c.path !== category.path)" :key="child.path">
+          <li
+            v-for="child in sortByOrder(category.children).filter((c) => c.path !== category.path)"
+            :key="child.path"
+          >
             <NuxtLink
               :to="child.path"
               class="flex items-center gap-2 rounded-md px-2 py-1 text-sm transition-colors"
               :class="[
                 isActive(child.path)
                   ? 'bg-(--ui-color-primary-50) dark:bg-(--ui-color-primary-950)/30 text-(--ui-color-primary-500) font-medium'
-                  : 'text-(--ui-text-muted) hover:text-(--ui-text) hover:bg-(--ui-bg-elevated)/60'
+                  : 'text-(--ui-text-muted) hover:text-(--ui-text) hover:bg-(--ui-bg-elevated)/60',
               ]"
             >
               <!-- HTTP method badge -->

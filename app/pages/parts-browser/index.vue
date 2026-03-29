@@ -27,16 +27,16 @@ watch(searchInput, (val) => {
 
 // Unique values for filter dropdowns (derived from fetched data)
 const jobOptions = computed(() => {
-  const names = [...new Set(parts.value.map(s => s.jobName))].sort()
-  return [{ label: 'All Jobs', value: '__all__' }, ...names.map(n => ({ label: n, value: n }))]
+  const names = [...new Set(parts.value.map((s) => s.jobName))].sort()
+  return [{ label: 'All Jobs', value: '__all__' }, ...names.map((n) => ({ label: n, value: n }))]
 })
 const pathOptions = computed(() => {
-  const names = [...new Set(parts.value.map(s => s.pathName))].sort()
-  return [{ label: 'All Paths', value: '__all__' }, ...names.map(n => ({ label: n, value: n }))]
+  const names = [...new Set(parts.value.map((s) => s.pathName))].sort()
+  return [{ label: 'All Paths', value: '__all__' }, ...names.map((n) => ({ label: n, value: n }))]
 })
 const stepOptions = computed(() => {
-  const names = [...new Set(parts.value.map(s => s.currentStepName))].sort()
-  return [{ label: 'All Steps', value: '__all__' }, ...names.map(n => ({ label: n, value: n }))]
+  const names = [...new Set(parts.value.map((s) => s.currentStepName))].sort()
+  return [{ label: 'All Steps', value: '__all__' }, ...names.map((n) => ({ label: n, value: n }))]
 })
 const statusOptions = [
   { label: 'All Statuses', value: 'all' },
@@ -44,11 +44,13 @@ const statusOptions = [
   { label: 'Completed', value: 'completed' },
 ]
 const assigneeOptions = computed(() => {
-  const names = [...new Set(parts.value.map(s => s.assignedTo).filter((v): v is string => !!v))].sort()
+  const names = [
+    ...new Set(parts.value.map((s) => s.assignedTo).filter((v): v is string => !!v)),
+  ].sort()
   return [
     { label: 'All Assignees', value: '__all__' },
     { label: 'Unassigned', value: 'Unassigned' },
-    ...names.map(n => ({ label: n, value: n })),
+    ...names.map((n) => ({ label: n, value: n })),
   ]
 })
 
@@ -70,13 +72,14 @@ watch([selectedJob, selectedPath, selectedStep, selectedStatus, selectedAssignee
   }
 })
 
-const filtersActive = computed(() =>
-  searchQuery.value.trim().length > 0
-  || selectedJob.value !== ''
-  || selectedPath.value !== ''
-  || selectedStep.value !== ''
-  || selectedStatus.value !== 'all'
-  || selectedAssignee.value !== '',
+const filtersActive = computed(
+  () =>
+    searchQuery.value.trim().length > 0 ||
+    selectedJob.value !== '' ||
+    selectedPath.value !== '' ||
+    selectedStep.value !== '' ||
+    selectedStatus.value !== 'all' ||
+    selectedAssignee.value !== ''
 )
 
 // Sort indicator helper
@@ -85,7 +88,7 @@ function sortIcon(col: string) {
   return sortDirection.value === 'asc' ? '↑' : '↓'
 }
 
-const sortableColumns: { key: string, label: string }[] = [
+const sortableColumns: { key: string; label: string }[] = [
   { key: 'id', label: 'Part' },
   { key: 'jobName', label: 'Job' },
   { key: 'currentStepName', label: 'Step' },
@@ -101,9 +104,7 @@ onMounted(() => {
 
 <template>
   <div class="p-4 space-y-3 max-w-6xl">
-    <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
-      Parts Browser
-    </h1>
+    <h1 class="text-lg font-bold text-(--ui-text-highlighted)">Parts Browser</h1>
 
     <!-- Search + Filters row -->
     <div class="flex flex-wrap items-end gap-2">
@@ -160,7 +161,13 @@ onMounted(() => {
     <!-- Error -->
     <div v-else-if="error" class="flex items-center gap-2 text-xs text-(--ui-error)">
       <span>{{ error }}</span>
-      <UButton size="xs" variant="ghost" icon="i-lucide-refresh-cw" label="Retry" @click="fetchParts" />
+      <UButton
+        size="xs"
+        variant="ghost"
+        icon="i-lucide-refresh-cw"
+        label="Retry"
+        @click="fetchParts"
+      />
     </div>
 
     <!-- Table -->
@@ -199,7 +206,9 @@ onMounted(() => {
               </UBadge>
             </td>
             <td class="px-3 py-2 text-(--ui-text-muted)">{{ s.assignedTo ?? 'Unassigned' }}</td>
-            <td class="px-3 py-2 text-(--ui-text-muted)">{{ new Date(s.createdAt).toLocaleDateString() }}</td>
+            <td class="px-3 py-2 text-(--ui-text-muted)">
+              {{ new Date(s.createdAt).toLocaleDateString() }}
+            </td>
           </tr>
           <tr v-if="filteredParts.length === 0">
             <td colspan="6" class="px-3 py-8 text-center text-(--ui-text-muted)">

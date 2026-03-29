@@ -1,12 +1,12 @@
 ---
-title: "Scrap Serial"
-description: "Mark a serial number as scrapped with a mandatory reason code and optional explanation"
-method: "POST"
-endpoint: "/api/serials/:id/scrap"
-service: "lifecycleService"
-category: "Serials"
-requestBody: "ScrapSerialInput"
-responseType: "SerialNumber"
+title: 'Scrap Serial'
+description: 'Mark a serial number as scrapped with a mandatory reason code and optional explanation'
+method: 'POST'
+endpoint: '/api/serials/:id/scrap'
+service: 'lifecycleService'
+category: 'Serials'
+requestBody: 'ScrapSerialInput'
+responseType: 'SerialNumber'
 errorCodes: [400, 404, 500]
 navigation:
   order: 6
@@ -26,27 +26,27 @@ Scrapped serials are excluded from progress calculations (the denominator adjust
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` | Yes | The unique identifier of the serial number to scrap (e.g. `"SN-00001"`) |
+| Parameter | Type     | Required | Description                                                             |
+| --------- | -------- | -------- | ----------------------------------------------------------------------- |
+| `id`      | `string` | Yes      | The unique identifier of the serial number to scrap (e.g. `"SN-00001"`) |
 
 ### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `reason` | `string` | Yes | Scrap reason code. Must be one of: `"out_of_tolerance"`, `"process_defect"`, `"damaged"`, `"operator_error"`, `"other"`. |
-| `explanation` | `string` | Conditional | Free-text explanation for the scrap. **Required** when `reason` is `"other"`. Optional for all other reason codes. |
-| `userId` | `string` | Yes | ID of the user performing the scrap operation. Used for audit trail attribution. |
+| Field         | Type     | Required    | Description                                                                                                              |
+| ------------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `reason`      | `string` | Yes         | Scrap reason code. Must be one of: `"out_of_tolerance"`, `"process_defect"`, `"damaged"`, `"operator_error"`, `"other"`. |
+| `explanation` | `string` | Conditional | Free-text explanation for the scrap. **Required** when `reason` is `"other"`. Optional for all other reason codes.       |
+| `userId`      | `string` | Yes         | ID of the user performing the scrap operation. Used for audit trail attribution.                                         |
 
 ### Scrap Reason Codes
 
-| Code | Meaning |
-|------|---------|
-| `out_of_tolerance` | Part measurements fall outside acceptable tolerances |
-| `process_defect` | Defect introduced during a manufacturing process |
-| `damaged` | Part was physically damaged (handling, transport, etc.) |
-| `operator_error` | Scrap caused by operator mistake |
-| `other` | Reason not covered by standard codes — requires `explanation` |
+| Code               | Meaning                                                       |
+| ------------------ | ------------------------------------------------------------- |
+| `out_of_tolerance` | Part measurements fall outside acceptable tolerances          |
+| `process_defect`   | Defect introduced during a manufacturing process              |
+| `damaged`          | Part was physically damaged (handling, transport, etc.)       |
+| `operator_error`   | Scrap caused by operator mistake                              |
+| `other`            | Reason not covered by standard codes — requires `explanation` |
 
 ## Response
 
@@ -54,49 +54,49 @@ Scrapped serials are excluded from progress calculations (the denominator adjust
 
 Returned when the serial is successfully scrapped. The response contains the updated `SerialNumber` object with all scrap metadata populated.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Serial identifier |
-| `jobId` | `string` | ID of the parent job |
-| `pathId` | `string` | ID of the manufacturing path |
-| `currentStepIndex` | `number` | Step index where the serial was scrapped (unchanged from before scrap) |
-| `status` | `"scrapped"` | Always `"scrapped"` after this operation |
-| `scrapReason` | `string` | The reason code provided in the request |
-| `scrapExplanation` | `string \| undefined` | The explanation text, if provided |
-| `scrapStepId` | `string \| undefined` | ID of the process step where the serial was at the time of scrapping |
-| `scrappedAt` | `string` | ISO 8601 timestamp of when the scrap occurred |
-| `scrappedBy` | `string` | User ID of who performed the scrap |
-| `forceCompleted` | `boolean` | Always `false` for scrapped serials |
-| `createdAt` | `string` | ISO 8601 timestamp of serial creation |
-| `updatedAt` | `string` | ISO 8601 timestamp — updated to reflect the scrap time |
+| Field              | Type                  | Description                                                            |
+| ------------------ | --------------------- | ---------------------------------------------------------------------- |
+| `id`               | `string`              | Serial identifier                                                      |
+| `jobId`            | `string`              | ID of the parent job                                                   |
+| `pathId`           | `string`              | ID of the manufacturing path                                           |
+| `currentStepIndex` | `number`              | Step index where the serial was scrapped (unchanged from before scrap) |
+| `status`           | `"scrapped"`          | Always `"scrapped"` after this operation                               |
+| `scrapReason`      | `string`              | The reason code provided in the request                                |
+| `scrapExplanation` | `string \| undefined` | The explanation text, if provided                                      |
+| `scrapStepId`      | `string \| undefined` | ID of the process step where the serial was at the time of scrapping   |
+| `scrappedAt`       | `string`              | ISO 8601 timestamp of when the scrap occurred                          |
+| `scrappedBy`       | `string`              | User ID of who performed the scrap                                     |
+| `forceCompleted`   | `boolean`             | Always `false` for scrapped serials                                    |
+| `createdAt`        | `string`              | ISO 8601 timestamp of serial creation                                  |
+| `updatedAt`        | `string`              | ISO 8601 timestamp — updated to reflect the scrap time                 |
 
 ### 400 Bad Request
 
 Returned when the serial cannot be scrapped due to its current state or invalid input.
 
-| Condition | Message |
-|-----------|---------|
-| Serial is already scrapped | `"Serial is already scrapped"` |
-| Serial is already completed | `"Cannot scrap a completed serial"` |
-| `reason` is missing | `"Scrap reason is required"` |
+| Condition                                          | Message                                                    |
+| -------------------------------------------------- | ---------------------------------------------------------- |
+| Serial is already scrapped                         | `"Serial is already scrapped"`                             |
+| Serial is already completed                        | `"Cannot scrap a completed serial"`                        |
+| `reason` is missing                                | `"Scrap reason is required"`                               |
 | `reason` is `"other"` but `explanation` is missing | `"Explanation is required when scrap reason is \"other\""` |
 
 ### 404 Not Found
 
 Returned when the serial or its path does not exist.
 
-| Condition | Message |
-|-----------|---------|
-| Serial does not exist | `"Serial not found: {id}"` |
+| Condition                                | Message                      |
+| ---------------------------------------- | ---------------------------- |
+| Serial does not exist                    | `"Serial not found: {id}"`   |
 | Path referenced by serial does not exist | `"Path not found: {pathId}"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs during the scrap operation.
 
-| Condition | Message |
-|-----------|---------|
-| Database write failure | `"Internal Server Error"` |
+| Condition                    | Message                   |
+| ---------------------------- | ------------------------- |
+| Database write failure       | `"Internal Server Error"` |
 | Unexpected runtime exception | `"Internal Server Error"` |
 
 ## Examples

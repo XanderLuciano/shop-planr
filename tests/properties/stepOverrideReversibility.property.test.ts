@@ -27,14 +27,14 @@ interface StepStatusRecord {
 function canComplete(
   steps: StepConfig[],
   stepStatuses: StepStatusRecord[],
-  overriddenStepIds: Set<string>,
+  overriddenStepIds: Set<string>
 ): { canComplete: boolean; blockers: string[] } {
   const blockers: string[] = []
   for (const step of steps) {
     if (step.optional) continue
     if (overriddenStepIds.has(step.id)) continue
 
-    const status = stepStatuses.find(s => s.stepId === step.id)
+    const status = stepStatuses.find((s) => s.stepId === step.id)
     if (!status || (status.status !== 'completed' && status.status !== 'waived')) {
       blockers.push(step.id)
     }
@@ -85,9 +85,9 @@ describe('Property 5: Step Override Reversibility', () => {
           const withoutOverride = canComplete(steps, stepStatuses, new Set())
           expect(withoutOverride.canComplete).toBe(false)
           expect(withoutOverride.blockers).toContain(`step-${overrideStepIndex}`)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -97,9 +97,9 @@ describe('Property 5: Step Override Reversibility', () => {
         fc.constantFrom<PartStepStatusValue>('skipped', 'completed'),
         (terminalStatus) => {
           expect(canReverseOverride(terminalStatus)).toBe(false)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -109,9 +109,9 @@ describe('Property 5: Step Override Reversibility', () => {
         fc.constantFrom<PartStepStatusValue>('pending', 'deferred', 'in_progress', 'waived'),
         (status) => {
           expect(canReverseOverride(status)).toBe(true)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

@@ -44,7 +44,9 @@ function setupServices(db: Database.default.Database) {
 
   const partIdGenerator = createSequentialPartIdGenerator({
     getCounter: () => {
-      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
+      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as
+        | { value: number }
+        | undefined
       return row?.value ?? 0
     },
     setCounter: (v: number) => {
@@ -58,7 +60,7 @@ function setupServices(db: Database.default.Database) {
   const partService = createPartService(
     { parts: repos.parts, paths: repos.paths, certs: repos.certs },
     auditService,
-    partIdGenerator,
+    partIdGenerator
   )
 
   return { jobService, pathService, partService }
@@ -88,9 +90,9 @@ describe('Property 5: Quantity validation rejects over-limit', () => {
           const result = validateQuantity(quantity, available)
           expect(result).not.toBeNull()
           expect(result).toContain('Cannot advance')
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -103,9 +105,9 @@ describe('Property 5: Quantity validation rejects over-limit', () => {
           fc.pre(quantity <= available)
           const result = validateQuantity(quantity, available)
           expect(result).toBeNull()
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -117,13 +119,12 @@ describe('Property 5: Quantity validation rejects over-limit', () => {
         (quantity, available) => {
           const result = validateQuantity(quantity, available)
           expect(result).not.toBeNull()
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })
-
 
 /**
  * Property 4: Batch advancement by quantity in creation order
@@ -172,11 +173,11 @@ describe('Property 4: Batch advancement by quantity in creation order', () => {
 
           const serials = partService.batchCreateParts(
             { jobId: job.id, pathId: path.id, quantity: partCount },
-            'user_test',
+            'user_test'
           )
 
           // All start at step 0, sorted by creation order (which is array order)
-          const partIds = serials.map(s => s.id)
+          const partIds = serials.map((s) => s.id)
           const toAdvance = partIds.slice(0, quantity)
           const toRemain = partIds.slice(quantity)
 
@@ -200,9 +201,9 @@ describe('Property 4: Batch advancement by quantity in creation order', () => {
 
           db.close()
           db = null as any
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -228,7 +229,7 @@ describe('Property 4: Batch advancement by quantity in creation order', () => {
 
           const serials = partService.batchCreateParts(
             { jobId: job.id, pathId: path.id, quantity: partCount },
-            'user_test',
+            'user_test'
           )
 
           // Advance each part through all steps to completion
@@ -246,9 +247,9 @@ describe('Property 4: Batch advancement by quantity in creation order', () => {
 
           db.close()
           db = null as any
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

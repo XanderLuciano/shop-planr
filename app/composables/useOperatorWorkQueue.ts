@@ -19,11 +19,12 @@ export function useOperatorWorkQueue() {
     return all
       .map((group) => {
         const matchesOperator = group.operatorName.toLowerCase().includes(q)
-        const matchingJobs = group.jobs.filter(job =>
-          job.jobName.toLowerCase().includes(q)
-          || job.pathName.toLowerCase().includes(q)
-          || job.stepName.toLowerCase().includes(q)
-          || matchesOperator,
+        const matchingJobs = group.jobs.filter(
+          (job) =>
+            job.jobName.toLowerCase().includes(q) ||
+            job.pathName.toLowerCase().includes(q) ||
+            job.stepName.toLowerCase().includes(q) ||
+            matchesOperator
         )
         if (matchingJobs.length === 0) return null
         return {

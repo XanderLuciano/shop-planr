@@ -26,14 +26,14 @@ interface StepStatusRecord {
 function canComplete(
   steps: StepConfig[],
   stepStatuses: StepStatusRecord[],
-  overriddenStepIds: Set<string>,
+  overriddenStepIds: Set<string>
 ): { canComplete: boolean; blockers: string[] } {
   const blockers: string[] = []
   for (const step of steps) {
     if (step.optional) continue
     if (overriddenStepIds.has(step.id)) continue
 
-    const status = stepStatuses.find(s => s.stepId === step.id)
+    const status = stepStatuses.find((s) => s.stepId === step.id)
     if (!status || (status.status !== 'completed' && status.status !== 'waived')) {
       blockers.push(step.id)
     }
@@ -56,7 +56,7 @@ describe('Property 4: Optional Skip and Waiver Allow Completion', () => {
           }))
 
           // Required steps → completed, optional steps → skipped
-          const stepStatuses: StepStatusRecord[] = steps.map(step => ({
+          const stepStatuses: StepStatusRecord[] = steps.map((step) => ({
             stepId: step.id,
             status: step.optional ? 'skipped' : 'completed',
           }))
@@ -65,9 +65,9 @@ describe('Property 4: Optional Skip and Waiver Allow Completion', () => {
 
           expect(result.canComplete).toBe(true)
           expect(result.blockers).toHaveLength(0)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -95,39 +95,36 @@ describe('Property 4: Optional Skip and Waiver Allow Completion', () => {
 
           expect(result.canComplete).toBe(true)
           expect(result.blockers).toHaveLength(0)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
   it('overridden required steps do not block completion even if not completed', () => {
     fc.assert(
-      fc.property(
-        fc.integer({ min: 3, max: 10 }),
-        (totalSteps) => {
-          // All steps required
-          const steps: StepConfig[] = Array.from({ length: totalSteps }, (_, i) => ({
-            id: `step-${i}`,
-            optional: false,
-          }))
+      fc.property(fc.integer({ min: 3, max: 10 }), (totalSteps) => {
+        // All steps required
+        const steps: StepConfig[] = Array.from({ length: totalSteps }, (_, i) => ({
+          id: `step-${i}`,
+          optional: false,
+        }))
 
-          // First step pending (would block), rest completed
-          const stepStatuses: StepStatusRecord[] = steps.map((step, i) => ({
-            stepId: step.id,
-            status: i === 0 ? 'pending' : 'completed',
-          }))
+        // First step pending (would block), rest completed
+        const stepStatuses: StepStatusRecord[] = steps.map((step, i) => ({
+          stepId: step.id,
+          status: i === 0 ? 'pending' : 'completed',
+        }))
 
-          // Override the first step
-          const overriddenStepIds = new Set(['step-0'])
+        // Override the first step
+        const overriddenStepIds = new Set(['step-0'])
 
-          const result = canComplete(steps, stepStatuses, overriddenStepIds)
+        const result = canComplete(steps, stepStatuses, overriddenStepIds)
 
-          expect(result.canComplete).toBe(true)
-          expect(result.blockers).toHaveLength(0)
-        },
-      ),
-      { numRuns: 100 },
+        expect(result.canComplete).toBe(true)
+        expect(result.blockers).toHaveLength(0)
+      }),
+      { numRuns: 100 }
     )
   })
 })

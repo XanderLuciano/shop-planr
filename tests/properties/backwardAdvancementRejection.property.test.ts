@@ -17,7 +17,7 @@ import fc from 'fast-check'
 function validateAdvancementDirection(
   currentStepIndex: number,
   targetStepIndex: number,
-  totalSteps: number,
+  totalSteps: number
 ): { valid: boolean; error?: string } {
   if (targetStepIndex <= currentStepIndex) {
     return { valid: false, error: 'Cannot advance to a step at or before the current position' }
@@ -43,17 +43,13 @@ describe('Property 15: Backward and Duplicate Advancement Rejection', () => {
           // Ensure target <= current
           const targetStepIndex = Math.min(rawTarget, currentStepIndex)
 
-          const result = validateAdvancementDirection(
-            currentStepIndex,
-            targetStepIndex,
-            totalSteps,
-          )
+          const result = validateAdvancementDirection(currentStepIndex, targetStepIndex, totalSteps)
 
           expect(result.valid).toBe(false)
           expect(result.error).toContain('at or before the current position')
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -68,14 +64,14 @@ describe('Property 15: Backward and Duplicate Advancement Rejection', () => {
           const result = validateAdvancementDirection(
             currentStepIndex,
             currentStepIndex, // same step = duplicate
-            totalSteps,
+            totalSteps
           )
 
           expect(result.valid).toBe(false)
           expect(result.error).toContain('at or before the current position')
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -92,16 +88,12 @@ describe('Property 15: Backward and Duplicate Advancement Rejection', () => {
           // Only test valid forward targets within range
           if (targetStepIndex > totalSteps) return
 
-          const result = validateAdvancementDirection(
-            currentStepIndex,
-            targetStepIndex,
-            totalSteps,
-          )
+          const result = validateAdvancementDirection(currentStepIndex, targetStepIndex, totalSteps)
 
           expect(result.valid).toBe(true)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -115,17 +107,13 @@ describe('Property 15: Backward and Duplicate Advancement Rejection', () => {
           const currentStepIndex = rawCurrentStep % totalSteps
           const targetStepIndex = totalSteps + extraOffset // always out of range
 
-          const result = validateAdvancementDirection(
-            currentStepIndex,
-            targetStepIndex,
-            totalSteps,
-          )
+          const result = validateAdvancementDirection(currentStepIndex, targetStepIndex, totalSteps)
 
           expect(result.valid).toBe(false)
           expect(result.error).toContain('out of range')
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

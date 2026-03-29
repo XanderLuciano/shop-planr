@@ -1,11 +1,11 @@
 ---
-title: "Delete Process"
-description: "Delete a process library entry by ID"
-method: "DELETE"
-endpoint: "/api/library/processes/:id"
-service: "libraryService"
-category: "Library"
-responseType: "{ success: true }"
+title: 'Delete Process'
+description: 'Delete a process library entry by ID'
+method: 'DELETE'
+endpoint: '/api/library/processes/:id'
+service: 'libraryService'
+category: 'Library'
+responseType: '{ success: true }'
 errorCodes: [404, 500]
 navigation:
   order: 2
@@ -23,9 +23,9 @@ Deleting a library entry does **not** affect any existing paths, steps, or templ
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` | Yes | The process library entry ID to delete (e.g. `"plib_a1b2c3"`). |
+| Parameter | Type     | Required | Description                                                    |
+| --------- | -------- | -------- | -------------------------------------------------------------- |
+| `id`      | `string` | Yes      | The process library entry ID to delete (e.g. `"plib_a1b2c3"`). |
 
 ## Response
 
@@ -33,20 +33,20 @@ Deleting a library entry does **not** affect any existing paths, steps, or templ
 
 Returns a success confirmation.
 
-| Field | Type | Description |
-|-------|------|-------------|
+| Field     | Type      | Description                          |
+| --------- | --------- | ------------------------------------ |
 | `success` | `boolean` | Always `true` on successful deletion |
 
 ### 404 Not Found
 
-| Condition | Message |
-|-----------|---------|
+| Condition                                         | Message                                 |
+| ------------------------------------------------- | --------------------------------------- |
 | No process library entry exists with the given ID | `"ProcessLibraryEntry not found: {id}"` |
 
 ### 500 Internal Server Error
 
-| Condition | Message |
-|-----------|---------|
+| Condition               | Message                   |
+| ----------------------- | ------------------------- |
 | Database delete failure | `"Internal Server Error"` |
 
 ## Examples

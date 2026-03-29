@@ -28,17 +28,12 @@ describe('Progress Tracking — Done Count Correctness', () => {
       jobId: job.id,
       name: 'Assembly Line',
       goalQuantity: 5,
-      steps: [
-        { name: 'Cut' },
-        { name: 'Weld' },
-        { name: 'Paint' },
-        { name: 'Inspect' },
-      ],
+      steps: [{ name: 'Cut' }, { name: 'Weld' }, { name: 'Paint' }, { name: 'Inspect' }],
     })
 
     const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 5 },
-      'operator1',
+      'operator1'
     )
 
     // 2. Advance 3 parts through ALL steps to completion (stepIndex -1)
@@ -68,10 +63,7 @@ describe('Progress Tracking — Done Count Correctness', () => {
     }
 
     // 6. Assert the old bug (N × completedCount) no longer occurs
-    const sumOfDistributionCompleted = distribution.reduce(
-      (sum, d) => sum + d.completedCount,
-      0,
-    )
+    const sumOfDistributionCompleted = distribution.reduce((sum, d) => sum + d.completedCount, 0)
     // Old bug would produce: 4 steps × 3 completed = 12
     // Fixed: sum is 0 (per-step completedCount is always 0)
     expect(sumOfDistributionCompleted).toBe(0)
@@ -80,8 +72,8 @@ describe('Progress Tracking — Done Count Correctness', () => {
     // 7. Verify distribution still tracks in-progress parts correctly
     expect(distribution).toHaveLength(4)
     // parts[4] is at step 0, parts[3] is at step 2
-    const step0 = distribution.find(d => d.stepOrder === 0)!
-    const step2 = distribution.find(d => d.stepOrder === 2)!
+    const step0 = distribution.find((d) => d.stepOrder === 0)!
+    const step2 = distribution.find((d) => d.stepOrder === 2)!
     expect(step0.partCount).toBe(1) // parts[4]
     expect(step2.partCount).toBe(1) // parts[3]
   })
@@ -98,16 +90,13 @@ describe('Progress Tracking — Done Count Correctness', () => {
       steps: [{ name: 'Step A' }, { name: 'Step B' }, { name: 'Step C' }],
     })
 
-    partService.batchCreateParts(
-      { jobId: job.id, pathId: path.id, quantity: 2 },
-      'op1',
-    )
+    partService.batchCreateParts({ jobId: job.id, pathId: path.id, quantity: 2 }, 'op1')
 
     const completedCount = pathService.getPathCompletedCount(path.id)
     const distribution = pathService.getStepDistribution(path.id)
 
     expect(completedCount).toBe(0)
-    expect(distribution.every(d => d.completedCount === 0)).toBe(true)
+    expect(distribution.every((d) => d.completedCount === 0)).toBe(true)
     // All 2 parts should be at step 0
     expect(distribution[0].partCount).toBe(2)
   })

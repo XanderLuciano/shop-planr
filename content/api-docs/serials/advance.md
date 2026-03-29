@@ -1,12 +1,12 @@
 ---
-title: "Advance Serial"
-description: "Advance a serial number to the next process step in its path"
-method: "POST"
-endpoint: "/api/serials/:id/advance"
-service: "serialService"
-category: "Serials"
-requestBody: "AdvanceSerialInput"
-responseType: "SerialNumber"
+title: 'Advance Serial'
+description: 'Advance a serial number to the next process step in its path'
+method: 'POST'
+endpoint: '/api/serials/:id/advance'
+service: 'serialService'
+category: 'Serials'
+requestBody: 'AdvanceSerialInput'
+responseType: 'SerialNumber'
 errorCodes: [400, 404, 500]
 navigation:
   order: 4
@@ -26,15 +26,15 @@ For non-sequential advancement (skipping steps, jumping ahead), use the [Advance
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` | Yes | The unique identifier of the serial number to advance (e.g. `"SN-00001"`) |
+| Parameter | Type     | Required | Description                                                               |
+| --------- | -------- | -------- | ------------------------------------------------------------------------- |
+| `id`      | `string` | Yes      | The unique identifier of the serial number to advance (e.g. `"SN-00001"`) |
 
 ### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `userId` | `string` | Yes | ID of the user performing the advancement. Used for audit trail tracking. If omitted, defaults to `"anonymous"`. |
+| Field    | Type     | Required | Description                                                                                                      |
+| -------- | -------- | -------- | ---------------------------------------------------------------------------------------------------------------- |
+| `userId` | `string` | Yes      | ID of the user performing the advancement. Used for audit trail tracking. If omitted, defaults to `"anonymous"`. |
 
 ## Response
 
@@ -42,43 +42,43 @@ For non-sequential advancement (skipping steps, jumping ahead), use the [Advance
 
 Returned when the serial is successfully advanced. The response contains the updated `SerialNumber` object reflecting the new step position.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Serial identifier |
-| `jobId` | `string` | ID of the parent job |
-| `pathId` | `string` | ID of the manufacturing path |
-| `currentStepIndex` | `number` | New step index after advancement. `-1` if the serial just completed. |
-| `status` | `"in_progress" \| "completed"` | Updated status. Changes to `"completed"` when advancing past the last step. |
-| `forceCompleted` | `boolean` | Always `false` for normal advancement |
-| `createdAt` | `string` | ISO 8601 timestamp of serial creation |
-| `updatedAt` | `string` | ISO 8601 timestamp — updated to reflect the advancement time |
+| Field              | Type                           | Description                                                                 |
+| ------------------ | ------------------------------ | --------------------------------------------------------------------------- |
+| `id`               | `string`                       | Serial identifier                                                           |
+| `jobId`            | `string`                       | ID of the parent job                                                        |
+| `pathId`           | `string`                       | ID of the manufacturing path                                                |
+| `currentStepIndex` | `number`                       | New step index after advancement. `-1` if the serial just completed.        |
+| `status`           | `"in_progress" \| "completed"` | Updated status. Changes to `"completed"` when advancing past the last step. |
+| `forceCompleted`   | `boolean`                      | Always `false` for normal advancement                                       |
+| `createdAt`        | `string`                       | ISO 8601 timestamp of serial creation                                       |
+| `updatedAt`        | `string`                       | ISO 8601 timestamp — updated to reflect the advancement time                |
 
 ### 400 Bad Request
 
 Returned when the serial cannot be advanced due to its current state.
 
-| Condition | Message |
-|-----------|---------|
-| Serial status is `scrapped` | `"Cannot advance a scrapped serial"` |
-| Serial status is `completed` | `"Serial number is already completed"` |
+| Condition                         | Message                                |
+| --------------------------------- | -------------------------------------- |
+| Serial status is `scrapped`       | `"Cannot advance a scrapped serial"`   |
+| Serial status is `completed`      | `"Serial number is already completed"` |
 | Serial `currentStepIndex` is `-1` | `"Serial number is already completed"` |
 
 ### 404 Not Found
 
 Returned when the serial number does not exist.
 
-| Condition | Message |
-|-----------|---------|
-| Serial does not exist | `"SerialNumber not found: {id}"` |
-| Path referenced by serial does not exist | `"Path not found: {pathId}"` |
+| Condition                                | Message                          |
+| ---------------------------------------- | -------------------------------- |
+| Serial does not exist                    | `"SerialNumber not found: {id}"` |
+| Path referenced by serial does not exist | `"Path not found: {pathId}"`     |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs during advancement.
 
-| Condition | Message |
-|-----------|---------|
-| Database write failure | `"Internal Server Error"` |
+| Condition                    | Message                   |
+| ---------------------------- | ------------------------- |
+| Database write failure       | `"Internal Server Error"` |
 | Unexpected runtime exception | `"Internal Server Error"` |
 
 ## Examples

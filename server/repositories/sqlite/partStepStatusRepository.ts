@@ -31,10 +31,21 @@ export class SQLitePartStepStatusRepository implements PartStepStatusRepository 
   }
 
   create(status: PartStepStatus): PartStepStatus {
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO part_step_statuses (id, part_id, step_id, step_index, status, updated_at)
       VALUES (?, ?, ?, ?, ?, ?)
-    `).run(status.id, status.partId, status.stepId, status.stepIndex, status.status, status.updatedAt)
+    `
+      )
+      .run(
+        status.id,
+        status.partId,
+        status.stepId,
+        status.stepIndex,
+        status.status,
+        status.updatedAt
+      )
     return status
   }
 
@@ -52,44 +63,68 @@ export class SQLitePartStepStatusRepository implements PartStepStatusRepository 
   }
 
   getByPartAndStep(partId: string, stepId: string): PartStepStatus | null {
-    const row = this.db.prepare(
-      'SELECT * FROM part_step_statuses WHERE part_id = ? AND step_id = ?'
-    ).get(partId, stepId) as PartStepStatusRow | undefined
+    const row = this.db
+      .prepare('SELECT * FROM part_step_statuses WHERE part_id = ? AND step_id = ?')
+      .get(partId, stepId) as PartStepStatusRow | undefined
     return row ? rowToDomain(row) : null
   }
 
   listByPartId(partId: string): PartStepStatus[] {
-    const rows = this.db.prepare(
-      'SELECT * FROM part_step_statuses WHERE part_id = ? ORDER BY step_index ASC'
-    ).all(partId) as PartStepStatusRow[]
+    const rows = this.db
+      .prepare('SELECT * FROM part_step_statuses WHERE part_id = ? ORDER BY step_index ASC')
+      .all(partId) as PartStepStatusRow[]
     return rows.map(rowToDomain)
   }
 
   update(id: string, partial: Partial<PartStepStatus>): PartStepStatus {
-    const row = this.db.prepare('SELECT * FROM part_step_statuses WHERE id = ?').get(id) as PartStepStatusRow | undefined
+    const row = this.db.prepare('SELECT * FROM part_step_statuses WHERE id = ?').get(id) as
+      | PartStepStatusRow
+      | undefined
     if (!row) throw new NotFoundError('PartStepStatus', id)
 
     const existing = rowToDomain(row)
-    const updated: PartStepStatus = { ...existing, ...partial, id, updatedAt: partial.updatedAt ?? new Date().toISOString() }
+    const updated: PartStepStatus = {
+      ...existing,
+      ...partial,
+      id,
+      updatedAt: partial.updatedAt ?? new Date().toISOString(),
+    }
 
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       UPDATE part_step_statuses SET status = ?, updated_at = ? WHERE id = ?
-    `).run(updated.status, updated.updatedAt, id)
+    `
+      )
+      .run(updated.status, updated.updatedAt, id)
     return updated
   }
 
-  updateByPartAndStep(partId: string, stepId: string, partial: Partial<PartStepStatus>): PartStepStatus {
-    const row = this.db.prepare(
-      'SELECT * FROM part_step_statuses WHERE part_id = ? AND step_id = ?'
-    ).get(partId, stepId) as PartStepStatusRow | undefined
+  updateByPartAndStep(
+    partId: string,
+    stepId: string,
+    partial: Partial<PartStepStatus>
+  ): PartStepStatus {
+    const row = this.db
+      .prepare('SELECT * FROM part_step_statuses WHERE part_id = ? AND step_id = ?')
+      .get(partId, stepId) as PartStepStatusRow | undefined
     if (!row) throw new NotFoundError('PartStepStatus', `${partId}/${stepId}`)
 
     const existing = rowToDomain(row)
-    const updated: PartStepStatus = { ...existing, ...partial, id: existing.id, updatedAt: partial.updatedAt ?? new Date().toISOString() }
+    const updated: PartStepStatus = {
+      ...existing,
+      ...partial,
+      id: existing.id,
+      updatedAt: partial.updatedAt ?? new Date().toISOString(),
+    }
 
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       UPDATE part_step_statuses SET status = ?, updated_at = ? WHERE part_id = ? AND step_id = ?
-    `).run(updated.status, updated.updatedAt, partId, stepId)
+    `
+      )
+      .run(updated.status, updated.updatedAt, partId, stepId)
     return updated
   }
 
@@ -106,7 +141,11 @@ export class SQLitePartStepStatusRepository implements PartStepStatusRepository 
   }
 
   /** @deprecated Use `updateByPartAndStep` instead. */
-  updateBySerialAndStep(serialId: string, stepId: string, partial: Partial<PartStepStatus>): PartStepStatus {
+  updateBySerialAndStep(
+    serialId: string,
+    stepId: string,
+    partial: Partial<PartStepStatus>
+  ): PartStepStatus {
     return this.updateByPartAndStep(serialId, stepId, partial)
   }
 }

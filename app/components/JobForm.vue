@@ -6,7 +6,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  submit: [data: { name: string, goalQuantity: number }]
+  submit: [data: { name: string; goalQuantity: number }]
   cancel: []
 }>()
 
@@ -34,59 +34,30 @@ function onSubmit() {
   if (!validate()) return
   emit('submit', {
     name: name.value.trim(),
-    goalQuantity: goalQuantity.value
+    goalQuantity: goalQuantity.value,
   })
 }
 </script>
 
 <template>
-  <form
-    class="space-y-3"
-    @submit.prevent="onSubmit"
-  >
+  <form class="space-y-3" @submit.prevent="onSubmit">
     <div>
       <label class="block text-xs font-medium text-(--ui-text-muted) mb-1">Job Name</label>
-      <UInput
-        v-model="name"
-        size="sm"
-        placeholder="Enter job name"
-        class="w-full"
-      />
-      <p
-        v-if="nameError"
-        class="text-xs text-red-500 mt-0.5"
-      >
+      <UInput v-model="name" size="sm" placeholder="Enter job name" class="w-full" />
+      <p v-if="nameError" class="text-xs text-red-500 mt-0.5">
         {{ nameError }}
       </p>
     </div>
     <div>
       <label class="block text-xs font-medium text-(--ui-text-muted) mb-1">Goal Quantity</label>
-      <UInput
-        v-model.number="goalQuantity"
-        type="number"
-        size="sm"
-        :min="1"
-        class="w-full"
-      />
-      <p
-        v-if="qtyError"
-        class="text-xs text-red-500 mt-0.5"
-      >
+      <UInput v-model.number="goalQuantity" type="number" size="sm" :min="1" class="w-full" />
+      <p v-if="qtyError" class="text-xs text-red-500 mt-0.5">
         {{ qtyError }}
       </p>
     </div>
     <div class="flex gap-2 justify-end">
-      <UButton
-        variant="ghost"
-        size="xs"
-        label="Cancel"
-        @click="emit('cancel')"
-      />
-      <UButton
-        type="submit"
-        size="xs"
-        :label="props.job ? 'Update' : 'Create'"
-      />
+      <UButton variant="ghost" size="xs" label="Cancel" @click="emit('cancel')" />
+      <UButton type="submit" size="xs" :label="props.job ? 'Update' : 'Create'" />
     </div>
   </form>
 </template>

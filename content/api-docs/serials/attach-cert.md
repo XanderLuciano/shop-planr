@@ -1,12 +1,12 @@
 ---
-title: "Attach Certificate"
-description: "Attach a certificate to a serial number at its current process step"
-method: "POST"
-endpoint: "/api/serials/:id/attach-cert"
-service: "certService"
-category: "Serials"
-requestBody: "AttachCertInput"
-responseType: "CertAttachment"
+title: 'Attach Certificate'
+description: 'Attach a certificate to a serial number at its current process step'
+method: 'POST'
+endpoint: '/api/serials/:id/attach-cert'
+service: 'certService'
+category: 'Serials'
+requestBody: 'AttachCertInput'
+responseType: 'CertAttachment'
 errorCodes: [400, 404, 500]
 navigation:
   order: 8
@@ -26,16 +26,16 @@ The serial must be in `in_progress` status (i.e. not completed or scrapped) beca
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` | Yes | The unique identifier of the serial number (e.g. `"SN-00001"`) |
+| Parameter | Type     | Required | Description                                                    |
+| --------- | -------- | -------- | -------------------------------------------------------------- |
+| `id`      | `string` | Yes      | The unique identifier of the serial number (e.g. `"SN-00001"`) |
 
 ### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `certId` | `string` | Yes | ID of the certificate to attach. The certificate must exist in the system. |
-| `userId` | `string` | Yes | ID of the user performing the attachment. Recorded on the attachment record and in the audit trail. |
+| Field    | Type     | Required | Description                                                                                         |
+| -------- | -------- | -------- | --------------------------------------------------------------------------------------------------- |
+| `certId` | `string` | Yes      | ID of the certificate to attach. The certificate must exist in the system.                          |
+| `userId` | `string` | Yes      | ID of the user performing the attachment. Recorded on the attachment record and in the audit trail. |
 
 ## Response
 
@@ -43,41 +43,41 @@ The serial must be in `in_progress` status (i.e. not completed or scrapped) beca
 
 Returned when the certificate is successfully attached (or was already attached — idempotent). The response contains the `CertAttachment` record.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Unique identifier for the attachment record |
-| `serialId` | `string` | ID of the serial number the certificate is attached to |
-| `certId` | `string` | ID of the attached certificate |
-| `stepId` | `string` | ID of the process step where the attachment occurred (the serial's current step at attachment time) |
-| `attachedAt` | `string` | ISO 8601 timestamp of when the attachment was created |
-| `attachedBy` | `string` | User ID of who performed the attachment |
+| Field        | Type     | Description                                                                                         |
+| ------------ | -------- | --------------------------------------------------------------------------------------------------- |
+| `id`         | `string` | Unique identifier for the attachment record                                                         |
+| `serialId`   | `string` | ID of the serial number the certificate is attached to                                              |
+| `certId`     | `string` | ID of the attached certificate                                                                      |
+| `stepId`     | `string` | ID of the process step where the attachment occurred (the serial's current step at attachment time) |
+| `attachedAt` | `string` | ISO 8601 timestamp of when the attachment was created                                               |
+| `attachedBy` | `string` | User ID of who performed the attachment                                                             |
 
 ### 400 Bad Request
 
 Returned when the attachment cannot be performed due to validation failures.
 
-| Condition | Message |
-|-----------|---------|
+| Condition                                    | Message                                             |
+| -------------------------------------------- | --------------------------------------------------- |
 | Serial is completed (`currentStepIndex: -1`) | `"Serial is already completed, cannot attach cert"` |
-| `certId` is missing or invalid | Varies — describes the specific validation issue |
+| `certId` is missing or invalid               | Varies — describes the specific validation issue    |
 
 ### 404 Not Found
 
 Returned when the serial, its path, or the certificate does not exist.
 
-| Condition | Message |
-|-----------|---------|
-| Serial does not exist | `"SerialNumber not found: {id}"` |
-| Path referenced by serial does not exist | `"Path not found: {pathId}"` |
-| Certificate does not exist | `"Certificate not found: {certId}"` |
+| Condition                                | Message                             |
+| ---------------------------------------- | ----------------------------------- |
+| Serial does not exist                    | `"SerialNumber not found: {id}"`    |
+| Path referenced by serial does not exist | `"Path not found: {pathId}"`        |
+| Certificate does not exist               | `"Certificate not found: {certId}"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs during the attachment operation.
 
-| Condition | Message |
-|-----------|---------|
-| Database write failure | `"Internal Server Error"` |
+| Condition                    | Message                   |
+| ---------------------------- | ------------------------- |
+| Database write failure       | `"Internal Server Error"` |
 | Unexpected runtime exception | `"Internal Server Error"` |
 
 ## Examples

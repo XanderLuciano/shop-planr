@@ -26,7 +26,7 @@ export function createNoteService(repos: { notes: NoteRepository }, auditService
         text: input.text.trim(),
         createdBy: input.userId,
         createdAt: new Date().toISOString(),
-        pushedToJira: false
+        pushedToJira: false,
       }
 
       const created = repos.notes.create(note)
@@ -35,7 +35,7 @@ export function createNoteService(repos: { notes: NoteRepository }, auditService
         userId: input.userId,
         jobId: input.jobId,
         pathId: input.pathId,
-        stepId: input.stepId
+        stepId: input.stepId,
       })
 
       return created
@@ -51,7 +51,7 @@ export function createNoteService(repos: { notes: NoteRepository }, auditService
 
     getNotesForJob(jobId: string): StepNote[] {
       return repos.notes.listByJobId(jobId)
-    }
+    },
   }
 }
 

@@ -40,8 +40,11 @@ function filterDropdownOptions(users: ShopUser[], search: string): DropdownOptio
   const normalizedSearch = search.toLowerCase().trim()
 
   const userOptions: DropdownOption[] = users
-    .filter(u => u.active && (normalizedSearch === '' || u.name.toLowerCase().includes(normalizedSearch)))
-    .map(u => ({
+    .filter(
+      (u) =>
+        u.active && (normalizedSearch === '' || u.name.toLowerCase().includes(normalizedSearch))
+    )
+    .map((u) => ({
       label: u.name,
       value: u.id,
     }))
@@ -53,8 +56,8 @@ function filterDropdownOptions(users: ShopUser[], search: string): DropdownOptio
 
 const arbShopUser = (): fc.Arbitrary<ShopUser> =>
   fc.record({
-    id: fc.string({ minLength: 3, maxLength: 20 }).filter(s => s.trim().length >= 3),
-    name: fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length >= 1),
+    id: fc.string({ minLength: 3, maxLength: 20 }).filter((s) => s.trim().length >= 3),
+    name: fc.string({ minLength: 1, maxLength: 50 }).filter((s) => s.trim().length >= 1),
     department: fc.option(fc.string({ minLength: 1, maxLength: 30 }), { nil: undefined }),
     active: fc.boolean(),
     createdAt: fc.constant(new Date().toISOString()),
@@ -64,10 +67,7 @@ const arbUserList = (): fc.Arbitrary<ShopUser[]> =>
   fc.array(arbShopUser(), { minLength: 0, maxLength: 20 })
 
 const arbSearchString = (): fc.Arbitrary<string> =>
-  fc.oneof(
-    fc.constant(''),
-    fc.string({ minLength: 0, maxLength: 30 }),
-  )
+  fc.oneof(fc.constant(''), fc.string({ minLength: 0, maxLength: 30 }))
 
 // ---- Property 2: Preservation ----
 
@@ -75,14 +75,11 @@ describe('Property 2: Preservation — Non-Assignment Behavior Unchanged', () =>
   describe('Unassign extraction preserved', () => {
     it('null input to extraction logic always returns null', () => {
       fc.assert(
-        fc.property(
-          fc.constant(null),
-          (input) => {
-            const result = extractUserIdUnfixed(input)
-            expect(result).toBeNull()
-          },
-        ),
-        { numRuns: 50 },
+        fc.property(fc.constant(null), (input) => {
+          const result = extractUserIdUnfixed(input)
+          expect(result).toBeNull()
+        }),
+        { numRuns: 50 }
       )
     })
   })
@@ -90,61 +87,51 @@ describe('Property 2: Preservation — Non-Assignment Behavior Unchanged', () =>
   describe('Dropdown filter behavior preserved', () => {
     it('"Unassigned" is always the first option regardless of users or search', () => {
       fc.assert(
-        fc.property(
-          arbUserList(),
-          arbSearchString(),
-          (users, search) => {
-            const result = filterDropdownOptions(users, search)
-            expect(result.length).toBeGreaterThanOrEqual(1)
-            expect(result[0]!.label).toBe('Unassigned')
-            expect(result[0]!.value).toBeNull()
-          },
-        ),
-        { numRuns: 100 },
+        fc.property(arbUserList(), arbSearchString(), (users, search) => {
+          const result = filterDropdownOptions(users, search)
+          expect(result.length).toBeGreaterThanOrEqual(1)
+          expect(result[0]!.label).toBe('Unassigned')
+          expect(result[0]!.value).toBeNull()
+        }),
+        { numRuns: 100 }
       )
     })
 
     it('returns exactly active users whose name matches search (case-insensitive)', () => {
       fc.assert(
-        fc.property(
-          arbUserList(),
-          arbSearchString(),
-          (users, search) => {
-            const result = filterDropdownOptions(users, search)
-            const normalizedSearch = search.toLowerCase().trim()
+        fc.property(arbUserList(), arbSearchString(), (users, search) => {
+          const result = filterDropdownOptions(users, search)
+          const normalizedSearch = search.toLowerCase().trim()
 
-            const expectedUsers = users.filter(u =>
-              u.active && (normalizedSearch === '' || u.name.toLowerCase().includes(normalizedSearch)),
-            )
+          const expectedUsers = users.filter(
+            (u) =>
+              u.active &&
+              (normalizedSearch === '' || u.name.toLowerCase().includes(normalizedSearch))
+          )
 
-            const resultUsers = result.slice(1)
-            expect(resultUsers.length).toBe(expectedUsers.length)
+          const resultUsers = result.slice(1)
+          expect(resultUsers.length).toBe(expectedUsers.length)
 
-            for (let i = 0; i < resultUsers.length; i++) {
-              expect(resultUsers[i]!.label).toBe(expectedUsers[i]!.name)
-              expect(resultUsers[i]!.value).toBe(expectedUsers[i]!.id)
-            }
-          },
-        ),
-        { numRuns: 100 },
+          for (let i = 0; i < resultUsers.length; i++) {
+            expect(resultUsers[i]!.label).toBe(expectedUsers[i]!.name)
+            expect(resultUsers[i]!.value).toBe(expectedUsers[i]!.id)
+          }
+        }),
+        { numRuns: 100 }
       )
     })
 
     it('inactive users are never included in filtered results', () => {
       fc.assert(
-        fc.property(
-          arbUserList(),
-          arbSearchString(),
-          (users, search) => {
-            const result = filterDropdownOptions(users, search)
-            const inactiveIds = new Set(users.filter(u => !u.active).map(u => u.id))
+        fc.property(arbUserList(), arbSearchString(), (users, search) => {
+          const result = filterDropdownOptions(users, search)
+          const inactiveIds = new Set(users.filter((u) => !u.active).map((u) => u.id))
 
-            for (const option of result.slice(1)) {
-              expect(inactiveIds.has(option.value!)).toBe(false)
-            }
-          },
-        ),
-        { numRuns: 100 },
+          for (const option of result.slice(1)) {
+            expect(inactiveIds.has(option.value!)).toBe(false)
+          }
+        }),
+        { numRuns: 100 }
       )
     })
   })

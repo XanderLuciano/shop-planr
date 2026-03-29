@@ -3,29 +3,17 @@
     "nuxt-docs": {
       "type": "http",
       "url": "https://nuxt.com/mcp",
-      "autoApprove": [
-        "get-module"
-      ]
+      "autoApprove": ["get-module"]
     },
     "nuxt-ui": {
       "type": "http",
       "url": "https://ui.nuxt.com/mcp",
-      "autoApprove": [
-        "get-component"
-      ]
+      "autoApprove": ["get-component"]
     },
     "sqlite": {
       "command": "npx",
-      "args": [
-        "-y",
-        "mcp-server-sqlite-npx",
-        "./data/shop_erp.db"
-      ],
-      "autoApprove": [
-        "read_query",
-        "list_tables",
-        "describe_table"
-      ]
+      "args": ["-y", "mcp-server-sqlite-npx", "./data/shop_erp.db"],
+      "autoApprove": ["read_query", "list_tables", "describe_table"]
     }
   }
 }

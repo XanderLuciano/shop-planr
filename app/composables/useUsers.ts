@@ -49,7 +49,7 @@ export function useUsers() {
     if (isBrowser()) {
       const storedId = localStorage.getItem(STORAGE_KEY)
       if (storedId) {
-        const found = users.value.find(u => u.id === storedId)
+        const found = users.value.find((u) => u.id === storedId)
         if (found) {
           selectedUser.value = found
         } else {
@@ -79,6 +79,6 @@ export function useUsers() {
     selectUser,
     clearUser,
     requireUser,
-    init
+    init,
   }
 }

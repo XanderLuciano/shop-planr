@@ -26,10 +26,10 @@ export function useJira() {
     }
   }
 
-  async function linkTicket(input: LinkJiraInput): Promise<{ job: Job, path: Path | null }> {
-    const result = await $fetch<{ job: Job, path: Path | null }>('/api/jira/link', {
+  async function linkTicket(input: LinkJiraInput): Promise<{ job: Job; path: Path | null }> {
+    const result = await $fetch<{ job: Job; path: Path | null }>('/api/jira/link', {
       method: 'POST',
-      body: input
+      body: input,
     })
     // Re-fetch tickets so the linked one disappears from the list
     await fetchTickets()
@@ -43,21 +43,21 @@ export function useJira() {
   async function pushDescriptionTable(jobId: string): Promise<JiraPushResult> {
     return await $fetch<JiraPushResult>('/api/jira/push', {
       method: 'POST',
-      body: { jobId }
+      body: { jobId },
     })
   }
 
   async function pushCommentSummary(jobId: string): Promise<JiraPushResult> {
     return await $fetch<JiraPushResult>('/api/jira/comment', {
       method: 'POST',
-      body: { jobId }
+      body: { jobId },
     })
   }
 
   async function pushNoteAsComment(jobId: string, noteId: string): Promise<JiraPushResult> {
     return await $fetch<JiraPushResult>('/api/jira/comment', {
       method: 'POST',
-      body: { jobId, noteId }
+      body: { jobId, noteId },
     })
   }
 
@@ -71,6 +71,6 @@ export function useJira() {
     refreshTickets,
     pushDescriptionTable,
     pushCommentSummary,
-    pushNoteAsComment
+    pushNoteAsComment,
   }
 }

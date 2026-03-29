@@ -44,27 +44,28 @@ describe('Property 8: moveStep is a valid swap permutation', () => {
           }
 
           // Name steps for identification
-          path.steps.forEach((s, i) => { s.name = `Step-${i}` })
+          path.steps.forEach((s, i) => {
+            s.name = `Step-${i}`
+          })
 
           const stepIdx = stepIdxSeed % path.steps.length
           const targetClientId = path.steps[stepIdx]._clientId
 
           // Snapshot before move
-          const clientIdsBefore = path.steps.map(s => s._clientId)
+          const clientIdsBefore = path.steps.map((s) => s._clientId)
 
-          const isInvalidMove
-            = (stepIdx === 0 && direction === -1)
-            || (stepIdx === path.steps.length - 1 && direction === 1)
+          const isInvalidMove =
+            (stepIdx === 0 && direction === -1) ||
+            (stepIdx === path.steps.length - 1 && direction === 1)
 
           moveStep(path._clientId, targetClientId, direction)
 
-          const clientIdsAfter = path.steps.map(s => s._clientId)
+          const clientIdsAfter = path.steps.map((s) => s._clientId)
 
           if (isInvalidMove) {
             // Steps unchanged
             expect(clientIdsAfter).toEqual(clientIdsBefore)
-          }
-          else {
+          } else {
             const targetIdx = stepIdx + direction
 
             // The two swapped positions should have exchanged
@@ -81,9 +82,9 @@ describe('Property 8: moveStep is a valid swap permutation', () => {
             // Same set of clientIds (no duplicates, no losses)
             expect([...clientIdsAfter].sort()).toEqual([...clientIdsBefore].sort())
           }
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

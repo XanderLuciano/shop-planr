@@ -23,9 +23,7 @@ export function validateQuantity(quantity: number): string | null {
 export function formatDestination(job: WorkQueueJob): string {
   if (job.isFinalStep) return 'Completed'
   if (!job.nextStepName) return '—'
-  return job.nextStepLocation
-    ? `${job.nextStepName} → ${job.nextStepLocation}`
-    : job.nextStepName
+  return job.nextStepLocation ? `${job.nextStepName} → ${job.nextStepLocation}` : job.nextStepName
 }
 
 /** Toggles a part ID in/out of the selected set. Returns a new Set. */
@@ -50,7 +48,7 @@ export function selectNone(): Set<string> {
 export function buildCreatePayload(
   job: WorkQueueJob,
   quantity: number,
-  userId: string,
+  userId: string
 ): BatchCreatePartsInput & { userId: string } {
   return {
     jobId: job.jobId,
@@ -64,13 +62,12 @@ export function buildCreatePayload(
 export function buildAdvancePayload(
   partIds: string[],
   selectedSet: Set<string>,
-  note: string,
+  note: string
 ): { partIds: string[]; note?: string } {
-  const ids = partIds.filter(id => selectedSet.has(id))
+  const ids = partIds.filter((id) => selectedSet.has(id))
   const trimmedNote = note.trim()
   return { partIds: ids, note: trimmedNote || undefined }
 }
-
 
 // ---- Test helpers ----
 
@@ -247,7 +244,13 @@ describe('PartCreationPanel — pure logic', () => {
   describe('Create & Advance partial failure', () => {
     it('creation succeeds but advance throws — error is captured', async () => {
       const mockBatchCreate = vi.fn().mockResolvedValue([
-        { id: 'part_00200', jobId: 'j-1', pathId: 'p-1', currentStepIndex: 0, status: 'in_progress' },
+        {
+          id: 'part_00200',
+          jobId: 'j-1',
+          pathId: 'p-1',
+          currentStepIndex: 0,
+          status: 'in_progress',
+        },
       ])
       const mockAdvance = vi.fn().mockRejectedValue(new Error('Advance failed for part_00200'))
 

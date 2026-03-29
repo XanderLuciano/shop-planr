@@ -54,7 +54,7 @@ export function useLibrary() {
     error.value = null
     try {
       await $fetch(`/api/library/processes/${encodeURIComponent(id)}`, { method: 'DELETE' })
-      processes.value = processes.value.filter(p => p.id !== id)
+      processes.value = processes.value.filter((p) => p.id !== id)
     } catch (e: any) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to remove process'
       throw e
@@ -86,7 +86,7 @@ export function useLibrary() {
     error.value = null
     try {
       await $fetch(`/api/library/locations/${encodeURIComponent(id)}`, { method: 'DELETE' })
-      locations.value = locations.value.filter(l => l.id !== id)
+      locations.value = locations.value.filter((l) => l.id !== id)
     } catch (e: any) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to remove location'
       throw e

@@ -6,7 +6,7 @@ export default defineEventHandler(async () => {
     const jobs = jobService.listJobs()
 
     // Build WorkQueueJob entries keyed by "jobId|pathId|stepOrder"
-    const entries: { job: WorkQueueJob, assignedTo: string | undefined }[] = []
+    const entries: { job: WorkQueueJob; assignedTo: string | undefined }[] = []
 
     for (const job of jobs) {
       const paths = pathService.listPathsByJob(job.id)
@@ -33,7 +33,7 @@ export default defineEventHandler(async () => {
               stepOrder: step.order,
               stepLocation: step.location,
               totalSteps,
-              partIds: parts.map(s => s.id),
+              partIds: parts.map((s) => s.id),
               partCount: parts.length,
               nextStepName: nextStep?.name,
               nextStepLocation: nextStep?.location,
@@ -69,9 +69,7 @@ export default defineEventHandler(async () => {
 
     for (const [operatorId, groupJobs] of groupMap) {
       const totalParts = groupJobs.reduce((sum, j) => sum + j.partCount, 0)
-      const operatorName = operatorId
-        ? (userNameMap.get(operatorId) ?? operatorId)
-        : 'Unassigned'
+      const operatorName = operatorId ? (userNameMap.get(operatorId) ?? operatorId) : 'Unassigned'
 
       groups.push({
         operatorId,

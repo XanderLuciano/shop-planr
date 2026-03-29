@@ -17,20 +17,18 @@ const currentColumns = [
   { key: 'partId', label: 'Part' },
   { key: 'jobName', label: 'Job' },
   { key: 'pathName', label: 'Path' },
-  { key: 'nextStep', label: 'Next Step → Location' }
+  { key: 'nextStep', label: 'Next Step → Location' },
 ]
 
 const upstreamColumns = [
   { key: 'partId', label: 'Part' },
   { key: 'jobName', label: 'Job' },
-  { key: 'pathName', label: 'Path' }
+  { key: 'pathName', label: 'Path' },
 ]
 
-function formatNextStep(row: { nextStepName?: string, nextStepLocation?: string }): string {
+function formatNextStep(row: { nextStepName?: string; nextStepLocation?: string }): string {
   if (!row.nextStepName) return '— (final step)'
-  return row.nextStepLocation
-    ? `${row.nextStepName} → ${row.nextStepLocation}`
-    : row.nextStepName
+  return row.nextStepLocation ? `${row.nextStepName} → ${row.nextStepLocation}` : row.nextStepName
 }
 </script>
 
@@ -41,18 +39,10 @@ function formatNextStep(row: { nextStepName?: string, nextStepLocation?: string 
       <div class="text-sm font-semibold text-(--ui-text-highlighted)">
         {{ data.stepName }}
       </div>
-      <span
-        v-if="data.location"
-        class="text-xs text-(--ui-text-muted)"
-      >
+      <span v-if="data.location" class="text-xs text-(--ui-text-muted)">
         📍 {{ data.location }}
       </span>
-      <UBadge
-        v-if="data.vendorPartsCount > 0"
-        color="warning"
-        variant="subtle"
-        size="sm"
-      >
+      <UBadge v-if="data.vendorPartsCount > 0" color="warning" variant="subtle" size="sm">
         {{ data.vendorPartsCount }} vendor part{{ data.vendorPartsCount !== 1 ? 's' : '' }}
       </UBadge>
     </div>
@@ -61,11 +51,7 @@ function formatNextStep(row: { nextStepName?: string, nextStepLocation?: string 
     <div>
       <div class="flex items-center gap-2 mb-1">
         <span class="text-xs font-semibold text-(--ui-text-highlighted)">Current Parts</span>
-        <UBadge
-          color="primary"
-          variant="subtle"
-          size="xs"
-        >
+        <UBadge color="primary" variant="subtle" size="xs">
           {{ data.currentParts.length }}
         </UBadge>
       </div>
@@ -107,23 +93,14 @@ function formatNextStep(row: { nextStepName?: string, nextStepLocation?: string 
           </tbody>
         </table>
       </div>
-      <p
-        v-else
-        class="text-xs text-(--ui-text-muted)"
-      >
-        No parts currently at this step.
-      </p>
+      <p v-else class="text-xs text-(--ui-text-muted)">No parts currently at this step.</p>
     </div>
 
     <!-- Coming Soon -->
     <div>
       <div class="flex items-center gap-2 mb-1">
         <span class="text-xs font-semibold text-(--ui-text-highlighted)">Coming Soon</span>
-        <UBadge
-          color="info"
-          variant="subtle"
-          size="xs"
-        >
+        <UBadge color="info" variant="subtle" size="xs">
           {{ data.comingSoon.length }}
         </UBadge>
       </div>
@@ -162,23 +139,14 @@ function formatNextStep(row: { nextStepName?: string, nextStepLocation?: string 
           </tbody>
         </table>
       </div>
-      <p
-        v-else
-        class="text-xs text-(--ui-text-muted)"
-      >
-        No parts one step upstream.
-      </p>
+      <p v-else class="text-xs text-(--ui-text-muted)">No parts one step upstream.</p>
     </div>
 
     <!-- Backlog -->
     <div>
       <div class="flex items-center gap-2 mb-1">
         <span class="text-xs font-semibold text-(--ui-text-highlighted)">Backlog</span>
-        <UBadge
-          color="neutral"
-          variant="subtle"
-          size="xs"
-        >
+        <UBadge color="neutral" variant="subtle" size="xs">
           {{ data.backlog.length }}
         </UBadge>
       </div>
@@ -217,12 +185,7 @@ function formatNextStep(row: { nextStepName?: string, nextStepLocation?: string 
           </tbody>
         </table>
       </div>
-      <p
-        v-else
-        class="text-xs text-(--ui-text-muted)"
-      >
-        No parts further upstream.
-      </p>
+      <p v-else class="text-xs text-(--ui-text-muted)">No parts further upstream.</p>
     </div>
 
     <!-- Step Notes -->
@@ -230,12 +193,7 @@ function formatNextStep(row: { nextStepName?: string, nextStepLocation?: string 
       <div class="flex items-center justify-between mb-1">
         <div class="flex items-center gap-2">
           <span class="text-xs font-semibold text-(--ui-text-highlighted)">Notes</span>
-          <UBadge
-            v-if="notes?.length"
-            color="warning"
-            variant="subtle"
-            size="xs"
-          >
+          <UBadge v-if="notes?.length" color="warning" variant="subtle" size="xs">
             {{ notes.length }}
           </UBadge>
         </div>
@@ -257,16 +215,14 @@ function formatNextStep(row: { nextStepName?: string, nextStepLocation?: string 
           :job-id="data.currentParts[0]!.jobId"
           :path-id="data.currentParts[0]!.pathId"
           :step-id="data.stepIds[0]!"
-          :part-ids="data.currentParts.map(p => p.partId)"
-          @created="showNoteForm = false; emit('noteCreated')"
+          :part-ids="data.currentParts.map((p) => p.partId)"
+          @created="
+            showNoteForm = false
+            emit('noteCreated')
+          "
         />
         <div class="flex justify-end mt-1">
-          <UButton
-            size="xs"
-            variant="ghost"
-            label="Cancel"
-            @click="showNoteForm = false"
-          />
+          <UButton size="xs" variant="ghost" label="Cancel" @click="showNoteForm = false" />
         </div>
       </div>
 

@@ -15,40 +15,48 @@ import { ValidationError } from '../../server/utils/errors'
 /** Generate a valid Job object */
 const arbJob = () =>
   fc.record({
-    id: fc.string({ minLength: 1, maxLength: 20 }).map(s => `job_${s.replace(/[^a-zA-Z0-9]/g, 'x')}`),
+    id: fc
+      .string({ minLength: 1, maxLength: 20 })
+      .map((s) => `job_${s.replace(/[^a-zA-Z0-9]/g, 'x')}`),
     name: fc.string({ minLength: 1, maxLength: 50 }),
     goalQuantity: fc.integer({ min: 1, max: 10000 }),
     createdAt: fc.constant(new Date().toISOString()),
-    updatedAt: fc.constant(new Date().toISOString())
+    updatedAt: fc.constant(new Date().toISOString()),
   })
 
 /** Generate a valid Certificate object */
 const arbCert = () =>
   fc.record({
-    id: fc.string({ minLength: 1, maxLength: 20 }).map(s => `cert_${s.replace(/[^a-zA-Z0-9]/g, 'x')}`),
+    id: fc
+      .string({ minLength: 1, maxLength: 20 })
+      .map((s) => `cert_${s.replace(/[^a-zA-Z0-9]/g, 'x')}`),
     type: fc.constantFrom('material' as const, 'process' as const),
     name: fc.string({ minLength: 1, maxLength: 50 }),
-    createdAt: fc.constant(new Date().toISOString())
+    createdAt: fc.constant(new Date().toISOString()),
   })
 
 /** Generate a valid ShopUser object */
 const arbUser = () =>
   fc.record({
-    id: fc.string({ minLength: 1, maxLength: 20 }).map(s => `user_${s.replace(/[^a-zA-Z0-9]/g, 'x')}`),
+    id: fc
+      .string({ minLength: 1, maxLength: 20 })
+      .map((s) => `user_${s.replace(/[^a-zA-Z0-9]/g, 'x')}`),
     name: fc.string({ minLength: 1, maxLength: 50 }),
     active: fc.boolean(),
-    createdAt: fc.constant(new Date().toISOString())
+    createdAt: fc.constant(new Date().toISOString()),
   })
 
 /** Generate a valid Part object */
 const arbPart = () =>
   fc.record({
-    id: fc.string({ minLength: 1, maxLength: 20 }).map(s => `part_${s.replace(/[^a-zA-Z0-9]/g, 'x')}`),
+    id: fc
+      .string({ minLength: 1, maxLength: 20 })
+      .map((s) => `part_${s.replace(/[^a-zA-Z0-9]/g, 'x')}`),
     jobId: fc.constant('job_1'),
     pathId: fc.constant('path_1'),
     currentStepIndex: fc.integer({ min: -1, max: 10 }),
     createdAt: fc.constant(new Date().toISOString()),
-    updatedAt: fc.constant(new Date().toISOString())
+    updatedAt: fc.constant(new Date().toISOString()),
   })
 
 describe('Property 12: Malformed JSON Error Reporting', () => {
@@ -77,23 +85,19 @@ describe('Property 12: Malformed JSON Error Reporting', () => {
 
   it('changing goalQuantity to a string in a Job produces error mentioning the field', () => {
     fc.assert(
-      fc.property(
-        arbJob(),
-        fc.string({ minLength: 1, maxLength: 10 }),
-        (job, badValue) => {
-          const json = serialize(job)
-          const parsed = JSON.parse(json)
-          parsed.goalQuantity = badValue
-          const corrupted = JSON.stringify(parsed)
+      fc.property(arbJob(), fc.string({ minLength: 1, maxLength: 10 }), (job, badValue) => {
+        const json = serialize(job)
+        const parsed = JSON.parse(json)
+        parsed.goalQuantity = badValue
+        const corrupted = JSON.stringify(parsed)
 
-          expect(() => deserialize(corrupted, 'Job')).toThrow(ValidationError)
-          try {
-            deserialize(corrupted, 'Job')
-          } catch (e: any) {
-            expect(e.message).toContain('goalQuantity')
-          }
+        expect(() => deserialize(corrupted, 'Job')).toThrow(ValidationError)
+        try {
+          deserialize(corrupted, 'Job')
+        } catch (e: any) {
+          expect(e.message).toContain('goalQuantity')
         }
-      ),
+      }),
       { numRuns: 100 }
     )
   })
@@ -125,7 +129,9 @@ describe('Property 12: Malformed JSON Error Reporting', () => {
     fc.assert(
       fc.property(
         arbCert(),
-        fc.string({ minLength: 1, maxLength: 10 }).filter(s => s !== 'material' && s !== 'process'),
+        fc
+          .string({ minLength: 1, maxLength: 10 })
+          .filter((s) => s !== 'material' && s !== 'process'),
         (cert, badType) => {
           const json = serialize(cert)
           const parsed = JSON.parse(json)
@@ -146,23 +152,19 @@ describe('Property 12: Malformed JSON Error Reporting', () => {
 
   it('changing a boolean field to a number in ShopUser produces error mentioning the field', () => {
     fc.assert(
-      fc.property(
-        arbUser(),
-        fc.integer({ min: 0, max: 100 }),
-        (user, badValue) => {
-          const json = serialize(user)
-          const parsed = JSON.parse(json)
-          parsed.active = badValue
-          const corrupted = JSON.stringify(parsed)
+      fc.property(arbUser(), fc.integer({ min: 0, max: 100 }), (user, badValue) => {
+        const json = serialize(user)
+        const parsed = JSON.parse(json)
+        parsed.active = badValue
+        const corrupted = JSON.stringify(parsed)
 
-          expect(() => deserialize(corrupted, 'ShopUser')).toThrow(ValidationError)
-          try {
-            deserialize(corrupted, 'ShopUser')
-          } catch (e: any) {
-            expect(e.message).toContain('active')
-          }
+        expect(() => deserialize(corrupted, 'ShopUser')).toThrow(ValidationError)
+        try {
+          deserialize(corrupted, 'ShopUser')
+        } catch (e: any) {
+          expect(e.message).toContain('active')
         }
-      ),
+      }),
       { numRuns: 100 }
     )
   })
@@ -194,7 +196,12 @@ describe('Property 12: Malformed JSON Error Reporting', () => {
     fc.assert(
       fc.property(
         fc.string({ minLength: 1, maxLength: 50 }).filter((s) => {
-          try { JSON.parse(s); return false } catch { return true }
+          try {
+            JSON.parse(s)
+            return false
+          } catch {
+            return true
+          }
         }),
         fc.constantFrom('Job', 'Certificate', 'ShopUser', 'Part') as fc.Arbitrary<DomainType>,
         (badJson, domainType) => {

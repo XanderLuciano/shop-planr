@@ -1,12 +1,12 @@
 ---
-title: "Assign Step"
-description: "Assign or unassign an operator to a process step"
-method: "PATCH"
-endpoint: "/api/steps/:id/assign"
-service: "pathService"
-category: "Steps"
-requestBody: "AssignStepInput"
-responseType: "ProcessStep"
+title: 'Assign Step'
+description: 'Assign or unassign an operator to a process step'
+method: 'PATCH'
+endpoint: '/api/steps/:id/assign'
+service: 'pathService'
+category: 'Steps'
+requestBody: 'AssignStepInput'
+responseType: 'ProcessStep'
 errorCodes: [400, 404, 500]
 navigation:
   order: 1
@@ -31,15 +31,15 @@ The assignment is stored on the `ProcessStep` object within its parent path. It 
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` | Yes | The process step ID to assign (e.g. `"step_001"`). |
+| Parameter | Type     | Required | Description                                        |
+| --------- | -------- | -------- | -------------------------------------------------- |
+| `id`      | `string` | Yes      | The process step ID to assign (e.g. `"step_001"`). |
 
 ### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `userId` | `string \| null` | Yes | The user ID to assign to this step. Pass `null` to remove the current assignment (unassign). The user must exist and be active. |
+| Field    | Type             | Required | Description                                                                                                                     |
+| -------- | ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `userId` | `string \| null` | Yes      | The user ID to assign to this step. Pass `null` to remove the current assignment (unassign). The user must exist and be active. |
 
 ## Response
 
@@ -47,34 +47,34 @@ The assignment is stored on the `ProcessStep` object within its parent path. It 
 
 Returns the updated `ProcessStep` object with the new assignment.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Step ID (unchanged) |
-| `name` | `string` | Step name |
-| `order` | `number` | Zero-based position in the path |
-| `location` | `string \| undefined` | Physical location of the step |
-| `assignedTo` | `string \| undefined` | User ID of the assigned operator, or `undefined` if unassigned |
-| `optional` | `boolean` | Whether the step can be skipped |
-| `dependencyType` | `string` | `"physical"`, `"preferred"`, or `"completion_gate"` |
+| Field            | Type                  | Description                                                    |
+| ---------------- | --------------------- | -------------------------------------------------------------- |
+| `id`             | `string`              | Step ID (unchanged)                                            |
+| `name`           | `string`              | Step name                                                      |
+| `order`          | `number`              | Zero-based position in the path                                |
+| `location`       | `string \| undefined` | Physical location of the step                                  |
+| `assignedTo`     | `string \| undefined` | User ID of the assigned operator, or `undefined` if unassigned |
+| `optional`       | `boolean`             | Whether the step can be skipped                                |
+| `dependencyType` | `string`              | `"physical"`, `"preferred"`, or `"completion_gate"`            |
 
 ### 400 Bad Request
 
-| Condition | Message |
-|-----------|---------|
-| `userId` is a non-null value that doesn't match any user | `"User not found or inactive"` |
-| `userId` matches an inactive user | `"User not found or inactive"` |
-| User repository not available (internal config issue) | `"User repository not available"` |
+| Condition                                                | Message                           |
+| -------------------------------------------------------- | --------------------------------- |
+| `userId` is a non-null value that doesn't match any user | `"User not found or inactive"`    |
+| `userId` matches an inactive user                        | `"User not found or inactive"`    |
+| User repository not available (internal config issue)    | `"User repository not available"` |
 
 ### 404 Not Found
 
-| Condition | Message |
-|-----------|---------|
+| Condition                       | Message                         |
+| ------------------------------- | ------------------------------- |
 | No step found with the given ID | `"ProcessStep not found: {id}"` |
 
 ### 500 Internal Server Error
 
-| Condition | Message |
-|-----------|---------|
+| Condition              | Message                   |
+| ---------------------- | ------------------------- |
 | Database write failure | `"Internal Server Error"` |
 
 ## Examples

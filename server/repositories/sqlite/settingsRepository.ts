@@ -18,7 +18,7 @@ function rowToDomain(row: SettingsRow): AppSettings {
     jiraConnection: JSON.parse(row.jira_connection),
     jiraFieldMappings: JSON.parse(row.jira_field_mappings),
     pageToggles: mergePageToggles({}, parsedToggles),
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
   }
 }
 
@@ -30,9 +30,9 @@ export class SQLiteSettingsRepository implements SettingsRepository {
   }
 
   get(): AppSettings | null {
-    const row = this.db.prepare(
-      'SELECT * FROM settings WHERE id = \'app_settings\''
-    ).get() as SettingsRow | undefined
+    const row = this.db.prepare("SELECT * FROM settings WHERE id = 'app_settings'").get() as
+      | SettingsRow
+      | undefined
     return row ? rowToDomain(row) : null
   }
 
@@ -42,7 +42,9 @@ export class SQLiteSettingsRepository implements SettingsRepository {
     const jiraFieldMappings = JSON.stringify(settings.jiraFieldMappings)
     const pageToggles = JSON.stringify(settings.pageToggles)
 
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO settings (id, jira_connection, jira_field_mappings, page_toggles, updated_at)
       VALUES (?, ?, ?, ?, ?)
       ON CONFLICT(id) DO UPDATE SET
@@ -50,7 +52,9 @@ export class SQLiteSettingsRepository implements SettingsRepository {
         jira_field_mappings = excluded.jira_field_mappings,
         page_toggles = excluded.page_toggles,
         updated_at = excluded.updated_at
-    `).run(id, jiraConnection, jiraFieldMappings, pageToggles, settings.updatedAt)
+    `
+      )
+      .run(id, jiraConnection, jiraFieldMappings, pageToggles, settings.updatedAt)
 
     return this.get()!
   }

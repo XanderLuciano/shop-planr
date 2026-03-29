@@ -1,9 +1,15 @@
 <script setup lang="ts">
 const {
-  processes, locations, loading, error,
-  fetchProcesses, fetchLocations,
-  addProcess, removeProcess,
-  addLocation, removeLocation,
+  processes,
+  locations,
+  loading,
+  error,
+  fetchProcesses,
+  fetchLocations,
+  addProcess,
+  removeProcess,
+  addLocation,
+  removeLocation,
 } = useLibrary()
 
 const newProcessName = ref('')

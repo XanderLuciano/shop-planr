@@ -51,7 +51,7 @@ const wellFormedOperatorGroupArb: fc.Arbitrary<OperatorGroup> = fc
   .tuple(
     fc.option(fc.uuid(), { nil: null }),
     fc.string({ minLength: 1, maxLength: 20 }),
-    fc.array(workQueueJobArb, { minLength: 0, maxLength: 6 }),
+    fc.array(workQueueJobArb, { minLength: 0, maxLength: 6 })
   )
   .map(([operatorId, operatorName, jobs]) => ({
     operatorId,
@@ -77,7 +77,7 @@ describe('Property 2: TotalParts Invariant', () => {
         const expectedTotal = response.jobs.reduce((sum, j) => sum + j.partCount, 0)
         expect(response.totalParts).toBe(expectedTotal)
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -87,15 +87,15 @@ describe('Property 2: TotalParts Invariant', () => {
         // Top-level totalParts should equal sum of all partCounts across all groups
         const expectedTotal = response.groups.reduce(
           (sum, g) => sum + g.jobs.reduce((s, j) => s + j.partCount, 0),
-          0,
+          0
         )
         expect(response.totalParts).toBe(expectedTotal)
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
-  it('each OperatorGroup.totalParts equals sum of partCount across that group\'s jobs', () => {
+  it("each OperatorGroup.totalParts equals sum of partCount across that group's jobs", () => {
     fc.assert(
       fc.property(wellFormedGroupedResponseArb, (response) => {
         for (const group of response.groups) {
@@ -103,7 +103,7 @@ describe('Property 2: TotalParts Invariant', () => {
           expect(group.totalParts).toBe(expectedGroupTotal)
         }
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -113,7 +113,7 @@ describe('Property 2: TotalParts Invariant', () => {
         const sumOfGroupTotals = response.groups.reduce((sum, g) => sum + g.totalParts, 0)
         expect(response.totalParts).toBe(sumOfGroupTotals)
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

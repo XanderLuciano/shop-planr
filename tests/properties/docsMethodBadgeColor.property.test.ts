@@ -32,8 +32,12 @@ describe('Property 8: Method badge color mapping', () => {
         const result = getMethodColor(method)
         const expectedColor = METHOD_COLOR_MAP[method]
 
-        expect(result.bg, `${method}: bg should contain '${expectedColor}'`).toContain(expectedColor)
-        expect(result.text, `${method}: text should contain '${expectedColor}'`).toContain(expectedColor)
+        expect(result.bg, `${method}: bg should contain '${expectedColor}'`).toContain(
+          expectedColor
+        )
+        expect(result.text, `${method}: text should contain '${expectedColor}'`).toContain(
+          expectedColor
+        )
       }),
       { numRuns: 100 }
     )
@@ -42,9 +46,11 @@ describe('Property 8: Method badge color mapping', () => {
   it('handles case-insensitive input for valid methods', () => {
     // Arbitrary that generates mixed-case variants by randomly toggling each character's case
     const arbCaseVariant = arbValidMethod.chain((method) =>
-      fc.tuple(...[...method].map(() => fc.boolean())).map((flags) =>
-        [...method].map((c, i) => (flags[i] ? c.toLowerCase() : c.toUpperCase())).join('')
-      )
+      fc
+        .tuple(...[...method].map(() => fc.boolean()))
+        .map((flags) =>
+          [...method].map((c, i) => (flags[i] ? c.toLowerCase() : c.toUpperCase())).join('')
+        )
     )
 
     fc.assert(
@@ -52,8 +58,12 @@ describe('Property 8: Method badge color mapping', () => {
         const result = getMethodColor(variant)
         const expectedColor = METHOD_COLOR_MAP[variant.toUpperCase()]
 
-        expect(result.bg, `'${variant}': bg should contain '${expectedColor}'`).toContain(expectedColor)
-        expect(result.text, `'${variant}': text should contain '${expectedColor}'`).toContain(expectedColor)
+        expect(result.bg, `'${variant}': bg should contain '${expectedColor}'`).toContain(
+          expectedColor
+        )
+        expect(result.text, `'${variant}': text should contain '${expectedColor}'`).toContain(
+          expectedColor
+        )
       }),
       { numRuns: 100 }
     )
@@ -61,16 +71,18 @@ describe('Property 8: Method badge color mapping', () => {
 
   it('unknown methods return gray fallback', () => {
     // Arbitrary that generates strings NOT matching any valid method (case-insensitive)
-    const arbUnknownMethod = fc.string({ minLength: 1 }).filter(
-      (s) => !VALID_METHODS.includes(s.toUpperCase())
-    )
+    const arbUnknownMethod = fc
+      .string({ minLength: 1 })
+      .filter((s) => !VALID_METHODS.includes(s.toUpperCase()))
 
     fc.assert(
       fc.property(arbUnknownMethod, (method) => {
         const result = getMethodColor(method)
 
         expect(result.bg, `'${method}': unknown method bg should contain 'gray'`).toContain('gray')
-        expect(result.text, `'${method}': unknown method text should contain 'gray'`).toContain('gray')
+        expect(result.text, `'${method}': unknown method text should contain 'gray'`).toContain(
+          'gray'
+        )
       }),
       { numRuns: 100 }
     )

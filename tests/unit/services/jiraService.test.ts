@@ -42,7 +42,7 @@ function makeMockFetch(responseData: unknown, ok = true, status = 200) {
     status,
     statusText: ok ? 'OK' : 'Internal Server Error',
     json: () => Promise.resolve(responseData),
-    text: () => Promise.resolve(JSON.stringify(responseData))
+    text: () => Promise.resolve(JSON.stringify(responseData)),
   })
 }
 
@@ -60,9 +60,9 @@ function samplePITicket(overrides: Partial<PITicket> = {}): PITicket {
       updated: '2026-03-10T15:30:00.000Z',
       customfield_10908: '7654321-002',
       customfield_10900: 25,
-      customfield_10014: 'EPIC-100'
+      customfield_10014: 'EPIC-100',
     },
-    ...overrides
+    ...overrides,
   }
 }
 
@@ -74,12 +74,15 @@ describe('JiraService', () => {
   beforeEach(() => {
     db = createTestDb()
     const settingsRepo = new SQLiteSettingsRepository(db)
-    settingsService = createSettingsService({ settings: settingsRepo }, {
-      jiraBaseUrl: 'https://jira.example.com',
-      jiraProjectKey: 'PI',
-      jiraUsername: 'testuser',
-      jiraApiToken: 'testtoken'
-    })
+    settingsService = createSettingsService(
+      { settings: settingsRepo },
+      {
+        jiraBaseUrl: 'https://jira.example.com',
+        jiraProjectKey: 'PI',
+        jiraUsername: 'testuser',
+        jiraApiToken: 'testtoken',
+      }
+    )
     const jobsRepo = new SQLiteJobRepository(db)
     const pathsRepo = new SQLitePathRepository(db)
     const partsRepo = new SQLitePartRepository(db)
@@ -93,7 +96,13 @@ describe('JiraService', () => {
   describe('normalizeTicket', () => {
     it('maps all standard fields from a PI ticket', () => {
       const mockFetch = makeMockFetch({})
-      const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, mockFetch)
+      const jira = createJiraService(
+        { jobs: new SQLiteJobRepository(db) },
+        settingsService,
+        jobService,
+        {},
+        mockFetch
+      )
 
       const ticket = samplePITicket()
       const normalized = jira.normalizeTicket(ticket)
@@ -114,7 +123,13 @@ describe('JiraService', () => {
 
     it('handles null/missing mapped fields gracefully', () => {
       const mockFetch = makeMockFetch({})
-      const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, mockFetch)
+      const jira = createJiraService(
+        { jobs: new SQLiteJobRepository(db) },
+        settingsService,
+        jobService,
+        {},
+        mockFetch
+      )
 
       const ticket: PITicket = {
         key: 'PI-1000',
@@ -126,8 +141,8 @@ describe('JiraService', () => {
           reporter: null,
           labels: null,
           created: null,
-          updated: null
-        }
+          updated: null,
+        },
       }
       const normalized = jira.normalizeTicket(ticket)
 
@@ -145,7 +160,13 @@ describe('JiraService', () => {
 
     it('handles completely empty fields object', () => {
       const mockFetch = makeMockFetch({})
-      const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, mockFetch)
+      const jira = createJiraService(
+        { jobs: new SQLiteJobRepository(db) },
+        settingsService,
+        jobService,
+        {},
+        mockFetch
+      )
 
       const ticket: PITicket = { key: 'PI-999', fields: {} }
       const normalized = jira.normalizeTicket(ticket)
@@ -160,7 +181,13 @@ describe('JiraService', () => {
   describe('getPartNumber', () => {
     it('prefers customfield_10908 over summary regex', () => {
       const mockFetch = makeMockFetch({})
-      const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, mockFetch)
+      const jira = createJiraService(
+        { jobs: new SQLiteJobRepository(db) },
+        settingsService,
+        jobService,
+        {},
+        mockFetch
+      )
 
       const result = jira.getPartNumber(
         { customfield_10908: 'PN-FROM-FIELD' },
@@ -171,7 +198,13 @@ describe('JiraService', () => {
 
     it('falls back to summary regex when custom field is null', () => {
       const mockFetch = makeMockFetch({})
-      const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, mockFetch)
+      const jira = createJiraService(
+        { jobs: new SQLiteJobRepository(db) },
+        settingsService,
+        jobService,
+        {},
+        mockFetch
+      )
 
       const result = jira.getPartNumber(
         { customfield_10908: null },
@@ -182,23 +215,29 @@ describe('JiraService', () => {
 
     it('falls back to summary regex when custom field is empty string', () => {
       const mockFetch = makeMockFetch({})
-      const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, mockFetch)
-
-      const result = jira.getPartNumber(
-        { customfield_10908: '' },
-        'Part 123456-789 needs work'
+      const jira = createJiraService(
+        { jobs: new SQLiteJobRepository(db) },
+        settingsService,
+        jobService,
+        {},
+        mockFetch
       )
+
+      const result = jira.getPartNumber({ customfield_10908: '' }, 'Part 123456-789 needs work')
       expect(result).toBe('123456-789')
     })
 
     it('returns null when neither field nor regex match', () => {
       const mockFetch = makeMockFetch({})
-      const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, mockFetch)
-
-      const result = jira.getPartNumber(
-        { customfield_10908: null },
-        'No part number here'
+      const jira = createJiraService(
+        { jobs: new SQLiteJobRepository(db) },
+        settingsService,
+        jobService,
+        {},
+        mockFetch
       )
+
+      const result = jira.getPartNumber({ customfield_10908: null }, 'No part number here')
       expect(result).toBeNull()
     })
   })
@@ -206,9 +245,15 @@ describe('JiraService', () => {
   describe('fetchOpenTickets', () => {
     it('fetches and normalizes open tickets', async () => {
       const mockFetch = makeMockFetch({
-        issues: [samplePITicket(), samplePITicket({ key: 'PI-8000' })]
+        issues: [samplePITicket(), samplePITicket({ key: 'PI-8000' })],
       })
-      const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, mockFetch)
+      const jira = createJiraService(
+        { jobs: new SQLiteJobRepository(db) },
+        settingsService,
+        jobService,
+        {},
+        mockFetch
+      )
 
       const result = await jira.fetchOpenTickets()
 
@@ -228,9 +273,15 @@ describe('JiraService', () => {
     it('returns cached tickets on connection failure', async () => {
       // First call succeeds and populates cache
       const successFetch = makeMockFetch({
-        issues: [samplePITicket()]
+        issues: [samplePITicket()],
       })
-      const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, successFetch)
+      const jira = createJiraService(
+        { jobs: new SQLiteJobRepository(db) },
+        settingsService,
+        jobService,
+        {},
+        successFetch
+      )
 
       await jira.fetchOpenTickets()
       expect(jira.getCachedTickets()).toHaveLength(1)
@@ -247,7 +298,13 @@ describe('JiraService', () => {
 
     it('returns empty list with error when no cache and connection fails', async () => {
       const failFetch = vi.fn().mockRejectedValue(new Error('Connection refused'))
-      const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, failFetch)
+      const jira = createJiraService(
+        { jobs: new SQLiteJobRepository(db) },
+        settingsService,
+        jobService,
+        {},
+        failFetch
+      )
 
       const result = await jira.fetchOpenTickets()
       expect(result.error).toBe('Connection refused')
@@ -257,7 +314,13 @@ describe('JiraService', () => {
 
     it('handles non-ok HTTP response', async () => {
       const mockFetch = makeMockFetch({ errorMessages: ['Unauthorized'] }, false, 401)
-      const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, mockFetch)
+      const jira = createJiraService(
+        { jobs: new SQLiteJobRepository(db) },
+        settingsService,
+        jobService,
+        {},
+        mockFetch
+      )
 
       const result = await jira.fetchOpenTickets()
       expect(result.error).toContain('Jira API error: 401')
@@ -266,7 +329,13 @@ describe('JiraService', () => {
 
     it('uses 10s timeout via AbortController', async () => {
       const mockFetch = makeMockFetch({ issues: [] })
-      const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, mockFetch)
+      const jira = createJiraService(
+        { jobs: new SQLiteJobRepository(db) },
+        settingsService,
+        jobService,
+        {},
+        mockFetch
+      )
 
       await jira.fetchOpenTickets()
 
@@ -277,7 +346,13 @@ describe('JiraService', () => {
 
     it('includes Authorization header with Basic auth', async () => {
       const mockFetch = makeMockFetch({ issues: [] })
-      const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, mockFetch)
+      const jira = createJiraService(
+        { jobs: new SQLiteJobRepository(db) },
+        settingsService,
+        jobService,
+        {},
+        mockFetch
+      )
 
       await jira.fetchOpenTickets()
 
@@ -291,7 +366,13 @@ describe('JiraService', () => {
     it('fetches and normalizes a single ticket', async () => {
       const ticket = samplePITicket()
       const mockFetch = makeMockFetch(ticket)
-      const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, mockFetch)
+      const jira = createJiraService(
+        { jobs: new SQLiteJobRepository(db) },
+        settingsService,
+        jobService,
+        {},
+        mockFetch
+      )
 
       const result = await jira.fetchTicketDetail('PI-7987')
 
@@ -308,7 +389,13 @@ describe('JiraService', () => {
     it('creates a Job from Jira ticket data', async () => {
       const ticket = samplePITicket()
       const mockFetch = makeMockFetch(ticket)
-      const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, mockFetch)
+      const jira = createJiraService(
+        { jobs: new SQLiteJobRepository(db) },
+        settingsService,
+        jobService,
+        {},
+        mockFetch
+      )
 
       const job = await jira.linkTicketToJob({ ticketKey: 'PI-7987' })
 
@@ -326,7 +413,13 @@ describe('JiraService', () => {
     it('uses user-provided goalQuantity when specified', async () => {
       const ticket = samplePITicket()
       const mockFetch = makeMockFetch(ticket)
-      const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, mockFetch)
+      const jira = createJiraService(
+        { jobs: new SQLiteJobRepository(db) },
+        settingsService,
+        jobService,
+        {},
+        mockFetch
+      )
 
       const job = await jira.linkTicketToJob({ ticketKey: 'PI-7987', goalQuantity: 50 })
 
@@ -344,11 +437,17 @@ describe('JiraService', () => {
           reporter: null,
           labels: [],
           created: '2026-01-01T00:00:00.000Z',
-          updated: '2026-01-01T00:00:00.000Z'
-        }
+          updated: '2026-01-01T00:00:00.000Z',
+        },
       }
       const mockFetch = makeMockFetch(ticket)
-      const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, mockFetch)
+      const jira = createJiraService(
+        { jobs: new SQLiteJobRepository(db) },
+        settingsService,
+        jobService,
+        {},
+        mockFetch
+      )
 
       const job = await jira.linkTicketToJob({ ticketKey: 'PI-5000' })
 
@@ -359,10 +458,16 @@ describe('JiraService', () => {
     it('uses ticket key as name when summary is empty', async () => {
       const ticket: PITicket = {
         key: 'PI-6000',
-        fields: {}
+        fields: {},
       }
       const mockFetch = makeMockFetch(ticket)
-      const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, mockFetch)
+      const jira = createJiraService(
+        { jobs: new SQLiteJobRepository(db) },
+        settingsService,
+        jobService,
+        {},
+        mockFetch
+      )
 
       const job = await jira.linkTicketToJob({ ticketKey: 'PI-6000' })
 
@@ -375,14 +480,38 @@ describe('JiraService', () => {
       // Update settings with custom field mappings
       settingsService.updateSettings({
         jiraFieldMappings: [
-          { id: 'fm_1', jiraFieldId: 'customfield_99999', label: 'Custom PN', shopErpField: 'partNumber', isDefault: false },
-          { id: 'fm_2', jiraFieldId: 'customfield_88888', label: 'Custom Qty', shopErpField: 'goalQuantity', isDefault: false },
-          { id: 'fm_3', jiraFieldId: 'customfield_77777', label: 'Custom Epic', shopErpField: 'epicLink', isDefault: false }
-        ]
+          {
+            id: 'fm_1',
+            jiraFieldId: 'customfield_99999',
+            label: 'Custom PN',
+            shopErpField: 'partNumber',
+            isDefault: false,
+          },
+          {
+            id: 'fm_2',
+            jiraFieldId: 'customfield_88888',
+            label: 'Custom Qty',
+            shopErpField: 'goalQuantity',
+            isDefault: false,
+          },
+          {
+            id: 'fm_3',
+            jiraFieldId: 'customfield_77777',
+            label: 'Custom Epic',
+            shopErpField: 'epicLink',
+            isDefault: false,
+          },
+        ],
       })
 
       const mockFetch = makeMockFetch({})
-      const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, mockFetch)
+      const jira = createJiraService(
+        { jobs: new SQLiteJobRepository(db) },
+        settingsService,
+        jobService,
+        {},
+        mockFetch
+      )
 
       const ticket: PITicket = {
         key: 'PI-CUSTOM',
@@ -390,8 +519,8 @@ describe('JiraService', () => {
           summary: 'Custom mapped ticket',
           customfield_99999: 'CUSTOM-PN-001',
           customfield_88888: 42,
-          customfield_77777: 'CUSTOM-EPIC'
-        }
+          customfield_77777: 'CUSTOM-EPIC',
+        },
       }
 
       const normalized = jira.normalizeTicket(ticket)
@@ -425,29 +554,41 @@ describe('JiraService', () => {
       pathService = createPathService({ paths: pathsRepo, parts: partsRepo })
       const partIdGenerator = createSequentialPartIdGenerator({
         getCounter: () => {
-          const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
+          const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as
+            | { value: number }
+            | undefined
           return row?.value ?? 0
         },
         setCounter: (v: number) => {
           db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-        }
+        },
       })
-      partService = createPartService({ parts: partsRepo, paths: pathsRepo, certs: certsRepo }, auditService, partIdGenerator)
+      partService = createPartService(
+        { parts: partsRepo, paths: pathsRepo, certs: certsRepo },
+        auditService,
+        partIdGenerator
+      )
       certService = createCertService({ certs: certsRepo }, auditService)
       noteService = createNoteService({ notes: notesRepo }, auditService)
     })
 
     function enablePush() {
       settingsService.updateSettings({
-        jiraConnection: { enabled: true, pushEnabled: true }
+        jiraConnection: { enabled: true, pushEnabled: true },
       })
     }
 
     function createJobWithPath(mockFetch: ReturnType<typeof makeMockFetch>) {
-      const job = jobService.createJob({ name: 'Test Job', goalQuantity: 10, jiraTicketKey: 'PI-100' })
+      const job = jobService.createJob({
+        name: 'Test Job',
+        goalQuantity: 10,
+        jiraTicketKey: 'PI-100',
+      })
       const path = pathService.createPath({
-        jobId: job.id, name: 'Main Path', goalQuantity: 10,
-        steps: [{ name: 'Machining' }, { name: 'Inspection' }, { name: 'Coating' }]
+        jobId: job.id,
+        name: 'Main Path',
+        goalQuantity: 10,
+        steps: [{ name: 'Machining' }, { name: 'Inspection' }, { name: 'Coating' }],
       })
       return { job, path }
     }
@@ -455,17 +596,31 @@ describe('JiraService', () => {
     describe('assertPushEnabled', () => {
       it('throws ValidationError when Jira is not enabled', async () => {
         const mockFetch = makeMockFetch({})
-        const jira = createJiraService({ jobs: jobsRepo }, settingsService, jobService, { pathService }, mockFetch)
+        const jira = createJiraService(
+          { jobs: jobsRepo },
+          settingsService,
+          jobService,
+          { pathService },
+          mockFetch
+        )
         const job = jobService.createJob({ name: 'Test', goalQuantity: 5, jiraTicketKey: 'PI-1' })
 
         await expect(jira.pushDescriptionTable(job.id)).rejects.toThrow(ValidationError)
-        await expect(jira.pushDescriptionTable(job.id)).rejects.toThrow('Jira integration is not enabled')
+        await expect(jira.pushDescriptionTable(job.id)).rejects.toThrow(
+          'Jira integration is not enabled'
+        )
       })
 
       it('throws ValidationError when push is not enabled', async () => {
         settingsService.updateSettings({ jiraConnection: { enabled: true, pushEnabled: false } })
         const mockFetch = makeMockFetch({})
-        const jira = createJiraService({ jobs: jobsRepo }, settingsService, jobService, { pathService }, mockFetch)
+        const jira = createJiraService(
+          { jobs: jobsRepo },
+          settingsService,
+          jobService,
+          { pathService },
+          mockFetch
+        )
         const job = jobService.createJob({ name: 'Test', goalQuantity: 5, jiraTicketKey: 'PI-1' })
 
         await expect(jira.pushCommentSummary(job.id)).rejects.toThrow('Jira push is not enabled')
@@ -476,7 +631,13 @@ describe('JiraService', () => {
       it('appends wiki markup table to ticket description', async () => {
         enablePush()
         const mockFetch = makeMockFetch({ fields: { description: 'Existing description' } })
-        const jira = createJiraService({ jobs: jobsRepo }, settingsService, jobService, { pathService }, mockFetch)
+        const jira = createJiraService(
+          { jobs: jobsRepo },
+          settingsService,
+          jobService,
+          { pathService },
+          mockFetch
+        )
         const { job } = createJobWithPath(mockFetch)
 
         const result = await jira.pushDescriptionTable(job.id)
@@ -497,7 +658,13 @@ describe('JiraService', () => {
       it('returns error when job has no Jira ticket', async () => {
         enablePush()
         const mockFetch = makeMockFetch({})
-        const jira = createJiraService({ jobs: jobsRepo }, settingsService, jobService, { pathService }, mockFetch)
+        const jira = createJiraService(
+          { jobs: jobsRepo },
+          settingsService,
+          jobService,
+          { pathService },
+          mockFetch
+        )
         const job = jobService.createJob({ name: 'No Jira', goalQuantity: 5 })
 
         const result = await jira.pushDescriptionTable(job.id)
@@ -508,7 +675,13 @@ describe('JiraService', () => {
       it('returns error on Jira API failure instead of throwing', async () => {
         enablePush()
         const mockFetch = makeMockFetch({}, false, 500)
-        const jira = createJiraService({ jobs: jobsRepo }, settingsService, jobService, { pathService }, mockFetch)
+        const jira = createJiraService(
+          { jobs: jobsRepo },
+          settingsService,
+          jobService,
+          { pathService },
+          mockFetch
+        )
         const { job } = createJobWithPath(mockFetch)
 
         const result = await jira.pushDescriptionTable(job.id)
@@ -521,7 +694,13 @@ describe('JiraService', () => {
       it('posts a comment with part counts per path per step', async () => {
         enablePush()
         const mockFetch = makeMockFetch({ id: '12345' })
-        const jira = createJiraService({ jobs: jobsRepo }, settingsService, jobService, { pathService }, mockFetch)
+        const jira = createJiraService(
+          { jobs: jobsRepo },
+          settingsService,
+          jobService,
+          { pathService },
+          mockFetch
+        )
         const { job } = createJobWithPath(mockFetch)
 
         const result = await jira.pushCommentSummary(job.id)
@@ -539,7 +718,13 @@ describe('JiraService', () => {
       it('returns error when job has no Jira ticket', async () => {
         enablePush()
         const mockFetch = makeMockFetch({})
-        const jira = createJiraService({ jobs: jobsRepo }, settingsService, jobService, { pathService }, mockFetch)
+        const jira = createJiraService(
+          { jobs: jobsRepo },
+          settingsService,
+          jobService,
+          { pathService },
+          mockFetch
+        )
         const job = jobService.createJob({ name: 'No Jira', goalQuantity: 5 })
 
         const result = await jira.pushCommentSummary(job.id)
@@ -553,18 +738,26 @@ describe('JiraService', () => {
         enablePush()
         const mockFetch = makeMockFetch({ id: '12345' })
         const jira = createJiraService(
-          { jobs: jobsRepo }, settingsService, jobService,
-          { pathService, noteService }, mockFetch
+          { jobs: jobsRepo },
+          settingsService,
+          jobService,
+          { pathService, noteService },
+          mockFetch
         )
         const { job, path } = createJobWithPath(mockFetch)
 
         // Create parts and a note
         const parts = partService.batchCreateParts(
-          { jobId: job.id, pathId: path.id, quantity: 2 }, 'user1'
+          { jobId: job.id, pathId: path.id, quantity: 2 },
+          'user1'
         )
         const note = noteService.createNote({
-          jobId: job.id, pathId: path.id, stepId: path.steps[0].id,
-          partIds: parts.map(s => s.id), text: 'threaded feature is missing', userId: 'user1'
+          jobId: job.id,
+          pathId: path.id,
+          stepId: path.steps[0].id,
+          partIds: parts.map((s) => s.id),
+          text: 'threaded feature is missing',
+          userId: 'user1',
         })
 
         const result = await jira.pushNoteAsComment(note.id, job.id)
@@ -581,8 +774,11 @@ describe('JiraService', () => {
         enablePush()
         const mockFetch = makeMockFetch({})
         const jira = createJiraService(
-          { jobs: jobsRepo }, settingsService, jobService,
-          { pathService, noteService }, mockFetch
+          { jobs: jobsRepo },
+          settingsService,
+          jobService,
+          { pathService, noteService },
+          mockFetch
         )
         const job = jobService.createJob({ name: 'Test', goalQuantity: 5, jiraTicketKey: 'PI-1' })
 
@@ -597,8 +793,11 @@ describe('JiraService', () => {
         enablePush()
         const mockFetch = makeMockFetch({ id: '12345' })
         const jira = createJiraService(
-          { jobs: jobsRepo }, settingsService, jobService,
-          { pathService, partService: partService as any, certService }, mockFetch
+          { jobs: jobsRepo },
+          settingsService,
+          jobService,
+          { pathService, partService: partService as any, certService },
+          mockFetch
         )
         const { job, path } = createJobWithPath(mockFetch)
 
@@ -620,14 +819,18 @@ describe('JiraService', () => {
         enablePush()
         const mockFetch = makeMockFetch({ id: '12345' })
         const jira = createJiraService(
-          { jobs: jobsRepo }, settingsService, jobService,
-          { pathService, partService: partService as any, certService }, mockFetch
+          { jobs: jobsRepo },
+          settingsService,
+          jobService,
+          { pathService, partService: partService as any, certService },
+          mockFetch
         )
         const { job, path } = createJobWithPath(mockFetch)
 
         const cert = certService.createCert({ type: 'material', name: 'Steel Cert 304L' })
         const parts = partService.batchCreateParts(
-          { jobId: job.id, pathId: path.id, quantity: 1, certId: cert.id }, 'user1'
+          { jobId: job.id, pathId: path.id, quantity: 1, certId: cert.id },
+          'user1'
         )
 
         const result = await jira.pushCompletionDocs(job.id)
@@ -644,8 +847,11 @@ describe('JiraService', () => {
         enablePush()
         const mockFetch = makeMockFetch({})
         const jira = createJiraService(
-          { jobs: jobsRepo }, settingsService, jobService,
-          { partService: partService as any, certService }, mockFetch
+          { jobs: jobsRepo },
+          settingsService,
+          jobService,
+          { partService: partService as any, certService },
+          mockFetch
         )
         const job = jobService.createJob({ name: 'No Jira', goalQuantity: 5 })
 

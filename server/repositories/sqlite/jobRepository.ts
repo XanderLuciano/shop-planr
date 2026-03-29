@@ -29,7 +29,7 @@ function rowToDomain(row: JobRow): Job {
     jiraEpicLink: row.jira_epic_link ?? undefined,
     jiraLabels: row.jira_labels ? JSON.parse(row.jira_labels) : undefined,
     createdAt: row.created_at,
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
   }
 }
 
@@ -41,22 +41,26 @@ export class SQLiteJobRepository implements JobRepository {
   }
 
   create(job: Job): Job {
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO jobs (id, name, goal_quantity, jira_ticket_key, jira_ticket_summary, jira_part_number, jira_priority, jira_epic_link, jira_labels, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      job.id,
-      job.name,
-      job.goalQuantity,
-      job.jiraTicketKey ?? null,
-      job.jiraTicketSummary ?? null,
-      job.jiraPartNumber ?? null,
-      job.jiraPriority ?? null,
-      job.jiraEpicLink ?? null,
-      job.jiraLabels ? JSON.stringify(job.jiraLabels) : null,
-      job.createdAt,
-      job.updatedAt
-    )
+    `
+      )
+      .run(
+        job.id,
+        job.name,
+        job.goalQuantity,
+        job.jiraTicketKey ?? null,
+        job.jiraTicketSummary ?? null,
+        job.jiraPartNumber ?? null,
+        job.jiraPriority ?? null,
+        job.jiraEpicLink ?? null,
+        job.jiraLabels ? JSON.stringify(job.jiraLabels) : null,
+        job.createdAt,
+        job.updatedAt
+      )
     return job
   }
 
@@ -74,23 +78,32 @@ export class SQLiteJobRepository implements JobRepository {
     const existing = this.getById(id)
     if (!existing) throw new NotFoundError('Job', id)
 
-    const updated: Job = { ...existing, ...partial, id, updatedAt: partial.updatedAt ?? new Date().toISOString() }
+    const updated: Job = {
+      ...existing,
+      ...partial,
+      id,
+      updatedAt: partial.updatedAt ?? new Date().toISOString(),
+    }
 
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       UPDATE jobs SET name = ?, goal_quantity = ?, jira_ticket_key = ?, jira_ticket_summary = ?, jira_part_number = ?, jira_priority = ?, jira_epic_link = ?, jira_labels = ?, updated_at = ?
       WHERE id = ?
-    `).run(
-      updated.name,
-      updated.goalQuantity,
-      updated.jiraTicketKey ?? null,
-      updated.jiraTicketSummary ?? null,
-      updated.jiraPartNumber ?? null,
-      updated.jiraPriority ?? null,
-      updated.jiraEpicLink ?? null,
-      updated.jiraLabels ? JSON.stringify(updated.jiraLabels) : null,
-      updated.updatedAt,
-      id
-    )
+    `
+      )
+      .run(
+        updated.name,
+        updated.goalQuantity,
+        updated.jiraTicketKey ?? null,
+        updated.jiraTicketSummary ?? null,
+        updated.jiraPartNumber ?? null,
+        updated.jiraPriority ?? null,
+        updated.jiraEpicLink ?? null,
+        updated.jiraLabels ? JSON.stringify(updated.jiraLabels) : null,
+        updated.updatedAt,
+        id
+      )
     return updated
   }
 

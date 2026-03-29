@@ -36,9 +36,9 @@ describe('Property 3: Validation rejects invalid goal quantities', () => {
 
         const result = validate()
         expect(result.valid).toBe(false)
-        expect(result.errors.some(e => e.field === 'job.goalQuantity')).toBe(true)
+        expect(result.errors.some((e) => e.field === 'job.goalQuantity')).toBe(true)
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -57,9 +57,9 @@ describe('Property 3: Validation rejects invalid goal quantities', () => {
 
         const result = validate()
         expect(result.valid).toBe(false)
-        expect(result.errors.some(e => e.field === 'paths[0].goalQuantity')).toBe(true)
+        expect(result.errors.some((e) => e.field === 'paths[0].goalQuantity')).toBe(true)
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

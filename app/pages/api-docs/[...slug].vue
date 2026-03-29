@@ -14,15 +14,16 @@ if (!page.value) {
     statusCode: 404,
     statusMessage: 'Page not found',
     message: 'The documentation page you are looking for does not exist.',
-    fatal: true
+    fatal: true,
   })
 }
 
 const { data: surround } = await useAsyncData(
   `docs-surround-${route.path}`,
-  () => queryCollectionItemSurroundings('docs', route.path, {
-    fields: ['title', 'path']
-  }),
+  () =>
+    queryCollectionItemSurroundings('docs', route.path, {
+      fields: ['title', 'path'],
+    }),
   { watch: [() => route.path] }
 )
 

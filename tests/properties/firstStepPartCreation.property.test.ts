@@ -18,12 +18,20 @@ export function selectPanelType(stepOrder: number): 'part-creation' | 'process-a
 }
 
 /** Extracts display context strings from a WorkQueueJob. */
-export function extractDisplayContext(job: WorkQueueJob): { jobName: string; pathName: string; stepName: string } {
+export function extractDisplayContext(job: WorkQueueJob): {
+  jobName: string
+  pathName: string
+  stepName: string
+} {
   return { jobName: job.jobName, pathName: job.pathName, stepName: job.stepName }
 }
 
 /** Returns accumulated parts info: count, empty state, and IDs. */
-export function getAccumulatedPartsInfo(partIds: string[]): { count: number; isEmpty: boolean; ids: string[] } {
+export function getAccumulatedPartsInfo(partIds: string[]): {
+  count: number
+  isEmpty: boolean
+  ids: string[]
+} {
   return { count: partIds.length, isEmpty: partIds.length === 0, ids: partIds }
 }
 
@@ -37,9 +45,9 @@ export function validateQuantity(quantity: number): string | null {
 export function buildAdvancePayload(
   partIds: string[],
   selectedSet: Set<string>,
-  note: string,
+  note: string
 ): { partIds: string[]; note?: string } {
-  const ids = partIds.filter(id => selectedSet.has(id))
+  const ids = partIds.filter((id) => selectedSet.has(id))
   const trimmedNote = note.trim()
   return { partIds: ids, note: trimmedNote || undefined }
 }
@@ -48,9 +56,7 @@ export function buildAdvancePayload(
 export function formatDestination(job: WorkQueueJob): string {
   if (job.isFinalStep) return 'Completed'
   if (!job.nextStepName) return '—'
-  return job.nextStepLocation
-    ? `${job.nextStepName} → ${job.nextStepLocation}`
-    : job.nextStepName
+  return job.nextStepLocation ? `${job.nextStepName} → ${job.nextStepLocation}` : job.nextStepName
 }
 
 /** Returns note info: length and whether it's within the 1000-char limit. */
@@ -63,7 +69,7 @@ export function getControlStates(
   creating: boolean,
   loading: boolean,
   hasValidationError: boolean,
-  selectedCount: number,
+  selectedCount: number
 ): { createDisabled: boolean; advanceDisabled: boolean } {
   return {
     createDisabled: creating || hasValidationError,
@@ -74,30 +80,44 @@ export function getControlStates(
 // ---- Generators ----
 
 const arbNonEmptyString = (maxLen = 50): fc.Arbitrary<string> =>
-  fc.string({ minLength: 1, maxLength: maxLen }).filter(s => s.trim().length >= 1)
+  fc.string({ minLength: 1, maxLength: maxLen }).filter((s) => s.trim().length >= 1)
 
-const arbWorkQueueJob = (overrides?: Partial<Record<string, fc.Arbitrary<any>>>): fc.Arbitrary<WorkQueueJob> =>
+const arbWorkQueueJob = (
+  overrides?: Partial<Record<string, fc.Arbitrary<any>>>
+): fc.Arbitrary<WorkQueueJob> =>
   fc.record({
-    jobId: overrides?.jobId ?? fc.string({ minLength: 3, maxLength: 20 }).filter(s => s.trim().length >= 3),
+    jobId:
+      overrides?.jobId ??
+      fc.string({ minLength: 3, maxLength: 20 }).filter((s) => s.trim().length >= 3),
     jobName: overrides?.jobName ?? arbNonEmptyString(),
-    pathId: overrides?.pathId ?? fc.string({ minLength: 3, maxLength: 20 }).filter(s => s.trim().length >= 3),
+    pathId:
+      overrides?.pathId ??
+      fc.string({ minLength: 3, maxLength: 20 }).filter((s) => s.trim().length >= 3),
     pathName: overrides?.pathName ?? arbNonEmptyString(),
-    stepId: overrides?.stepId ?? fc.string({ minLength: 3, maxLength: 20 }).filter(s => s.trim().length >= 3),
+    stepId:
+      overrides?.stepId ??
+      fc.string({ minLength: 3, maxLength: 20 }).filter((s) => s.trim().length >= 3),
     stepName: overrides?.stepName ?? arbNonEmptyString(),
     stepOrder: overrides?.stepOrder ?? fc.nat({ max: 20 }),
     stepLocation: fc.option(arbNonEmptyString(30), { nil: undefined }),
     totalSteps: fc.integer({ min: 1, max: 20 }),
-    partIds: overrides?.partIds ?? fc.array(fc.string({ minLength: 3, maxLength: 20 }).filter(s => s.trim().length >= 3), { minLength: 0, maxLength: 15 }),
+    partIds:
+      overrides?.partIds ??
+      fc.array(
+        fc.string({ minLength: 3, maxLength: 20 }).filter((s) => s.trim().length >= 3),
+        { minLength: 0, maxLength: 15 }
+      ),
     partCount: fc.nat({ max: 100 }),
     nextStepName: overrides?.nextStepName ?? fc.option(arbNonEmptyString(30), { nil: undefined }),
-    nextStepLocation: overrides?.nextStepLocation ?? fc.option(arbNonEmptyString(30), { nil: undefined }),
+    nextStepLocation:
+      overrides?.nextStepLocation ?? fc.option(arbNonEmptyString(30), { nil: undefined }),
     isFinalStep: overrides?.isFinalStep ?? fc.boolean(),
   })
 
 const arbPartIds = (min = 0, max = 20): fc.Arbitrary<string[]> =>
   fc.array(
-    fc.string({ minLength: 3, maxLength: 20 }).filter(s => s.trim().length >= 3),
-    { minLength: min, maxLength: max },
+    fc.string({ minLength: 3, maxLength: 20 }).filter((s) => s.trim().length >= 3),
+    { minLength: min, maxLength: max }
   )
 
 // ---- Property Tests ----
@@ -113,42 +133,33 @@ const arbPartIds = (min = 0, max = 20): fc.Arbitrary<string[]> =>
 describe('Property 1: Panel type selection based on step order', () => {
   it('stepOrder === 0 selects part-creation panel', () => {
     fc.assert(
-      fc.property(
-        fc.constant(0),
-        (stepOrder) => {
-          expect(selectPanelType(stepOrder)).toBe('part-creation')
-        },
-      ),
-      { numRuns: 100 },
+      fc.property(fc.constant(0), (stepOrder) => {
+        expect(selectPanelType(stepOrder)).toBe('part-creation')
+      }),
+      { numRuns: 100 }
     )
   })
 
   it('stepOrder > 0 selects process-advancement panel', () => {
     fc.assert(
-      fc.property(
-        fc.integer({ min: 1, max: 100 }),
-        (stepOrder) => {
-          expect(selectPanelType(stepOrder)).toBe('process-advancement')
-        },
-      ),
-      { numRuns: 100 },
+      fc.property(fc.integer({ min: 1, max: 100 }), (stepOrder) => {
+        expect(selectPanelType(stepOrder)).toBe('process-advancement')
+      }),
+      { numRuns: 100 }
     )
   })
 
   it('panels are mutually exclusive for any step order', () => {
     fc.assert(
-      fc.property(
-        fc.nat({ max: 50 }),
-        (stepOrder) => {
-          const result = selectPanelType(stepOrder)
-          if (stepOrder === 0) {
-            expect(result).toBe('part-creation')
-          } else {
-            expect(result).toBe('process-advancement')
-          }
-        },
-      ),
-      { numRuns: 100 },
+      fc.property(fc.nat({ max: 50 }), (stepOrder) => {
+        const result = selectPanelType(stepOrder)
+        if (stepOrder === 0) {
+          expect(result).toBe('part-creation')
+        } else {
+          expect(result).toBe('process-advancement')
+        }
+      }),
+      { numRuns: 100 }
     )
   })
 })
@@ -170,17 +181,25 @@ describe('Property 2: Context display contains job, path, and step names', () =>
         arbNonEmptyString(),
         (jobName, pathName, stepName) => {
           const job: WorkQueueJob = {
-            jobId: 'j-1', jobName, pathId: 'p-1', pathName,
-            stepId: 's-1', stepName, stepOrder: 0, totalSteps: 3,
-            partIds: [], partCount: 0, isFinalStep: false,
+            jobId: 'j-1',
+            jobName,
+            pathId: 'p-1',
+            pathName,
+            stepId: 's-1',
+            stepName,
+            stepOrder: 0,
+            totalSteps: 3,
+            partIds: [],
+            partCount: 0,
+            isFinalStep: false,
           }
           const ctx = extractDisplayContext(job)
           expect(ctx.jobName).toBe(jobName)
           expect(ctx.pathName).toBe(pathName)
           expect(ctx.stepName).toBe(stepName)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })
@@ -196,45 +215,36 @@ describe('Property 2: Context display contains job, path, and step names', () =>
 describe('Property 3: Accumulated parts rendering and count', () => {
   it('count matches array length and isEmpty is correct', () => {
     fc.assert(
-      fc.property(
-        arbPartIds(0, 30),
-        (partIds) => {
-          const info = getAccumulatedPartsInfo(partIds)
-          expect(info.count).toBe(partIds.length)
-          expect(info.isEmpty).toBe(partIds.length === 0)
-          expect(info.ids).toEqual(partIds)
-        },
-      ),
-      { numRuns: 100 },
+      fc.property(arbPartIds(0, 30), (partIds) => {
+        const info = getAccumulatedPartsInfo(partIds)
+        expect(info.count).toBe(partIds.length)
+        expect(info.isEmpty).toBe(partIds.length === 0)
+        expect(info.ids).toEqual(partIds)
+      }),
+      { numRuns: 100 }
     )
   })
 
   it('empty array yields isEmpty true and count 0', () => {
     fc.assert(
-      fc.property(
-        fc.constant([] as string[]),
-        (partIds) => {
-          const info = getAccumulatedPartsInfo(partIds)
-          expect(info.count).toBe(0)
-          expect(info.isEmpty).toBe(true)
-          expect(info.ids).toEqual([])
-        },
-      ),
-      { numRuns: 100 },
+      fc.property(fc.constant([] as string[]), (partIds) => {
+        const info = getAccumulatedPartsInfo(partIds)
+        expect(info.count).toBe(0)
+        expect(info.isEmpty).toBe(true)
+        expect(info.ids).toEqual([])
+      }),
+      { numRuns: 100 }
     )
   })
 
   it('non-empty array yields isEmpty false', () => {
     fc.assert(
-      fc.property(
-        arbPartIds(1, 30),
-        (partIds) => {
-          const info = getAccumulatedPartsInfo(partIds)
-          expect(info.isEmpty).toBe(false)
-          expect(info.count).toBeGreaterThan(0)
-        },
-      ),
-      { numRuns: 100 },
+      fc.property(arbPartIds(1, 30), (partIds) => {
+        const info = getAccumulatedPartsInfo(partIds)
+        expect(info.isEmpty).toBe(false)
+        expect(info.count).toBeGreaterThan(0)
+      }),
+      { numRuns: 100 }
     )
   })
 })
@@ -250,27 +260,21 @@ describe('Property 3: Accumulated parts rendering and count', () => {
 describe('Property 4: Invalid quantity rejection', () => {
   it('quantities less than 1 produce a validation error', () => {
     fc.assert(
-      fc.property(
-        fc.integer({ min: -1000, max: 0 }),
-        (quantity) => {
-          const error = validateQuantity(quantity)
-          expect(error).toBe('Quantity must be at least 1')
-        },
-      ),
-      { numRuns: 100 },
+      fc.property(fc.integer({ min: -1000, max: 0 }), (quantity) => {
+        const error = validateQuantity(quantity)
+        expect(error).toBe('Quantity must be at least 1')
+      }),
+      { numRuns: 100 }
     )
   })
 
   it('quantities >= 1 produce no validation error', () => {
     fc.assert(
-      fc.property(
-        fc.integer({ min: 1, max: 10000 }),
-        (quantity) => {
-          const error = validateQuantity(quantity)
-          expect(error).toBeNull()
-        },
-      ),
-      { numRuns: 100 },
+      fc.property(fc.integer({ min: 1, max: 10000 }), (quantity) => {
+        const error = validateQuantity(quantity)
+        expect(error).toBeNull()
+      }),
+      { numRuns: 100 }
     )
   })
 })
@@ -288,13 +292,13 @@ describe('Property 5: Selection state drives advance payload and button state', 
   it('advance payload contains exactly the selected part IDs', () => {
     fc.assert(
       fc.property(
-        arbPartIds(0, 20).chain(ids => {
+        arbPartIds(0, 20).chain((ids) => {
           // Generate a random subset of the IDs
           const uniqueIds = [...new Set(ids)]
           return fc.tuple(
             fc.constant(uniqueIds),
             fc.shuffledSubarray(uniqueIds),
-            fc.string({ minLength: 0, maxLength: 50 }),
+            fc.string({ minLength: 0, maxLength: 50 })
           )
         }),
         ([allIds, selectedSubset, note]) => {
@@ -302,49 +306,43 @@ describe('Property 5: Selection state drives advance payload and button state', 
           const payload = buildAdvancePayload(allIds, selectedSet, note)
 
           // Payload should contain exactly the selected IDs (in order of allIds)
-          const expectedIds = allIds.filter(id => selectedSet.has(id))
+          const expectedIds = allIds.filter((id) => selectedSet.has(id))
           expect(payload.partIds).toEqual(expectedIds)
           expect(payload.partIds.length).toBe(selectedSet.size)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
   it('advance button is disabled when no parts are selected', () => {
     fc.assert(
-      fc.property(
-        arbPartIds(0, 20),
-        (partIds) => {
-          const emptySelection = new Set<string>()
-          const payload = buildAdvancePayload(partIds, emptySelection, '')
-          expect(payload.partIds.length).toBe(0)
-          // Button disabled = selectedCount === 0
-          const buttonDisabled = emptySelection.size === 0
-          expect(buttonDisabled).toBe(true)
-        },
-      ),
-      { numRuns: 100 },
+      fc.property(arbPartIds(0, 20), (partIds) => {
+        const emptySelection = new Set<string>()
+        const payload = buildAdvancePayload(partIds, emptySelection, '')
+        expect(payload.partIds.length).toBe(0)
+        // Button disabled = selectedCount === 0
+        const buttonDisabled = emptySelection.size === 0
+        expect(buttonDisabled).toBe(true)
+      }),
+      { numRuns: 100 }
     )
   })
 
   it('advance button is enabled when at least one part is selected', () => {
     fc.assert(
       fc.property(
-        arbPartIds(1, 20).chain(ids => {
+        arbPartIds(1, 20).chain((ids) => {
           const uniqueIds = [...new Set(ids)]
-          return fc.tuple(
-            fc.constant(uniqueIds),
-            fc.shuffledSubarray(uniqueIds, { minLength: 1 }),
-          )
+          return fc.tuple(fc.constant(uniqueIds), fc.shuffledSubarray(uniqueIds, { minLength: 1 }))
         }),
         ([allIds, selectedSubset]) => {
           const selectedSet = new Set(selectedSubset)
           const buttonDisabled = selectedSet.size === 0
           expect(buttonDisabled).toBe(false)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })
@@ -363,13 +361,10 @@ describe('Property 5: Selection state drives advance payload and button state', 
 describe('Property 6: Destination display matches WorkQueueJob fields', () => {
   it('isFinalStep true always returns "Completed"', () => {
     fc.assert(
-      fc.property(
-        arbWorkQueueJob({ isFinalStep: fc.constant(true) }),
-        (job) => {
-          expect(formatDestination(job)).toBe('Completed')
-        },
-      ),
-      { numRuns: 100 },
+      fc.property(arbWorkQueueJob({ isFinalStep: fc.constant(true) }), (job) => {
+        expect(formatDestination(job)).toBe('Completed')
+      }),
+      { numRuns: 100 }
     )
   })
 
@@ -380,51 +375,72 @@ describe('Property 6: Destination display matches WorkQueueJob fields', () => {
         arbNonEmptyString(30),
         (nextStepName, nextStepLocation) => {
           const job: WorkQueueJob = {
-            jobId: 'j-1', jobName: 'J', pathId: 'p-1', pathName: 'P',
-            stepId: 's-1', stepName: 'S', stepOrder: 0, totalSteps: 3,
-            partIds: [], partCount: 0,
-            nextStepName, nextStepLocation, isFinalStep: false,
+            jobId: 'j-1',
+            jobName: 'J',
+            pathId: 'p-1',
+            pathName: 'P',
+            stepId: 's-1',
+            stepName: 'S',
+            stepOrder: 0,
+            totalSteps: 3,
+            partIds: [],
+            partCount: 0,
+            nextStepName,
+            nextStepLocation,
+            isFinalStep: false,
           }
           expect(formatDestination(job)).toBe(`${nextStepName} → ${nextStepLocation}`)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
   it('non-final step with name but no location returns name alone', () => {
     fc.assert(
-      fc.property(
-        arbNonEmptyString(30),
-        (nextStepName) => {
-          const job: WorkQueueJob = {
-            jobId: 'j-1', jobName: 'J', pathId: 'p-1', pathName: 'P',
-            stepId: 's-1', stepName: 'S', stepOrder: 0, totalSteps: 3,
-            partIds: [], partCount: 0,
-            nextStepName, nextStepLocation: undefined, isFinalStep: false,
-          }
-          expect(formatDestination(job)).toBe(nextStepName)
-        },
-      ),
-      { numRuns: 100 },
+      fc.property(arbNonEmptyString(30), (nextStepName) => {
+        const job: WorkQueueJob = {
+          jobId: 'j-1',
+          jobName: 'J',
+          pathId: 'p-1',
+          pathName: 'P',
+          stepId: 's-1',
+          stepName: 'S',
+          stepOrder: 0,
+          totalSteps: 3,
+          partIds: [],
+          partCount: 0,
+          nextStepName,
+          nextStepLocation: undefined,
+          isFinalStep: false,
+        }
+        expect(formatDestination(job)).toBe(nextStepName)
+      }),
+      { numRuns: 100 }
     )
   })
 
   it('non-final step with no next step name returns dash', () => {
     fc.assert(
-      fc.property(
-        fc.constant(undefined),
-        () => {
-          const job: WorkQueueJob = {
-            jobId: 'j-1', jobName: 'J', pathId: 'p-1', pathName: 'P',
-            stepId: 's-1', stepName: 'S', stepOrder: 0, totalSteps: 3,
-            partIds: [], partCount: 0,
-            nextStepName: undefined, nextStepLocation: undefined, isFinalStep: false,
-          }
-          expect(formatDestination(job)).toBe('—')
-        },
-      ),
-      { numRuns: 100 },
+      fc.property(fc.constant(undefined), () => {
+        const job: WorkQueueJob = {
+          jobId: 'j-1',
+          jobName: 'J',
+          pathId: 'p-1',
+          pathName: 'P',
+          stepId: 's-1',
+          stepName: 'S',
+          stepOrder: 0,
+          totalSteps: 3,
+          partIds: [],
+          partCount: 0,
+          nextStepName: undefined,
+          nextStepLocation: undefined,
+          isFinalStep: false,
+        }
+        expect(formatDestination(job)).toBe('—')
+      }),
+      { numRuns: 100 }
     )
   })
 })
@@ -440,43 +456,34 @@ describe('Property 6: Destination display matches WorkQueueJob fields', () => {
 describe('Property 7: Note character count and limit enforcement', () => {
   it('character count equals string length and limit is enforced at 1000', () => {
     fc.assert(
-      fc.property(
-        fc.string({ minLength: 0, maxLength: 1500 }),
-        (note) => {
-          const info = getNoteInfo(note)
-          expect(info.length).toBe(note.length)
-          expect(info.isWithinLimit).toBe(note.length <= 1000)
-        },
-      ),
-      { numRuns: 100 },
+      fc.property(fc.string({ minLength: 0, maxLength: 1500 }), (note) => {
+        const info = getNoteInfo(note)
+        expect(info.length).toBe(note.length)
+        expect(info.isWithinLimit).toBe(note.length <= 1000)
+      }),
+      { numRuns: 100 }
     )
   })
 
   it('notes at exactly 1000 characters are within limit', () => {
     fc.assert(
-      fc.property(
-        fc.string({ minLength: 1000, maxLength: 1000 }),
-        (note) => {
-          const info = getNoteInfo(note)
-          expect(info.length).toBe(1000)
-          expect(info.isWithinLimit).toBe(true)
-        },
-      ),
-      { numRuns: 100 },
+      fc.property(fc.string({ minLength: 1000, maxLength: 1000 }), (note) => {
+        const info = getNoteInfo(note)
+        expect(info.length).toBe(1000)
+        expect(info.isWithinLimit).toBe(true)
+      }),
+      { numRuns: 100 }
     )
   })
 
   it('notes exceeding 1000 characters are not within limit', () => {
     fc.assert(
-      fc.property(
-        fc.string({ minLength: 1001, maxLength: 1500 }),
-        (note) => {
-          const info = getNoteInfo(note)
-          expect(info.length).toBeGreaterThan(1000)
-          expect(info.isWithinLimit).toBe(false)
-        },
-      ),
-      { numRuns: 100 },
+      fc.property(fc.string({ minLength: 1001, maxLength: 1500 }), (note) => {
+        const info = getNoteInfo(note)
+        expect(info.length).toBeGreaterThan(1000)
+        expect(info.isWithinLimit).toBe(false)
+      }),
+      { numRuns: 100 }
     )
   })
 })
@@ -493,43 +500,31 @@ describe('Property 7: Note character count and limit enforcement', () => {
 describe('Property 8: Loading states disable corresponding controls', () => {
   it('create button disabled when creating is true', () => {
     fc.assert(
-      fc.property(
-        fc.boolean(),
-        fc.nat({ max: 20 }),
-        (hasValidationError, selectedCount) => {
-          const states = getControlStates(true, false, hasValidationError, selectedCount)
-          expect(states.createDisabled).toBe(true)
-        },
-      ),
-      { numRuns: 100 },
+      fc.property(fc.boolean(), fc.nat({ max: 20 }), (hasValidationError, selectedCount) => {
+        const states = getControlStates(true, false, hasValidationError, selectedCount)
+        expect(states.createDisabled).toBe(true)
+      }),
+      { numRuns: 100 }
     )
   })
 
   it('create button disabled when validation error exists', () => {
     fc.assert(
-      fc.property(
-        fc.boolean(),
-        fc.nat({ max: 20 }),
-        (creating, selectedCount) => {
-          const states = getControlStates(creating, false, true, selectedCount)
-          expect(states.createDisabled).toBe(true)
-        },
-      ),
-      { numRuns: 100 },
+      fc.property(fc.boolean(), fc.nat({ max: 20 }), (creating, selectedCount) => {
+        const states = getControlStates(creating, false, true, selectedCount)
+        expect(states.createDisabled).toBe(true)
+      }),
+      { numRuns: 100 }
     )
   })
 
   it('create button enabled when not creating and no validation error', () => {
     fc.assert(
-      fc.property(
-        fc.boolean(),
-        fc.nat({ max: 20 }),
-        (loading, selectedCount) => {
-          const states = getControlStates(false, loading, false, selectedCount)
-          expect(states.createDisabled).toBe(false)
-        },
-      ),
-      { numRuns: 100 },
+      fc.property(fc.boolean(), fc.nat({ max: 20 }), (loading, selectedCount) => {
+        const states = getControlStates(false, loading, false, selectedCount)
+        expect(states.createDisabled).toBe(false)
+      }),
+      { numRuns: 100 }
     )
   })
 
@@ -542,9 +537,9 @@ describe('Property 8: Loading states disable corresponding controls', () => {
         (creating, hasValidationError, selectedCount) => {
           const states = getControlStates(creating, true, hasValidationError, selectedCount)
           expect(states.advanceDisabled).toBe(true)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -557,9 +552,9 @@ describe('Property 8: Loading states disable corresponding controls', () => {
         (creating, loading, hasValidationError) => {
           const states = getControlStates(creating, loading, hasValidationError, 0)
           expect(states.advanceDisabled).toBe(true)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -572,9 +567,9 @@ describe('Property 8: Loading states disable corresponding controls', () => {
         (creating, hasValidationError, selectedCount) => {
           const states = getControlStates(creating, false, hasValidationError, selectedCount)
           expect(states.advanceDisabled).toBe(false)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

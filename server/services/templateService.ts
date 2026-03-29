@@ -19,7 +19,7 @@ export function createTemplateService(repos: {
       const steps: TemplateStep[] = input.steps.map((s, index) => ({
         name: s.name,
         order: index,
-        location: s.location
+        location: s.location,
       }))
 
       return repos.templates.create({
@@ -27,7 +27,7 @@ export function createTemplateService(repos: {
         name: input.name.trim(),
         steps,
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       })
     },
 
@@ -56,7 +56,7 @@ export function createTemplateService(repos: {
       const now = new Date().toISOString()
 
       // Deep-clone template steps into new ProcessSteps with fresh IDs
-      const steps: ProcessStep[] = template.steps.map(ts => ({
+      const steps: ProcessStep[] = template.steps.map((ts) => ({
         id: generateId('step'),
         name: ts.name,
         order: ts.order,
@@ -72,13 +72,24 @@ export function createTemplateService(repos: {
         goalQuantity: input.goalQuantity,
         steps,
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       }
 
       return repos.paths.create(path)
     },
 
-    updateTemplate(id: string, input: { name?: string; steps?: { name: string; location?: string; optional?: boolean; dependencyType?: 'physical' | 'preferred' | 'completion_gate' }[] }): TemplateRoute {
+    updateTemplate(
+      id: string,
+      input: {
+        name?: string
+        steps?: {
+          name: string
+          location?: string
+          optional?: boolean
+          dependencyType?: 'physical' | 'preferred' | 'completion_gate'
+        }[]
+      }
+    ): TemplateRoute {
       const existing = repos.templates.getById(id)
       if (!existing) {
         throw new NotFoundError('TemplateRoute', id)

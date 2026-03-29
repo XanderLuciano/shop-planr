@@ -74,16 +74,14 @@ function parseFrontmatter(content: string): Record<string, unknown> {
 function getEndpointFiles(): string[] {
   const files: string[] = []
 
-  const subdirs = readdirSync(CONTENT_DIR).filter(entry => {
+  const subdirs = readdirSync(CONTENT_DIR).filter((entry) => {
     const fullPath = join(CONTENT_DIR, entry)
     return statSync(fullPath).isDirectory()
   })
 
   for (const subdir of subdirs) {
     const dirPath = join(CONTENT_DIR, subdir)
-    const mdFiles = readdirSync(dirPath).filter(
-      f => f.endsWith('.md') && f !== 'index.md'
-    )
+    const mdFiles = readdirSync(dirPath).filter((f) => f.endsWith('.md') && f !== 'index.md')
     for (const file of mdFiles) {
       files.push(join(subdir, file))
     }
@@ -111,7 +109,9 @@ describe('Property 3: Endpoint frontmatter validity', () => {
 
         // title: non-empty string
         expect(typeof fm.title, `${relPath}: title must be a string`).toBe('string')
-        expect((fm.title as string).length, `${relPath}: title must be non-empty`).toBeGreaterThan(0)
+        expect((fm.title as string).length, `${relPath}: title must be non-empty`).toBeGreaterThan(
+          0
+        )
 
         // method: one of GET, POST, PUT, PATCH, DELETE
         expect(typeof fm.method, `${relPath}: method must be a string`).toBe('string')
@@ -122,7 +122,10 @@ describe('Property 3: Endpoint frontmatter validity', () => {
 
         // endpoint: non-empty string starting with /api/
         expect(typeof fm.endpoint, `${relPath}: endpoint must be a string`).toBe('string')
-        expect((fm.endpoint as string).length, `${relPath}: endpoint must be non-empty`).toBeGreaterThan(0)
+        expect(
+          (fm.endpoint as string).length,
+          `${relPath}: endpoint must be non-empty`
+        ).toBeGreaterThan(0)
         expect(
           (fm.endpoint as string).startsWith('/api/'),
           `${relPath}: endpoint "${fm.endpoint}" must start with /api/`
@@ -130,11 +133,17 @@ describe('Property 3: Endpoint frontmatter validity', () => {
 
         // service: non-empty string
         expect(typeof fm.service, `${relPath}: service must be a string`).toBe('string')
-        expect((fm.service as string).length, `${relPath}: service must be non-empty`).toBeGreaterThan(0)
+        expect(
+          (fm.service as string).length,
+          `${relPath}: service must be non-empty`
+        ).toBeGreaterThan(0)
 
         // category: non-empty string
         expect(typeof fm.category, `${relPath}: category must be a string`).toBe('string')
-        expect((fm.category as string).length, `${relPath}: category must be non-empty`).toBeGreaterThan(0)
+        expect(
+          (fm.category as string).length,
+          `${relPath}: category must be non-empty`
+        ).toBeGreaterThan(0)
       }),
       { numRuns: endpointFiles.length * 3 }
     )

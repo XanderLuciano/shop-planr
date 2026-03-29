@@ -42,21 +42,21 @@ function applyAdvancement(
   statuses: StepStatusRecord[],
   steps: StepConfig[],
   currentStepIndex: number,
-  targetStepIndex: number,
+  targetStepIndex: number
 ): StepStatusRecord[] {
-  const result = statuses.map(s => ({ ...s }))
+  const result = statuses.map((s) => ({ ...s }))
 
   // Origin step → completed
   const originStep = steps[currentStepIndex]
   if (originStep) {
-    const rec = result.find(s => s.stepId === originStep.id)
+    const rec = result.find((s) => s.stepId === originStep.id)
     if (rec) rec.status = 'completed'
   }
 
   // Bypassed steps
   for (let i = currentStepIndex + 1; i < targetStepIndex && i < steps.length; i++) {
     const step = steps[i]
-    const rec = result.find(s => s.stepId === step.id)
+    const rec = result.find((s) => s.stepId === step.id)
     if (rec) {
       rec.status = step.optional ? 'skipped' : 'deferred'
     }
@@ -65,7 +65,7 @@ function applyAdvancement(
   // Destination step → in_progress (if not past end)
   if (targetStepIndex < steps.length) {
     const destStep = steps[targetStepIndex]
-    const rec = result.find(s => s.stepId === destStep.id)
+    const rec = result.find((s) => s.stepId === destStep.id)
     if (rec) rec.status = 'in_progress'
   }
 
@@ -75,27 +75,24 @@ function applyAdvancement(
 describe('Property 2: Step Status Conservation', () => {
   it('after initialization, step status count equals total steps', () => {
     fc.assert(
-      fc.property(
-        fc.integer({ min: 1, max: 20 }),
-        (totalSteps) => {
-          const steps: StepConfig[] = Array.from({ length: totalSteps }, (_, i) => ({
-            id: `step-${i}`,
-            name: `Step ${i}`,
-            order: i,
-            optional: false,
-            dependencyType: 'preferred',
-          }))
+      fc.property(fc.integer({ min: 1, max: 20 }), (totalSteps) => {
+        const steps: StepConfig[] = Array.from({ length: totalSteps }, (_, i) => ({
+          id: `step-${i}`,
+          name: `Step ${i}`,
+          order: i,
+          optional: false,
+          dependencyType: 'preferred',
+        }))
 
-          const statuses = initializeStepStatuses(steps)
+        const statuses = initializeStepStatuses(steps)
 
-          expect(statuses.length).toBe(totalSteps)
+        expect(statuses.length).toBe(totalSteps)
 
-          // Each step has exactly one status
-          const stepIds = new Set(statuses.map(s => s.stepId))
-          expect(stepIds.size).toBe(totalSteps)
-        },
-      ),
-      { numRuns: 100 },
+        // Each step has exactly one status
+        const stepIds = new Set(statuses.map((s) => s.stepId))
+        expect(stepIds.size).toBe(totalSteps)
+      }),
+      { numRuns: 100 }
     )
   })
 
@@ -127,17 +124,24 @@ describe('Property 2: Step Status Conservation', () => {
           expect(afterAdvance.length).toBe(totalSteps)
 
           // No duplicates
-          const stepIds = new Set(afterAdvance.map(s => s.stepId))
+          const stepIds = new Set(afterAdvance.map((s) => s.stepId))
           expect(stepIds.size).toBe(totalSteps)
 
           // Every status is a valid value
-          const validStatuses: PartStepStatusValue[] = ['pending', 'in_progress', 'completed', 'skipped', 'deferred', 'waived']
+          const validStatuses: PartStepStatusValue[] = [
+            'pending',
+            'in_progress',
+            'completed',
+            'skipped',
+            'deferred',
+            'waived',
+          ]
           for (const s of afterAdvance) {
             expect(validStatuses).toContain(s.status)
           }
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -167,14 +171,14 @@ describe('Property 2: Step Status Conservation', () => {
 
             // Conservation holds after each operation
             expect(statuses.length).toBe(totalSteps)
-            const stepIds = new Set(statuses.map(s => s.stepId))
+            const stepIds = new Set(statuses.map((s) => s.stepId))
             expect(stepIds.size).toBe(totalSteps)
 
             if (currentIndex >= totalSteps) break
           }
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

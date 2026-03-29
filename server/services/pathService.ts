@@ -34,7 +34,7 @@ export interface StepReconciliation {
  */
 export function reconcileSteps(
   existingSteps: ProcessStep[],
-  inputSteps: StepInput[],
+  inputSteps: StepInput[]
 ): StepReconciliation {
   const toUpdate: ProcessStep[] = []
   const toInsert: ProcessStep[] = []
@@ -100,7 +100,7 @@ export function createPathService(repos: {
         steps,
         advancementMode: input.advancementMode ?? 'strict',
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       })
     },
 
@@ -173,7 +173,7 @@ export function createPathService(repos: {
           location: step.location,
           partCount: partsAtStep.length,
           completedCount: 0,
-          isBottleneck: false
+          isBottleneck: false,
         }
       })
 

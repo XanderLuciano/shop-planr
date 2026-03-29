@@ -15,8 +15,18 @@ const error = ref<string | null>(null)
 const localOptional = ref(props.optional)
 const localDependencyType = ref(props.dependencyType)
 
-watch(() => props.optional, (v) => { localOptional.value = v })
-watch(() => props.dependencyType, (v) => { localDependencyType.value = v })
+watch(
+  () => props.optional,
+  (v) => {
+    localOptional.value = v
+  }
+)
+watch(
+  () => props.dependencyType,
+  (v) => {
+    localDependencyType.value = v
+  }
+)
 
 const dependencyOptions = [
   { label: '🔒 Physical', value: 'physical' },
@@ -26,10 +36,14 @@ const dependencyOptions = [
 
 const depIcon = computed(() => {
   switch (localDependencyType.value) {
-    case 'physical': return 'i-lucide-lock'
-    case 'preferred': return 'i-lucide-arrow-right'
-    case 'completion_gate': return 'i-lucide-shield-check'
-    default: return 'i-lucide-arrow-right'
+    case 'physical':
+      return 'i-lucide-lock'
+    case 'preferred':
+      return 'i-lucide-arrow-right'
+    case 'completion_gate':
+      return 'i-lucide-shield-check'
+    default:
+      return 'i-lucide-arrow-right'
   }
 })
 
@@ -52,8 +66,8 @@ async function saveChanges() {
   }
 }
 
-const hasChanges = computed(() =>
-  localOptional.value !== props.optional || localDependencyType.value !== props.dependencyType,
+const hasChanges = computed(
+  () => localOptional.value !== props.optional || localDependencyType.value !== props.dependencyType
 )
 </script>
 
@@ -68,11 +82,7 @@ const hasChanges = computed(() =>
 
     <div class="flex items-center gap-3">
       <label class="flex items-center gap-2 text-sm cursor-pointer">
-        <input
-          v-model="localOptional"
-          type="checkbox"
-          class="rounded"
-        >
+        <input v-model="localOptional" type="checkbox" class="rounded" />
         <span class="text-(--ui-text-highlighted)">Optional</span>
       </label>
     </div>
@@ -91,12 +101,6 @@ const hasChanges = computed(() =>
 
     <p v-if="error" class="text-xs text-(--ui-error)">{{ error }}</p>
 
-    <UButton
-      v-if="hasChanges"
-      size="sm"
-      label="Save"
-      :loading="loading"
-      @click="saveChanges"
-    />
+    <UButton v-if="hasChanges" size="sm" label="Save" :loading="loading" @click="saveChanges" />
   </div>
 </template>

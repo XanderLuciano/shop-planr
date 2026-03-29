@@ -1,11 +1,11 @@
 ---
-title: "Get Notes by Step"
-description: "Retrieve all step notes attached to a specific process step"
-method: "GET"
-endpoint: "/api/notes/step/:id"
-service: "noteService"
-category: "Notes"
-responseType: "StepNote[]"
+title: 'Get Notes by Step'
+description: 'Retrieve all step notes attached to a specific process step'
+method: 'GET'
+endpoint: '/api/notes/step/:id'
+service: 'noteService'
+category: 'Notes'
+responseType: 'StepNote[]'
 errorCodes: [500]
 navigation:
   order: 3
@@ -25,9 +25,9 @@ Notes are returned in storage order (typically creation order).
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` | Yes | The process step ID to query notes for (e.g. `"step_001"`). |
+| Parameter | Type     | Required | Description                                                 |
+| --------- | -------- | -------- | ----------------------------------------------------------- |
+| `id`      | `string` | Yes      | The process step ID to query notes for (e.g. `"step_001"`). |
 
 ## Response
 
@@ -35,23 +35,23 @@ Notes are returned in storage order (typically creation order).
 
 Returns an array of `StepNote` objects. May be empty if no notes exist for the step.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Unique note identifier |
-| `jobId` | `string` | Job ID the note belongs to |
-| `pathId` | `string` | Path ID the note belongs to |
-| `stepId` | `string` | Step ID (matches the queried `:id` parameter) |
-| `serialIds` | `string[]` | Serial IDs this note applies to |
-| `text` | `string` | Note content |
-| `createdBy` | `string` | User ID of the note author |
-| `createdAt` | `string` | ISO 8601 creation timestamp |
-| `pushedToJira` | `boolean` | Whether this note has been pushed to Jira |
-| `jiraCommentId` | `string \| undefined` | Jira comment ID if pushed |
+| Field           | Type                  | Description                                   |
+| --------------- | --------------------- | --------------------------------------------- |
+| `id`            | `string`              | Unique note identifier                        |
+| `jobId`         | `string`              | Job ID the note belongs to                    |
+| `pathId`        | `string`              | Path ID the note belongs to                   |
+| `stepId`        | `string`              | Step ID (matches the queried `:id` parameter) |
+| `serialIds`     | `string[]`            | Serial IDs this note applies to               |
+| `text`          | `string`              | Note content                                  |
+| `createdBy`     | `string`              | User ID of the note author                    |
+| `createdAt`     | `string`              | ISO 8601 creation timestamp                   |
+| `pushedToJira`  | `boolean`             | Whether this note has been pushed to Jira     |
+| `jiraCommentId` | `string \| undefined` | Jira comment ID if pushed                     |
 
 ### 500 Internal Server Error
 
-| Condition | Message |
-|-----------|---------|
+| Condition             | Message                   |
+| --------------------- | ------------------------- |
 | Database read failure | `"Internal Server Error"` |
 
 ## Examples

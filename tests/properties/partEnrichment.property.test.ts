@@ -40,7 +40,9 @@ function setupServices(db: Database.default.Database) {
 
   const partIdGenerator = createSequentialPartIdGenerator({
     getCounter: () => {
-      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
+      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as
+        | { value: number }
+        | undefined
       return row?.value ?? 0
     },
     setCounter: (v: number) => {
@@ -54,7 +56,7 @@ function setupServices(db: Database.default.Database) {
   const partService = createPartService(
     { parts: repos.parts, paths: repos.paths, certs: repos.certs, jobs: repos.jobs },
     auditService,
-    partIdGenerator,
+    partIdGenerator
   )
 
   return { repos, jobService, pathService, partService }
@@ -62,8 +64,8 @@ function setupServices(db: Database.default.Database) {
 
 /** Arbitrary for a job/path/part scenario with advancements */
 const scenarioArb = fc.record({
-  jobName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
-  pathName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
+  jobName: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
+  pathName: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
   stepCount: fc.integer({ min: 1, max: 5 }),
   partCount: fc.integer({ min: 1, max: 6 }),
   /** Number of advancements per part (capped by stepCount at runtime) */
@@ -113,7 +115,7 @@ describe('Property 5: Part status derivation', () => {
 
         const parts = partService.batchCreateParts(
           { jobId: job.id, pathId: path.id, quantity: config.partCount },
-          'user_test',
+          'user_test'
         )
 
         // Apply advancements
@@ -142,11 +144,10 @@ describe('Property 5: Part status derivation', () => {
         db.close()
         db = null as any
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })
-
 
 /**
  * Property 7: Part enrichment completeness
@@ -192,7 +193,7 @@ describe('Property 7: Part enrichment completeness', () => {
 
         const parts = partService.batchCreateParts(
           { jobId: job.id, pathId: path.id, quantity: config.partCount },
-          'user_test',
+          'user_test'
         )
 
         // Apply advancements
@@ -240,11 +241,10 @@ describe('Property 7: Part enrichment completeness', () => {
         db.close()
         db = null as any
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })
-
 
 /**
  * Property 12: Part summary counts
@@ -262,8 +262,8 @@ import type { EnrichedPart } from '../../server/types/computed'
 /** Pure summary count logic matching the Parts tab implementation */
 function computeSummaryCounts(parts: Array<{ currentStepIndex: number }>) {
   const totalCount = parts.length
-  const completedCount = parts.filter(s => s.currentStepIndex === -1).length
-  const inProgressCount = parts.filter(s => s.currentStepIndex >= 0).length
+  const completedCount = parts.filter((s) => s.currentStepIndex === -1).length
+  const inProgressCount = parts.filter((s) => s.currentStepIndex >= 0).length
   return { totalCount, completedCount, inProgressCount }
 }
 
@@ -275,27 +275,24 @@ const partWithStepIndexArb = fc.record({
 describe('Property 12: Part summary counts', () => {
   it('totalCount === list.length, completedCount + inProgressCount === totalCount', () => {
     fc.assert(
-      fc.property(
-        fc.array(partWithStepIndexArb, { minLength: 0, maxLength: 50 }),
-        (parts) => {
-          const { totalCount, completedCount, inProgressCount } = computeSummaryCounts(parts)
+      fc.property(fc.array(partWithStepIndexArb, { minLength: 0, maxLength: 50 }), (parts) => {
+        const { totalCount, completedCount, inProgressCount } = computeSummaryCounts(parts)
 
-          // totalCount equals list length
-          expect(totalCount).toBe(parts.length)
+        // totalCount equals list length
+        expect(totalCount).toBe(parts.length)
 
-          // completedCount equals count where index === -1
-          const expectedCompleted = parts.filter(s => s.currentStepIndex === -1).length
-          expect(completedCount).toBe(expectedCompleted)
+        // completedCount equals count where index === -1
+        const expectedCompleted = parts.filter((s) => s.currentStepIndex === -1).length
+        expect(completedCount).toBe(expectedCompleted)
 
-          // inProgressCount equals count where index >= 0
-          const expectedInProgress = parts.filter(s => s.currentStepIndex >= 0).length
-          expect(inProgressCount).toBe(expectedInProgress)
+        // inProgressCount equals count where index >= 0
+        const expectedInProgress = parts.filter((s) => s.currentStepIndex >= 0).length
+        expect(inProgressCount).toBe(expectedInProgress)
 
-          // completedCount + inProgressCount === totalCount
-          expect(completedCount + inProgressCount).toBe(totalCount)
-        },
-      ),
-      { numRuns: 100 },
+        // completedCount + inProgressCount === totalCount
+        expect(completedCount + inProgressCount).toBe(totalCount)
+      }),
+      { numRuns: 100 }
     )
   })
 })

@@ -26,7 +26,7 @@ describe('Job Lifecycle Integration', () => {
       jobId: job.id,
       name: 'Path A',
       goalQuantity: 5,
-      steps: [{ name: 'Cut' }, { name: 'Weld' }, { name: 'Inspect' }]
+      steps: [{ name: 'Cut' }, { name: 'Weld' }, { name: 'Inspect' }],
     })
     expect(pathA.steps).toHaveLength(3)
 
@@ -34,7 +34,7 @@ describe('Job Lifecycle Integration', () => {
       jobId: job.id,
       name: 'Path B',
       goalQuantity: 5,
-      steps: [{ name: 'Mill' }, { name: 'Coat' }]
+      steps: [{ name: 'Mill' }, { name: 'Coat' }],
     })
     expect(pathB.steps).toHaveLength(2)
 
@@ -94,19 +94,20 @@ describe('Job Lifecycle Integration', () => {
 
   it('rejects job with zero goal quantity', () => {
     ctx = createTestContext()
-    expect(() => ctx.jobService.createJob({ name: 'Bad Job', goalQuantity: 0 }))
-      .toThrow()
+    expect(() => ctx.jobService.createJob({ name: 'Bad Job', goalQuantity: 0 })).toThrow()
   })
 
   it('rejects path with zero steps', () => {
     ctx = createTestContext()
     const job = ctx.jobService.createJob({ name: 'Test', goalQuantity: 5 })
-    expect(() => ctx.pathService.createPath({
-      jobId: job.id,
-      name: 'Empty Path',
-      goalQuantity: 5,
-      steps: []
-    })).toThrow()
+    expect(() =>
+      ctx.pathService.createPath({
+        jobId: job.id,
+        name: 'Empty Path',
+        goalQuantity: 5,
+        steps: [],
+      })
+    ).toThrow()
   })
 
   it('rejects part creation on path with no steps', () => {
@@ -120,7 +121,7 @@ describe('Job Lifecycle Integration', () => {
       jobId: job.id,
       name: 'Valid Path',
       goalQuantity: 5,
-      steps: [{ name: 'Step 1' }]
+      steps: [{ name: 'Step 1' }],
     })
 
     // Creating parts on a valid path works
@@ -140,7 +141,7 @@ describe('Job Lifecycle Integration', () => {
       jobId: job.id,
       name: 'Route',
       goalQuantity: 20,
-      steps: [{ name: 'OP1' }, { name: 'OP2' }]
+      steps: [{ name: 'OP1' }, { name: 'OP2' }],
     })
 
     const batch1 = partService.batchCreateParts(
@@ -152,7 +153,7 @@ describe('Job Lifecycle Integration', () => {
       'user1'
     )
 
-    const allIds = [...batch1, ...batch2].map(s => s.id)
+    const allIds = [...batch1, ...batch2].map((s) => s.id)
     const uniqueIds = new Set(allIds)
     expect(uniqueIds.size).toBe(20)
   })
@@ -166,7 +167,7 @@ describe('Job Lifecycle Integration', () => {
       jobId: job.id,
       name: 'Route',
       goalQuantity: 6,
-      steps: [{ name: 'Cut' }, { name: 'Weld' }, { name: 'QC' }]
+      steps: [{ name: 'Cut' }, { name: 'Weld' }, { name: 'QC' }],
     })
 
     const parts = partService.batchCreateParts(

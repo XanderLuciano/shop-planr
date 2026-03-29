@@ -6,24 +6,26 @@ export function usePaths() {
   async function createPath(input: CreatePathInput): Promise<Path> {
     return await $fetch<Path>('/api/paths', {
       method: 'POST',
-      body: input
+      body: input,
     })
   }
 
-  async function getPath(id: string): Promise<Path & { distribution: StepDistribution[]; completedCount: number }> {
+  async function getPath(
+    id: string
+  ): Promise<Path & { distribution: StepDistribution[]; completedCount: number }> {
     return await $fetch(`/api/paths/${id}`)
   }
 
   async function updatePath(id: string, input: UpdatePathInput): Promise<Path> {
     return await $fetch<Path>(`/api/paths/${id}`, {
       method: 'PUT',
-      body: input
+      body: input,
     })
   }
 
   async function deletePath(id: string): Promise<void> {
     await $fetch(`/api/paths/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
     })
   }
 
@@ -31,6 +33,6 @@ export function usePaths() {
     createPath,
     getPath,
     updatePath,
-    deletePath
+    deletePath,
   }
 }

@@ -22,26 +22,39 @@ function createInMemoryLibraryRepo() {
 
   return {
     listProcesses: () => [...processes],
-    createProcess: (entry: ProcessLibraryEntry) => { processes.push(entry); return entry },
+    createProcess: (entry: ProcessLibraryEntry) => {
+      processes.push(entry)
+      return entry
+    },
     deleteProcess: (id: string) => {
-      const idx = processes.findIndex(p => p.id === id)
-      if (idx >= 0) { processes.splice(idx, 1); return true }
+      const idx = processes.findIndex((p) => p.id === id)
+      if (idx >= 0) {
+        processes.splice(idx, 1)
+        return true
+      }
       return false
     },
     listLocations: () => [...locations],
-    createLocation: (entry: LocationLibraryEntry) => { locations.push(entry); return entry },
+    createLocation: (entry: LocationLibraryEntry) => {
+      locations.push(entry)
+      return entry
+    },
     deleteLocation: (id: string) => {
-      const idx = locations.findIndex(l => l.id === id)
-      if (idx >= 0) { locations.splice(idx, 1); return true }
+      const idx = locations.findIndex((l) => l.id === id)
+      if (idx >= 0) {
+        locations.splice(idx, 1)
+        return true
+      }
       return false
     },
   }
 }
 
 /** Arbitrary for non-empty trimmed strings (valid library names) */
-const arbName = fc.string({ minLength: 1, maxLength: 50 })
-  .map(s => s.trim())
-  .filter(s => s.length > 0)
+const arbName = fc
+  .string({ minLength: 1, maxLength: 50 })
+  .map((s) => s.trim())
+  .filter((s) => s.length > 0)
 
 describe('Property 17: Library Entry Round-Trip', () => {
   it('any process name added appears in list; after removal it is gone', () => {
@@ -53,14 +66,14 @@ describe('Property 17: Library Entry Round-Trip', () => {
         // Add
         const entry = service.addProcess(name)
         const listAfterAdd = service.listProcesses()
-        expect(listAfterAdd.some(e => e.id === entry.id && e.name === name.trim())).toBe(true)
+        expect(listAfterAdd.some((e) => e.id === entry.id && e.name === name.trim())).toBe(true)
 
         // Remove
         service.removeProcess(entry.id)
         const listAfterRemove = service.listProcesses()
-        expect(listAfterRemove.some(e => e.id === entry.id)).toBe(false)
+        expect(listAfterRemove.some((e) => e.id === entry.id)).toBe(false)
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -73,14 +86,14 @@ describe('Property 17: Library Entry Round-Trip', () => {
         // Add
         const entry = service.addLocation(name)
         const listAfterAdd = service.listLocations()
-        expect(listAfterAdd.some(e => e.id === entry.id && e.name === name.trim())).toBe(true)
+        expect(listAfterAdd.some((e) => e.id === entry.id && e.name === name.trim())).toBe(true)
 
         // Remove
         service.removeLocation(entry.id)
         const listAfterRemove = service.listLocations()
-        expect(listAfterRemove.some(e => e.id === entry.id)).toBe(false)
+        expect(listAfterRemove.some((e) => e.id === entry.id)).toBe(false)
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -93,7 +106,7 @@ describe('Property 17: Library Entry Round-Trip', () => {
         service.addProcess(name)
         expect(() => service.addProcess(name)).toThrow('Process name already exists')
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -106,7 +119,7 @@ describe('Property 17: Library Entry Round-Trip', () => {
         service.addLocation(name)
         expect(() => service.addLocation(name)).toThrow('Location name already exists')
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

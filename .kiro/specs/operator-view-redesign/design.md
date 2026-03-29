@@ -344,7 +344,16 @@ export function usePartsView() {
   // Returns: jobs, loading, error, searchQuery, filteredJobs, totalParts, filteredParts
   // Calls: GET /api/operator/queue/_all
   async function fetchAllWork(): Promise<void>
-  return { jobs, loading, error, searchQuery, filteredJobs, totalParts, filteredParts, fetchAllWork }
+  return {
+    jobs,
+    loading,
+    error,
+    searchQuery,
+    filteredJobs,
+    totalParts,
+    filteredParts,
+    fetchAllWork,
+  }
 }
 ```
 
@@ -364,8 +373,8 @@ export function useStepView(stepId: string) {
 
 ```typescript
 export interface OperatorGroup {
-  operatorId: string | null  // null = unassigned
-  operatorName: string       // "Unassigned" for null
+  operatorId: string | null // null = unassigned
+  operatorName: string // "Unassigned" for null
   jobs: WorkQueueJob[]
   totalParts: number
 }
@@ -380,7 +389,16 @@ export function useOperatorWorkQueue() {
   // Returns: groups, loading, error, searchQuery, filteredGroups, totalParts
   // Calls: GET /api/operator/work-queue
   async function fetchGroupedWork(): Promise<void>
-  return { response, groups, loading, error, searchQuery, filteredGroups, totalParts, fetchGroupedWork }
+  return {
+    response,
+    groups,
+    loading,
+    error,
+    searchQuery,
+    filteredGroups,
+    totalParts,
+    fetchGroupedWork,
+  }
 }
 ```
 
@@ -466,8 +484,8 @@ Add an optional `navigateOnClick` behavior. Currently emits `select-job`; the pa
 ```typescript
 /** A group of work entries assigned to a single operator */
 export interface OperatorGroup {
-  operatorId: string | null   // null means unassigned
-  operatorName: string        // "Unassigned" when operatorId is null
+  operatorId: string | null // null means unassigned
+  operatorName: string // "Unassigned" when operatorId is null
   jobs: WorkQueueJob[]
   totalParts: number
 }
@@ -494,45 +512,43 @@ export interface StepViewResponse {
 - No database migrations needed
 - No domain type changes needed
 
-
-
 ## Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+_A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
 
 ### Property 1: All-Work Endpoint Completeness
 
-*For any* set of jobs, each with paths containing ordered process steps and serials at various steps, the all-work endpoint (`/api/operator/queue/_all`) should return a `WorkQueueJob` entry for every step that has at least one active (non-scrapped, non-completed) serial. Each entry should contain the correct `partCount` (matching the number of active serials at that step), `stepName`, `stepLocation`, `pathName`, `jobName`, and `serialIds`.
+_For any_ set of jobs, each with paths containing ordered process steps and serials at various steps, the all-work endpoint (`/api/operator/queue/_all`) should return a `WorkQueueJob` entry for every step that has at least one active (non-scrapped, non-completed) serial. Each entry should contain the correct `partCount` (matching the number of active serials at that step), `stepName`, `stepLocation`, `pathName`, `jobName`, and `serialIds`.
 
 **Validates: Requirements 1.2, 1.3**
 
 ### Property 2: TotalParts Invariant
 
-*For any* response from the all-work endpoint or the grouped work-queue endpoint, the top-level `totalParts` field should equal the sum of `partCount` across all `WorkQueueJob` entries in the response. For the grouped endpoint, each `OperatorGroup.totalParts` should also equal the sum of `partCount` across that group's jobs.
+_For any_ response from the all-work endpoint or the grouped work-queue endpoint, the top-level `totalParts` field should equal the sum of `partCount` across all `WorkQueueJob` entries in the response. For the grouped endpoint, each `OperatorGroup.totalParts` should also equal the sum of `partCount` across that group's jobs.
 
 **Validates: Requirements 1.4, 4.6**
 
 ### Property 3: Search Filter Correctness
 
-*For any* list of `WorkQueueJob` entries and any non-empty search string, filtering by that string should return exactly those entries where `jobName`, `pathName`, or `stepName` contains the search string as a case-insensitive substring. When the search string is empty, all entries should be returned.
+_For any_ list of `WorkQueueJob` entries and any non-empty search string, filtering by that string should return exactly those entries where `jobName`, `pathName`, or `stepName` contains the search string as a case-insensitive substring. When the search string is empty, all entries should be returned.
 
 **Validates: Requirements 1.6, 1.7, 5.7**
 
 ### Property 4: Step Endpoint Correctness
 
-*For any* valid step ID that has active serials, the step endpoint (`/api/operator/step/{stepId}`) should return a `WorkQueueJob` with: the correct `stepId`, `stepOrder`, `stepName`, and `stepLocation` matching the process step; the correct `jobId`, `jobName`, `pathId`, and `pathName` matching the parent path and job; `serialIds` containing exactly the IDs of all active serials at that step; and `partCount` equal to the length of `serialIds`.
+_For any_ valid step ID that has active serials, the step endpoint (`/api/operator/step/{stepId}`) should return a `WorkQueueJob` with: the correct `stepId`, `stepOrder`, `stepName`, and `stepLocation` matching the process step; the correct `jobId`, `jobName`, `pathId`, and `pathName` matching the parent path and job; `serialIds` containing exactly the IDs of all active serials at that step; and `partCount` equal to the length of `serialIds`.
 
 **Validates: Requirements 2.3, 3.1, 3.5**
 
 ### Property 5: Invalid Step Rejection
 
-*For any* step ID that does not exist in the database, or that exists but has zero active serials, the step endpoint should return a 404 error.
+_For any_ step ID that does not exist in the database, or that exists but has zero active serials, the step endpoint should return a 404 error.
 
 **Validates: Requirements 2.6**
 
 ### Property 6: Assignee Grouping Correctness
 
-*For any* set of jobs with paths whose steps have various `assignedTo` values (some set to user IDs, some undefined), the grouped work-queue endpoint (`/api/operator/work-queue`) should: place each `WorkQueueJob` entry into the group matching its step's `assignedTo` value; resolve `operatorName` to the matching `ShopUser.name` for assigned steps; place steps with no `assignedTo` into a group with `operatorId = null` and `operatorName = "Unassigned"`; and ensure every active step appears in exactly one group.
+_For any_ set of jobs with paths whose steps have various `assignedTo` values (some set to user IDs, some undefined), the grouped work-queue endpoint (`/api/operator/work-queue`) should: place each `WorkQueueJob` entry into the group matching its step's `assignedTo` value; resolve `operatorName` to the matching `ShopUser.name` for assigned steps; place steps with no `assignedTo` into a group with `operatorId = null` and `operatorName = "Unassigned"`; and ensure every active step appears in exactly one group.
 
 **Validates: Requirements 4.2, 4.3, 4.4**
 
@@ -554,13 +570,13 @@ catch (error) {
 
 Specific error scenarios:
 
-| Endpoint | Condition | Response |
-|----------|-----------|----------|
-| `GET /api/operator/step/{stepId}` | Step ID not found in DB | 404 "ProcessStep not found" |
-| `GET /api/operator/step/{stepId}` | Step exists but has 0 active serials | 404 "No active parts at this step" |
-| `GET /api/operator/step/{stepId}` | Missing stepId param | 400 "stepId is required" |
-| `GET /api/operator/work-queue` | No jobs exist | 200 with empty `groups` array and `totalParts: 0` |
-| `GET /api/operator/queue/_all` | No active work | 200 with empty `jobs` array and `totalParts: 0` |
+| Endpoint                          | Condition                            | Response                                          |
+| --------------------------------- | ------------------------------------ | ------------------------------------------------- |
+| `GET /api/operator/step/{stepId}` | Step ID not found in DB              | 404 "ProcessStep not found"                       |
+| `GET /api/operator/step/{stepId}` | Step exists but has 0 active serials | 404 "No active parts at this step"                |
+| `GET /api/operator/step/{stepId}` | Missing stepId param                 | 400 "stepId is required"                          |
+| `GET /api/operator/work-queue`    | No jobs exist                        | 200 with empty `groups` array and `totalParts: 0` |
+| `GET /api/operator/queue/_all`    | No active work                       | 200 with empty `jobs` array and `totalParts: 0`   |
 
 ### Frontend Layer
 
@@ -584,35 +600,35 @@ This feature uses both unit tests and property-based tests:
 Each correctness property maps to a single property-based test. Tests are tagged with the format:
 `Feature: operator-view-redesign, Property {number}: {property_text}`
 
-| Property | Test File | What It Generates |
-|----------|-----------|-------------------|
-| P1: All-Work Endpoint Completeness | `tests/properties/allWorkEndpoint.property.test.ts` | Random jobs with paths, steps, and serials at various steps; verifies response contains correct entries with matching metadata |
-| P2: TotalParts Invariant | `tests/properties/totalPartsInvariant.property.test.ts` | Random WorkQueueResponse and WorkQueueGroupedResponse objects; verifies totalParts equals sum of partCounts at both top-level and group-level |
-| P3: Search Filter Correctness | `tests/properties/workQueueSearch.property.test.ts` | Random WorkQueueJob arrays and search strings; verifies filter returns exactly matching entries |
-| P4: Step Endpoint Correctness | `tests/properties/stepEndpoint.property.test.ts` | Random job/path/step/serial configurations; verifies step endpoint returns correct WorkQueueJob with matching data |
-| P5: Invalid Step Rejection | `tests/properties/invalidStepRejection.property.test.ts` | Random non-existent step IDs and steps with zero active serials; verifies 404 response |
-| P6: Assignee Grouping Correctness | `tests/properties/assigneeGrouping.property.test.ts` | Random steps with mixed assignedTo values and user records; verifies grouping, name resolution, and unassigned handling |
+| Property                           | Test File                                                | What It Generates                                                                                                                             |
+| ---------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1: All-Work Endpoint Completeness | `tests/properties/allWorkEndpoint.property.test.ts`      | Random jobs with paths, steps, and serials at various steps; verifies response contains correct entries with matching metadata                |
+| P2: TotalParts Invariant           | `tests/properties/totalPartsInvariant.property.test.ts`  | Random WorkQueueResponse and WorkQueueGroupedResponse objects; verifies totalParts equals sum of partCounts at both top-level and group-level |
+| P3: Search Filter Correctness      | `tests/properties/workQueueSearch.property.test.ts`      | Random WorkQueueJob arrays and search strings; verifies filter returns exactly matching entries                                               |
+| P4: Step Endpoint Correctness      | `tests/properties/stepEndpoint.property.test.ts`         | Random job/path/step/serial configurations; verifies step endpoint returns correct WorkQueueJob with matching data                            |
+| P5: Invalid Step Rejection         | `tests/properties/invalidStepRejection.property.test.ts` | Random non-existent step IDs and steps with zero active serials; verifies 404 response                                                        |
+| P6: Assignee Grouping Correctness  | `tests/properties/assigneeGrouping.property.test.ts`     | Random steps with mixed assignedTo values and user records; verifies grouping, name resolution, and unassigned handling                       |
 
 ### Unit Tests
 
-| Test | File | What It Covers |
-|------|------|----------------|
-| All-work empty state | `tests/unit/services/workQueue.test.ts` | Returns empty jobs array when no active serials exist |
-| Step endpoint 404 | `tests/unit/services/workQueue.test.ts` | Returns 404 for non-existent step ID |
-| Step endpoint no serials | `tests/unit/services/workQueue.test.ts` | Returns 404 for step with zero active serials |
-| Grouped endpoint empty | `tests/unit/services/workQueue.test.ts` | Returns empty groups when no work exists |
-| Unassigned group naming | `tests/unit/services/workQueue.test.ts` | Unassigned group has operatorId=null and operatorName="Unassigned" |
-| Search filter empty query | `tests/unit/composables/workQueueSearch.test.ts` | Empty search returns all entries |
-| Search filter case insensitive | `tests/unit/composables/workQueueSearch.test.ts` | "mill" matches "Milling" |
+| Test                           | File                                             | What It Covers                                                     |
+| ------------------------------ | ------------------------------------------------ | ------------------------------------------------------------------ |
+| All-work empty state           | `tests/unit/services/workQueue.test.ts`          | Returns empty jobs array when no active serials exist              |
+| Step endpoint 404              | `tests/unit/services/workQueue.test.ts`          | Returns 404 for non-existent step ID                               |
+| Step endpoint no serials       | `tests/unit/services/workQueue.test.ts`          | Returns 404 for step with zero active serials                      |
+| Grouped endpoint empty         | `tests/unit/services/workQueue.test.ts`          | Returns empty groups when no work exists                           |
+| Unassigned group naming        | `tests/unit/services/workQueue.test.ts`          | Unassigned group has operatorId=null and operatorName="Unassigned" |
+| Search filter empty query      | `tests/unit/composables/workQueueSearch.test.ts` | Empty search returns all entries                                   |
+| Search filter case insensitive | `tests/unit/composables/workQueueSearch.test.ts` | "mill" matches "Milling"                                           |
 
 ### Integration Tests
 
-| Test | File | What It Covers |
-|------|------|----------------|
-| Full parts view flow | `tests/integration/operatorViewRedesign.test.ts` | Create jobs → paths → serials → verify all-work endpoint returns correct groups |
-| Step view navigation | `tests/integration/operatorViewRedesign.test.ts` | Create job → path → serials → fetch step by ID → verify correct data |
-| Grouped work queue | `tests/integration/operatorViewRedesign.test.ts` | Create jobs with assigned/unassigned steps → verify grouping |
-| Step advancement from step view | `tests/integration/operatorViewRedesign.test.ts` | Fetch step → advance serials → re-fetch → verify updated counts |
+| Test                            | File                                             | What It Covers                                                                  |
+| ------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------- |
+| Full parts view flow            | `tests/integration/operatorViewRedesign.test.ts` | Create jobs → paths → serials → verify all-work endpoint returns correct groups |
+| Step view navigation            | `tests/integration/operatorViewRedesign.test.ts` | Create job → path → serials → fetch step by ID → verify correct data            |
+| Grouped work queue              | `tests/integration/operatorViewRedesign.test.ts` | Create jobs with assigned/unassigned steps → verify grouping                    |
+| Step advancement from step view | `tests/integration/operatorViewRedesign.test.ts` | Fetch step → advance serials → re-fetch → verify updated counts                 |
 
 ### Test Configuration
 

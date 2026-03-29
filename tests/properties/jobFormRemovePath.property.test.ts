@@ -27,9 +27,11 @@ describe('Property 5: removePath removes exactly one path', () => {
   it('removes exactly the targeted path and preserves all others', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 1, max: 6 }).chain(pathCount =>
-          fc.tuple(fc.constant(pathCount), fc.integer({ min: 0, max: pathCount - 1 })),
-        ),
+        fc
+          .integer({ min: 1, max: 6 })
+          .chain((pathCount) =>
+            fc.tuple(fc.constant(pathCount), fc.integer({ min: 0, max: pathCount - 1 }))
+          ),
         ([pathCount, removeIdx]) => {
           const { pathDrafts, addPath, removePath } = useJobForm('create')
 
@@ -44,8 +46,8 @@ describe('Property 5: removePath removes exactly one path', () => {
 
           // Snapshot the other paths' clientIds before removal
           const otherClientIds = pathDrafts.value
-            .filter(p => p._clientId !== targetClientId)
-            .map(p => p._clientId)
+            .filter((p) => p._clientId !== targetClientId)
+            .map((p) => p._clientId)
 
           // Remove
           removePath(targetClientId)
@@ -54,14 +56,14 @@ describe('Property 5: removePath removes exactly one path', () => {
           expect(pathDrafts.value.length).toBe(lengthBefore - 1)
 
           // The removed path is gone
-          expect(pathDrafts.value.find(p => p._clientId === targetClientId)).toBeUndefined()
+          expect(pathDrafts.value.find((p) => p._clientId === targetClientId)).toBeUndefined()
 
           // All other paths remain (same clientIds, same order)
-          const remainingClientIds = pathDrafts.value.map(p => p._clientId)
+          const remainingClientIds = pathDrafts.value.map((p) => p._clientId)
           expect(remainingClientIds).toEqual(otherClientIds)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

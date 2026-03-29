@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
     for (const job of jobs) {
       const paths = pathService.listPathsByJob(job.id)
       for (const path of paths) {
-        const stepIndex = path.steps.findIndex(s => s.name === stepName)
+        const stepIndex = path.steps.findIndex((s) => s.name === stepName)
         if (stepIndex === -1) continue
 
         const step = path.steps[stepIndex]!
@@ -44,7 +44,7 @@ export default defineEventHandler(async (event) => {
             pathId: path.id,
             pathName: path.name,
             nextStepName: nextStep?.name,
-            nextStepLocation: nextStep?.location
+            nextStepLocation: nextStep?.location,
           })
         }
 
@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
               jobId: job.id,
               jobName: job.name,
               pathId: path.id,
-              pathName: path.name
+              pathName: path.name,
             })
           }
         }
@@ -71,7 +71,7 @@ export default defineEventHandler(async (event) => {
               jobId: job.id,
               jobName: job.name,
               pathId: path.id,
-              pathName: path.name
+              pathName: path.name,
             })
           }
         }
@@ -90,7 +90,7 @@ export default defineEventHandler(async (event) => {
       comingSoon,
       backlog,
       vendorPartsCount,
-      stepIds: [...stepIdSet]
+      stepIds: [...stepIdSet],
     }
 
     return result

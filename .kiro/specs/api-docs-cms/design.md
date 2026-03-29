@@ -87,12 +87,14 @@ sequenceDiagram
 **Purpose**: Provides the documentation-specific layout with sidebar navigation, search bar, and content area — separate from the main app's dashboard layout.
 
 **Interface**:
+
 ```typescript
 // Layout props (implicit via Nuxt layout system)
 // Activated by pages via: definePageMeta({ layout: 'docs' })
 ```
 
 **Responsibilities**:
+
 - Render sidebar navigation tree from content directory structure
 - Provide search input that filters across all doc pages
 - Display breadcrumb trail based on current slug
@@ -103,6 +105,7 @@ sequenceDiagram
 **Purpose**: Renders any documentation page based on the URL slug, using Nuxt Content's `<ContentDoc>` component.
 
 **Interface**:
+
 ```typescript
 // Route: /api-docs/:slug*
 // Examples:
@@ -114,6 +117,7 @@ definePageMeta({ layout: 'docs' })
 ```
 
 **Responsibilities**:
+
 - Resolve slug to content file path
 - Render markdown content via `<ContentDoc>`
 - Display prev/next navigation links
@@ -124,6 +128,7 @@ definePageMeta({ layout: 'docs' })
 **Purpose**: MDC (Markdown Components) component used inside `.md` files to render a styled API endpoint block with method badge, path, description, and collapsible request/response sections.
 
 **Interface**:
+
 ```typescript
 interface EndpointCardProps {
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
@@ -137,6 +142,7 @@ interface EndpointCardProps {
 ```
 
 **Responsibilities**:
+
 - Render color-coded method badge (GET=green, POST=blue, PUT=amber, DELETE=red, PATCH=purple)
 - Display endpoint path with monospace font
 - Wrap child content (request/response docs) in collapsible sections
@@ -146,6 +152,7 @@ interface EndpointCardProps {
 **Purpose**: Renders the navigation tree for the documentation, auto-generated from the content directory structure.
 
 **Interface**:
+
 ```typescript
 interface DocsSidebarProps {
   navigation: ContentNavigationItem[]
@@ -154,6 +161,7 @@ interface DocsSidebarProps {
 ```
 
 **Responsibilities**:
+
 - Render nested navigation tree with expand/collapse
 - Highlight current page
 - Show endpoint method badges next to endpoint pages
@@ -164,12 +172,14 @@ interface DocsSidebarProps {
 **Purpose**: Full-text search across all documentation content using Nuxt Content's built-in search.
 
 **Interface**:
+
 ```typescript
 // No props — self-contained search component
 // Uses Nuxt Content's searchContent() composable
 ```
 
 **Responsibilities**:
+
 - Debounced search input
 - Display results with title, path, and content snippet
 - Navigate to selected result
@@ -181,12 +191,14 @@ interface DocsSidebarProps {
 **Location**: Added to the `#footer` template slot of `UDashboardSidebar` in `app/layouts/default.vue`, alongside the existing collapse and color mode buttons.
 
 **Interface**:
+
 ```typescript
 // No separate component file — inline in default.vue sidebar footer
 // Uses NuxtLink or <a> with target="_blank" to open /api-docs in a new tab
 ```
 
 **Implementation**:
+
 ```vue
 <!-- Added to #footer template in app/layouts/default.vue -->
 <template #footer>
@@ -209,6 +221,7 @@ interface DocsSidebarProps {
 ```
 
 **Responsibilities**:
+
 - Render an "API Docs" link with a book icon and external-link indicator in the sidebar footer
 - Open `/api-docs` in a new browser tab via `target="_blank"`
 - Visually consistent with the existing sidebar styling (muted text, hover states)
@@ -349,7 +362,6 @@ content/
       location-delete.md           # DELETE /api/library/locations/:id
 ```
 
-
 ## Algorithmic Pseudocode
 
 ### Content File Generation Algorithm
@@ -361,10 +373,10 @@ function generateEndpointDoc(
   service: ServiceModule,
   types: TypeDefinitions
 ): string {
-  const method = extractMethod(route.filename)     // e.g. "index.post.ts" → "POST"
-  const path = extractApiPath(route.filepath)       // e.g. "server/api/jobs/index.post.ts" → "/api/jobs"
-  const category = extractCategory(route.filepath)  // e.g. "jobs"
-  const serviceName = mapRouteToService(category)   // e.g. "jobService"
+  const method = extractMethod(route.filename) // e.g. "index.post.ts" → "POST"
+  const path = extractApiPath(route.filepath) // e.g. "server/api/jobs/index.post.ts" → "/api/jobs"
+  const category = extractCategory(route.filepath) // e.g. "jobs"
+  const serviceName = mapRouteToService(category) // e.g. "jobService"
 
   // Build frontmatter
   const frontmatter = {
@@ -376,7 +388,7 @@ function generateEndpointDoc(
     category: capitalize(category),
     requestBody: findInputType(method, route, types),
     responseType: findResponseType(route, service, types),
-    errorCodes: inferErrorCodes(route)
+    errorCodes: inferErrorCodes(route),
   }
 
   // Build body sections
@@ -386,7 +398,7 @@ function generateEndpointDoc(
     renderRequestSection(frontmatter, types),
     renderResponseSection(frontmatter, types),
     renderErrorSection(frontmatter),
-    renderExampleSection(frontmatter, types)
+    renderExampleSection(frontmatter, types),
   ]
 
   return formatMarkdown(frontmatter, sections)
@@ -394,11 +406,13 @@ function generateEndpointDoc(
 ```
 
 **Preconditions:**
+
 - `route` corresponds to a valid Nitro API route file
 - `types` contains all domain, API, and computed type definitions
 - `service` module exists and is mapped to the route category
 
 **Postconditions:**
+
 - Returns valid Markdown string with YAML frontmatter
 - All type references in the doc resolve to actual TypeScript interfaces
 - Method badge and path are accurate for the route
@@ -422,7 +436,7 @@ function resolveNavigation(contentDir: string): NavigationTree {
       path: `/api-docs/${category.name}`,
       icon: indexMd.icon,
       order: indexMd.navigation?.order ?? 999,
-      children: []
+      children: [],
     }
 
     // Each endpoint .md becomes a child node
@@ -433,7 +447,7 @@ function resolveNavigation(contentDir: string): NavigationTree {
         title: fm.title,
         path: `/api-docs/${category.name}/${file.stem}`,
         method: fm.method,
-        order: fm.navigation?.order ?? 999
+        order: fm.navigation?.order ?? 999,
       })
     }
 
@@ -449,15 +463,18 @@ function resolveNavigation(contentDir: string): NavigationTree {
 ```
 
 **Preconditions:**
+
 - `content/api-docs/` directory exists with valid markdown files
 - Each subdirectory has an `index.md` with required frontmatter
 
 **Postconditions:**
+
 - Returns a tree where each category contains its endpoint children
 - Items are sorted by `navigation.order` within each level
 - All paths are valid route slugs
 
 **Loop Invariants:**
+
 - All previously processed categories have valid `title` and `path`
 - Children array contains only non-index markdown files
 
@@ -470,25 +487,27 @@ function resolveNavigation(contentDir: string): NavigationTree {
 async function searchDocs(query: string): Promise<SearchResult[]> {
   // Nuxt Content's searchContent scans parsed content
   const results = await searchContent(query, {
-    where: { _path: { $contains: '/api-docs' } }
+    where: { _path: { $contains: '/api-docs' } },
   })
 
-  return results.map(doc => ({
+  return results.map((doc) => ({
     title: doc.title,
     path: doc._path,
     method: doc.method,
     category: doc.category,
     excerpt: extractExcerpt(doc.body, query),
-    score: doc.score
+    score: doc.score,
   }))
 }
 ```
 
 **Preconditions:**
+
 - `query` is a non-empty string
 - Nuxt Content module is initialized and content is indexed
 
 **Postconditions:**
+
 - Returns results scoped to `/api-docs` content only
 - Results are ranked by relevance score
 - Each result includes enough context for display
@@ -506,10 +525,12 @@ function useDocsNavigation(): {
 ```
 
 **Preconditions:**
+
 - Called within a Vue component under the `/api-docs` route
 - Nuxt Content module is registered
 
 **Postconditions:**
+
 - `navigation` contains the full sidebar tree, reactively updated
 - `currentCategory` reflects the active category from the route
 - `isActive(path)` returns `true` iff `path` matches current route
@@ -526,9 +547,11 @@ function useDocsSearch(): {
 ```
 
 **Preconditions:**
+
 - Nuxt Content search is available
 
 **Postconditions:**
+
 - `search()` debounces input (300ms) before querying
 - `results` only contains docs from `/api-docs` path
 - `isSearching` is `true` during query execution, `false` otherwise
@@ -537,17 +560,18 @@ function useDocsSearch(): {
 
 ```typescript
 // Inside [...slug].vue
-const { data: page } = await useAsyncData(
-  `docs-${route.path}`,
-  () => queryContent(route.path).findOne()
+const { data: page } = await useAsyncData(`docs-${route.path}`, () =>
+  queryContent(route.path).findOne()
 )
 ```
 
 **Preconditions:**
+
 - `route.path` starts with `/api-docs/`
 - A matching `.md` file exists in `content/api-docs/`
 
 **Postconditions:**
+
 - `page` contains parsed markdown AST + frontmatter
 - Returns `null` if no matching content (triggers 404)
 
@@ -555,16 +579,16 @@ const { data: page } = await useAsyncData(
 
 ### Example Markdown Content File: `content/api-docs/jobs/create.md`
 
-```markdown
+````markdown
 ---
-title: "Create Job"
-description: "Create a new production job with optional Jira ticket linking"
-method: "POST"
-path: "/api/jobs"
-service: "jobService"
-category: "Jobs"
-requestBody: "CreateJobInput"
-responseType: "Job"
+title: 'Create Job'
+description: 'Create a new production job with optional Jira ticket linking'
+method: 'POST'
+path: '/api/jobs'
+service: 'jobService'
+category: 'Jobs'
+requestBody: 'CreateJobInput'
+responseType: 'Job'
 errorCodes: [400]
 navigation:
   order: 3
@@ -579,16 +603,16 @@ be routed through one or more paths with process steps.
 
 ## Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | `string` | Yes | Job name / identifier |
-| `goalQuantity` | `number` | Yes | Target quantity to produce |
-| `jiraTicketKey` | `string` | No | Link to Jira ticket (e.g. `PI-42`) |
-| `jiraTicketSummary` | `string` | No | Jira ticket summary |
-| `jiraPartNumber` | `string` | No | Part number from Jira |
-| `jiraPriority` | `string` | No | Priority from Jira |
-| `jiraEpicLink` | `string` | No | Epic link from Jira |
-| `jiraLabels` | `string[]` | No | Labels from Jira |
+| Field               | Type       | Required | Description                        |
+| ------------------- | ---------- | -------- | ---------------------------------- |
+| `name`              | `string`   | Yes      | Job name / identifier              |
+| `goalQuantity`      | `number`   | Yes      | Target quantity to produce         |
+| `jiraTicketKey`     | `string`   | No       | Link to Jira ticket (e.g. `PI-42`) |
+| `jiraTicketSummary` | `string`   | No       | Jira ticket summary                |
+| `jiraPartNumber`    | `string`   | No       | Part number from Jira              |
+| `jiraPriority`      | `string`   | No       | Priority from Jira                 |
+| `jiraEpicLink`      | `string`   | No       | Epic link from Jira                |
+| `jiraLabels`        | `string[]` | No       | Labels from Jira                   |
 
 ## Example Request
 
@@ -599,6 +623,7 @@ be routed through one or more paths with process steps.
   "jiraTicketKey": "PI-42"
 }
 ```
+````
 
 ## Response
 
@@ -617,12 +642,13 @@ Returns the created `Job` object:
 
 ## Errors
 
-| Code | Condition |
-|------|-----------|
+| Code  | Condition                                                |
+| ----- | -------------------------------------------------------- |
 | `400` | Missing `name` or `goalQuantity`, or `goalQuantity <= 0` |
 
 ::
-```
+
+````
 
 ### Example Nuxt Config Addition
 
@@ -639,7 +665,7 @@ export default defineNuxtConfig({
     // No additional config needed for basic setup
   }
 })
-```
+````
 
 ### Example Catch-All Page
 
@@ -649,18 +675,16 @@ export default defineNuxtConfig({
 definePageMeta({ layout: 'docs' })
 
 const route = useRoute()
-const { data: page } = await useAsyncData(
-  `docs-${route.path}`,
-  () => queryContent(route.path).findOne()
+const { data: page } = await useAsyncData(`docs-${route.path}`, () =>
+  queryContent(route.path).findOne()
 )
 
 if (!page.value) {
   throw createError({ statusCode: 404, message: 'Page not found' })
 }
 
-const { data: navigation } = await useAsyncData(
-  'docs-navigation',
-  () => fetchContentNavigation(queryContent('api-docs'))
+const { data: navigation } = await useAsyncData('docs-navigation', () =>
+  fetchContentNavigation(queryContent('api-docs'))
 )
 </script>
 
@@ -676,53 +700,53 @@ const { data: navigation } = await useAsyncData(
 
 ## Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+_A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
 
 ### Property 1: API route documentation coverage
 
-*For any* API route in `server/api/`, there must exist a corresponding Endpoint_Doc in `content/api-docs/` with a matching HTTP method and API path.
+_For any_ API route in `server/api/`, there must exist a corresponding Endpoint_Doc in `content/api-docs/` with a matching HTTP method and API path.
 
 **Validates: Requirements 3.1**
 
 ### Property 2: Content directory structure completeness
 
-*For any* service domain subdirectory in `content/api-docs/`, that subdirectory must contain an `index.md` Category_Index file with title, description, icon, and navigation order frontmatter fields.
+_For any_ service domain subdirectory in `content/api-docs/`, that subdirectory must contain an `index.md` Category_Index file with title, description, icon, and navigation order frontmatter fields.
 
 **Validates: Requirements 1.2, 2.5**
 
 ### Property 3: Endpoint frontmatter validity
 
-*For any* Endpoint_Doc in the Content_Directory, the frontmatter must contain all required fields (title, method, path, service, category) and the method field must be one of GET, POST, PUT, PATCH, or DELETE.
+_For any_ Endpoint_Doc in the Content_Directory, the frontmatter must contain all required fields (title, method, path, service, category) and the method field must be one of GET, POST, PUT, PATCH, or DELETE.
 
 **Validates: Requirements 2.1, 2.2**
 
 ### Property 4: Type reference integrity
 
-*For any* Endpoint_Doc that specifies a `requestBody` or `responseType` frontmatter field, the referenced TypeScript interface name must exist in the project type definitions.
+_For any_ Endpoint_Doc that specifies a `requestBody` or `responseType` frontmatter field, the referenced TypeScript interface name must exist in the project type definitions.
 
 **Validates: Requirements 2.3, 2.4**
 
 ### Property 5: Slug resolution correctness
 
-*For any* valid content file path in `content/api-docs/`, the corresponding URL slug `/api-docs/{slug}` must resolve to that file and render without error.
+_For any_ valid content file path in `content/api-docs/`, the corresponding URL slug `/api-docs/{slug}` must resolve to that file and render without error.
 
 **Validates: Requirements 4.1, 4.3**
 
 ### Property 6: Navigation tree ordering
 
-*For any* set of navigation items at any nesting level in the Navigation_Tree, the items must be sorted in ascending order by their `navigation.order` frontmatter field.
+_For any_ set of navigation items at any nesting level in the Navigation_Tree, the items must be sorted in ascending order by their `navigation.order` frontmatter field.
 
 **Validates: Requirement 6.5**
 
 ### Property 7: Search result scoping
 
-*For any* search query executed through Docs_Search, all returned results must have paths that start with `/api-docs`.
+_For any_ search query executed through Docs_Search, all returned results must have paths that start with `/api-docs`.
 
 **Validates: Requirement 7.2**
 
 ### Property 8: Method badge color mapping
 
-*For any* valid HTTP method string (GET, POST, PUT, PATCH, DELETE), the EndpointCard badge color mapping must return the defined color (GET=green, POST=blue, PUT=amber, DELETE=red, PATCH=purple).
+_For any_ valid HTTP method string (GET, POST, PUT, PATCH, DELETE), the EndpointCard badge color mapping must return the defined color (GET=green, POST=blue, PUT=amber, DELETE=red, PATCH=purple).
 
 **Validates: Requirement 8.1**
 
@@ -794,8 +818,8 @@ const { data: navigation } = await useAsyncData(
 
 ## Dependencies
 
-| Dependency | Version | Purpose |
-|------------|---------|---------|
-| `@nuxt/content` | `^3.x` | Markdown-based CMS, navigation, search |
+| Dependency      | Version | Purpose                                |
+| --------------- | ------- | -------------------------------------- |
+| `@nuxt/content` | `^3.x`  | Markdown-based CMS, navigation, search |
 
 No other new dependencies required. The existing Nuxt UI components, Tailwind CSS, and Lucide icons are sufficient for the documentation UI.

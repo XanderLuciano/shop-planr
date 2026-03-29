@@ -41,7 +41,10 @@ export function assertNonNegativeInteger(value: number, fieldName: string): void
 }
 
 /** Assert that a value is defined (not null/undefined). */
-export function assertDefined<T>(value: T | null | undefined, fieldName: string): asserts value is T {
+export function assertDefined<T>(
+  value: T | null | undefined,
+  fieldName: string
+): asserts value is T {
   if (value === null || value === undefined) {
     throw new ValidationError(`${fieldName} is required`)
   }

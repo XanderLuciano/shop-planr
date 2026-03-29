@@ -72,9 +72,9 @@ describe('Property 2: Audit Actions Use Renamed Values', () => {
           expect(DEPRECATED_SERIAL_ACTIONS).not.toContain(entry.action)
           expect(repo.entries).toHaveLength(1)
           expect(repo.entries[0].action).toBe('part_created')
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -102,9 +102,9 @@ describe('Property 2: Audit Actions Use Renamed Values', () => {
 
           expect(entry.action).toBe('part_advanced')
           expect(DEPRECATED_SERIAL_ACTIONS).not.toContain(entry.action)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -130,9 +130,9 @@ describe('Property 2: Audit Actions Use Renamed Values', () => {
 
           expect(entry.action).toBe('part_completed')
           expect(DEPRECATED_SERIAL_ACTIONS).not.toContain(entry.action)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -161,9 +161,9 @@ describe('Property 2: Audit Actions Use Renamed Values', () => {
 
           expect(entry.action).toBe('part_scrapped')
           expect(DEPRECATED_SERIAL_ACTIONS).not.toContain(entry.action)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -190,9 +190,9 @@ describe('Property 2: Audit Actions Use Renamed Values', () => {
 
           expect(entry.action).toBe('part_force_completed')
           expect(DEPRECATED_SERIAL_ACTIONS).not.toContain(entry.action)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -211,23 +211,51 @@ describe('Property 2: Audit Actions Use Renamed Values', () => {
           const service = createAuditService({ audit: repo })
 
           service.recordPartCreation({ userId, jobId, pathId, batchQuantity: batchQty })
-          service.recordPartAdvancement({ userId, partId, jobId, pathId, fromStepId: stepId1, toStepId: stepId2 })
+          service.recordPartAdvancement({
+            userId,
+            partId,
+            jobId,
+            pathId,
+            fromStepId: stepId1,
+            toStepId: stepId2,
+          })
           service.recordPartCompletion({ userId, partId, jobId, pathId, fromStepId: stepId1 })
-          service.recordScrap({ userId, partId, jobId, pathId, stepId: stepId1, metadata: { reason: 'damaged' } })
-          service.recordForceComplete({ userId, partId, jobId, pathId, metadata: { incompleteStepIds: [stepId1] } })
+          service.recordScrap({
+            userId,
+            partId,
+            jobId,
+            pathId,
+            stepId: stepId1,
+            metadata: { reason: 'damaged' },
+          })
+          service.recordForceComplete({
+            userId,
+            partId,
+            jobId,
+            pathId,
+            metadata: { incompleteStepIds: [stepId1] },
+          })
 
           for (const entry of repo.entries) {
             expect(DEPRECATED_SERIAL_ACTIONS).not.toContain(entry.action)
             // All lifecycle actions should start with 'part_'
-            if (['part_created', 'part_advanced', 'part_completed', 'part_scrapped', 'part_force_completed'].includes(entry.action)) {
+            if (
+              [
+                'part_created',
+                'part_advanced',
+                'part_completed',
+                'part_scrapped',
+                'part_force_completed',
+              ].includes(entry.action)
+            ) {
               expect(entry.action).toMatch(/^part_/)
             }
           }
 
           expect(repo.entries).toHaveLength(5)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

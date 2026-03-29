@@ -23,7 +23,7 @@ interface StepDraft {
 const pathName = ref(props.path?.name ?? '')
 const goalQuantity = ref(props.path?.goalQuantity ?? 1)
 const steps = ref<StepDraft[]>(
-  props.path?.steps.map(s => ({
+  props.path?.steps.map((s) => ({
     name: s.name,
     location: s.location ?? '',
     optional: s.optional ?? false,
@@ -66,7 +66,7 @@ async function onSave() {
     error.value = 'Goal quantity must be at least 1'
     return
   }
-  const validSteps = steps.value.filter(s => s.name.trim())
+  const validSteps = steps.value.filter((s) => s.name.trim())
   if (!validSteps.length) {
     error.value = 'At least one step with a name is required'
     return
@@ -74,7 +74,7 @@ async function onSave() {
 
   saving.value = true
   try {
-    const stepData = validSteps.map(s => ({
+    const stepData = validSteps.map((s) => ({
       name: s.name.trim(),
       location: s.location.trim() || undefined,
       optional: s.optional,
@@ -86,14 +86,14 @@ async function onSave() {
       result = await updatePath(props.path.id, {
         name: pathName.value.trim(),
         goalQuantity: goalQuantity.value,
-        steps: stepData
+        steps: stepData,
       })
     } else {
       result = await createPath({
         jobId: props.jobId,
         name: pathName.value.trim(),
         goalQuantity: goalQuantity.value,
-        steps: stepData
+        steps: stepData,
       })
     }
     emit('save', result)
@@ -128,12 +128,16 @@ async function onSave() {
         <UButton icon="i-lucide-plus" size="xs" variant="ghost" label="Add Step" @click="addStep" />
       </div>
       <div class="space-y-2">
-        <div v-for="(step, i) in steps" :key="i" class="flex items-center gap-2 border border-(--ui-border) rounded-md p-2">
+        <div
+          v-for="(step, i) in steps"
+          :key="i"
+          class="flex items-center gap-2 border border-(--ui-border) rounded-md p-2"
+        >
           <span class="text-xs text-(--ui-text-muted) w-5 shrink-0 text-right">{{ i + 1 }}.</span>
           <ProcessLocationDropdown v-model="step.name" type="process" class="flex-1" />
           <ProcessLocationDropdown v-model="step.location" type="location" class="flex-1" />
           <label class="flex items-center gap-1 text-xs shrink-0">
-            <input v-model="step.optional" type="checkbox" class="rounded">
+            <input v-model="step.optional" type="checkbox" class="rounded" />
             Opt
           </label>
           <USelect
@@ -144,9 +148,30 @@ async function onSave() {
             size="xs"
             class="w-32 shrink-0"
           />
-          <UButton icon="i-lucide-chevron-up" size="xs" variant="ghost" color="neutral" :disabled="i === 0" @click="moveStep(i, -1)" />
-          <UButton icon="i-lucide-chevron-down" size="xs" variant="ghost" color="neutral" :disabled="i === steps.length - 1" @click="moveStep(i, 1)" />
-          <UButton icon="i-lucide-x" size="xs" variant="ghost" color="error" :disabled="steps.length <= 1" @click="removeStep(i)" />
+          <UButton
+            icon="i-lucide-chevron-up"
+            size="xs"
+            variant="ghost"
+            color="neutral"
+            :disabled="i === 0"
+            @click="moveStep(i, -1)"
+          />
+          <UButton
+            icon="i-lucide-chevron-down"
+            size="xs"
+            variant="ghost"
+            color="neutral"
+            :disabled="i === steps.length - 1"
+            @click="moveStep(i, 1)"
+          />
+          <UButton
+            icon="i-lucide-x"
+            size="xs"
+            variant="ghost"
+            color="error"
+            :disabled="steps.length <= 1"
+            @click="removeStep(i)"
+          />
         </div>
       </div>
     </div>
@@ -155,7 +180,12 @@ async function onSave() {
 
     <div class="flex gap-2 justify-end">
       <UButton variant="ghost" size="xs" label="Cancel" @click="emit('cancel')" />
-      <UButton size="xs" :label="path ? 'Update Path' : 'Create Path'" :loading="saving" @click="onSave" />
+      <UButton
+        size="xs"
+        :label="path ? 'Update Path' : 'Create Path'"
+        :loading="saving"
+        @click="onSave"
+      />
     </div>
   </div>
 </template>

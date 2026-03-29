@@ -1,12 +1,12 @@
 ---
-title: "Create BOM"
-description: "Create a new bill of materials with part entries"
-method: "POST"
-endpoint: "/api/bom"
-service: "bomService"
-category: "BOM"
-requestBody: "CreateBomInput"
-responseType: "BOM"
+title: 'Create BOM'
+description: 'Create a new bill of materials with part entries'
+method: 'POST'
+endpoint: '/api/bom'
+service: 'bomService'
+category: 'BOM'
+requestBody: 'CreateBomInput'
+responseType: 'BOM'
 errorCodes: [400, 500]
 navigation:
   order: 3
@@ -24,13 +24,13 @@ After creating a BOM, you can track production progress against it using the [Ge
 
 ### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | `string` | Yes | A human-readable name for the BOM (e.g. `"Widget Assembly BOM"`). Must be a non-empty string. Leading and trailing whitespace is trimmed. |
-| `entries` | `array` | Yes | An array of part entries. Must contain at least one entry. |
-| `entries[].partType` | `string` | Yes | The name or identifier of the part type (e.g. `"Steel Plate"`, `"Bolt M8"`). |
-| `entries[].requiredQuantityPerBuild` | `number` | Yes | How many of this part are needed for each unit produced. Should be a positive number. |
-| `entries[].contributingJobIds` | `string[]` | Yes | An array of job IDs that supply this part type. Can be empty if no jobs have been assigned yet. |
+| Field                                | Type       | Required | Description                                                                                                                               |
+| ------------------------------------ | ---------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`                               | `string`   | Yes      | A human-readable name for the BOM (e.g. `"Widget Assembly BOM"`). Must be a non-empty string. Leading and trailing whitespace is trimmed. |
+| `entries`                            | `array`    | Yes      | An array of part entries. Must contain at least one entry.                                                                                |
+| `entries[].partType`                 | `string`   | Yes      | The name or identifier of the part type (e.g. `"Steel Plate"`, `"Bolt M8"`).                                                              |
+| `entries[].requiredQuantityPerBuild` | `number`   | Yes      | How many of this part are needed for each unit produced. Should be a positive number.                                                     |
+| `entries[].contributingJobIds`       | `string[]` | Yes      | An array of job IDs that supply this part type. Can be empty if no jobs have been assigned yet.                                           |
 
 ## Response
 
@@ -38,34 +38,34 @@ After creating a BOM, you can track production progress against it using the [Ge
 
 Returned when the BOM is successfully created. The response contains the complete `BOM` object with server-generated fields.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Server-generated unique identifier (prefixed with `bom_`) |
-| `name` | `string` | The BOM name as provided (trimmed) |
-| `entries` | `BomEntry[]` | The entries as provided, potentially with server-assigned `id` and `bomId` fields |
-| `entries[].id` | `string \| undefined` | Server-generated entry ID, if assigned |
-| `entries[].bomId` | `string \| undefined` | Parent BOM ID reference, if assigned |
-| `entries[].partType` | `string` | Part type as provided |
-| `entries[].requiredQuantityPerBuild` | `number` | Required quantity as provided |
-| `entries[].contributingJobIds` | `string[]` | Contributing job IDs as provided |
-| `createdAt` | `string` | ISO 8601 timestamp of when the BOM was created |
-| `updatedAt` | `string` | ISO 8601 timestamp — same as `createdAt` for newly created BOMs |
+| Field                                | Type                  | Description                                                                       |
+| ------------------------------------ | --------------------- | --------------------------------------------------------------------------------- |
+| `id`                                 | `string`              | Server-generated unique identifier (prefixed with `bom_`)                         |
+| `name`                               | `string`              | The BOM name as provided (trimmed)                                                |
+| `entries`                            | `BomEntry[]`          | The entries as provided, potentially with server-assigned `id` and `bomId` fields |
+| `entries[].id`                       | `string \| undefined` | Server-generated entry ID, if assigned                                            |
+| `entries[].bomId`                    | `string \| undefined` | Parent BOM ID reference, if assigned                                              |
+| `entries[].partType`                 | `string`              | Part type as provided                                                             |
+| `entries[].requiredQuantityPerBuild` | `number`              | Required quantity as provided                                                     |
+| `entries[].contributingJobIds`       | `string[]`            | Contributing job IDs as provided                                                  |
+| `createdAt`                          | `string`              | ISO 8601 timestamp of when the BOM was created                                    |
+| `updatedAt`                          | `string`              | ISO 8601 timestamp — same as `createdAt` for newly created BOMs                   |
 
 ### 400 Bad Request
 
 Returned when the request body fails validation.
 
-| Condition | Message |
-|-----------|---------|
-| `name` is missing or empty | `"name is required"` |
+| Condition                           | Message                                 |
+| ----------------------------------- | --------------------------------------- |
+| `name` is missing or empty          | `"name is required"`                    |
 | `entries` is missing or empty array | `"entries must have at least one item"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while persisting the BOM.
 
-| Condition | Message |
-|-----------|---------|
+| Condition              | Message                   |
+| ---------------------- | ------------------------- |
 | Database write failure | `"Internal Server Error"` |
 
 ## Examples

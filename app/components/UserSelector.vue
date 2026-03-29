@@ -13,23 +13,19 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
   }
 
   return [
-    users.value.map(user => ({
+    users.value.map((user) => ({
       label: user.name,
       icon: user.id === selectedUser.value?.id ? 'i-lucide-check' : 'i-lucide-user',
       onSelect() {
         selectUser(user)
-      }
-    }))
+      },
+    })),
   ]
 })
 </script>
 
 <template>
-  <UDropdownMenu
-    :items="menuItems"
-    size="sm"
-    :content="{ align: 'end' }"
-  >
+  <UDropdownMenu :items="menuItems" size="sm" :content="{ align: 'end' }">
     <UButton
       size="sm"
       :variant="selectedUser ? 'ghost' : 'soft'"

@@ -34,11 +34,8 @@ function parseStepId(url: string): string | undefined {
 /**
  * Matching logic to find the correct WorkQueueJob entry by stepId.
  */
-function findMatchingQueueEntry(
-  jobs: WorkQueueJob[],
-  stepId: string,
-): WorkQueueJob | undefined {
-  return jobs.find(j => j.stepId === stepId)
+function findMatchingQueueEntry(jobs: WorkQueueJob[], stepId: string): WorkQueueJob | undefined {
+  return jobs.find((j) => j.stepId === stepId)
 }
 
 /** Arbitrary for non-empty ID strings (simulating nanoid-style IDs) */
@@ -53,7 +50,7 @@ describe('Property 6: Step navigation URL round-trip', () => {
 
         expect(parsed).toBe(stepId)
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -78,8 +75,8 @@ describe('Property 6: Step navigation URL round-trip', () => {
           }
 
           const otherJobs: WorkQueueJob[] = otherStepIds
-            .filter(id => id !== targetStepId)
-            .map(id => ({
+            .filter((id) => id !== targetStepId)
+            .map((id) => ({
               jobId: 'job_2',
               jobName: 'Other Job',
               pathId: 'path_2',
@@ -102,9 +99,9 @@ describe('Property 6: Step navigation URL round-trip', () => {
 
           expect(match).toBeDefined()
           expect(match!.stepId).toBe(targetStepId)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -115,8 +112,8 @@ describe('Property 6: Step navigation URL round-trip', () => {
         fc.array(idArb, { minLength: 0, maxLength: 5 }),
         (targetStepId, otherStepIds) => {
           const nonMatchingJobs: WorkQueueJob[] = otherStepIds
-            .filter(id => id !== targetStepId)
-            .map(id => ({
+            .filter((id) => id !== targetStepId)
+            .map((id) => ({
               jobId: 'job_1',
               jobName: 'Job',
               pathId: 'path_1',
@@ -136,9 +133,9 @@ describe('Property 6: Step navigation URL round-trip', () => {
           const match = findMatchingQueueEntry(nonMatchingJobs, parsed!)
 
           expect(match).toBeUndefined()
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

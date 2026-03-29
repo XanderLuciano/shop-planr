@@ -1,11 +1,11 @@
 ---
-title: "Get Certificate Attachments"
-description: "Retrieve all attachment records for a specific certificate"
-method: "GET"
-endpoint: "/api/certs/:id/attachments"
-service: "certService"
-category: "Certs"
-responseType: "CertAttachment[]"
+title: 'Get Certificate Attachments'
+description: 'Retrieve all attachment records for a specific certificate'
+method: 'GET'
+endpoint: '/api/certs/:id/attachments'
+service: 'certService'
+category: 'Certs'
+responseType: 'CertAttachment[]'
 errorCodes: [404, 500]
 navigation:
   order: 5
@@ -23,9 +23,9 @@ This endpoint is useful for auditing certificate coverage — for example, verif
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` | Yes | The unique identifier of the certificate (e.g. `"cert_abc123"`) |
+| Parameter | Type     | Required | Description                                                     |
+| --------- | -------- | -------- | --------------------------------------------------------------- |
+| `id`      | `string` | Yes      | The unique identifier of the certificate (e.g. `"cert_abc123"`) |
 
 ## Response
 
@@ -33,29 +33,29 @@ This endpoint is useful for auditing certificate coverage — for example, verif
 
 Returns an array of `CertAttachment` objects for the specified certificate. If the certificate exists but has no attachments, returns an empty array `[]`.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string \| undefined` | Server-generated attachment ID, if assigned |
-| `serialId` | `string` | The serial number this attachment belongs to |
-| `certId` | `string` | The certificate ID (matches the path parameter) |
-| `stepId` | `string` | The process step ID where the attachment was recorded |
-| `attachedAt` | `string` | ISO 8601 timestamp of when the attachment was created |
-| `attachedBy` | `string` | The user ID who performed the attachment |
+| Field        | Type                  | Description                                           |
+| ------------ | --------------------- | ----------------------------------------------------- |
+| `id`         | `string \| undefined` | Server-generated attachment ID, if assigned           |
+| `serialId`   | `string`              | The serial number this attachment belongs to          |
+| `certId`     | `string`              | The certificate ID (matches the path parameter)       |
+| `stepId`     | `string`              | The process step ID where the attachment was recorded |
+| `attachedAt` | `string`              | ISO 8601 timestamp of when the attachment was created |
+| `attachedBy` | `string`              | The user ID who performed the attachment              |
 
 ### 404 Not Found
 
 Returned when no certificate exists with the given ID.
 
-| Condition | Message |
-|-----------|---------|
+| Condition                  | Message                                |
+| -------------------------- | -------------------------------------- |
 | Certificate does not exist | `"Certificate not found: cert_abc123"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while querying the database.
 
-| Condition | Message |
-|-----------|---------|
+| Condition             | Message                   |
+| --------------------- | ------------------------- |
 | Database read failure | `"Internal Server Error"` |
 
 ## Examples

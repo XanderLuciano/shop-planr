@@ -40,12 +40,12 @@ describe('FK-Safe Path Update Integration', () => {
 
   it('7.1 update path steps without FK violation — preserves step IDs and references', () => {
     const { job, path } = createJobWithPath(2)
-    const originalStepIds = path.steps.map(s => s.id)
+    const originalStepIds = path.steps.map((s) => s.id)
 
     // Create a part so we can attach a cert and a note to step 0
     const [part] = ctx.partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
-      'operator1',
+      'operator1'
     )
 
     // Attach a cert to step 0
@@ -79,7 +79,7 @@ describe('FK-Safe Path Update Integration', () => {
     })
 
     // Step IDs must be preserved
-    expect(updated.steps.map(s => s.id)).toEqual(originalStepIds)
+    expect(updated.steps.map((s) => s.id)).toEqual(originalStepIds)
     expect(updated.goalQuantity).toBe(20)
     expect(updated.steps[0].location).toBe('New Loc')
 
@@ -96,7 +96,7 @@ describe('FK-Safe Path Update Integration', () => {
 
   it('7.2 append new steps to existing path — preserves existing IDs, inserts fresh ID', () => {
     const { path } = createJobWithPath(2)
-    const originalStepIds = path.steps.map(s => s.id)
+    const originalStepIds = path.steps.map((s) => s.id)
 
     // Update with 3 steps (append one)
     const updated = ctx.pathService.updatePath(path.id, {
@@ -115,7 +115,7 @@ describe('FK-Safe Path Update Integration', () => {
     expect(updated.steps[2].id).not.toBe(originalStepIds[0])
     expect(updated.steps[2].id).not.toBe(originalStepIds[1])
     // Orders are sequential
-    expect(updated.steps.map(s => s.order)).toEqual([0, 1, 2])
+    expect(updated.steps.map((s) => s.order)).toEqual([0, 1, 2])
   })
 
   it('7.3 remove step blocked by FK dependents — throws ValidationError', () => {
@@ -124,7 +124,7 @@ describe('FK-Safe Path Update Integration', () => {
     // Create a part and attach a cert to step 2 (the one we'll try to remove)
     const [part] = ctx.partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
-      'operator1',
+      'operator1'
     )
     const cert = ctx.certService.createCert({ type: 'process', name: 'Heat Treat' })
     ctx.certService.attachCertToPart({
@@ -143,7 +143,7 @@ describe('FK-Safe Path Update Integration', () => {
           { name: 'Step 0', location: 'Loc 0' },
           { name: 'Step 1', location: 'Loc 1' },
         ],
-      }),
+      })
     ).toThrow(ValidationError)
 
     // Verify the error message matches the requirement
@@ -157,14 +157,14 @@ describe('FK-Safe Path Update Integration', () => {
     } catch (err) {
       expect(err).toBeInstanceOf(ValidationError)
       expect((err as ValidationError).message).toBe(
-        'Cannot remove step because it has associated data (certificates, notes, part statuses, or overrides). Remove the associated data first, or keep the step.',
+        'Cannot remove step because it has associated data (certificates, notes, part statuses, or overrides). Remove the associated data first, or keep the step.'
       )
     }
   })
 
   it('7.4 remove step with no dependents — succeeds', () => {
     const { path } = createJobWithPath(3)
-    const originalStepIds = path.steps.map(s => s.id)
+    const originalStepIds = path.steps.map((s) => s.id)
 
     // No certs/notes/statuses attached to any step — remove the last step
     const updated = ctx.pathService.updatePath(path.id, {
@@ -185,13 +185,13 @@ describe('FK-Safe Path Update Integration', () => {
 
   it('7.5 idempotent update — save without changes produces no errors', () => {
     const { path } = createJobWithPath(2)
-    const originalStepIds = path.steps.map(s => s.id)
+    const originalStepIds = path.steps.map((s) => s.id)
 
     // Update with identical data
     const updated = ctx.pathService.updatePath(path.id, {
       name: path.name,
       goalQuantity: path.goalQuantity,
-      steps: path.steps.map(s => ({
+      steps: path.steps.map((s) => ({
         name: s.name,
         location: s.location,
         optional: s.optional,
@@ -199,11 +199,11 @@ describe('FK-Safe Path Update Integration', () => {
       })),
     })
 
-    expect(updated.steps.map(s => s.id)).toEqual(originalStepIds)
+    expect(updated.steps.map((s) => s.id)).toEqual(originalStepIds)
     expect(updated.name).toBe(path.name)
     expect(updated.goalQuantity).toBe(path.goalQuantity)
-    expect(updated.steps.map(s => s.name)).toEqual(path.steps.map(s => s.name))
-    expect(updated.steps.map(s => s.location)).toEqual(path.steps.map(s => s.location))
+    expect(updated.steps.map((s) => s.name)).toEqual(path.steps.map((s) => s.name))
+    expect(updated.steps.map((s) => s.location)).toEqual(path.steps.map((s) => s.location))
   })
 
   it('7.6 both entry points produce same result — identical payloads yield identical outcomes', () => {

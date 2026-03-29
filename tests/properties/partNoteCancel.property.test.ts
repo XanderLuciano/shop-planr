@@ -53,7 +53,7 @@ describe('Property 2: Cancel resets form state', () => {
         expect(after.showNoteForm).toBe(false)
         expect(after.noteText).toBe('')
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

@@ -1,12 +1,12 @@
 ---
-title: "Update Step Config"
-description: "Update the optional flag and dependency type for a process step"
-method: "PATCH"
-endpoint: "/api/steps/:id/config"
-service: "pathService"
-category: "Steps"
-requestBody: "{ optional?, dependencyType? }"
-responseType: "ProcessStep"
+title: 'Update Step Config'
+description: 'Update the optional flag and dependency type for a process step'
+method: 'PATCH'
+endpoint: '/api/steps/:id/config'
+service: 'pathService'
+category: 'Steps'
+requestBody: '{ optional?, dependencyType? }'
+responseType: 'ProcessStep'
 errorCodes: [400, 404, 500]
 navigation:
   order: 2
@@ -29,18 +29,18 @@ The `optional` field must be a boolean (not a truthy/falsy value). The `dependen
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` | Yes | The process step ID to configure (e.g. `"step_001"`). |
+| Parameter | Type     | Required | Description                                           |
+| --------- | -------- | -------- | ----------------------------------------------------- |
+| `id`      | `string` | Yes      | The process step ID to configure (e.g. `"step_001"`). |
 
 ### Request Body
 
 At least one field must be provided.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `optional` | `boolean` | No | Set to `true` to allow the step to be skipped/deferred/waived during advancement. Set to `false` to make it mandatory. Must be a strict boolean. |
-| `dependencyType` | `string` | No | The dependency classification. Must be one of: `"physical"` (hard dependency, cannot be skipped), `"preferred"` (default, should be done in order but can be bypassed), or `"completion_gate"` (all prior steps must complete first). |
+| Field            | Type      | Required | Description                                                                                                                                                                                                                           |
+| ---------------- | --------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `optional`       | `boolean` | No       | Set to `true` to allow the step to be skipped/deferred/waived during advancement. Set to `false` to make it mandatory. Must be a strict boolean.                                                                                      |
+| `dependencyType` | `string`  | No       | The dependency classification. Must be one of: `"physical"` (hard dependency, cannot be skipped), `"preferred"` (default, should be done in order but can be bypassed), or `"completion_gate"` (all prior steps must complete first). |
 
 ## Response
 
@@ -48,34 +48,34 @@ At least one field must be provided.
 
 Returns the updated `ProcessStep` object.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Step ID (unchanged) |
-| `name` | `string` | Step name (unchanged) |
-| `order` | `number` | Zero-based position in the path (unchanged) |
-| `location` | `string \| undefined` | Physical location (unchanged) |
-| `assignedTo` | `string \| undefined` | Assigned operator (unchanged) |
-| `optional` | `boolean` | Updated optional flag |
-| `dependencyType` | `string` | Updated dependency type |
+| Field            | Type                  | Description                                 |
+| ---------------- | --------------------- | ------------------------------------------- |
+| `id`             | `string`              | Step ID (unchanged)                         |
+| `name`           | `string`              | Step name (unchanged)                       |
+| `order`          | `number`              | Zero-based position in the path (unchanged) |
+| `location`       | `string \| undefined` | Physical location (unchanged)               |
+| `assignedTo`     | `string \| undefined` | Assigned operator (unchanged)               |
+| `optional`       | `boolean`             | Updated optional flag                       |
+| `dependencyType` | `string`              | Updated dependency type                     |
 
 ### 400 Bad Request
 
-| Condition | Message |
-|-----------|---------|
-| Step ID is missing from the URL | `"Step ID is required"` |
-| No valid fields provided in the body | `"No valid fields to update"` |
+| Condition                                         | Message                                                                                      |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Step ID is missing from the URL                   | `"Step ID is required"`                                                                      |
+| No valid fields provided in the body              | `"No valid fields to update"`                                                                |
 | `dependencyType` is not one of the allowed values | Field is silently ignored; if no other valid field is present, `"No valid fields to update"` |
 
 ### 404 Not Found
 
-| Condition | Message |
-|-----------|---------|
+| Condition                       | Message                         |
+| ------------------------------- | ------------------------------- |
 | No step found with the given ID | `"ProcessStep not found: {id}"` |
 
 ### 500 Internal Server Error
 
-| Condition | Message |
-|-----------|---------|
+| Condition              | Message                   |
+| ---------------------- | ------------------------- |
 | Database write failure | `"Internal Server Error"` |
 
 ## Examples

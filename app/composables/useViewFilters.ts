@@ -26,7 +26,7 @@ function saveToStorage(state: FilterState) {
 }
 
 // Persist on every change
-watch(filters, val => saveToStorage(val), { deep: true })
+watch(filters, (val) => saveToStorage(val), { deep: true })
 
 export function useViewFilters() {
   function updateFilter<K extends keyof FilterState>(key: K, value: FilterState[K]) {
@@ -91,6 +91,6 @@ export function useViewFilters() {
     filters,
     updateFilter,
     clearFilters,
-    applyFilters
+    applyFilters,
   }
 }

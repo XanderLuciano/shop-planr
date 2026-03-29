@@ -19,9 +19,12 @@ const modeOptions = [
 
 const selected = ref(props.currentMode)
 
-watch(() => props.currentMode, (v) => {
-  selected.value = v
-})
+watch(
+  () => props.currentMode,
+  (v) => {
+    selected.value = v
+  }
+)
 
 async function handleChange(value: string) {
   const mode = value as 'strict' | 'flexible' | 'per_step'

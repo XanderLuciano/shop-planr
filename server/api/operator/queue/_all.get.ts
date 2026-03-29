@@ -31,7 +31,7 @@ export default defineEventHandler(async () => {
             stepOrder: step.order,
             stepLocation: step.location,
             totalSteps,
-            partIds: parts.map(s => s.id),
+            partIds: parts.map((s) => s.id),
             partCount: parts.length,
             nextStepName: nextStep?.name,
             nextStepLocation: nextStep?.location,

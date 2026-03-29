@@ -68,12 +68,18 @@ function validateForceComplete(part: Part): { valid: boolean; error?: string } {
 
 /** Generate an arbitrary scrapped Part */
 function scrappedPartArb(): fc.Arbitrary<Part> {
-  const scrapReasons: ScrapReason[] = ['out_of_tolerance', 'process_defect', 'damaged', 'operator_error', 'other']
+  const scrapReasons: ScrapReason[] = [
+    'out_of_tolerance',
+    'process_defect',
+    'damaged',
+    'operator_error',
+    'other',
+  ]
 
   return fc.record({
-    id: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
-    jobId: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
-    pathId: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
+    id: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
+    jobId: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
+    pathId: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
     currentStepIndex: fc.integer({ min: 0, max: 10 }),
     status: fc.constant('scrapped' as const),
     scrapReason: fc.constantFrom(...scrapReasons),
@@ -98,7 +104,7 @@ describe('Property 6: Scrap Immutability', () => {
         expect(result.valid).toBe(false)
         expect(result.error).toContain('scrapped')
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -109,7 +115,7 @@ describe('Property 6: Scrap Immutability', () => {
         expect(result.valid).toBe(false)
         expect(result.error).toContain('scrapped')
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -120,7 +126,7 @@ describe('Property 6: Scrap Immutability', () => {
         expect(result.valid).toBe(false)
         expect(result.error).toContain('scrapped')
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -131,7 +137,7 @@ describe('Property 6: Scrap Immutability', () => {
         expect(result.valid).toBe(false)
         expect(result.error).toContain('already scrapped')
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

@@ -14,7 +14,11 @@ import fc from 'fast-check'
  * Pure progress calculation matching the design doc formula:
  * progressPercent = completedCount / (goalQuantity - scrappedCount) * 100
  */
-function computeProgressPercent(goalQuantity: number, completedCount: number, scrappedCount: number): number {
+function computeProgressPercent(
+  goalQuantity: number,
+  completedCount: number,
+  scrappedCount: number
+): number {
   const adjustedGoal = goalQuantity - scrappedCount
   if (adjustedGoal <= 0) return completedCount > 0 ? 100 : 0
   return (completedCount / adjustedGoal) * 100
@@ -47,9 +51,9 @@ describe('Property 1: Scrap Exclusion from Progress', () => {
             const expected = (completedCount / adjustedGoal) * 100
             expect(result).toBeCloseTo(expected, 10)
           }
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -65,13 +69,17 @@ describe('Property 1: Scrap Exclusion from Progress', () => {
           const scrappedCount = Math.min(Math.floor(goalQuantity / 2), goalQuantity - 1)
           if (scrappedCount <= 0) return // skip degenerate case
 
-          const progressWithScrap = computeProgressPercent(goalQuantity, completedCount, scrappedCount)
+          const progressWithScrap = computeProgressPercent(
+            goalQuantity,
+            completedCount,
+            scrappedCount
+          )
 
           // Scrapping reduces denominator, so progress should be >= the no-scrap case
           expect(progressWithScrap).toBeGreaterThanOrEqual(progressNoScrap)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -92,9 +100,9 @@ describe('Property 1: Scrap Exclusion from Progress', () => {
           // Exact value check
           const expected = (completedCount / adjustedGoal) * 100
           expect(result).toBeCloseTo(expected, 10)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -106,9 +114,9 @@ describe('Property 1: Scrap Exclusion from Progress', () => {
         (goalQuantity, scrappedCount) => {
           const result = computeProgressPercent(goalQuantity, 0, scrappedCount)
           expect(result).toBe(0)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

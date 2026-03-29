@@ -1,11 +1,11 @@
 ---
-title: "List & Create Overrides"
-description: "Retrieve existing step overrides or create new ones for serial numbers"
-method: "GET"
-endpoint: "/api/serials/:id/overrides"
-service: "lifecycleService"
-category: "Serials"
-responseType: "SnStepOverride[]"
+title: 'List & Create Overrides'
+description: 'Retrieve existing step overrides or create new ones for serial numbers'
+method: 'GET'
+endpoint: '/api/serials/:id/overrides'
+service: 'lifecycleService'
+category: 'Serials'
+responseType: 'SnStepOverride[]'
 errorCodes: [400, 404, 500]
 navigation:
   order: 11
@@ -25,9 +25,9 @@ Retrieves all step overrides for a serial number, including both active and inac
 
 #### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` | Yes | The unique identifier of the serial number (e.g. `"SN-00001"`) |
+| Parameter | Type     | Required | Description                                                    |
+| --------- | -------- | -------- | -------------------------------------------------------------- |
+| `id`      | `string` | Yes      | The unique identifier of the serial number (e.g. `"SN-00001"`) |
 
 ### Response
 
@@ -35,26 +35,26 @@ Retrieves all step overrides for a serial number, including both active and inac
 
 Returned when the request is successful. The response is always an array, even if no overrides exist (empty array `[]`).
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Unique identifier for the override record |
-| `serialId` | `string` | ID of the serial number this override applies to |
-| `stepId` | `string` | ID of the process step being overridden |
-| `active` | `boolean` | Whether the override is currently active. `false` means it was reversed. |
-| `reason` | `string \| undefined` | Reason for creating the override |
-| `createdBy` | `string` | User ID of who created the override |
-| `createdAt` | `string` | ISO 8601 timestamp of when the override was created |
+| Field       | Type                  | Description                                                              |
+| ----------- | --------------------- | ------------------------------------------------------------------------ |
+| `id`        | `string`              | Unique identifier for the override record                                |
+| `serialId`  | `string`              | ID of the serial number this override applies to                         |
+| `stepId`    | `string`              | ID of the process step being overridden                                  |
+| `active`    | `boolean`             | Whether the override is currently active. `false` means it was reversed. |
+| `reason`    | `string \| undefined` | Reason for creating the override                                         |
+| `createdBy` | `string`              | User ID of who created the override                                      |
+| `createdAt` | `string`              | ISO 8601 timestamp of when the override was created                      |
 
 #### 400 Bad Request
 
-| Condition | Message |
-|-----------|---------|
+| Condition                         | Message                   |
+| --------------------------------- | ------------------------- |
 | Serial ID is missing from the URL | `"Serial ID is required"` |
 
 #### 500 Internal Server Error
 
-| Condition | Message |
-|-----------|---------|
+| Condition                   | Message                   |
+| --------------------------- | ------------------------- |
 | Database connection failure | `"Internal Server Error"` |
 
 ### Examples
@@ -116,18 +116,18 @@ Overrides are applied in batch — you provide an array of `serialIds` and a sin
 
 #### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` | Yes | The serial number ID in the URL path. Note: the actual serial IDs to override are specified in the request body's `serialIds` array. |
+| Parameter | Type     | Required | Description                                                                                                                          |
+| --------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `id`      | `string` | Yes      | The serial number ID in the URL path. Note: the actual serial IDs to override are specified in the request body's `serialIds` array. |
 
 #### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `serialIds` | `string[]` | Yes | Array of serial number IDs to apply the override to. Each serial must exist. |
-| `stepId` | `string` | Yes | ID of the process step to override. The step must not already be completed for any of the targeted serials. |
-| `reason` | `string` | Yes | Reason for creating the override. Recorded for audit trail purposes. |
-| `userId` | `string` | Yes | ID of the user creating the override. Used for audit trail attribution. |
+| Field       | Type       | Required | Description                                                                                                 |
+| ----------- | ---------- | -------- | ----------------------------------------------------------------------------------------------------------- |
+| `serialIds` | `string[]` | Yes      | Array of serial number IDs to apply the override to. Each serial must exist.                                |
+| `stepId`    | `string`   | Yes      | ID of the process step to override. The step must not already be completed for any of the targeted serials. |
+| `reason`    | `string`   | Yes      | Reason for creating the override. Recorded for audit trail purposes.                                        |
+| `userId`    | `string`   | Yes      | ID of the user creating the override. Used for audit trail attribution.                                     |
 
 ### Response
 
@@ -135,35 +135,35 @@ Overrides are applied in batch — you provide an array of `serialIds` and a sin
 
 Returned when the overrides are successfully created. The response is an array of newly created `SnStepOverride` objects. Serials that already had an active override for the same step are excluded from the response (no duplicate created).
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Unique identifier for the override record |
-| `serialId` | `string` | ID of the serial number this override applies to |
-| `stepId` | `string` | ID of the overridden process step |
-| `active` | `boolean` | Always `true` for newly created overrides |
-| `reason` | `string` | The reason provided in the request |
-| `createdBy` | `string` | User ID of who created the override |
-| `createdAt` | `string` | ISO 8601 timestamp of when the override was created |
+| Field       | Type      | Description                                         |
+| ----------- | --------- | --------------------------------------------------- |
+| `id`        | `string`  | Unique identifier for the override record           |
+| `serialId`  | `string`  | ID of the serial number this override applies to    |
+| `stepId`    | `string`  | ID of the overridden process step                   |
+| `active`    | `boolean` | Always `true` for newly created overrides           |
+| `reason`    | `string`  | The reason provided in the request                  |
+| `createdBy` | `string`  | User ID of who created the override                 |
+| `createdAt` | `string`  | ISO 8601 timestamp of when the override was created |
 
 #### 400 Bad Request
 
-| Condition | Message |
-|-----------|---------|
-| `serialIds` is missing or empty | Varies — validation error |
-| `stepId` is missing | Varies — validation error |
-| `reason` is missing | Varies — validation error |
+| Condition                              | Message                                                    |
+| -------------------------------------- | ---------------------------------------------------------- |
+| `serialIds` is missing or empty        | Varies — validation error                                  |
+| `stepId` is missing                    | Varies — validation error                                  |
+| `reason` is missing                    | Varies — validation error                                  |
 | Step is already completed for a serial | `"Cannot override a step that has already been completed"` |
 
 #### 404 Not Found
 
-| Condition | Message |
-|-----------|---------|
+| Condition                                | Message                          |
+| ---------------------------------------- | -------------------------------- |
 | Any serial in `serialIds` does not exist | `"Serial not found: {serialId}"` |
 
 #### 500 Internal Server Error
 
-| Condition | Message |
-|-----------|---------|
+| Condition              | Message                   |
+| ---------------------- | ------------------------- |
 | Database write failure | `"Internal Server Error"` |
 
 ### Examples

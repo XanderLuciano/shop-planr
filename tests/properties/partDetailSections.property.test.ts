@@ -78,7 +78,7 @@ function computeRoutingTabElements(state: PartState): RenderElement[] {
 const partStatusArb: fc.Arbitrary<PartStatus> = fc.constantFrom(
   'in_progress' as const,
   'completed' as const,
-  'scrapped' as const,
+  'scrapped' as const
 )
 
 const partStateArb: fc.Arbitrary<PartState> = fc.record({
@@ -86,7 +86,7 @@ const partStateArb: fc.Arbitrary<PartState> = fc.record({
   forceCompleted: fc.boolean(),
   currentStepIndex: fc.oneof(
     fc.constant(-1), // completed
-    fc.integer({ min: 0, max: 20 }), // in-progress at various steps
+    fc.integer({ min: 0, max: 20 }) // in-progress at various steps
   ),
 })
 
@@ -97,12 +97,12 @@ describe('Property 6: Status banner placement above section cards', () => {
     fc.assert(
       fc.property(partStateArb, (state) => {
         const elements = computeRoutingTabElements(state)
-        const hasScrapBanner = elements.some(e => e.type === 'scrap-banner')
+        const hasScrapBanner = elements.some((e) => e.type === 'scrap-banner')
         const isScrapped = state.status === 'scrapped'
 
         expect(hasScrapBanner).toBe(isScrapped)
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -110,12 +110,12 @@ describe('Property 6: Status banner placement above section cards', () => {
     fc.assert(
       fc.property(partStateArb, (state) => {
         const elements = computeRoutingTabElements(state)
-        const hasForceBanner = elements.some(e => e.type === 'force-complete-banner')
+        const hasForceBanner = elements.some((e) => e.type === 'force-complete-banner')
         const expected = state.forceCompleted && state.status !== 'scrapped'
 
         expect(hasForceBanner).toBe(expected)
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -124,15 +124,13 @@ describe('Property 6: Status banner placement above section cards', () => {
       fc.property(partStateArb, (state) => {
         const elements = computeRoutingTabElements(state)
 
-        const firstSectionIndex = elements.findIndex(e => e.type === 'section-card')
+        const firstSectionIndex = elements.findIndex((e) => e.type === 'section-card')
         if (firstSectionIndex === -1) return // no sections (shouldn't happen, but safe)
 
         // Every element before the first section card must be a banner
         for (let i = 0; i < firstSectionIndex; i++) {
           const el = elements[i]
-          expect(
-            el.type === 'scrap-banner' || el.type === 'force-complete-banner',
-          ).toBe(true)
+          expect(el.type === 'scrap-banner' || el.type === 'force-complete-banner').toBe(true)
         }
 
         // No banner appears after the first section card
@@ -142,7 +140,7 @@ describe('Property 6: Status banner placement above section cards', () => {
           expect(el.type).not.toBe('force-complete-banner')
         }
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -153,11 +151,11 @@ describe('Property 6: Status banner placement above section cards', () => {
 
         // Partition into banners and section cards
         const bannerIndices = elements
-          .map((e, i) => (e.type === 'scrap-banner' || e.type === 'force-complete-banner') ? i : -1)
-          .filter(i => i >= 0)
+          .map((e, i) => (e.type === 'scrap-banner' || e.type === 'force-complete-banner' ? i : -1))
+          .filter((i) => i >= 0)
         const sectionIndices = elements
-          .map((e, i) => e.type === 'section-card' ? i : -1)
-          .filter(i => i >= 0)
+          .map((e, i) => (e.type === 'section-card' ? i : -1))
+          .filter((i) => i >= 0)
 
         // No overlap — banners and section cards occupy distinct positions
         for (const bi of bannerIndices) {
@@ -171,7 +169,7 @@ describe('Property 6: Status banner placement above section cards', () => {
           expect(maxBanner).toBeLessThan(minSection)
         }
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

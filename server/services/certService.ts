@@ -6,10 +6,7 @@ import { assertOneOf, assertNonEmpty } from '../utils/validation'
 import { NotFoundError } from '../utils/errors'
 import { generateId } from '../utils/idGenerator'
 
-export function createCertService(
-  repos: { certs: CertRepository },
-  auditService: AuditService
-) {
+export function createCertService(repos: { certs: CertRepository }, auditService: AuditService) {
   return {
     createCert(input: CreateCertInput): Certificate {
       assertOneOf(input.type, ['material', 'process'] as const, 'type')
@@ -20,7 +17,7 @@ export function createCertService(
         type: input.type,
         name: input.name,
         metadata: input.metadata,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       }
 
       return repos.certs.create(cert)
@@ -57,7 +54,7 @@ export function createCertService(
         certId: params.certId,
         stepId: params.stepId,
         attachedAt: now,
-        attachedBy: params.userId
+        attachedBy: params.userId,
       })
 
       auditService.recordCertAttachment({
@@ -66,7 +63,7 @@ export function createCertService(
         certId: params.certId,
         stepId: params.stepId,
         jobId: params.jobId,
-        pathId: params.pathId
+        pathId: params.pathId,
       })
 
       return attachment
@@ -94,12 +91,12 @@ export function createCertService(
       }
 
       const now = new Date().toISOString()
-      const attachments: CertAttachment[] = input.partIds.map(partId => ({
+      const attachments: CertAttachment[] = input.partIds.map((partId) => ({
         partId,
         certId: input.certId,
         stepId: '',
         attachedAt: now,
-        attachedBy: input.userId
+        attachedBy: input.userId,
       }))
 
       const results = repos.certs.batchAttach(attachments)
@@ -110,7 +107,7 @@ export function createCertService(
           userId: input.userId,
           partId: attachment.partId,
           certId: input.certId,
-          stepId: attachment.stepId
+          stepId: attachment.stepId,
         })
       }
 

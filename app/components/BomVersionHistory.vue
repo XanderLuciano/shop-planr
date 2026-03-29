@@ -9,12 +9,15 @@ onMounted(() => {
   fetchVersions(props.bomId)
 })
 
-watch(() => props.bomId, (id) => {
-  if (id) fetchVersions(id)
-})
+watch(
+  () => props.bomId,
+  (id) => {
+    if (id) fetchVersions(id)
+  }
+)
 
 const sortedVersions = computed(() =>
-  [...versions.value].sort((a, b) => b.versionNumber - a.versionNumber),
+  [...versions.value].sort((a, b) => b.versionNumber - a.versionNumber)
 )
 
 function formatDate(iso: string): string {
@@ -49,14 +52,15 @@ function formatDate(iso: string): string {
             {{ formatDate(version.createdAt) }}
           </span>
         </div>
-        <p class="text-xs text-(--ui-text-muted)">
-          By: {{ version.changedBy }}
-        </p>
+        <p class="text-xs text-(--ui-text-muted)">By: {{ version.changedBy }}</p>
         <p v-if="version.changeDescription" class="text-xs text-(--ui-text-highlighted)">
           {{ version.changeDescription }}
         </p>
         <div class="text-xs text-(--ui-text-muted)">
-          {{ version.entriesSnapshot.length }} entr{{ version.entriesSnapshot.length === 1 ? 'y' : 'ies' }} at time of snapshot
+          {{ version.entriesSnapshot.length }} entr{{
+            version.entriesSnapshot.length === 1 ? 'y' : 'ies'
+          }}
+          at time of snapshot
         </div>
       </div>
     </div>

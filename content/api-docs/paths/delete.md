@@ -1,11 +1,11 @@
 ---
-title: "Delete Path"
-description: "Delete a manufacturing path that has no attached serial numbers"
-method: "DELETE"
-endpoint: "/api/paths/:id"
-service: "pathService"
-category: "Paths"
-responseType: "{ success: boolean }"
+title: 'Delete Path'
+description: 'Delete a manufacturing path that has no attached serial numbers'
+method: 'DELETE'
+endpoint: '/api/paths/:id'
+service: 'pathService'
+category: 'Paths'
+responseType: '{ success: boolean }'
 errorCodes: [400, 404, 500]
 navigation:
   order: 5
@@ -23,9 +23,9 @@ This safety check prevents accidental data loss. Serial numbers reference their 
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` | Yes | The unique identifier of the path to delete (e.g. `"path_xyz789"`) |
+| Parameter | Type     | Required | Description                                                        |
+| --------- | -------- | -------- | ------------------------------------------------------------------ |
+| `id`      | `string` | Yes      | The unique identifier of the path to delete (e.g. `"path_xyz789"`) |
 
 ## Response
 
@@ -33,33 +33,33 @@ This safety check prevents accidental data loss. Serial numbers reference their 
 
 Returned when the path is successfully deleted. The response is a simple confirmation object.
 
-| Field | Type | Description |
-|-------|------|-------------|
+| Field     | Type      | Description                              |
+| --------- | --------- | ---------------------------------------- |
 | `success` | `boolean` | Always `true` when the deletion succeeds |
 
 ### 400 Bad Request
 
 Returned when the path cannot be deleted because it has serial numbers attached. This check runs after the path existence check — a 404 takes priority over a 400 if the path does not exist.
 
-| Condition | Message |
-|-----------|---------|
+| Condition                        | Message                                             |
+| -------------------------------- | --------------------------------------------------- |
 | Path has serial numbers attached | `"Cannot delete path with serial numbers attached"` |
 
 ### 404 Not Found
 
 Returned when no path exists with the given ID. The existence check runs before the serial number check.
 
-| Condition | Message |
-|-----------|---------|
+| Condition           | Message                  |
+| ------------------- | ------------------------ |
 | Path does not exist | `"Path not found: {id}"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while deleting the path from the database.
 
-| Condition | Message |
-|-----------|---------|
-| Database write failure | `"Internal Server Error"` |
+| Condition                    | Message                   |
+| ---------------------------- | ------------------------- |
+| Database write failure       | `"Internal Server Error"` |
 | Unexpected runtime exception | `"Internal Server Error"` |
 
 ## Examples

@@ -28,7 +28,7 @@ async function loadParts() {
   loading.value = true
   try {
     const all = await $fetch<EnrichedPart[]>('/api/parts')
-    parts.value = all.filter(s => s.jobId === props.jobId)
+    parts.value = all.filter((s) => s.jobId === props.jobId)
   } catch {
     parts.value = []
   } finally {
@@ -38,9 +38,14 @@ async function loadParts() {
 
 const filteredParts = computed(() => {
   let list = [...parts.value]
-  if (filterStatus.value && filterStatus.value !== '__all__') list = list.filter(s => s.status === filterStatus.value)
-  if (filterPath.value && filterPath.value !== '__all__') list = list.filter(s => s.pathName === filterPath.value)
-  if (filterStep.value) list = list.filter(s => s.currentStepName.toLowerCase().includes(filterStep.value.toLowerCase()))
+  if (filterStatus.value && filterStatus.value !== '__all__')
+    list = list.filter((s) => s.status === filterStatus.value)
+  if (filterPath.value && filterPath.value !== '__all__')
+    list = list.filter((s) => s.pathName === filterPath.value)
+  if (filterStep.value)
+    list = list.filter((s) =>
+      s.currentStepName.toLowerCase().includes(filterStep.value.toLowerCase())
+    )
 
   const col = sortColumn.value
   const dir = sortDirection.value === 'asc' ? 1 : -1
@@ -52,7 +57,7 @@ const filteredParts = computed(() => {
   return list
 })
 
-const pathNames = computed(() => [...new Set(parts.value.map(s => s.pathName))])
+const pathNames = computed(() => [...new Set(parts.value.map((s) => s.pathName))])
 
 function toggleSort(col: typeof sortColumn.value) {
   if (sortColumn.value === col) {
@@ -135,7 +140,10 @@ onMounted(() => {
         <label class="text-xs font-medium text-(--ui-text-muted) block mb-0.5">Path</label>
         <USelect
           v-model="filterPath"
-          :items="[{ label: 'All Paths', value: '__all__' }, ...pathNames.map(n => ({ label: n, value: n }))]"
+          :items="[
+            { label: 'All Paths', value: '__all__' },
+            ...pathNames.map((n) => ({ label: n, value: n })),
+          ]"
           value-key="value"
           label-key="label"
           size="xs"
@@ -146,7 +154,9 @@ onMounted(() => {
         <label class="text-xs font-medium text-(--ui-text-muted) block mb-0.5">Step</label>
         <UInput v-model="filterStep" placeholder="Filter step..." size="xs" class="w-32" />
       </div>
-      <span class="text-xs text-(--ui-text-muted)">{{ filteredParts.length }} of {{ parts.length }} parts</span>
+      <span class="text-xs text-(--ui-text-muted)"
+        >{{ filteredParts.length }} of {{ parts.length }} parts</span
+      >
     </div>
 
     <!-- Loading -->
@@ -165,17 +175,29 @@ onMounted(() => {
       <table class="w-full text-sm">
         <thead>
           <tr class="bg-(--ui-bg-elevated)/50 text-xs text-(--ui-text-muted)">
-            <th class="px-3 py-2 text-left cursor-pointer select-none hover:text-(--ui-text-highlighted)" @click="toggleSort('id')">
+            <th
+              class="px-3 py-2 text-left cursor-pointer select-none hover:text-(--ui-text-highlighted)"
+              @click="toggleSort('id')"
+            >
               Part{{ sortIndicator('id') }}
             </th>
             <th class="px-3 py-2 text-left">Path</th>
-            <th class="px-3 py-2 text-left cursor-pointer select-none hover:text-(--ui-text-highlighted)" @click="toggleSort('currentStepName')">
+            <th
+              class="px-3 py-2 text-left cursor-pointer select-none hover:text-(--ui-text-highlighted)"
+              @click="toggleSort('currentStepName')"
+            >
               Current Step{{ sortIndicator('currentStepName') }}
             </th>
-            <th class="px-3 py-2 text-left cursor-pointer select-none hover:text-(--ui-text-highlighted)" @click="toggleSort('status')">
+            <th
+              class="px-3 py-2 text-left cursor-pointer select-none hover:text-(--ui-text-highlighted)"
+              @click="toggleSort('status')"
+            >
               Status{{ sortIndicator('status') }}
             </th>
-            <th class="px-3 py-2 text-left cursor-pointer select-none hover:text-(--ui-text-highlighted)" @click="toggleSort('createdAt')">
+            <th
+              class="px-3 py-2 text-left cursor-pointer select-none hover:text-(--ui-text-highlighted)"
+              @click="toggleSort('createdAt')"
+            >
               Created{{ sortIndicator('createdAt') }}
             </th>
             <th class="px-3 py-2 text-right">Actions</th>
@@ -200,13 +222,35 @@ onMounted(() => {
                 {{ statusLabel(s) }}
               </UBadge>
             </td>
-            <td class="px-3 py-2 text-(--ui-text-muted)">{{ new Date(s.createdAt).toLocaleDateString() }}</td>
+            <td class="px-3 py-2 text-(--ui-text-muted)">
+              {{ new Date(s.createdAt).toLocaleDateString() }}
+            </td>
             <td class="px-3 py-2 text-right" @click.stop>
               <div v-if="s.status === 'in-progress'" class="flex items-center gap-1 justify-end">
-                <UButton size="xs" variant="ghost" icon="i-lucide-arrow-right" title="Advance" @click="handleQuickAdvance(s.id)" />
-                <UButton size="xs" variant="ghost" color="error" icon="i-lucide-trash-2" title="Scrap" @click="openScrap(s.id)" />
+                <UButton
+                  size="xs"
+                  variant="ghost"
+                  icon="i-lucide-arrow-right"
+                  title="Advance"
+                  @click="handleQuickAdvance(s.id)"
+                />
+                <UButton
+                  size="xs"
+                  variant="ghost"
+                  color="error"
+                  icon="i-lucide-trash-2"
+                  title="Scrap"
+                  @click="openScrap(s.id)"
+                />
               </div>
-              <UButton v-else size="xs" variant="ghost" icon="i-lucide-eye" title="View" @click="navigateTo(`/parts-browser/${encodeURIComponent(s.id)}`)" />
+              <UButton
+                v-else
+                size="xs"
+                variant="ghost"
+                icon="i-lucide-eye"
+                title="View"
+                @click="navigateTo(`/parts-browser/${encodeURIComponent(s.id)}`)"
+              />
             </td>
           </tr>
         </tbody>

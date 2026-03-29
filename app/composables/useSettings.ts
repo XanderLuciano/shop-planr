@@ -1,5 +1,10 @@
 import { ref, readonly } from 'vue'
-import type { AppSettings, JiraConnectionSettings, JiraFieldMapping, PageToggles } from '~/server/types/domain'
+import type {
+  AppSettings,
+  JiraConnectionSettings,
+  JiraFieldMapping,
+  PageToggles,
+} from '~/server/types/domain'
 
 const settings = ref<AppSettings | null>(null)
 const loading = ref(false)
@@ -26,7 +31,7 @@ export function useSettings() {
   }): Promise<AppSettings> {
     const result = await $fetch<AppSettings>('/api/settings', {
       method: 'PUT',
-      body: input
+      body: input,
     })
     settings.value = result
     return result
@@ -37,6 +42,6 @@ export function useSettings() {
     loading: readonly(loading),
     error: readonly(error),
     fetchSettings,
-    updateSettings
+    updateSettings,
   }
 }

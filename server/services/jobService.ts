@@ -30,7 +30,7 @@ export function createJobService(repos: {
         jiraEpicLink: input.jiraEpicLink,
         jiraLabels: input.jiraLabels,
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       })
     },
 
@@ -79,9 +79,8 @@ export function createJobService(repos: {
 
       // progressPercent = completedCount / (goalQuantity - scrappedCount) * 100
       const adjustedGoal = job.goalQuantity - scrappedParts
-      const progressPercent = adjustedGoal > 0
-        ? (completedParts / adjustedGoal) * 100
-        : (completedParts > 0 ? 100 : 0)
+      const progressPercent =
+        adjustedGoal > 0 ? (completedParts / adjustedGoal) * 100 : completedParts > 0 ? 100 : 0
 
       return {
         jobId: job.id,
@@ -99,7 +98,7 @@ export function createJobService(repos: {
 
     getJobPartCount(jobId: string): number {
       return repos.parts.countByJobId(jobId)
-    }
+    },
   }
 }
 

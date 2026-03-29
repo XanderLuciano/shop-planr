@@ -1,6 +1,6 @@
 ---
 inclusion: auto
-description: "Coding standards for Shop Planr: import resolution, architecture layers, API route patterns, and quality rules."
+description: 'Coding standards for Shop Planr: import resolution, architecture layers, API route patterns, and quality rules.'
 ---
 
 # Coding Standards
@@ -39,12 +39,14 @@ Thin handlers: parse input → call service → return result. Catch `Validation
 NEVER throw `NotFoundError` (404) when a resource exists but has zero child items. A 404 means the resource itself doesn't exist in the database — not that it's empty.
 
 **Anti-pattern (DO NOT):**
+
 ```ts
 const serials = await serialService.listByStep(stepId)
 if (serials.length === 0) throw new NotFoundError('No active parts') // WRONG
 ```
 
 **Correct pattern:**
+
 ```ts
 const step = await pathService.getStepById(stepId)
 if (!step) throw new NotFoundError('ProcessStep not found') // resource truly missing

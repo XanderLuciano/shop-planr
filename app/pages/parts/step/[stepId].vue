@@ -6,15 +6,8 @@ const stepId = route.params.stepId as string
 const fromQuery = route.query.from as string | undefined
 const backNav = computed(() => resolveBackNavigation(fromQuery))
 
-const {
-  job,
-  notes,
-  loading,
-  error,
-  notFound,
-  previousStepWipCount,
-  fetchStep,
-} = useStepView(stepId)
+const { job, notes, loading, error, notFound, previousStepWipCount, fetchStep } =
+  useStepView(stepId)
 
 const {
   operatorId,
@@ -37,7 +30,7 @@ const operatorMenuItems = computed<DropdownMenuItem[][]>(() => {
     return [[{ label: 'No operators available', disabled: true }]]
   }
   return [
-    activeUsers.value.map((user: { id: string, name: string }) => ({
+    activeUsers.value.map((user: { id: string; name: string }) => ({
       label: user.name,
       icon: user.id === operatorId.value ? 'i-lucide-check' : 'i-lucide-user',
       onSelect() {
@@ -47,7 +40,7 @@ const operatorMenuItems = computed<DropdownMenuItem[][]>(() => {
   ]
 })
 
-async function handleAdvance(payload: { partIds: string[], note?: string }) {
+async function handleAdvance(payload: { partIds: string[]; note?: string }) {
   if (!job.value || !operatorId.value) return
 
   advanceLoading.value = true
@@ -122,10 +115,7 @@ onMounted(async () => {
     </div>
 
     <!-- 404 state -->
-    <div
-      v-else-if="notFound"
-      class="text-center py-12"
-    >
+    <div v-else-if="notFound" class="text-center py-12">
       <UIcon name="i-lucide-alert-triangle" class="size-8 mx-auto mb-2 text-(--ui-warning)" />
       <p class="text-sm text-(--ui-text-highlighted) font-medium mb-1">Step not found</p>
       <p class="text-xs text-(--ui-text-muted) mb-4">
@@ -141,10 +131,7 @@ onMounted(async () => {
     </div>
 
     <!-- Error state (non-404) -->
-    <div
-      v-else-if="error && !notFound"
-      class="flex items-center gap-2 text-xs text-(--ui-error)"
-    >
+    <div v-else-if="error && !notFound" class="flex items-center gap-2 text-xs text-(--ui-error)">
       <span>{{ error }}</span>
       <UButton
         size="xs"
@@ -163,7 +150,9 @@ onMounted(async () => {
           <div>
             <div class="flex items-center gap-2">
               <h1 class="text-lg font-bold text-(--ui-text-highlighted)">{{ job.stepName }}</h1>
-              <span class="text-xs text-(--ui-text-muted) bg-(--ui-bg-elevated) px-1.5 py-0.5 rounded">
+              <span
+                class="text-xs text-(--ui-text-muted) bg-(--ui-bg-elevated) px-1.5 py-0.5 rounded"
+              >
                 Step {{ job.stepOrder + 1 }} of {{ job.totalSteps }}
               </span>
             </div>
@@ -175,11 +164,7 @@ onMounted(async () => {
 
           <!-- Operator selector -->
           <div class="flex items-center gap-2">
-            <UDropdownMenu
-              :items="operatorMenuItems"
-              size="sm"
-              :content="{ align: 'end' }"
-            >
+            <UDropdownMenu :items="operatorMenuItems" size="sm" :content="{ align: 'end' }">
               <UButton
                 size="sm"
                 :variant="operatorId ? 'ghost' : 'soft'"
@@ -209,7 +194,11 @@ onMounted(async () => {
             icon="i-lucide-arrow-left"
             label="Prev"
             :disabled="job.stepOrder === 0"
-            :to="job.previousStepId ? `/parts/step/${job.previousStepId}${fromQuery ? `?from=${encodeURIComponent(fromQuery)}` : ''}` : undefined"
+            :to="
+              job.previousStepId
+                ? `/parts/step/${job.previousStepId}${fromQuery ? `?from=${encodeURIComponent(fromQuery)}` : ''}`
+                : undefined
+            "
           />
           <UButton
             size="xs"
@@ -217,16 +206,17 @@ onMounted(async () => {
             trailing-icon="i-lucide-arrow-right"
             label="Next"
             :disabled="job.isFinalStep"
-            :to="job.nextStepId ? `/parts/step/${job.nextStepId}${fromQuery ? `?from=${encodeURIComponent(fromQuery)}` : ''}` : undefined"
+            :to="
+              job.nextStepId
+                ? `/parts/step/${job.nextStepId}${fromQuery ? `?from=${encodeURIComponent(fromQuery)}` : ''}`
+                : undefined
+            "
           />
         </div>
       </div>
 
       <!-- No operator warning -->
-      <div
-        v-if="!operatorId"
-        class="text-sm text-(--ui-text-muted) py-8 text-center"
-      >
+      <div v-if="!operatorId" class="text-sm text-(--ui-text-muted) py-8 text-center">
         <UIcon name="i-lucide-hard-hat" class="size-8 mb-2 opacity-50" />
         <p>Select an operator to advance parts or create new parts.</p>
       </div>
@@ -242,16 +232,15 @@ onMounted(async () => {
       />
 
       <!-- Non-first step with zero parts: waiting for prior step -->
-      <div
-        v-else-if="job.partCount === 0"
-        class="text-center py-12"
-      >
+      <div v-else-if="job.partCount === 0" class="text-center py-12">
         <UIcon name="i-lucide-clock" class="size-8 mx-auto mb-2 text-(--ui-text-muted)" />
-        <p class="text-sm text-(--ui-text-highlighted) font-medium mb-1">Waiting for the previous step</p>
+        <p class="text-sm text-(--ui-text-highlighted) font-medium mb-1">
+          Waiting for the previous step
+        </p>
         <p class="text-xs text-(--ui-text-muted) mb-4">
           The prior step "{{ job.previousStepName }}" currently has
-          {{ previousStepWipCount ?? 0 }} part{{ (previousStepWipCount ?? 0) !== 1 ? 's' : '' }} in progress.
-          Parts will appear here once they are advanced from the previous step.
+          {{ previousStepWipCount ?? 0 }} part{{ (previousStepWipCount ?? 0) !== 1 ? 's' : '' }} in
+          progress. Parts will appear here once they are advanced from the previous step.
         </p>
         <UButton
           :to="backNav.to"

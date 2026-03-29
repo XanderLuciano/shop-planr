@@ -37,17 +37,19 @@ function setupServices(db: Database.default.Database) {
     paths: new SQLitePathRepository(db),
     parts: new SQLitePartRepository(db),
     certs: new SQLiteCertRepository(db),
-    audit: new SQLiteAuditRepository(db)
+    audit: new SQLiteAuditRepository(db),
   }
 
   const partIdGenerator = createSequentialPartIdGenerator({
     getCounter: () => {
-      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
+      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as
+        | { value: number }
+        | undefined
       return row?.value ?? 0
     },
     setCounter: (v: number) => {
       db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-    }
+    },
   })
 
   const auditService = createAuditService({ audit: repos.audit })
@@ -77,7 +79,7 @@ describe('Property 1: Job Part Count Invariant', () => {
           fc.record({
             stepCount: fc.integer({ min: 1, max: 5 }),
             partQuantity: fc.integer({ min: 1, max: 20 }),
-            advanceCount: fc.integer({ min: 0, max: 10 })
+            advanceCount: fc.integer({ min: 0, max: 10 }),
           }),
           { minLength: 1, maxLength: 3 }
         ),
@@ -92,14 +94,14 @@ describe('Property 1: Job Part Count Invariant', () => {
           for (const config of pathConfigs) {
             // Create steps for this path
             const steps = Array.from({ length: config.stepCount }, (_, i) => ({
-              name: `Step ${i}`
+              name: `Step ${i}`,
             }))
 
             const path = pathService.createPath({
               jobId: job.id,
               name: `Path ${pathIds.length}`,
               goalQuantity: config.partQuantity,
-              steps
+              steps,
             })
             pathIds.push(path.id)
 

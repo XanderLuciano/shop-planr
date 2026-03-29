@@ -26,19 +26,23 @@ vi.stubGlobal('usePaths', () => ({
 import { useJobForm } from '~/app/composables/useJobForm'
 
 const templateStepArb = fc.record({
-  name: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
+  name: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
   order: fc.constant(0),
   location: fc.option(fc.string({ minLength: 1, maxLength: 20 }), { nil: undefined }),
   optional: fc.boolean(),
-  dependencyType: fc.constantFrom('physical' as const, 'preferred' as const, 'completion_gate' as const),
+  dependencyType: fc.constantFrom(
+    'physical' as const,
+    'preferred' as const,
+    'completion_gate' as const
+  ),
 })
 
 const templateRouteArb = fc.record({
   id: fc.uuid(),
   name: fc.string({ minLength: 1, maxLength: 30 }),
-  steps: fc.array(templateStepArb, { minLength: 1, maxLength: 6 }).map(steps =>
-    steps.map((s, i) => ({ ...s, order: i })),
-  ),
+  steps: fc
+    .array(templateStepArb, { minLength: 1, maxLength: 6 })
+    .map((steps) => steps.map((s, i) => ({ ...s, order: i }))),
   createdAt: fc.constant('2024-01-01T00:00:00Z'),
   updatedAt: fc.constant('2024-01-01T00:00:00Z'),
 })
@@ -82,9 +86,9 @@ describe('Property 9: Template application faithfully maps template steps', () =
           expect(path.name).toBe(pathName)
           expect(path.goalQuantity).toBe(pathGoalQty)
           expect(path.advancementMode).toBe(advMode)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

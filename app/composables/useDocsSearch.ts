@@ -38,19 +38,20 @@ export function useDocsSearch() {
 
     debounceTimer = setTimeout(async () => {
       try {
-        const sections = await queryCollectionSearchSections('docs')
-          .where('path', 'LIKE', '/api-docs%')
+        const sections = await queryCollectionSearchSections('docs').where(
+          'path',
+          'LIKE',
+          '/api-docs%'
+        )
 
         const searchTerms = q.toLowerCase().split(/\s+/).filter(Boolean)
 
         const matched = sections.filter((section) => {
-          const haystack = [
-            section.title,
-            section.content,
-            ...section.titles
-          ].join(' ').toLowerCase()
+          const haystack = [section.title, section.content, ...section.titles]
+            .join(' ')
+            .toLowerCase()
 
-          return searchTerms.every(term => haystack.includes(term))
+          return searchTerms.every((term) => haystack.includes(term))
         })
 
         // Deduplicate by path (extracted from id) and map to DocsSearchResult
@@ -66,16 +67,14 @@ export function useDocsSearch() {
           deduplicated.push({
             title: section.title || section.titles[section.titles.length - 1] || path,
             path,
-            titles: section.titles
+            titles: section.titles,
           })
         }
 
         results.value = deduplicated
-      }
-      catch {
+      } catch {
         results.value = []
-      }
-      finally {
+      } finally {
         isSearching.value = false
       }
     }, 300)
@@ -85,6 +84,6 @@ export function useDocsSearch() {
     query,
     results,
     isSearching,
-    search
+    search,
   }
 }

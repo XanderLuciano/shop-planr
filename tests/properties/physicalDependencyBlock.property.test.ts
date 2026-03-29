@@ -34,7 +34,7 @@ function validatePhysicalDependencies(
   targetStepIndex: number,
   steps: StepConfig[],
   stepStatuses: StepStatus[],
-  overriddenStepIds: Set<string>,
+  overriddenStepIds: Set<string>
 ): { valid: boolean; error?: string } {
   // Identify bypassed steps
   for (let i = currentStepIndex + 1; i < targetStepIndex; i++) {
@@ -43,7 +43,7 @@ function validatePhysicalDependencies(
     const isEffectivelyOptional = step.optional || overriddenStepIds.has(step.id)
 
     if (step.dependencyType === 'physical' && !isEffectivelyOptional) {
-      const status = stepStatuses.find(s => s.stepId === step.id)
+      const status = stepStatuses.find((s) => s.stepId === step.id)
       if (!status || status.status !== 'completed') {
         return { valid: false, error: `Cannot skip step with physical dependency` }
       }
@@ -60,7 +60,11 @@ function stepConfigArb(index: number): fc.Arbitrary<StepConfig> {
     name: fc.constant(`Step ${index}`),
     order: fc.constant(index),
     optional: fc.boolean(),
-    dependencyType: fc.constantFrom('physical' as const, 'preferred' as const, 'completion_gate' as const),
+    dependencyType: fc.constantFrom(
+      'physical' as const,
+      'preferred' as const,
+      'completion_gate' as const
+    ),
   })
 }
 
@@ -73,7 +77,7 @@ function stepStatusArb(stepId: string): fc.Arbitrary<StepStatus> {
       'in_progress' as const,
       'completed' as const,
       'skipped' as const,
-      'deferred' as const,
+      'deferred' as const
     ),
   })
 }
@@ -107,7 +111,7 @@ describe('Property 7: Physical Dependency Hard Block', () => {
           }))
 
           // Step statuses — physical step is NOT completed (pending)
-          const stepStatuses: StepStatus[] = steps.map(s => ({
+          const stepStatuses: StepStatus[] = steps.map((s) => ({
             stepId: s.id,
             status: 'pending' as const,
           }))
@@ -117,14 +121,14 @@ describe('Property 7: Physical Dependency Hard Block', () => {
             targetStepIndex,
             steps,
             stepStatuses,
-            new Set(),
+            new Set()
           )
 
           expect(result.valid).toBe(false)
           expect(result.error).toContain('physical dependency')
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -149,9 +153,10 @@ describe('Property 7: Physical Dependency Hard Block', () => {
           }))
 
           // Physical step IS completed
-          const stepStatuses: StepStatus[] = steps.map(s => ({
+          const stepStatuses: StepStatus[] = steps.map((s) => ({
             stepId: s.id,
-            status: s.id === `step-${physicalStepIndex}` ? 'completed' as const : 'pending' as const,
+            status:
+              s.id === `step-${physicalStepIndex}` ? ('completed' as const) : ('pending' as const),
           }))
 
           const result = validatePhysicalDependencies(
@@ -159,13 +164,13 @@ describe('Property 7: Physical Dependency Hard Block', () => {
             targetStepIndex,
             steps,
             stepStatuses,
-            new Set(),
+            new Set()
           )
 
           expect(result.valid).toBe(true)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -190,7 +195,7 @@ describe('Property 7: Physical Dependency Hard Block', () => {
           }))
 
           // Physical step is NOT completed
-          const stepStatuses: StepStatus[] = steps.map(s => ({
+          const stepStatuses: StepStatus[] = steps.map((s) => ({
             stepId: s.id,
             status: 'pending' as const,
           }))
@@ -203,13 +208,13 @@ describe('Property 7: Physical Dependency Hard Block', () => {
             targetStepIndex,
             steps,
             stepStatuses,
-            overriddenStepIds,
+            overriddenStepIds
           )
 
           expect(result.valid).toBe(true)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

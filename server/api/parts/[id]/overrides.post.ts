@@ -3,7 +3,12 @@ export default defineEventHandler(async (event) => {
     const id = getRouterParam(event, 'id')!
     const body = await readBody(event)
     const { lifecycleService } = getServices()
-    return lifecycleService.createStepOverride(body.partIds || body.serialIds, body.stepId, body.reason, body.userId)
+    return lifecycleService.createStepOverride(
+      body.partIds || body.serialIds,
+      body.stepId,
+      body.reason,
+      body.userId
+    )
   } catch (error) {
     if (error instanceof ValidationError) {
       throw createError({ statusCode: 400, message: error.message })

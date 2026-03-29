@@ -13,7 +13,7 @@ onMounted(() => {
 })
 
 const sortedNotes = computed(() =>
-  [...notes.value].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
+  [...notes.value].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 )
 
 function formatDate(iso: string): string {
@@ -23,7 +23,10 @@ function formatDate(iso: string): string {
 
 <template>
   <div class="space-y-2">
-    <h4 v-if="!hideHeading" class="text-sm font-semibold text-(--ui-text-highlighted) flex items-center gap-1.5">
+    <h4
+      v-if="!hideHeading"
+      class="text-sm font-semibold text-(--ui-text-highlighted) flex items-center gap-1.5"
+    >
       <UIcon name="i-lucide-message-square" class="size-4" />
       Notes
     </h4>

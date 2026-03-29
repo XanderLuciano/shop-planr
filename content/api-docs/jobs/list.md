@@ -1,11 +1,11 @@
 ---
-title: "List Jobs"
-description: "Retrieve all production jobs in the system"
-method: "GET"
-endpoint: "/api/jobs"
-service: "jobService"
-category: "Jobs"
-responseType: "Job[]"
+title: 'List Jobs'
+description: 'Retrieve all production jobs in the system'
+method: 'GET'
+endpoint: '/api/jobs'
+service: 'jobService'
+category: 'Jobs'
+responseType: 'Job[]'
 errorCodes: [400, 500]
 navigation:
   order: 1
@@ -29,35 +29,35 @@ This endpoint accepts no path parameters, query parameters, or request body.
 
 Returned when the request is successful. The response is always an array, even if no jobs exist (in which case an empty array `[]` is returned).
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Unique identifier for the job (e.g. `"job_abc123"`) |
-| `name` | `string` | Human-readable job name, typically a work order number |
-| `goalQuantity` | `number` | Target number of units to produce for this job |
-| `jiraTicketKey` | `string \| undefined` | Jira issue key if the job is linked to a ticket (e.g. `"PI-42"`) |
-| `jiraTicketSummary` | `string \| undefined` | Summary text from the linked Jira ticket |
-| `jiraPartNumber` | `string \| undefined` | Part number extracted from the Jira ticket's custom fields |
-| `jiraPriority` | `string \| undefined` | Priority level from the Jira ticket (e.g. `"High"`, `"Medium"`) |
-| `jiraEpicLink` | `string \| undefined` | Epic link key from Jira (e.g. `"PI-10"`) |
-| `jiraLabels` | `string[] \| undefined` | Array of label strings from the Jira ticket |
-| `createdAt` | `string` | ISO 8601 timestamp of when the job was created |
-| `updatedAt` | `string` | ISO 8601 timestamp of the last modification |
+| Field               | Type                    | Description                                                      |
+| ------------------- | ----------------------- | ---------------------------------------------------------------- |
+| `id`                | `string`                | Unique identifier for the job (e.g. `"job_abc123"`)              |
+| `name`              | `string`                | Human-readable job name, typically a work order number           |
+| `goalQuantity`      | `number`                | Target number of units to produce for this job                   |
+| `jiraTicketKey`     | `string \| undefined`   | Jira issue key if the job is linked to a ticket (e.g. `"PI-42"`) |
+| `jiraTicketSummary` | `string \| undefined`   | Summary text from the linked Jira ticket                         |
+| `jiraPartNumber`    | `string \| undefined`   | Part number extracted from the Jira ticket's custom fields       |
+| `jiraPriority`      | `string \| undefined`   | Priority level from the Jira ticket (e.g. `"High"`, `"Medium"`)  |
+| `jiraEpicLink`      | `string \| undefined`   | Epic link key from Jira (e.g. `"PI-10"`)                         |
+| `jiraLabels`        | `string[] \| undefined` | Array of label strings from the Jira ticket                      |
+| `createdAt`         | `string`                | ISO 8601 timestamp of when the job was created                   |
+| `updatedAt`         | `string`                | ISO 8601 timestamp of the last modification                      |
 
 ### 400 Bad Request
 
 Returned if an unexpected validation error occurs during the request.
 
-| Condition | Message |
-|-----------|---------|
+| Condition                   | Message                                          |
+| --------------------------- | ------------------------------------------------ |
 | Internal validation failure | Varies — describes the specific validation issue |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while fetching jobs from the database.
 
-| Condition | Message |
-|-----------|---------|
-| Database connection failure | `"Internal Server Error"` |
+| Condition                    | Message                   |
+| ---------------------------- | ------------------------- |
+| Database connection failure  | `"Internal Server Error"` |
 | Unexpected runtime exception | `"Internal Server Error"` |
 
 ## Examples

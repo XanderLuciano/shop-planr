@@ -34,26 +34,41 @@ const EndpointCard = defineComponent({
         h(
           'button',
           {
-            class: 'flex w-full items-center gap-3 px-4 py-3 bg-(--ui-bg-elevated) hover:bg-(--ui-bg-elevated)/80 transition-colors cursor-pointer',
-            onClick: () => { expanded.value = !expanded.value },
+            class:
+              'flex w-full items-center gap-3 px-4 py-3 bg-(--ui-bg-elevated) hover:bg-(--ui-bg-elevated)/80 transition-colors cursor-pointer',
+            onClick: () => {
+              expanded.value = !expanded.value
+            },
           },
           [
-            h('span', {
-              class: `inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${colors.value.bg} ${colors.value.text}`,
-            }, props.method),
+            h(
+              'span',
+              {
+                class: `inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${colors.value.bg} ${colors.value.text}`,
+              },
+              props.method
+            ),
             h('code', { class: 'font-mono text-sm text-(--ui-text-highlighted)' }, props.path),
-            h('span', { class: 'ml-auto size-4 text-(--ui-text-muted)' }, expanded.value ? '▲' : '▼'),
-          ],
+            h(
+              'span',
+              { class: 'ml-auto size-4 text-(--ui-text-muted)' },
+              expanded.value ? '▲' : '▼'
+            ),
+          ]
         ),
         // Description
         props.description
           ? h('p', { class: 'px-4 pt-3 pb-0 text-sm text-(--ui-text-muted)' }, props.description)
           : null,
         // Collapsible slot content
-        h('div', {
-          class: 'px-4 pb-4',
-          style: expanded.value ? {} : { display: 'none' },
-        }, slots.default?.()),
+        h(
+          'div',
+          {
+            class: 'px-4 pb-4',
+            style: expanded.value ? {} : { display: 'none' },
+          },
+          slots.default?.()
+        ),
       ])
   },
 })

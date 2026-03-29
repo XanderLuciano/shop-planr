@@ -67,7 +67,7 @@ function parseFrontmatter(content: string): Record<string, unknown> {
 /** Get all subdirectories in content/api-docs/ */
 function getCategories(): string[] {
   if (!existsSync(CONTENT_DIR)) return []
-  return readdirSync(CONTENT_DIR).filter(entry => {
+  return readdirSync(CONTENT_DIR).filter((entry) => {
     const fullPath = join(CONTENT_DIR, entry)
     return statSync(fullPath).isDirectory()
   })
@@ -86,9 +86,7 @@ function getNavOrder(filePath: string): number | undefined {
 function getEndpointFiles(category: string): string[] {
   const dir = join(CONTENT_DIR, category)
   if (!existsSync(dir)) return []
-  return readdirSync(dir).filter(
-    f => f.endsWith('.md') && f !== 'index.md'
-  )
+  return readdirSync(dir).filter((f) => f.endsWith('.md') && f !== 'index.md')
 }
 
 describe('Property 6: Navigation tree ordering', () => {
@@ -111,10 +109,12 @@ describe('Property 6: Navigation tree ordering', () => {
   })
 
   it('category index files are sorted ascending by navigation.order', () => {
-    const categoryOrders = categories.map(cat => ({
-      category: cat,
-      order: getNavOrder(join(CONTENT_DIR, cat, 'index.md'))!
-    })).filter(c => c.order !== undefined)
+    const categoryOrders = categories
+      .map((cat) => ({
+        category: cat,
+        order: getNavOrder(join(CONTENT_DIR, cat, 'index.md'))!,
+      }))
+      .filter((c) => c.order !== undefined)
 
     const sorted = [...categoryOrders].sort((a, b) => a.order - b.order)
 
@@ -136,22 +136,19 @@ describe('Property 6: Navigation tree ordering', () => {
         const endpointFiles = getEndpointFiles(category)
         if (endpointFiles.length === 0) return // skip empty categories
 
-        const endpointOrders = endpointFiles.map(file => ({
+        const endpointOrders = endpointFiles.map((file) => ({
           file,
-          order: getNavOrder(join(CONTENT_DIR, category, file))
+          order: getNavOrder(join(CONTENT_DIR, category, file)),
         }))
 
         // Every endpoint must have a navigation.order
         for (const ep of endpointOrders) {
-          expect(
-            ep.order,
-            `${category}/${ep.file} must have a navigation.order`
-          ).toBeDefined()
+          expect(ep.order, `${category}/${ep.file} must have a navigation.order`).toBeDefined()
         }
 
         // Sort by order and verify uniqueness + ascending
         const sorted = [...endpointOrders].sort((a, b) => a.order! - b.order!)
-        const orders = sorted.map(e => e.order!)
+        const orders = sorted.map((e) => e.order!)
         const uniqueOrders = new Set(orders)
 
         expect(

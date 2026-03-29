@@ -11,12 +11,9 @@ import fc from 'fast-check'
 import type { EnrichedPart } from '../../server/types/computed'
 
 /** Generate an arbitrary EnrichedPart with controlled jobId/pathId */
-function enrichedPartArb(
-  jobIds: string[],
-  pathIds: string[],
-): fc.Arbitrary<EnrichedPart> {
+function enrichedPartArb(jobIds: string[], pathIds: string[]): fc.Arbitrary<EnrichedPart> {
   return fc.record({
-    id: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
+    id: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
     jobId: fc.constantFrom(...jobIds),
     jobName: fc.constant('Job'),
     pathId: fc.constantFrom(...pathIds),
@@ -35,9 +32,9 @@ function enrichedPartArb(
 function filterSiblings(
   allParts: EnrichedPart[],
   targetJobId: string,
-  targetPathId: string,
+  targetPathId: string
 ): EnrichedPart[] {
-  return allParts.filter(s => s.jobId === targetJobId && s.pathId === targetPathId)
+  return allParts.filter((s) => s.jobId === targetJobId && s.pathId === targetPathId)
 }
 
 describe('Property 11: Sibling part filtering', () => {
@@ -61,20 +58,20 @@ describe('Property 11: Sibling part filtering', () => {
 
           // Every part in allParts with matching jobId+pathId must be in siblings
           const expected = allParts.filter(
-            s => s.jobId === targetJobId && s.pathId === targetPathId,
+            (s) => s.jobId === targetJobId && s.pathId === targetPathId
           )
           expect(siblings.length).toBe(expected.length)
 
           // The sets must be identical (same elements)
-          const siblingIds = new Set(siblings.map(s => s.id))
-          const expectedIds = new Set(expected.map(s => s.id))
+          const siblingIds = new Set(siblings.map((s) => s.id))
+          const expectedIds = new Set(expected.map((s) => s.id))
           // Every expected id is in siblings
           for (const id of expectedIds) {
             expect(siblingIds.has(id)).toBe(true)
           }
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -91,11 +88,11 @@ describe('Property 11: Sibling part filtering', () => {
           const siblings = filterSiblings(allParts, target.jobId, target.pathId)
 
           // The target part must appear in the siblings list
-          const found = siblings.some(s => s.id === target.id)
+          const found = siblings.some((s) => s.id === target.id)
           expect(found).toBe(true)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

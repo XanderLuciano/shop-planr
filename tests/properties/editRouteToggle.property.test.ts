@@ -42,7 +42,7 @@ describe('Property 1: Edit route toggle inheritance', () => {
       fc.property(arbPageToggles, arbAlphanumericId, (toggles, id) => {
         expect(isPageEnabled(toggles, '/jobs/edit/' + id)).toBe(toggles.jobs)
       }),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 })

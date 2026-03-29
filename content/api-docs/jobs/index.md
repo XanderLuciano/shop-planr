@@ -1,7 +1,7 @@
 ---
-title: "Jobs API"
-description: "Production order management — create, read, update jobs and track progress across paths and serial numbers"
-icon: "i-lucide-briefcase"
+title: 'Jobs API'
+description: 'Production order management — create, read, update jobs and track progress across paths and serial numbers'
+icon: 'i-lucide-briefcase'
 navigation:
   order: 1
 ---
@@ -35,12 +35,12 @@ The `GET /api/jobs/:id` endpoint returns computed progress statistics alongside 
 
 ## Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | [`/api/jobs`](/api-docs/jobs/list) | List all production jobs |
-| `GET` | [`/api/jobs/:id`](/api-docs/jobs/get) | Get a single job with its paths and computed progress |
-| `POST` | [`/api/jobs`](/api-docs/jobs/create) | Create a new production job |
-| `PUT` | [`/api/jobs/:id`](/api-docs/jobs/update) | Update an existing job's name or goal quantity |
+| Method | Path                                     | Description                                           |
+| ------ | ---------------------------------------- | ----------------------------------------------------- |
+| `GET`  | [`/api/jobs`](/api-docs/jobs/list)       | List all production jobs                              |
+| `GET`  | [`/api/jobs/:id`](/api-docs/jobs/get)    | Get a single job with its paths and computed progress |
+| `POST` | [`/api/jobs`](/api-docs/jobs/create)     | Create a new production job                           |
+| `PUT`  | [`/api/jobs/:id`](/api-docs/jobs/update) | Update an existing job's name or goal quantity        |
 
 ## Related APIs
 

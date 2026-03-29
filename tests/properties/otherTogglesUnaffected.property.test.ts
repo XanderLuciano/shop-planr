@@ -8,16 +8,11 @@
  */
 import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
-import {
-  isPageEnabled,
-  ROUTE_TOGGLE_MAP,
-} from '~/server/utils/pageToggles'
+import { isPageEnabled, ROUTE_TOGGLE_MAP } from '~/server/utils/pageToggles'
 import { arbPageToggles } from './arbitraries/pageToggles'
 
 /** Non-/parts entries from ROUTE_TOGGLE_MAP as [basePath, toggleKey] tuples. */
-const NON_PARTS_ENTRIES = Object.entries(ROUTE_TOGGLE_MAP).filter(
-  ([bp]) => bp !== '/parts',
-)
+const NON_PARTS_ENTRIES = Object.entries(ROUTE_TOGGLE_MAP).filter(([bp]) => bp !== '/parts')
 
 /** Arbitrary that produces a random detail route suffix (e.g., `/abc123`, `/foo/bar`). */
 const arbDetailSuffix: fc.Arbitrary<string> = fc
@@ -38,9 +33,9 @@ describe('Property 3: All other toggle-mapped routes are unaffected', () => {
         fc.constantFrom(...NON_PARTS_ENTRIES),
         (toggles, [basePath, toggleKey]) => {
           expect(isPageEnabled(toggles, basePath)).toBe(toggles[toggleKey])
-        },
+        }
       ),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 
@@ -59,9 +54,9 @@ describe('Property 3: All other toggle-mapped routes are unaffected', () => {
         (toggles, [basePath, toggleKey], suffix) => {
           const detailRoute = basePath + suffix
           expect(isPageEnabled(toggles, detailRoute)).toBe(toggles[toggleKey])
-        },
+        }
       ),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 })

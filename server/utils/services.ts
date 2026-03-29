@@ -54,18 +54,32 @@ export function getServices(): ServiceSet {
     // Services with no service dependencies
     const auditService = createAuditService({ audit: repos.audit })
     const userService = createUserService({ users: repos.users })
-    const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts })
-    const pathService = createPathService({ paths: repos.paths, parts: repos.parts, users: repos.users })
-    const templateService = createTemplateService({ templates: repos.templates, paths: repos.paths })
+    const jobService = createJobService({
+      jobs: repos.jobs,
+      paths: repos.paths,
+      parts: repos.parts,
+    })
+    const pathService = createPathService({
+      paths: repos.paths,
+      parts: repos.parts,
+      users: repos.users,
+    })
+    const templateService = createTemplateService({
+      templates: repos.templates,
+      paths: repos.paths,
+    })
 
     // Lifecycle service depends on auditService
-    const lifecycleService = createLifecycleService({
-      parts: repos.parts,
-      paths: repos.paths,
-      jobs: repos.jobs,
-      partStepStatuses: repos.partStepStatuses,
-      partStepOverrides: repos.partStepOverrides,
-    }, auditService)
+    const lifecycleService = createLifecycleService(
+      {
+        parts: repos.parts,
+        paths: repos.paths,
+        jobs: repos.jobs,
+        partStepStatuses: repos.partStepStatuses,
+        partStepOverrides: repos.partStepOverrides,
+      },
+      auditService
+    )
 
     // Library service
     const libraryService = createLibraryService({ library: repos.library })
@@ -80,12 +94,14 @@ export function getServices(): ServiceSet {
     const db = repos._db
     const partIdGenerator = createSequentialPartIdGenerator({
       getCounter: () => {
-        const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
+        const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as
+          | { value: number }
+          | undefined
         return row?.value ?? 0
       },
       setCounter: (v: number) => {
         db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-      }
+      },
     })
 
     // Services that depend on auditService (and optionally lifecycleService)
@@ -99,19 +115,22 @@ export function getServices(): ServiceSet {
     const noteService = createNoteService({ notes: repos.notes }, auditService)
 
     // Settings service depends on runtimeConfig
-    const settingsService = createSettingsService({ settings: repos.settings }, {
-      jiraBaseUrl: config.jiraBaseUrl,
-      jiraProjectKey: config.jiraProjectKey,
-      jiraUsername: config.jiraUsername,
-      jiraApiToken: config.jiraApiToken
-    })
+    const settingsService = createSettingsService(
+      { settings: repos.settings },
+      {
+        jiraBaseUrl: config.jiraBaseUrl,
+        jiraProjectKey: config.jiraProjectKey,
+        jiraUsername: config.jiraUsername,
+        jiraApiToken: config.jiraApiToken,
+      }
+    )
 
     // Jira service depends on settingsService and jobService
     const jiraService = createJiraService({ jobs: repos.jobs }, settingsService, jobService, {
       pathService,
       noteService,
       certService,
-      partService
+      partService,
     })
 
     services = {

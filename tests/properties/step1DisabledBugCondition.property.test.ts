@@ -52,7 +52,7 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
           stepOrder: step.order,
           stepLocation: step.location,
           totalSteps,
-          partIds: parts.map(s => s.id),
+          partIds: parts.map((s) => s.id),
           partCount: parts.length,
           previousStepId: prevStep?.id,
           previousStepName: prevStep?.name,
@@ -107,7 +107,7 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
           stepOrder: step.order,
           stepLocation: step.location,
           totalSteps,
-          partIds: parts.map(s => s.id),
+          partIds: parts.map((s) => s.id),
           partCount: parts.length,
           nextStepName: nextStep?.name,
           nextStepLocation: nextStep?.location,
@@ -122,32 +122,37 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
   return { operatorId: '_all', jobs: queueJobs, totalParts }
 }
 
-
 // ---------------------------------------------------------------------------
 // Arbitraries — same pattern as stepEndpoint.property.test.ts
 // ---------------------------------------------------------------------------
 
 /** Arbitrary for a single job with one path, random steps, and random parts */
 const jobPathConfigArb = fc.record({
-  jobName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
-  pathName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
+  jobName: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
+  pathName: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
   stepCount: fc.integer({ min: 1, max: 5 }),
   partCount: fc.integer({ min: 1, max: 8 }),
   stepLocations: fc.array(
-    fc.option(fc.string({ minLength: 1, maxLength: 15 }).filter(s => s.trim().length > 0), { nil: undefined }),
-    { minLength: 5, maxLength: 5 },
+    fc.option(
+      fc.string({ minLength: 1, maxLength: 15 }).filter((s) => s.trim().length > 0),
+      { nil: undefined }
+    ),
+    { minLength: 5, maxLength: 5 }
   ),
 })
 
 /** Config for tests that need 2+ steps */
 const multiStepConfigArb = fc.record({
-  jobName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
-  pathName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
+  jobName: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
+  pathName: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
   stepCount: fc.integer({ min: 2, max: 5 }),
   partCount: fc.integer({ min: 1, max: 8 }),
   stepLocations: fc.array(
-    fc.option(fc.string({ minLength: 1, maxLength: 15 }).filter(s => s.trim().length > 0), { nil: undefined }),
-    { minLength: 5, maxLength: 5 },
+    fc.option(
+      fc.string({ minLength: 1, maxLength: 15 }).filter((s) => s.trim().length > 0),
+      { nil: undefined }
+    ),
+    { minLength: 5, maxLength: 5 }
   ),
 })
 
@@ -204,7 +209,7 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
         // Create parts (they start at step 0)
         const parts = partService.batchCreateParts(
           { jobId: job.id, pathId: path.id, quantity: config.partCount },
-          'user_test',
+          'user_test'
         )
 
         // Advance ALL parts past step 0
@@ -223,14 +228,17 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
         const result = lookupStep(ctx, step0Id)
 
         // ASSERT: first step should always be accessible with partCount: 0
-        expect(result, `First step ${step0Id} should return non-null even with 0 parts`).not.toBeNull()
+        expect(
+          result,
+          `First step ${step0Id} should return non-null even with 0 parts`
+        ).not.toBeNull()
         expect(result!.job.partCount).toBe(0)
         expect(result!.job.partIds).toEqual([])
 
         ctx.cleanup()
         ctx = null as any
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -273,7 +281,7 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
         // Create parts at step 0 — do NOT advance any
         partService.batchCreateParts(
           { jobId: job.id, pathId: path.id, quantity: config.partCount },
-          'user_test',
+          'user_test'
         )
 
         // Step 1 has zero parts (none advanced from step 0 yet)
@@ -281,14 +289,17 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
         const result = lookupStep(ctx, step1Id)
 
         // ASSERT: non-first step should return valid response with partCount: 0
-        expect(result, `Step 1 (${step1Id}) should return non-null even with 0 parts`).not.toBeNull()
+        expect(
+          result,
+          `Step 1 (${step1Id}) should return non-null even with 0 parts`
+        ).not.toBeNull()
         expect(result!.job.partCount).toBe(0)
         expect(result!.job.partIds).toEqual([])
 
         ctx.cleanup()
         ctx = null as any
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -331,7 +342,7 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
         // Create parts
         const parts = partService.batchCreateParts(
           { jobId: job.id, pathId: path.id, quantity: config.partCount },
-          'user_test',
+          'user_test'
         )
 
         // Advance ALL parts past step 0
@@ -348,14 +359,17 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
 
         // ASSERT: step 0 should appear in the response
         const step0Id = path.steps[0].id
-        const step0InResponse = response.jobs.some(j => j.stepId === step0Id)
+        const step0InResponse = response.jobs.some((j) => j.stepId === step0Id)
 
-        expect(step0InResponse, `Step 0 (${step0Id}) should be included in Parts View even with 0 parts`).toBe(true)
+        expect(
+          step0InResponse,
+          `Step 0 (${step0Id}) should be included in Parts View even with 0 parts`
+        ).toBe(true)
 
         ctx.cleanup()
         ctx = null as any
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

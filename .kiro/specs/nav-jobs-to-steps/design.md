@@ -21,11 +21,12 @@ When a user navigates from a Job detail page (`/jobs/:id`) to a Step View page (
 The bug manifests when a user clicks a step in the Job detail page's StepTracker component, which navigates them to `/parts/step/:stepId`. The Step View page has a hardcoded `<NuxtLink to="/parts">` back arrow that always points to the Parts list, regardless of where the user navigated from.
 
 **Formal Specification:**
+
 ```
 FUNCTION isBugCondition(input)
   INPUT: input of type { currentRoute: Route, previousRoute: Route | null }
   OUTPUT: boolean
-  
+
   RETURN input.currentRoute.path MATCHES '/parts/step/:stepId'
          AND input.previousRoute IS NOT NULL
          AND input.previousRoute.path MATCHES '/jobs/:id'
@@ -45,6 +46,7 @@ END FUNCTION
 ### Preservation Requirements
 
 **Unchanged Behaviors:**
+
 - Navigation from Parts list (`/parts`) to Step View must continue to show "Back to Parts" linking to `/parts`
 - Direct URL access to Step View must default to "Back to Parts" linking to `/parts`
 - All Step View functionality: advancement panel, serial creation panel, operator selection, prev/next step navigation, notes display
@@ -54,6 +56,7 @@ END FUNCTION
 
 **Scope:**
 All inputs that do NOT involve the back arrow navigation on the Step View page should be completely unaffected by this fix. This includes:
+
 - Step advancement and serial creation workflows
 - Operator identity selection
 - Prev/Next step navigation within Step View
@@ -95,6 +98,7 @@ Assuming our root cause analysis is correct:
 **Function**: `onStepClick`
 
 **Specific Changes**:
+
 1. **Pass referrer query parameter**: Modify `onStepClick` to include a `from` query parameter with the current job route:
    ```
    navigateTo(`/parts/step/${stepId}?from=${encodeURIComponent(`/jobs/${jobId}`)}`)
@@ -102,8 +106,7 @@ Assuming our root cause analysis is correct:
 
 **File**: `app/pages/parts/step/[stepId].vue`
 
-**Specific Changes**:
-2. **Read referrer from query**: Extract the `from` query parameter from the route to determine the back navigation target.
+**Specific Changes**: 2. **Read referrer from query**: Extract the `from` query parameter from the route to determine the back navigation target.
 
 3. **Compute back link destination**: Create a computed property that returns the `from` query value if present and valid (starts with `/jobs/`), otherwise defaults to `/parts`.
 

@@ -42,10 +42,7 @@ interface CreateNoteInput {
  * simulates the server returning a new StepNote and prepending it to the
  * notes array (matching useNotes.ts behavior).
  */
-function modelCreateNote(
-  existingNotes: StepNote[],
-  input: CreateNoteInput,
-): StepNote[] {
+function modelCreateNote(existingNotes: StepNote[], input: CreateNoteInput): StepNote[] {
   const newNote: StepNote = {
     id: `note-${Date.now()}`,
     jobId: input.jobId,
@@ -62,8 +59,9 @@ function modelCreateNote(
 
 // --- Generators ---
 
-const nonWhitespaceStringArb = fc.string({ minLength: 1, maxLength: 200 })
-  .filter(s => s.trim().length > 0)
+const nonWhitespaceStringArb = fc
+  .string({ minLength: 1, maxLength: 200 })
+  .filter((s) => s.trim().length > 0)
 
 const idArb = fc.uuid()
 
@@ -103,9 +101,9 @@ describe('Property 4: Note creation round trip', () => {
           expect(created.stepId).toBe(stepId)
           expect(created.jobId).toBe(jobId)
           expect(created.pathId).toBe(pathId)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -145,9 +143,9 @@ describe('Property 4: Note creation round trip', () => {
           expect(notesAfter).toHaveLength(2)
           expect(notesAfter[0].text).toBe(noteText.trim())
           expect(notesAfter[1].id).toBe('existing-1')
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

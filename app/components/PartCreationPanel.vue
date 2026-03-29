@@ -7,7 +7,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  advance: [payload: { partIds: string[], note?: string }]
+  advance: [payload: { partIds: string[]; note?: string }]
   cancel: []
   created: [count: number]
 }>()
@@ -23,7 +23,9 @@ const validationError = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 const errorMessage = ref<string | null>(null)
 
-watch(quantity, () => { validateQuantity() })
+watch(quantity, () => {
+  validateQuantity()
+})
 
 function validateQuantity() {
   if (quantity.value < 1) {
@@ -92,7 +94,7 @@ async function handleCreateAndAdvance() {
       quantity: quantity.value,
       userId: operatorId.value,
     })
-    const createdIds = created.map(s => s.id)
+    const createdIds = created.map((s) => s.id)
     emit('created', created.length)
     emit('advance', { partIds: createdIds, note: note.value.trim() || undefined })
   } catch (e: any) {
@@ -113,14 +115,18 @@ function handleAdvance() {
 <template>
   <div class="space-y-4">
     <!-- Destination info -->
-    <div class="text-xs px-2 py-1.5 rounded-md bg-(--ui-bg-elevated)/50 border border-(--ui-border)">
+    <div
+      class="text-xs px-2 py-1.5 rounded-md bg-(--ui-bg-elevated)/50 border border-(--ui-border)"
+    >
       <span class="text-(--ui-text-muted)">Advancing to:</span>
       <span class="ml-1 font-medium text-(--ui-text-highlighted)">{{ formatDestination() }}</span>
     </div>
 
     <!-- Creation form -->
     <div>
-      <label class="text-xs font-semibold text-(--ui-text-highlighted) block mb-1">Create Parts</label>
+      <label class="text-xs font-semibold text-(--ui-text-highlighted) block mb-1"
+        >Create Parts</label
+      >
       <div class="flex items-center gap-2">
         <UInput
           v-model.number="quantity"
@@ -154,12 +160,18 @@ function handleAdvance() {
     </div>
 
     <!-- Success message -->
-    <div v-if="successMessage" class="text-xs text-(--ui-success) bg-(--ui-success)/10 px-2 py-1.5 rounded-md">
+    <div
+      v-if="successMessage"
+      class="text-xs text-(--ui-success) bg-(--ui-success)/10 px-2 py-1.5 rounded-md"
+    >
       {{ successMessage }}
     </div>
 
     <!-- Error message -->
-    <div v-if="errorMessage" class="text-xs text-(--ui-error) bg-(--ui-error)/10 px-2 py-1.5 rounded-md">
+    <div
+      v-if="errorMessage"
+      class="text-xs text-(--ui-error) bg-(--ui-error)/10 px-2 py-1.5 rounded-md"
+    >
       {{ errorMessage }}
     </div>
 
@@ -174,27 +186,45 @@ function handleAdvance() {
           <UButton size="xs" variant="ghost" label="None" @click="selectNone" />
         </div>
       </div>
-      <div class="max-h-40 overflow-y-auto border border-(--ui-border) rounded-md divide-y divide-(--ui-border)">
+      <div
+        class="max-h-40 overflow-y-auto border border-(--ui-border) rounded-md divide-y divide-(--ui-border)"
+      >
         <label
           v-for="partId in job.partIds"
           :key="partId"
           class="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-(--ui-bg-elevated)/30 text-xs"
         >
-          <input type="checkbox" :checked="selectedParts.has(partId)" class="rounded" @change="togglePart(partId)">
+          <input
+            type="checkbox"
+            :checked="selectedParts.has(partId)"
+            class="rounded"
+            @change="togglePart(partId)"
+          />
           <span class="font-mono">{{ partId }}</span>
         </label>
       </div>
     </div>
 
     <!-- Empty state -->
-    <div v-else class="text-xs text-(--ui-text-muted) text-center py-4 border border-(--ui-border) rounded-md">
+    <div
+      v-else
+      class="text-xs text-(--ui-text-muted) text-center py-4 border border-(--ui-border) rounded-md"
+    >
       No parts created yet. Use the form above to create parts.
     </div>
 
     <!-- Optional note -->
     <div>
-      <label class="text-xs font-semibold text-(--ui-text-highlighted) block mb-1">Note (optional)</label>
-      <UTextarea v-model="note" placeholder="Add observations or issues..." :maxlength="1000" :rows="2" size="sm" />
+      <label class="text-xs font-semibold text-(--ui-text-highlighted) block mb-1"
+        >Note (optional)</label
+      >
+      <UTextarea
+        v-model="note"
+        placeholder="Add observations or issues..."
+        :maxlength="1000"
+        :rows="2"
+        size="sm"
+      />
       <div class="text-xs text-(--ui-text-muted) text-right mt-0.5">{{ note.length }}/1000</div>
     </div>
 

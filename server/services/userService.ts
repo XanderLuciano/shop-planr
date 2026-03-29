@@ -6,14 +6,14 @@ import { NotFoundError } from '../utils/errors'
 
 export function createUserService(repos: { users: UserRepository }) {
   return {
-    createUser(input: { name: string, department?: string }): ShopUser {
+    createUser(input: { name: string; department?: string }): ShopUser {
       assertNonEmpty(input.name, 'name')
       return repos.users.create({
         id: generateId('user'),
         name: input.name.trim(),
         department: input.department,
         active: true,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       })
     },
 
@@ -33,7 +33,10 @@ export function createUserService(repos: { users: UserRepository }) {
       return repos.users.listActive()
     },
 
-    updateUser(id: string, input: { name?: string, department?: string, active?: boolean }): ShopUser {
+    updateUser(
+      id: string,
+      input: { name?: string; department?: string; active?: boolean }
+    ): ShopUser {
       const existing = repos.users.getById(id)
       if (!existing) {
         throw new NotFoundError('User', id)
@@ -54,7 +57,7 @@ export function createUserService(repos: { users: UserRepository }) {
         throw new NotFoundError('User', id)
       }
       return repos.users.update(id, { active: false })
-    }
+    },
   }
 }
 

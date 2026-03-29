@@ -1,11 +1,11 @@
 ---
-title: "Get Job"
-description: "Retrieve a single job with its paths and computed progress statistics"
-method: "GET"
-endpoint: "/api/jobs/:id"
-service: "jobService"
-category: "Jobs"
-responseType: "Job & { paths: Path[], progress: JobProgress }"
+title: 'Get Job'
+description: 'Retrieve a single job with its paths and computed progress statistics'
+method: 'GET'
+endpoint: '/api/jobs/:id'
+service: 'jobService'
+category: 'Jobs'
+responseType: 'Job & { paths: Path[], progress: JobProgress }'
 errorCodes: [400, 404, 500]
 navigation:
   order: 2
@@ -23,9 +23,9 @@ Use this endpoint when you need the complete picture of a job — its configurat
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` | Yes | The unique identifier of the job to retrieve (e.g. `"job_abc123"`) |
+| Parameter | Type     | Required | Description                                                        |
+| --------- | -------- | -------- | ------------------------------------------------------------------ |
+| `id`      | `string` | Yes      | The unique identifier of the job to retrieve (e.g. `"job_abc123"`) |
 
 ## Response
 
@@ -35,91 +35,91 @@ Returned when the job is found. The response is a single object containing all `
 
 #### Job Fields
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Unique identifier for the job |
-| `name` | `string` | Human-readable job name, typically a work order number |
-| `goalQuantity` | `number` | Target number of units to produce |
-| `jiraTicketKey` | `string \| undefined` | Jira issue key if linked (e.g. `"PI-42"`) |
-| `jiraTicketSummary` | `string \| undefined` | Summary text from the linked Jira ticket |
-| `jiraPartNumber` | `string \| undefined` | Part number from the Jira ticket's custom fields |
-| `jiraPriority` | `string \| undefined` | Priority level from Jira (e.g. `"High"`) |
-| `jiraEpicLink` | `string \| undefined` | Epic link key from Jira |
-| `jiraLabels` | `string[] \| undefined` | Labels from the Jira ticket |
-| `createdAt` | `string` | ISO 8601 timestamp of when the job was created |
-| `updatedAt` | `string` | ISO 8601 timestamp of the last modification |
+| Field               | Type                    | Description                                            |
+| ------------------- | ----------------------- | ------------------------------------------------------ |
+| `id`                | `string`                | Unique identifier for the job                          |
+| `name`              | `string`                | Human-readable job name, typically a work order number |
+| `goalQuantity`      | `number`                | Target number of units to produce                      |
+| `jiraTicketKey`     | `string \| undefined`   | Jira issue key if linked (e.g. `"PI-42"`)              |
+| `jiraTicketSummary` | `string \| undefined`   | Summary text from the linked Jira ticket               |
+| `jiraPartNumber`    | `string \| undefined`   | Part number from the Jira ticket's custom fields       |
+| `jiraPriority`      | `string \| undefined`   | Priority level from Jira (e.g. `"High"`)               |
+| `jiraEpicLink`      | `string \| undefined`   | Epic link key from Jira                                |
+| `jiraLabels`        | `string[] \| undefined` | Labels from the Jira ticket                            |
+| `createdAt`         | `string`                | ISO 8601 timestamp of when the job was created         |
+| `updatedAt`         | `string`                | ISO 8601 timestamp of the last modification            |
 
 #### `paths` — Array of Path objects
 
 Each element in the `paths` array represents a manufacturing route defined for this job.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Unique identifier for the path |
-| `jobId` | `string` | The parent job's ID (matches the top-level `id`) |
-| `name` | `string` | Human-readable path name (e.g. `"Main Route"`, `"Rework Path"`) |
-| `goalQuantity` | `number` | Target number of units to produce on this specific path |
-| `advancementMode` | `"strict" \| "flexible" \| "per_step"` | How serial numbers advance through steps on this path |
-| `steps` | `ProcessStep[]` | Ordered array of process steps in this path (see below) |
-| `createdAt` | `string` | ISO 8601 timestamp of path creation |
-| `updatedAt` | `string` | ISO 8601 timestamp of last path modification |
+| Field             | Type                                   | Description                                                     |
+| ----------------- | -------------------------------------- | --------------------------------------------------------------- |
+| `id`              | `string`                               | Unique identifier for the path                                  |
+| `jobId`           | `string`                               | The parent job's ID (matches the top-level `id`)                |
+| `name`            | `string`                               | Human-readable path name (e.g. `"Main Route"`, `"Rework Path"`) |
+| `goalQuantity`    | `number`                               | Target number of units to produce on this specific path         |
+| `advancementMode` | `"strict" \| "flexible" \| "per_step"` | How serial numbers advance through steps on this path           |
+| `steps`           | `ProcessStep[]`                        | Ordered array of process steps in this path (see below)         |
+| `createdAt`       | `string`                               | ISO 8601 timestamp of path creation                             |
+| `updatedAt`       | `string`                               | ISO 8601 timestamp of last path modification                    |
 
 #### `paths[].steps[]` — Process Step objects
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Unique identifier for the step |
-| `name` | `string` | Step name (e.g. `"CNC Machining"`, `"QC Inspection"`) |
-| `order` | `number` | Zero-based position of this step in the path sequence |
-| `location` | `string \| undefined` | Physical location or workstation where this step is performed |
-| `assignedTo` | `string \| undefined` | User ID of the operator assigned to this step |
-| `optional` | `boolean` | Whether this step can be skipped without blocking advancement |
-| `dependencyType` | `"physical" \| "preferred" \| "completion_gate"` | How strictly this step's completion is enforced |
+| Field            | Type                                             | Description                                                   |
+| ---------------- | ------------------------------------------------ | ------------------------------------------------------------- |
+| `id`             | `string`                                         | Unique identifier for the step                                |
+| `name`           | `string`                                         | Step name (e.g. `"CNC Machining"`, `"QC Inspection"`)         |
+| `order`          | `number`                                         | Zero-based position of this step in the path sequence         |
+| `location`       | `string \| undefined`                            | Physical location or workstation where this step is performed |
+| `assignedTo`     | `string \| undefined`                            | User ID of the operator assigned to this step                 |
+| `optional`       | `boolean`                                        | Whether this step can be skipped without blocking advancement |
+| `dependencyType` | `"physical" \| "preferred" \| "completion_gate"` | How strictly this step's completion is enforced               |
 
 #### `progress` — Computed JobProgress object
 
 Progress is computed in real time from the current state of all serial numbers across all paths. It is not stored — it is recalculated on every request.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `totalGoal` | `number` | Sum of goal quantities across all paths |
-| `totalCompleted` | `number` | Total number of serial numbers that have completed all steps |
-| `percentComplete` | `number` | Overall completion percentage (`totalCompleted / totalGoal * 100`) |
-| `pathProgress` | `PathProgress[]` | Per-path breakdown of progress (see below) |
+| Field             | Type             | Description                                                        |
+| ----------------- | ---------------- | ------------------------------------------------------------------ |
+| `totalGoal`       | `number`         | Sum of goal quantities across all paths                            |
+| `totalCompleted`  | `number`         | Total number of serial numbers that have completed all steps       |
+| `percentComplete` | `number`         | Overall completion percentage (`totalCompleted / totalGoal * 100`) |
+| `pathProgress`    | `PathProgress[]` | Per-path breakdown of progress (see below)                         |
 
 #### `progress.pathProgress[]` — Per-path progress
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `pathId` | `string` | The path's unique identifier |
-| `pathName` | `string` | Human-readable name of the path |
-| `goal` | `number` | Goal quantity for this specific path |
-| `completed` | `number` | Number of serial numbers that have completed this path |
-| `percentComplete` | `number` | Completion percentage for this path |
+| Field             | Type     | Description                                            |
+| ----------------- | -------- | ------------------------------------------------------ |
+| `pathId`          | `string` | The path's unique identifier                           |
+| `pathName`        | `string` | Human-readable name of the path                        |
+| `goal`            | `number` | Goal quantity for this specific path                   |
+| `completed`       | `number` | Number of serial numbers that have completed this path |
+| `percentComplete` | `number` | Completion percentage for this path                    |
 
 ### 400 Bad Request
 
 Returned if a validation error occurs during the request.
 
-| Condition | Message |
-|-----------|---------|
+| Condition                           | Message                                          |
+| ----------------------------------- | ------------------------------------------------ |
 | Malformed or invalid `id` parameter | Varies — describes the specific validation issue |
 
 ### 404 Not Found
 
 Returned when no job exists with the given ID.
 
-| Condition | Message |
-|-----------|---------|
+| Condition          | Message                 |
+| ------------------ | ----------------------- |
 | Job does not exist | `"Job not found: {id}"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while fetching the job, paths, or computing progress.
 
-| Condition | Message |
-|-----------|---------|
-| Database connection failure | `"Internal Server Error"` |
+| Condition                    | Message                   |
+| ---------------------------- | ------------------------- |
+| Database connection failure  | `"Internal Server Error"` |
 | Unexpected runtime exception | `"Internal Server Error"` |
 
 ## Examples

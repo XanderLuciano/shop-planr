@@ -1,12 +1,12 @@
 ---
-title: "Create Certificate"
-description: "Create a new material or process certificate"
-method: "POST"
-endpoint: "/api/certs"
-service: "certService"
-category: "Certs"
-requestBody: "CreateCertInput"
-responseType: "Certificate"
+title: 'Create Certificate'
+description: 'Create a new material or process certificate'
+method: 'POST'
+endpoint: '/api/certs'
+service: 'certService'
+category: 'Certs'
+requestBody: 'CreateCertInput'
+responseType: 'Certificate'
 errorCodes: [400, 500]
 navigation:
   order: 3
@@ -24,11 +24,11 @@ Certificates are immutable after creation. The `type`, `name`, and `metadata` fi
 
 ### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `type` | `'material' \| 'process'` | Yes | The classification of the certificate. Must be exactly `"material"` or `"process"`. |
-| `name` | `string` | Yes | A human-readable name or identifier for the certificate (e.g. `"Steel Alloy 4140 Mill Cert"`). Must be a non-empty string. |
-| `metadata` | `Record<string, unknown>` | No | An optional free-form JSON object for storing domain-specific attributes such as supplier name, grade, lot number, expiration date, or any other key-value data. |
+| Field      | Type                      | Required | Description                                                                                                                                                      |
+| ---------- | ------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `type`     | `'material' \| 'process'` | Yes      | The classification of the certificate. Must be exactly `"material"` or `"process"`.                                                                              |
+| `name`     | `string`                  | Yes      | A human-readable name or identifier for the certificate (e.g. `"Steel Alloy 4140 Mill Cert"`). Must be a non-empty string.                                       |
+| `metadata` | `Record<string, unknown>` | No       | An optional free-form JSON object for storing domain-specific attributes such as supplier name, grade, lot number, expiration date, or any other key-value data. |
 
 ## Response
 
@@ -36,29 +36,29 @@ Certificates are immutable after creation. The `type`, `name`, and `metadata` fi
 
 Returned when the certificate is successfully created. The response contains the complete `Certificate` object with the server-generated `id` and `createdAt` timestamp.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Server-generated unique identifier (prefixed with `cert_`) |
-| `type` | `'material' \| 'process'` | The certificate type as provided in the request |
-| `name` | `string` | The certificate name as provided in the request |
-| `metadata` | `Record<string, unknown> \| undefined` | The metadata object, if provided |
-| `createdAt` | `string` | ISO 8601 timestamp of when the certificate was created |
+| Field       | Type                                   | Description                                                |
+| ----------- | -------------------------------------- | ---------------------------------------------------------- |
+| `id`        | `string`                               | Server-generated unique identifier (prefixed with `cert_`) |
+| `type`      | `'material' \| 'process'`              | The certificate type as provided in the request            |
+| `name`      | `string`                               | The certificate name as provided in the request            |
+| `metadata`  | `Record<string, unknown> \| undefined` | The metadata object, if provided                           |
+| `createdAt` | `string`                               | ISO 8601 timestamp of when the certificate was created     |
 
 ### 400 Bad Request
 
 Returned when the request body fails validation. The response includes a message describing the specific validation failure.
 
-| Condition | Message |
-|-----------|---------|
+| Condition                                          | Message                                    |
+| -------------------------------------------------- | ------------------------------------------ |
 | `type` is missing or not one of the allowed values | `"type must be one of: material, process"` |
-| `name` is missing or empty | `"name is required"` |
+| `name` is missing or empty                         | `"name is required"`                       |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while persisting the certificate to the database.
 
-| Condition | Message |
-|-----------|---------|
+| Condition              | Message                   |
+| ---------------------- | ------------------------- |
 | Database write failure | `"Internal Server Error"` |
 
 ## Examples

@@ -8,7 +8,8 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
-const { processes, locations, fetchProcesses, fetchLocations, addProcess, addLocation } = useLibrary()
+const { processes, locations, fetchProcesses, fetchLocations, addProcess, addLocation } =
+  useLibrary()
 
 const searchQuery = ref('')
 const showNewInput = ref(false)
@@ -18,8 +19,8 @@ const adding = ref(false)
 const items = computed(() => {
   const list = props.type === 'process' ? processes.value : locations.value
   const q = searchQuery.value.trim().toLowerCase()
-  const filtered = q ? list.filter(e => e.name.toLowerCase().includes(q)) : list
-  return filtered.map(e => ({ label: e.name, value: e.name }))
+  const filtered = q ? list.filter((e) => e.name.toLowerCase().includes(q)) : list
+  return filtered.map((e) => ({ label: e.name, value: e.name }))
 })
 
 onMounted(async () => {
@@ -58,16 +59,27 @@ async function handleAddNew() {
       :placeholder="`Search ${type}...`"
       size="sm"
       class="w-full"
-      @update:model-value="(v: string | number) => { searchQuery = String(v); emit('update:modelValue', String(v)) }"
+      @update:model-value="
+        (v: string | number) => {
+          searchQuery = String(v)
+          emit('update:modelValue', String(v))
+        }
+      "
     />
 
-    <div v-if="searchQuery && items.length" class="border border-(--ui-border) rounded-md max-h-32 overflow-y-auto">
+    <div
+      v-if="searchQuery && items.length"
+      class="border border-(--ui-border) rounded-md max-h-32 overflow-y-auto"
+    >
       <button
         v-for="item in items"
         :key="item.value"
         type="button"
         class="w-full text-left px-2 py-1.5 text-xs hover:bg-(--ui-bg-elevated)/50 text-(--ui-text-highlighted)"
-        @click="emit('update:modelValue', item.value); searchQuery = ''"
+        @click="
+          emit('update:modelValue', item.value)
+          searchQuery = ''
+        "
       >
         {{ item.label }}
       </button>
@@ -77,7 +89,10 @@ async function handleAddNew() {
       <button
         type="button"
         class="text-xs text-(--ui-primary) hover:underline"
-        @click="showNewInput = true; newName = searchQuery"
+        @click="
+          showNewInput = true
+          newName = searchQuery
+        "
       >
         + New {{ type }}
       </button>

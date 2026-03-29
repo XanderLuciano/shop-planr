@@ -37,7 +37,6 @@
   - _Requirements: 3.1, 3.2, 3.3, 3.5_
 
 - [x] 3. Fix for scrapped serials appearing in operator work queue
-
   - [x] 3.1 Implement the fix
     - In `server/repositories/sqlite/serialRepository.ts`, method `listByStepIndex`
     - Change the SQL query from:

@@ -1,12 +1,12 @@
 ---
-title: "Create Job"
-description: "Create a new production job with optional Jira ticket linking"
-method: "POST"
-endpoint: "/api/jobs"
-service: "jobService"
-category: "Jobs"
-requestBody: "CreateJobInput"
-responseType: "Job"
+title: 'Create Job'
+description: 'Create a new production job with optional Jira ticket linking'
+method: 'POST'
+endpoint: '/api/jobs'
+service: 'jobService'
+category: 'Jobs'
+requestBody: 'CreateJobInput'
+responseType: 'Job'
 errorCodes: [400, 500]
 navigation:
   order: 3
@@ -24,16 +24,16 @@ After creating a job, the next step is typically to define one or more paths usi
 
 ### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | `string` | Yes | A human-readable name or identifier for the job. Typically a work order number (e.g. `"JOB-2024-001"`). Must be a non-empty string. |
-| `goalQuantity` | `number` | Yes | The target number of units to produce for this job. Must be a positive integer greater than zero. This value is used to compute overall progress percentages. |
-| `jiraTicketKey` | `string` | No | The Jira issue key to link this job to (e.g. `"PI-42"`). When provided, establishes a reference between this job and the corresponding Jira ticket. |
-| `jiraTicketSummary` | `string` | No | The summary (title) of the linked Jira ticket. Stored for display purposes so the UI can show the ticket summary without making a Jira API call. |
-| `jiraPartNumber` | `string` | No | The part number extracted from the Jira ticket's custom fields. Used to display part identification information alongside the job. |
-| `jiraPriority` | `string` | No | The priority level from the Jira ticket (e.g. `"High"`, `"Medium"`, `"Low"`). Stored for display and filtering purposes. |
-| `jiraEpicLink` | `string` | No | The epic link key from Jira (e.g. `"PI-10"`). Indicates which Jira epic this ticket belongs to. |
-| `jiraLabels` | `string[]` | No | An array of label strings from the Jira ticket (e.g. `["Q1-2024", "rush"]`). Used for categorization and filtering in the UI. |
+| Field               | Type       | Required | Description                                                                                                                                                   |
+| ------------------- | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`              | `string`   | Yes      | A human-readable name or identifier for the job. Typically a work order number (e.g. `"JOB-2024-001"`). Must be a non-empty string.                           |
+| `goalQuantity`      | `number`   | Yes      | The target number of units to produce for this job. Must be a positive integer greater than zero. This value is used to compute overall progress percentages. |
+| `jiraTicketKey`     | `string`   | No       | The Jira issue key to link this job to (e.g. `"PI-42"`). When provided, establishes a reference between this job and the corresponding Jira ticket.           |
+| `jiraTicketSummary` | `string`   | No       | The summary (title) of the linked Jira ticket. Stored for display purposes so the UI can show the ticket summary without making a Jira API call.              |
+| `jiraPartNumber`    | `string`   | No       | The part number extracted from the Jira ticket's custom fields. Used to display part identification information alongside the job.                            |
+| `jiraPriority`      | `string`   | No       | The priority level from the Jira ticket (e.g. `"High"`, `"Medium"`, `"Low"`). Stored for display and filtering purposes.                                      |
+| `jiraEpicLink`      | `string`   | No       | The epic link key from Jira (e.g. `"PI-10"`). Indicates which Jira epic this ticket belongs to.                                                               |
+| `jiraLabels`        | `string[]` | No       | An array of label strings from the Jira ticket (e.g. `["Q1-2024", "rush"]`). Used for categorization and filtering in the UI.                                 |
 
 ## Response
 
@@ -41,38 +41,38 @@ After creating a job, the next step is typically to define one or more paths usi
 
 Returned when the job is successfully created. The response contains the complete `Job` object with server-generated fields (`id`, `createdAt`, `updatedAt`).
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Server-generated unique identifier for the new job |
-| `name` | `string` | The job name as provided in the request |
-| `goalQuantity` | `number` | The goal quantity as provided in the request |
-| `jiraTicketKey` | `string \| undefined` | Jira issue key, if provided |
-| `jiraTicketSummary` | `string \| undefined` | Jira ticket summary, if provided |
-| `jiraPartNumber` | `string \| undefined` | Part number from Jira, if provided |
-| `jiraPriority` | `string \| undefined` | Priority from Jira, if provided |
-| `jiraEpicLink` | `string \| undefined` | Epic link from Jira, if provided |
-| `jiraLabels` | `string[] \| undefined` | Labels from Jira, if provided |
-| `createdAt` | `string` | ISO 8601 timestamp of when the job was created |
-| `updatedAt` | `string` | ISO 8601 timestamp — same as `createdAt` for newly created jobs |
+| Field               | Type                    | Description                                                     |
+| ------------------- | ----------------------- | --------------------------------------------------------------- |
+| `id`                | `string`                | Server-generated unique identifier for the new job              |
+| `name`              | `string`                | The job name as provided in the request                         |
+| `goalQuantity`      | `number`                | The goal quantity as provided in the request                    |
+| `jiraTicketKey`     | `string \| undefined`   | Jira issue key, if provided                                     |
+| `jiraTicketSummary` | `string \| undefined`   | Jira ticket summary, if provided                                |
+| `jiraPartNumber`    | `string \| undefined`   | Part number from Jira, if provided                              |
+| `jiraPriority`      | `string \| undefined`   | Priority from Jira, if provided                                 |
+| `jiraEpicLink`      | `string \| undefined`   | Epic link from Jira, if provided                                |
+| `jiraLabels`        | `string[] \| undefined` | Labels from Jira, if provided                                   |
+| `createdAt`         | `string`                | ISO 8601 timestamp of when the job was created                  |
+| `updatedAt`         | `string`                | ISO 8601 timestamp — same as `createdAt` for newly created jobs |
 
 ### 400 Bad Request
 
 Returned when the request body fails validation. The response includes a message describing the specific validation failure.
 
-| Condition | Message |
-|-----------|---------|
-| `name` is missing or empty | `"name is required"` |
-| `goalQuantity` is missing | `"goalQuantity is required"` |
+| Condition                          | Message                                 |
+| ---------------------------------- | --------------------------------------- |
+| `name` is missing or empty         | `"name is required"`                    |
+| `goalQuantity` is missing          | `"goalQuantity is required"`            |
 | `goalQuantity` is zero or negative | `"goalQuantity must be greater than 0"` |
-| `goalQuantity` is not a number | `"goalQuantity must be a number"` |
+| `goalQuantity` is not a number     | `"goalQuantity must be a number"`       |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while persisting the job to the database.
 
-| Condition | Message |
-|-----------|---------|
-| Database write failure | `"Internal Server Error"` |
+| Condition                    | Message                   |
+| ---------------------------- | ------------------------- |
+| Database write failure       | `"Internal Server Error"` |
 | Unexpected runtime exception | `"Internal Server Error"` |
 
 ## Examples

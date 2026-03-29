@@ -48,9 +48,7 @@ function collectMarkdownFiles(dir: string, base: string = dir): string[] {
  *      `api-docs/index.md`      → `/api-docs`
  */
 function filePathToSlug(relativePath: string): string {
-  let slug = relativePath
-    .replace(/\.md$/, '')
-    .replace(/\\/g, '/') // normalise Windows separators
+  let slug = relativePath.replace(/\.md$/, '').replace(/\\/g, '/') // normalise Windows separators
 
   // index files resolve to the parent path
   if (slug.endsWith('/index')) {
@@ -74,10 +72,7 @@ function slugToFileCandidates(slug: string): string[] {
   const stripped = slug.replace(/^\//, '')
   if (stripped === '') return ['index.md']
 
-  return [
-    `${stripped}.md`,
-    `${stripped}/index.md`
-  ]
+  return [`${stripped}.md`, `${stripped}/index.md`]
 }
 
 describe('Property 5: Slug resolution correctness', () => {
@@ -161,10 +156,7 @@ describe('Property 5: Slug resolution correctness', () => {
           expect(slug.startsWith('/api-docs')).toBe(true)
 
           // Slug must be unique within the subset
-          expect(
-            slugs.has(slug),
-            `Duplicate slug "${slug}" in random subset`
-          ).toBe(false)
+          expect(slugs.has(slug), `Duplicate slug "${slug}" in random subset`).toBe(false)
           slugs.add(slug)
 
           // Reverse mapping must resolve to an existing file

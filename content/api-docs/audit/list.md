@@ -1,11 +1,11 @@
 ---
-title: "List Audit Entries"
-description: "Retrieve audit trail entries with optional pagination"
-method: "GET"
-endpoint: "/api/audit"
-service: "auditService"
-category: "Audit"
-responseType: "AuditEntry[]"
+title: 'List Audit Entries'
+description: 'Retrieve audit trail entries with optional pagination'
+method: 'GET'
+endpoint: '/api/audit'
+service: 'auditService'
+category: 'Audit'
+responseType: 'AuditEntry[]'
 errorCodes: [500]
 navigation:
   order: 1
@@ -23,10 +23,10 @@ Use this endpoint to build audit trail dashboards, generate compliance reports, 
 
 ### Query Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `limit` | `number` | No | Maximum number of entries to return. If omitted, returns all entries. |
-| `offset` | `number` | No | Number of entries to skip before returning results. Use with `limit` for pagination. |
+| Parameter | Type     | Required | Description                                                                          |
+| --------- | -------- | -------- | ------------------------------------------------------------------------------------ |
+| `limit`   | `number` | No       | Maximum number of entries to return. If omitted, returns all entries.                |
+| `offset`  | `number` | No       | Number of entries to skip before returning results. Use with `limit` for pagination. |
 
 ## Response
 
@@ -34,28 +34,28 @@ Use this endpoint to build audit trail dashboards, generate compliance reports, 
 
 Returns an array of `AuditEntry` objects. If no entries exist (or the offset exceeds the total count), returns an empty array `[]`.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Unique identifier for the audit entry (prefixed with `aud_`) |
-| `action` | `AuditAction` | The type of event (see [Action Types](/api-docs/audit#action-types)) |
-| `userId` | `string` | The user who performed the action |
-| `timestamp` | `string` | ISO 8601 timestamp of when the event occurred |
-| `serialId` | `string \| undefined` | The serial number involved, if applicable |
-| `certId` | `string \| undefined` | The certificate involved, if applicable |
-| `jobId` | `string \| undefined` | The job involved, if applicable |
-| `pathId` | `string \| undefined` | The path involved, if applicable |
-| `stepId` | `string \| undefined` | The process step involved, if applicable |
-| `fromStepId` | `string \| undefined` | The step the serial moved from (for `serial_advanced` events) |
-| `toStepId` | `string \| undefined` | The step the serial moved to (for `serial_advanced` events) |
-| `batchQuantity` | `number \| undefined` | The number of serials in a batch (for `serial_created` events) |
-| `metadata` | `Record<string, unknown> \| undefined` | Action-specific data (e.g., scrap reason, BOM change description) |
+| Field           | Type                                   | Description                                                          |
+| --------------- | -------------------------------------- | -------------------------------------------------------------------- |
+| `id`            | `string`                               | Unique identifier for the audit entry (prefixed with `aud_`)         |
+| `action`        | `AuditAction`                          | The type of event (see [Action Types](/api-docs/audit#action-types)) |
+| `userId`        | `string`                               | The user who performed the action                                    |
+| `timestamp`     | `string`                               | ISO 8601 timestamp of when the event occurred                        |
+| `serialId`      | `string \| undefined`                  | The serial number involved, if applicable                            |
+| `certId`        | `string \| undefined`                  | The certificate involved, if applicable                              |
+| `jobId`         | `string \| undefined`                  | The job involved, if applicable                                      |
+| `pathId`        | `string \| undefined`                  | The path involved, if applicable                                     |
+| `stepId`        | `string \| undefined`                  | The process step involved, if applicable                             |
+| `fromStepId`    | `string \| undefined`                  | The step the serial moved from (for `serial_advanced` events)        |
+| `toStepId`      | `string \| undefined`                  | The step the serial moved to (for `serial_advanced` events)          |
+| `batchQuantity` | `number \| undefined`                  | The number of serials in a batch (for `serial_created` events)       |
+| `metadata`      | `Record<string, unknown> \| undefined` | Action-specific data (e.g., scrap reason, BOM change description)    |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while querying the database.
 
-| Condition | Message |
-|-----------|---------|
+| Condition             | Message                   |
+| --------------------- | ------------------------- |
 | Database read failure | `"Internal Server Error"` |
 
 ## Examples

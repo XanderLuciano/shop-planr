@@ -36,7 +36,7 @@ function rowToDomain(row: TemplateRow, steps: TemplateStep[]): TemplateRoute {
     name: row.name,
     steps,
     createdAt: row.created_at,
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
   }
 }
 
@@ -60,7 +60,14 @@ export class SQLiteTemplateRepository implements TemplateRepository {
     this.db.transaction(() => {
       insertTemplate.run(template.id, template.name, template.createdAt, template.updatedAt)
       for (const step of template.steps) {
-        insertStep.run(template.id, step.name, step.order, step.location ?? null, step.optional ? 1 : 0, step.dependencyType ?? 'preferred')
+        insertStep.run(
+          template.id,
+          step.name,
+          step.order,
+          step.location ?? null,
+          step.optional ? 1 : 0,
+          step.dependencyType ?? 'preferred'
+        )
       }
     })()
 
@@ -68,22 +75,26 @@ export class SQLiteTemplateRepository implements TemplateRepository {
   }
 
   getById(id: string): TemplateRoute | null {
-    const row = this.db.prepare('SELECT * FROM templates WHERE id = ?').get(id) as TemplateRow | undefined
+    const row = this.db.prepare('SELECT * FROM templates WHERE id = ?').get(id) as
+      | TemplateRow
+      | undefined
     if (!row) return null
 
-    const stepRows = this.db.prepare(
-      'SELECT * FROM template_steps WHERE template_id = ? ORDER BY step_order ASC'
-    ).all(id) as TemplateStepRow[]
+    const stepRows = this.db
+      .prepare('SELECT * FROM template_steps WHERE template_id = ? ORDER BY step_order ASC')
+      .all(id) as TemplateStepRow[]
 
     return rowToDomain(row, stepRows.map(stepRowToDomain))
   }
 
   list(): TemplateRoute[] {
-    const rows = this.db.prepare('SELECT * FROM templates ORDER BY created_at DESC').all() as TemplateRow[]
+    const rows = this.db
+      .prepare('SELECT * FROM templates ORDER BY created_at DESC')
+      .all() as TemplateRow[]
     return rows.map((row) => {
-      const stepRows = this.db.prepare(
-        'SELECT * FROM template_steps WHERE template_id = ? ORDER BY step_order ASC'
-      ).all(row.id) as TemplateStepRow[]
+      const stepRows = this.db
+        .prepare('SELECT * FROM template_steps WHERE template_id = ? ORDER BY step_order ASC')
+        .all(row.id) as TemplateStepRow[]
       return rowToDomain(row, stepRows.map(stepRowToDomain))
     })
   }
@@ -96,10 +107,12 @@ export class SQLiteTemplateRepository implements TemplateRepository {
       ...existing,
       ...partial,
       id,
-      updatedAt: partial.updatedAt ?? new Date().toISOString()
+      updatedAt: partial.updatedAt ?? new Date().toISOString(),
     }
 
-    const updateTemplate = this.db.prepare('UPDATE templates SET name = ?, updated_at = ? WHERE id = ?')
+    const updateTemplate = this.db.prepare(
+      'UPDATE templates SET name = ?, updated_at = ? WHERE id = ?'
+    )
     const deleteSteps = this.db.prepare('DELETE FROM template_steps WHERE template_id = ?')
     const insertStep = this.db.prepare(`
       INSERT INTO template_steps (template_id, name, step_order, location, optional, dependency_type)
@@ -111,7 +124,14 @@ export class SQLiteTemplateRepository implements TemplateRepository {
       if (partial.steps) {
         deleteSteps.run(id)
         for (const step of updated.steps) {
-          insertStep.run(id, step.name, step.order, step.location ?? null, step.optional ? 1 : 0, step.dependencyType ?? 'preferred')
+          insertStep.run(
+            id,
+            step.name,
+            step.order,
+            step.location ?? null,
+            step.optional ? 1 : 0,
+            step.dependencyType ?? 'preferred'
+          )
         }
       }
     })()

@@ -3,7 +3,11 @@ import Database from 'better-sqlite3'
 import { mkdtempSync, writeFileSync, rmSync } from 'fs'
 import { join } from 'path'
 import { tmpdir } from 'os'
-import { initDatabase, loadMigrationFiles, runMigrations } from '../../../../server/repositories/sqlite/index'
+import {
+  initDatabase,
+  loadMigrationFiles,
+  runMigrations,
+} from '../../../../server/repositories/sqlite/index'
 
 describe('SQLite migration system', () => {
   let tempDir: string
@@ -65,24 +69,27 @@ describe('SQLite migration system', () => {
       const db = new Database(dbPath)
       runMigrations(db, migrationsDir)
 
-      const tables = db.prepare(
-        'SELECT name FROM sqlite_master WHERE type=\'table\' AND name=\'_migrations\''
-      ).all()
+      const tables = db
+        .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='_migrations'")
+        .all()
       expect(tables).toHaveLength(1)
 
       db.close()
     })
 
     it('applies pending migrations and records them', () => {
-      writeFileSync(join(migrationsDir, '001_create_foo.sql'), 'CREATE TABLE foo (id TEXT PRIMARY KEY);')
+      writeFileSync(
+        join(migrationsDir, '001_create_foo.sql'),
+        'CREATE TABLE foo (id TEXT PRIMARY KEY);'
+      )
 
       const db = new Database(dbPath)
       runMigrations(db, migrationsDir)
 
       // Table should exist
-      const tables = db.prepare(
-        'SELECT name FROM sqlite_master WHERE type=\'table\' AND name=\'foo\''
-      ).all()
+      const tables = db
+        .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='foo'")
+        .all()
       expect(tables).toHaveLength(1)
 
       // Migration should be recorded
@@ -95,7 +102,10 @@ describe('SQLite migration system', () => {
     })
 
     it('skips already-applied migrations', () => {
-      writeFileSync(join(migrationsDir, '001_create_foo.sql'), 'CREATE TABLE foo (id TEXT PRIMARY KEY);')
+      writeFileSync(
+        join(migrationsDir, '001_create_foo.sql'),
+        'CREATE TABLE foo (id TEXT PRIMARY KEY);'
+      )
 
       const db = new Database(dbPath)
       runMigrations(db, migrationsDir)
@@ -109,21 +119,27 @@ describe('SQLite migration system', () => {
     })
 
     it('applies new migrations incrementally', () => {
-      writeFileSync(join(migrationsDir, '001_create_foo.sql'), 'CREATE TABLE foo (id TEXT PRIMARY KEY);')
+      writeFileSync(
+        join(migrationsDir, '001_create_foo.sql'),
+        'CREATE TABLE foo (id TEXT PRIMARY KEY);'
+      )
 
       const db = new Database(dbPath)
       runMigrations(db, migrationsDir)
 
       // Add a second migration
-      writeFileSync(join(migrationsDir, '002_create_bar.sql'), 'CREATE TABLE bar (id TEXT PRIMARY KEY);')
+      writeFileSync(
+        join(migrationsDir, '002_create_bar.sql'),
+        'CREATE TABLE bar (id TEXT PRIMARY KEY);'
+      )
       runMigrations(db, migrationsDir)
 
       const applied = db.prepare('SELECT * FROM _migrations').all() as any[]
       expect(applied).toHaveLength(2)
 
-      const barTable = db.prepare(
-        'SELECT name FROM sqlite_master WHERE type=\'table\' AND name=\'bar\''
-      ).all()
+      const barTable = db
+        .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='bar'")
+        .all()
       expect(barTable).toHaveLength(1)
 
       db.close()
@@ -146,13 +162,16 @@ describe('SQLite migration system', () => {
     })
 
     it('runs migrations on init', () => {
-      writeFileSync(join(migrationsDir, '001_create_items.sql'), 'CREATE TABLE items (id TEXT PRIMARY KEY, name TEXT);')
+      writeFileSync(
+        join(migrationsDir, '001_create_items.sql'),
+        'CREATE TABLE items (id TEXT PRIMARY KEY, name TEXT);'
+      )
 
       const db = initDatabase(dbPath, migrationsDir)
 
-      const tables = db.prepare(
-        'SELECT name FROM sqlite_master WHERE type=\'table\' AND name=\'items\''
-      ).all()
+      const tables = db
+        .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='items'")
+        .all()
       expect(tables).toHaveLength(1)
 
       db.close()
@@ -164,11 +183,11 @@ describe('SQLite migration system', () => {
       const db = initDatabase(dbPath)
 
       // Verify key tables exist
-      const tableNames = db.prepare(
-        'SELECT name FROM sqlite_master WHERE type=\'table\' ORDER BY name'
-      ).all() as { name: string }[]
+      const tableNames = db
+        .prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+        .all() as { name: string }[]
 
-      const names = tableNames.map(t => t.name)
+      const names = tableNames.map((t) => t.name)
       expect(names).toContain('jobs')
       expect(names).toContain('paths')
       expect(names).toContain('process_steps')
@@ -191,9 +210,9 @@ describe('SQLite migration system', () => {
     it('applies 002_add_counters_table.sql successfully', () => {
       const db = initDatabase(dbPath)
 
-      const tableNames = db.prepare(
-        'SELECT name FROM sqlite_master WHERE type=\'table\' AND name=\'counters\''
-      ).all()
+      const tableNames = db
+        .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='counters'")
+        .all()
       expect(tableNames).toHaveLength(1)
 
       db.close()
@@ -203,7 +222,7 @@ describe('SQLite migration system', () => {
       const db = initDatabase(dbPath)
 
       const columns = db.prepare('PRAGMA table_info(process_steps)').all() as { name: string }[]
-      const columnNames = columns.map(c => c.name)
+      const columnNames = columns.map((c) => c.name)
       expect(columnNames).toContain('assigned_to')
 
       db.close()
@@ -213,9 +232,12 @@ describe('SQLite migration system', () => {
       const db = initDatabase(dbPath)
 
       const columns = db.prepare('PRAGMA table_info(settings)').all() as {
-        name: string; type: string; notnull: number; dflt_value: string | null
+        name: string
+        type: string
+        notnull: number
+        dflt_value: string | null
       }[]
-      const col = columns.find(c => c.name === 'page_toggles')
+      const col = columns.find((c) => c.name === 'page_toggles')
 
       expect(col).toBeDefined()
       expect(col!.type).toBe('TEXT')
@@ -228,11 +250,13 @@ describe('SQLite migration system', () => {
     it('creates all expected indexes', () => {
       const db = initDatabase(dbPath)
 
-      const indexes = db.prepare(
-        'SELECT name FROM sqlite_master WHERE type=\'index\' AND name LIKE \'idx_%\' ORDER BY name'
-      ).all() as { name: string }[]
+      const indexes = db
+        .prepare(
+          "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%' ORDER BY name"
+        )
+        .all() as { name: string }[]
 
-      const indexNames = indexes.map(i => i.name)
+      const indexNames = indexes.map((i) => i.name)
       expect(indexNames).toContain('idx_paths_job_id')
       expect(indexNames).toContain('idx_parts_job_id')
       expect(indexNames).toContain('idx_parts_path_id')
@@ -267,9 +291,12 @@ describe('SQLite migration system', () => {
       const db = initDatabase(dbPath)
 
       expect(() => {
-        db.prepare(
-          'INSERT INTO certs (id, type, name, created_at) VALUES (?, ?, ?, ?)'
-        ).run('c1', 'invalid', 'Test Cert', new Date().toISOString())
+        db.prepare('INSERT INTO certs (id, type, name, created_at) VALUES (?, ?, ?, ?)').run(
+          'c1',
+          'invalid',
+          'Test Cert',
+          new Date().toISOString()
+        )
       }).toThrow()
 
       db.close()
@@ -295,7 +322,9 @@ describe('SQLite migration system', () => {
     it('records all migrations in _migrations table', () => {
       const db = initDatabase(dbPath)
 
-      const applied = db.prepare('SELECT version, name FROM _migrations ORDER BY version').all() as any[]
+      const applied = db
+        .prepare('SELECT version, name FROM _migrations ORDER BY version')
+        .all() as any[]
       expect(applied).toHaveLength(6)
       expect(applied[0].version).toBe(1)
       expect(applied[0].name).toBe('initial_schema')

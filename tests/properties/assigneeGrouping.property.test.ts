@@ -15,7 +15,11 @@ import fc from 'fast-check'
 import { createTestContext, type TestContext } from '../integration/helpers'
 import { SQLiteUserRepository } from '../../server/repositories/sqlite/userRepository'
 import { createUserService } from '../../server/services/userService'
-import type { WorkQueueJob, OperatorGroup, WorkQueueGroupedResponse } from '../../server/types/computed'
+import type {
+  WorkQueueJob,
+  OperatorGroup,
+  WorkQueueGroupedResponse,
+} from '../../server/types/computed'
 
 /**
  * Replicate the grouping logic from server/api/operator/work-queue.get.ts
@@ -23,7 +27,7 @@ import type { WorkQueueJob, OperatorGroup, WorkQueueGroupedResponse } from '../.
  */
 function aggregateGroupedWork(
   ctx: TestContext,
-  userService: ReturnType<typeof createUserService>,
+  userService: ReturnType<typeof createUserService>
 ): WorkQueueGroupedResponse {
   const { jobService, pathService, partService } = ctx
   const jobs = jobService.listJobs()
@@ -55,7 +59,7 @@ function aggregateGroupedWork(
             stepOrder: step.order,
             stepLocation: step.location,
             totalSteps,
-            partIds: serials.map(s => s.id),
+            partIds: serials.map((s) => s.id),
             partCount: serials.length,
             nextStepName: nextStep?.name,
             nextStepLocation: nextStep?.location,
@@ -88,9 +92,7 @@ function aggregateGroupedWork(
   const groups: OperatorGroup[] = []
   for (const [operatorId, groupJobs] of groupMap) {
     const totalParts = groupJobs.reduce((sum, j) => sum + j.partCount, 0)
-    const operatorName = operatorId
-      ? (userNameMap.get(operatorId) ?? operatorId)
-      : 'Unassigned'
+    const operatorName = operatorId ? (userNameMap.get(operatorId) ?? operatorId) : 'Unassigned'
 
     groups.push({ operatorId, operatorName, jobs: groupJobs, totalParts })
   }
@@ -107,13 +109,16 @@ interface StepAssignment {
 
 /** Arbitrary for a single job/path config with assignment info */
 const jobPathConfigArb = fc.record({
-  jobName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
-  pathName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
+  jobName: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
+  pathName: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
   stepCount: fc.integer({ min: 1, max: 4 }),
   partCount: fc.integer({ min: 1, max: 5 }),
   stepLocations: fc.array(
-    fc.option(fc.string({ minLength: 1, maxLength: 15 }).filter(s => s.trim().length > 0), { nil: undefined }),
-    { minLength: 4, maxLength: 4 },
+    fc.option(
+      fc.string({ minLength: 1, maxLength: 15 }).filter((s) => s.trim().length > 0),
+      { nil: undefined }
+    ),
+    { minLength: 4, maxLength: 4 }
   ),
   /** Which steps to assign and to which user index (null = leave unassigned) */
   assignments: fc.array(
@@ -121,14 +126,14 @@ const jobPathConfigArb = fc.record({
       stepIndex: fc.integer({ min: 0, max: 3 }),
       userIndex: fc.option(fc.integer({ min: 0, max: 2 }), { nil: null }),
     }),
-    { minLength: 0, maxLength: 4 },
+    { minLength: 0, maxLength: 4 }
   ),
 })
 
 /** Generate 1-3 user names for the scenario */
 const userNamesArb = fc.array(
-  fc.string({ minLength: 1, maxLength: 15 }).filter(s => s.trim().length > 0),
-  { minLength: 1, maxLength: 3 },
+  fc.string({ minLength: 1, maxLength: 15 }).filter((s) => s.trim().length > 0),
+  { minLength: 1, maxLength: 3 }
 )
 
 /** Full scenario: multiple jobs + user names */
@@ -158,16 +163,17 @@ describe('Property 6: Assignee Grouping Correctness', () => {
         const userService = createUserService({ users: userRepo })
 
         // Create users
-        const createdUsers = scenario.userNames.map(name =>
-          userService.createUser({ name }),
-        )
+        const createdUsers = scenario.userNames.map((name) => userService.createUser({ name }))
 
         // Track expected: stepId → assignedTo (userId or undefined)
         const stepAssignments = new Map<string, string | undefined>()
         // Track which steps have active serials
         const activeStepIds = new Set<string>()
         // Track step metadata for verification
-        const stepToJob = new Map<string, { jobId: string; jobName: string; pathId: string; pathName: string }>()
+        const stepToJob = new Map<
+          string,
+          { jobId: string; jobName: string; pathId: string; pathName: string }
+        >()
 
         for (const config of scenario.configs) {
           const job = jobService.createJob({
@@ -190,7 +196,7 @@ describe('Property 6: Assignee Grouping Correctness', () => {
           // Create parts (all start at step 0)
           partService.batchCreateParts(
             { jobId: job.id, pathId: path.id, quantity: config.partCount },
-            'user_test',
+            'user_test'
           )
 
           // Record step metadata
@@ -274,7 +280,7 @@ describe('Property 6: Assignee Grouping Correctness', () => {
         }
 
         // 4. Unassigned group has operatorId = null and operatorName = "Unassigned"
-        const unassignedGroup = response.groups.find(g => g.operatorId === null)
+        const unassignedGroup = response.groups.find((g) => g.operatorId === null)
         if (expectedGroups.has(null)) {
           expect(unassignedGroup).toBeDefined()
           expect(unassignedGroup!.operatorName).toBe('Unassigned')
@@ -286,7 +292,7 @@ describe('Property 6: Assignee Grouping Correctness', () => {
         ctx.cleanup()
         ctx = null as any
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

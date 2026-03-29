@@ -22,7 +22,7 @@ describe('Property 4: Dashboard and Settings are always enabled', () => {
       fc.property(arbPageToggles, (toggles) => {
         expect(isPageEnabled(toggles, '/')).toBe(true)
       }),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 
@@ -36,7 +36,7 @@ describe('Property 4: Dashboard and Settings are always enabled', () => {
       fc.property(arbPageToggles, (toggles) => {
         expect(isPageEnabled(toggles, '/settings')).toBe(true)
       }),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 })

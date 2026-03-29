@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "seed": "npx tsx server/scripts/seed.ts",
     "seed:reset": "npx tsx server/scripts/seed.ts --reset",
-    "screenshots": "npx tsx scripts/screenshots.ts"
+    "screenshots": "npx tsx scripts/screenshots.ts",
+    "prepare": "husky"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.82",
@@ -32,10 +33,16 @@
     "eslint": "^9.39.2",
     "fast-check": "^4.6.0",
     "happy-dom": "^20.3.7",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.1",
     "puppeteer": "^24.40.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^3.2.4",
     "vue-tsc": "^3.2.1"
+  },
+  "lint-staged": {
+    "*.{js,ts,vue,json,md}": "prettier --write"
   }
 }

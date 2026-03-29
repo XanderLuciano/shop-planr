@@ -32,7 +32,11 @@ function setupServices(db: Database.default.Database) {
     parts: new SQLitePartRepository(db),
     users: new SQLiteUserRepository(db),
   }
-  const pathService = createPathService({ paths: repos.paths, parts: repos.parts, users: repos.users })
+  const pathService = createPathService({
+    paths: repos.paths,
+    parts: repos.parts,
+    users: repos.users,
+  })
   return { repos, pathService }
 }
 
@@ -40,7 +44,7 @@ function setupServices(db: Database.default.Database) {
 function insertJob(db: Database.default.Database, jobId: string) {
   const now = new Date().toISOString()
   db.prepare(
-    'INSERT INTO jobs (id, name, goal_quantity, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
+    'INSERT INTO jobs (id, name, goal_quantity, created_at, updated_at) VALUES (?, ?, ?, ?, ?)'
   ).run(jobId, `Job-${jobId}`, 10, now, now)
 }
 
@@ -48,7 +52,7 @@ function insertJob(db: Database.default.Database, jobId: string) {
 function insertUser(db: Database.default.Database, userId: string, active: boolean) {
   const now = new Date().toISOString()
   db.prepare(
-    'INSERT INTO users (id, name, department, active, created_at) VALUES (?, ?, ?, ?, ?)',
+    'INSERT INTO users (id, name, department, active, created_at) VALUES (?, ?, ?, ?, ?)'
   ).run(userId, `User-${userId}`, null, active ? 1 : 0, now)
 }
 
@@ -72,62 +76,58 @@ describe('Property 1: Step assignment round-trip', () => {
 
   it('assigning a user and reading back returns matching assignedTo; assigning null clears it', () => {
     fc.assert(
-      fc.property(
-        fc.integer({ min: 1, max: 5 }),
-        fc.boolean(),
-        (stepCount, shouldUnassign) => {
-          db = createTestDb()
-          const { repos, pathService } = setupServices(db)
+      fc.property(fc.integer({ min: 1, max: 5 }), fc.boolean(), (stepCount, shouldUnassign) => {
+        db = createTestDb()
+        const { repos, pathService } = setupServices(db)
 
-          // Create a job and path with steps
-          const jobId = generateId('job')
-          insertJob(db, jobId)
+        // Create a job and path with steps
+        const jobId = generateId('job')
+        insertJob(db, jobId)
 
-          const path = repos.paths.create({
-            id: generateId('path'),
-            jobId,
-            name: 'Test Path',
-            goalQuantity: 10,
-            steps: Array.from({ length: stepCount }, (_, i) => ({
-              id: generateId('step'),
-              name: `Step ${i}`,
-              order: i,
-            })),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          })
+        const path = repos.paths.create({
+          id: generateId('path'),
+          jobId,
+          name: 'Test Path',
+          goalQuantity: 10,
+          steps: Array.from({ length: stepCount }, (_, i) => ({
+            id: generateId('step'),
+            name: `Step ${i}`,
+            order: i,
+          })),
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
 
-          // Create an active user
-          const userId = generateId('user')
-          insertUser(db, userId, true)
+        // Create an active user
+        const userId = generateId('user')
+        insertUser(db, userId, true)
 
-          // Pick a random step
-          const step = path.steps[0]
+        // Pick a random step
+        const step = path.steps[0]
 
-          // Assign user to step
-          const assigned = pathService.assignStep(step.id, userId)
-          expect(assigned.assignedTo).toBe(userId)
+        // Assign user to step
+        const assigned = pathService.assignStep(step.id, userId)
+        expect(assigned.assignedTo).toBe(userId)
 
-          // Read back via getStepById
-          const readBack = repos.paths.getStepById(step.id)
-          expect(readBack).not.toBeNull()
-          expect(readBack!.assignedTo).toBe(userId)
+        // Read back via getStepById
+        const readBack = repos.paths.getStepById(step.id)
+        expect(readBack).not.toBeNull()
+        expect(readBack!.assignedTo).toBe(userId)
 
-          if (shouldUnassign) {
-            // Unassign (null)
-            const unassigned = pathService.assignStep(step.id, null)
-            expect(unassigned.assignedTo).toBeUndefined()
+        if (shouldUnassign) {
+          // Unassign (null)
+          const unassigned = pathService.assignStep(step.id, null)
+          expect(unassigned.assignedTo).toBeUndefined()
 
-            const readBackNull = repos.paths.getStepById(step.id)
-            expect(readBackNull).not.toBeNull()
-            expect(readBackNull!.assignedTo).toBeUndefined()
-          }
+          const readBackNull = repos.paths.getStepById(step.id)
+          expect(readBackNull).not.toBeNull()
+          expect(readBackNull!.assignedTo).toBeUndefined()
+        }
 
-          db.close()
-          db = null as any
-        },
-      ),
-      { numRuns: 100 },
+        db.close()
+        db = null as any
+      }),
+      { numRuns: 100 }
     )
   })
 })
@@ -152,55 +152,52 @@ describe('Property 2: Invalid assignment rejection', () => {
 
   it('assigning a non-existent or inactive user throws ValidationError and leaves step unchanged', () => {
     fc.assert(
-      fc.property(
-        fc.boolean(),
-        (useInactiveUser) => {
-          db = createTestDb()
-          const { repos, pathService } = setupServices(db)
+      fc.property(fc.boolean(), (useInactiveUser) => {
+        db = createTestDb()
+        const { repos, pathService } = setupServices(db)
 
-          // Create a job and path with one step
-          const jobId = generateId('job')
-          insertJob(db, jobId)
+        // Create a job and path with one step
+        const jobId = generateId('job')
+        insertJob(db, jobId)
 
-          const stepId = generateId('step')
-          repos.paths.create({
-            id: generateId('path'),
-            jobId,
-            name: 'Test Path',
-            goalQuantity: 10,
-            steps: [{ id: stepId, name: 'Step 0', order: 0 }],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          })
+        const stepId = generateId('step')
+        repos.paths.create({
+          id: generateId('path'),
+          jobId,
+          name: 'Test Path',
+          goalQuantity: 10,
+          steps: [{ id: stepId, name: 'Step 0', order: 0 }],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
 
-          // Optionally assign a valid user first so we can verify it stays unchanged
-          const validUserId = generateId('user')
-          insertUser(db, validUserId, true)
-          pathService.assignStep(stepId, validUserId)
+        // Optionally assign a valid user first so we can verify it stays unchanged
+        const validUserId = generateId('user')
+        insertUser(db, validUserId, true)
+        pathService.assignStep(stepId, validUserId)
 
-          // Now try to assign an invalid user
-          let invalidUserId: string
-          if (useInactiveUser) {
-            // Create an inactive user
-            invalidUserId = generateId('user')
-            insertUser(db, invalidUserId, false)
-          } else {
-            // Use a completely non-existent user ID
-            invalidUserId = generateId('user')
-          }
+        // Now try to assign an invalid user
+        let invalidUserId: string
+        if (useInactiveUser) {
+          // Create an inactive user
+          invalidUserId = generateId('user')
+          insertUser(db, invalidUserId, false)
+        } else {
+          // Use a completely non-existent user ID
+          invalidUserId = generateId('user')
+        }
 
-          expect(() => pathService.assignStep(stepId, invalidUserId)).toThrow(ValidationError)
+        expect(() => pathService.assignStep(stepId, invalidUserId)).toThrow(ValidationError)
 
-          // Verify step assignment is unchanged
-          const step = repos.paths.getStepById(stepId)
-          expect(step).not.toBeNull()
-          expect(step!.assignedTo).toBe(validUserId)
+        // Verify step assignment is unchanged
+        const step = repos.paths.getStepById(stepId)
+        expect(step).not.toBeNull()
+        expect(step!.assignedTo).toBe(validUserId)
 
-          db.close()
-          db = null as any
-        },
-      ),
-      { numRuns: 100 },
+        db.close()
+        db = null as any
+      }),
+      { numRuns: 100 }
     )
   })
 })
@@ -225,7 +222,7 @@ describe('Property 3: Non-existent step assignment error', () => {
   it('assigning to a non-existent step throws NotFoundError', () => {
     fc.assert(
       fc.property(
-        fc.string({ minLength: 5, maxLength: 20 }).filter(s => s.trim().length >= 5),
+        fc.string({ minLength: 5, maxLength: 20 }).filter((s) => s.trim().length >= 5),
         (randomSuffix) => {
           db = createTestDb()
           const { pathService } = setupServices(db)
@@ -237,9 +234,9 @@ describe('Property 3: Non-existent step assignment error', () => {
 
           db.close()
           db = null as any
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

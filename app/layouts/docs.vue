@@ -10,7 +10,7 @@ const navigation = computed(() => {
   const raw = rawNavigation.value
   if (!raw || raw.length === 0) return []
   // If the first item has children and its path is /api-docs, unwrap it
-  const root = raw.find(n => n.path === '/api-docs')
+  const root = raw.find((n) => n.path === '/api-docs')
   if (root?.children?.length) return root.children
   return raw
 })
@@ -19,9 +19,12 @@ const navigation = computed(() => {
 const sidebarOpen = ref(false)
 
 /** Close mobile sidebar on route change. */
-watch(() => route.path, () => {
-  sidebarOpen.value = false
-})
+watch(
+  () => route.path,
+  () => {
+    sidebarOpen.value = false
+  }
+)
 
 /**
  * Build breadcrumb items from the current URL slug.
@@ -34,7 +37,7 @@ const breadcrumbs = computed(() => {
     .filter(Boolean)
 
   const items: { label: string; to: string; icon?: string }[] = [
-    { label: 'API Docs', to: '/api-docs', icon: 'i-lucide-book-open' }
+    { label: 'API Docs', to: '/api-docs', icon: 'i-lucide-book-open' },
   ]
 
   let currentPath = '/api-docs'
@@ -43,7 +46,7 @@ const breadcrumbs = computed(() => {
     // Capitalize and humanize the segment: "force-complete" → "Force Complete"
     const label = segment
       .split('-')
-      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(' ')
     items.push({ label, to: currentPath })
   }
@@ -77,7 +80,9 @@ const breadcrumbs = computed(() => {
       <div class="mx-2 h-5 w-px bg-(--ui-border) hidden sm:block" />
 
       <!-- Title -->
-      <span class="font-bold text-base bg-gradient-to-r from-violet-500 to-violet-400 bg-clip-text text-transparent tracking-wide hidden sm:inline">
+      <span
+        class="font-bold text-base bg-gradient-to-r from-violet-500 to-violet-400 bg-clip-text text-transparent tracking-wide hidden sm:inline"
+      >
         API Docs
       </span>
 
@@ -90,10 +95,7 @@ const breadcrumbs = computed(() => {
     <div class="flex flex-1 overflow-hidden">
       <!-- Desktop sidebar -->
       <aside class="hidden md:block border-r border-(--ui-border) overflow-y-auto shrink-0">
-        <DocsSidebar
-          :navigation="navigation ?? []"
-          :current-path="route.path"
-        />
+        <DocsSidebar :navigation="navigation ?? []" :current-path="route.path" />
       </aside>
 
       <!-- Mobile sidebar overlay -->
@@ -120,10 +122,7 @@ const breadcrumbs = computed(() => {
                 <UIcon name="i-lucide-x" class="size-4" />
               </button>
             </div>
-            <DocsSidebar
-              :navigation="navigation ?? []"
-              :current-path="route.path"
-            />
+            <DocsSidebar :navigation="navigation ?? []" :current-path="route.path" />
           </aside>
         </Transition>
       </Teleport>
@@ -134,7 +133,11 @@ const breadcrumbs = computed(() => {
           <!-- Breadcrumbs -->
           <nav v-if="breadcrumbs.length > 1" class="mb-4" aria-label="Breadcrumb">
             <ol class="flex items-center gap-1 text-sm">
-              <li v-for="(crumb, idx) in breadcrumbs" :key="crumb.to" class="flex items-center gap-1">
+              <li
+                v-for="(crumb, idx) in breadcrumbs"
+                :key="crumb.to"
+                class="flex items-center gap-1"
+              >
                 <UIcon
                   v-if="idx > 0"
                   name="i-lucide-chevron-right"
@@ -145,7 +148,11 @@ const breadcrumbs = computed(() => {
                   :to="crumb.to"
                   class="text-(--ui-text-muted) hover:text-(--ui-text) transition-colors"
                 >
-                  <UIcon v-if="crumb.icon" :name="crumb.icon" class="size-3.5 inline-block mr-0.5 align-text-bottom" />
+                  <UIcon
+                    v-if="crumb.icon"
+                    :name="crumb.icon"
+                    class="size-3.5 inline-block mr-0.5 align-text-bottom"
+                  />
                   {{ crumb.label }}
                 </NuxtLink>
                 <span v-else class="text-(--ui-text-highlighted) font-medium">

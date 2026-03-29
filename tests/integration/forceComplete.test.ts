@@ -51,7 +51,7 @@ describe('Force-Complete Workflow Integration', () => {
 
     // 5. Verify audit entry contains incomplete steps
     const auditTrail = auditService.getPartAuditTrail(part.id)
-    const fcEntry = auditTrail.find(e => e.action === 'part_force_completed')
+    const fcEntry = auditTrail.find((e) => e.action === 'part_force_completed')
     expect(fcEntry).toBeDefined()
     expect(fcEntry!.partId).toBe(part.id)
     expect(fcEntry!.metadata).toBeDefined()
@@ -113,8 +113,6 @@ describe('Force-Complete Workflow Integration', () => {
     lifecycleService.scrapPart(part.id, { reason: 'damaged', userId: 'user1' })
 
     // Force-complete should fail
-    expect(() =>
-      lifecycleService.forceComplete(part.id, { userId: 'user1' })
-    ).toThrow(/scrapped/)
+    expect(() => lifecycleService.forceComplete(part.id, { userId: 'user1' })).toThrow(/scrapped/)
   })
 })

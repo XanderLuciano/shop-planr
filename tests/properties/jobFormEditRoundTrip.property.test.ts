@@ -29,12 +29,16 @@ import { useJobForm } from '~/app/composables/useJobForm'
 
 // ---- Arbitraries ----
 
-const depTypeArb = fc.constantFrom('physical' as const, 'preferred' as const, 'completion_gate' as const)
+const depTypeArb = fc.constantFrom(
+  'physical' as const,
+  'preferred' as const,
+  'completion_gate' as const
+)
 const advModeArb = fc.constantFrom('strict' as const, 'flexible' as const, 'per_step' as const)
 
 const processStepArb: fc.Arbitrary<ProcessStep> = fc.record({
   id: fc.uuid(),
-  name: fc.string({ minLength: 1, maxLength: 30 }).filter(s => s.trim().length > 0),
+  name: fc.string({ minLength: 1, maxLength: 30 }).filter((s) => s.trim().length > 0),
   order: fc.integer({ min: 0, max: 100 }),
   location: fc.option(fc.string({ minLength: 1, maxLength: 30 }), { nil: undefined }),
   assignedTo: fc.constant(undefined),
@@ -46,25 +50,25 @@ const pathArb = (jobId: string): fc.Arbitrary<Path> =>
   fc.record({
     id: fc.uuid(),
     jobId: fc.constant(jobId),
-    name: fc.string({ minLength: 1, maxLength: 30 }).filter(s => s.trim().length > 0),
+    name: fc.string({ minLength: 1, maxLength: 30 }).filter((s) => s.trim().length > 0),
     goalQuantity: fc.integer({ min: 1, max: 10000 }),
-    steps: fc.array(processStepArb, { minLength: 1, maxLength: 5 }).map(steps =>
-      steps.map((s, i) => ({ ...s, order: i })),
-    ),
+    steps: fc
+      .array(processStepArb, { minLength: 1, maxLength: 5 })
+      .map((steps) => steps.map((s, i) => ({ ...s, order: i }))),
     advancementMode: advModeArb,
     createdAt: fc.constant('2024-01-01T00:00:00Z'),
     updatedAt: fc.constant('2024-01-01T00:00:00Z'),
   })
 
-const jobWithPathsArb: fc.Arbitrary<Job & { paths: Path[] }> = fc.uuid().chain(jobId =>
+const jobWithPathsArb: fc.Arbitrary<Job & { paths: Path[] }> = fc.uuid().chain((jobId) =>
   fc.record({
     id: fc.constant(jobId),
-    name: fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length > 0),
+    name: fc.string({ minLength: 1, maxLength: 50 }).filter((s) => s.trim().length > 0),
     goalQuantity: fc.integer({ min: 1, max: 10000 }),
     createdAt: fc.constant('2024-01-01T00:00:00Z'),
     updatedAt: fc.constant('2024-01-01T00:00:00Z'),
     paths: fc.array(pathArb(jobId), { minLength: 0, maxLength: 4 }),
-  }),
+  })
 )
 
 describe('Property 1: Edit mode initialization round-trip', () => {
@@ -105,7 +109,7 @@ describe('Property 1: Edit mode initialization round-trip', () => {
           }
         }
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

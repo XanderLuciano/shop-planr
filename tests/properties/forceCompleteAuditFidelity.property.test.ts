@@ -28,14 +28,14 @@ interface StepStatusRecord {
 function collectIncompleteRequiredStepIds(
   steps: StepConfig[],
   stepStatuses: StepStatusRecord[],
-  overriddenStepIds: Set<string>,
+  overriddenStepIds: Set<string>
 ): string[] {
   const result: string[] = []
   for (const step of steps) {
     if (step.optional) continue
     if (overriddenStepIds.has(step.id)) continue
 
-    const status = stepStatuses.find(s => s.stepId === step.id)
+    const status = stepStatuses.find((s) => s.stepId === step.id)
     if (!status || (status.status !== 'completed' && status.status !== 'waived')) {
       result.push(step.id)
     }
@@ -53,8 +53,15 @@ describe('Property 12: Force Complete Audit Fidelity', () => {
         fc.array(fc.boolean(), { minLength: 12, maxLength: 12 }),
         // array of step statuses
         fc.array(
-          fc.constantFrom<PartStepStatusValue>('pending', 'in_progress', 'completed', 'skipped', 'deferred', 'waived'),
-          { minLength: 12, maxLength: 12 },
+          fc.constantFrom<PartStepStatusValue>(
+            'pending',
+            'in_progress',
+            'completed',
+            'skipped',
+            'deferred',
+            'waived'
+          ),
+          { minLength: 12, maxLength: 12 }
         ),
         (totalSteps, optionalFlags, statusValues) => {
           const steps: StepConfig[] = Array.from({ length: totalSteps }, (_, i) => ({
@@ -71,10 +78,10 @@ describe('Property 12: Force Complete Audit Fidelity', () => {
 
           // Verify: every ID in the result is a required step that is NOT completed/waived
           for (const id of incompleteIds) {
-            const step = steps.find(s => s.id === id)!
+            const step = steps.find((s) => s.id === id)!
             expect(step.optional).toBe(false)
 
-            const status = stepStatuses.find(s => s.stepId === id)
+            const status = stepStatuses.find((s) => s.stepId === id)
             if (status) {
               expect(status.status).not.toBe('completed')
               expect(status.status).not.toBe('waived')
@@ -84,58 +91,60 @@ describe('Property 12: Force Complete Audit Fidelity', () => {
           // Verify: every required step NOT completed/waived IS in the result
           for (const step of steps) {
             if (step.optional) continue
-            const status = stepStatuses.find(s => s.stepId === step.id)
-            const isIncomplete = !status || (status.status !== 'completed' && status.status !== 'waived')
+            const status = stepStatuses.find((s) => s.stepId === step.id)
+            const isIncomplete =
+              !status || (status.status !== 'completed' && status.status !== 'waived')
             if (isIncomplete) {
               expect(incompleteIds).toContain(step.id)
             } else {
               expect(incompleteIds).not.toContain(step.id)
             }
           }
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
   it('overridden steps are excluded from incomplete set even if not completed', () => {
     fc.assert(
-      fc.property(
-        fc.integer({ min: 3, max: 10 }),
-        (totalSteps) => {
-          // All steps required, all pending
-          const steps: StepConfig[] = Array.from({ length: totalSteps }, (_, i) => ({
-            id: `step-${i}`,
-            optional: false,
-          }))
+      fc.property(fc.integer({ min: 3, max: 10 }), (totalSteps) => {
+        // All steps required, all pending
+        const steps: StepConfig[] = Array.from({ length: totalSteps }, (_, i) => ({
+          id: `step-${i}`,
+          optional: false,
+        }))
 
-          const stepStatuses: StepStatusRecord[] = steps.map(step => ({
-            stepId: step.id,
-            status: 'pending' as PartStepStatusValue,
-          }))
+        const stepStatuses: StepStatusRecord[] = steps.map((step) => ({
+          stepId: step.id,
+          status: 'pending' as PartStepStatusValue,
+        }))
 
-          // Override every other step
-          const overriddenStepIds = new Set<string>()
-          for (let i = 0; i < totalSteps; i += 2) {
-            overriddenStepIds.add(`step-${i}`)
+        // Override every other step
+        const overriddenStepIds = new Set<string>()
+        for (let i = 0; i < totalSteps; i += 2) {
+          overriddenStepIds.add(`step-${i}`)
+        }
+
+        const incompleteIds = collectIncompleteRequiredStepIds(
+          steps,
+          stepStatuses,
+          overriddenStepIds
+        )
+
+        // Overridden steps should NOT appear in incomplete list
+        for (const id of incompleteIds) {
+          expect(overriddenStepIds.has(id)).toBe(false)
+        }
+
+        // Non-overridden pending steps SHOULD appear
+        for (const step of steps) {
+          if (!overriddenStepIds.has(step.id)) {
+            expect(incompleteIds).toContain(step.id)
           }
-
-          const incompleteIds = collectIncompleteRequiredStepIds(steps, stepStatuses, overriddenStepIds)
-
-          // Overridden steps should NOT appear in incomplete list
-          for (const id of incompleteIds) {
-            expect(overriddenStepIds.has(id)).toBe(false)
-          }
-
-          // Non-overridden pending steps SHOULD appear
-          for (const step of steps) {
-            if (!overriddenStepIds.has(step.id)) {
-              expect(incompleteIds).toContain(step.id)
-            }
-          }
-        },
-      ),
-      { numRuns: 100 },
+        }
+      }),
+      { numRuns: 100 }
     )
   })
 })

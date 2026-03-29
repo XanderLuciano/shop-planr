@@ -44,13 +44,13 @@ export function createPartService(
       const identifiers = partIdGenerator.nextBatch(input.quantity)
       const now = new Date().toISOString()
 
-      const parts: Part[] = identifiers.map(id => ({
+      const parts: Part[] = identifiers.map((id) => ({
         id,
         jobId: input.jobId,
         pathId: input.pathId,
         currentStepIndex: 0,
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       }))
 
       const created = repos.parts.createBatch(parts)
@@ -76,7 +76,7 @@ export function createPartService(
             certId: input.certId,
             stepId: firstStep.id,
             attachedAt: now,
-            attachedBy: userId
+            attachedBy: userId,
           })
         }
       }
@@ -85,7 +85,7 @@ export function createPartService(
         userId,
         jobId: input.jobId,
         pathId: input.pathId,
-        batchQuantity: input.quantity
+        batchQuantity: input.quantity,
       })
 
       return created
@@ -119,7 +119,7 @@ export function createPartService(
         const updated = repos.parts.update(partId, {
           currentStepIndex: -1,
           status: 'completed',
-          updatedAt: now
+          updatedAt: now,
         })
 
         auditService.recordPartCompletion({
@@ -127,7 +127,7 @@ export function createPartService(
           partId,
           jobId: part.jobId,
           pathId: part.pathId,
-          fromStepId: fromStep.id
+          fromStepId: fromStep.id,
         })
 
         return updated
@@ -137,7 +137,7 @@ export function createPartService(
       const toStep = path.steps[part.currentStepIndex + 1]!
       const updated = repos.parts.update(partId, {
         currentStepIndex: part.currentStepIndex + 1,
-        updatedAt: now
+        updatedAt: now,
       })
 
       auditService.recordPartAdvancement({
@@ -146,7 +146,7 @@ export function createPartService(
         jobId: part.jobId,
         pathId: part.pathId,
         fromStepId: fromStep.id,
-        toStepId: toStep.id
+        toStepId: toStep.id,
       })
 
       return updated
@@ -181,7 +181,10 @@ export function createPartService(
 
       // Build lookup maps for jobs and paths
       const jobMap = new Map<string, string>()
-      const pathMap = new Map<string, { name: string; steps: { name: string; order: number; assignedTo?: string }[] }>()
+      const pathMap = new Map<
+        string,
+        { name: string; steps: { name: string; order: number; assignedTo?: string }[] }
+      >()
 
       for (const part of parts) {
         if (!jobMap.has(part.jobId) && repos.jobs) {
@@ -193,7 +196,11 @@ export function createPartService(
           if (path) {
             pathMap.set(part.pathId, {
               name: path.name,
-              steps: path.steps.map(s => ({ name: s.name, order: s.order, assignedTo: s.assignedTo })),
+              steps: path.steps.map((s) => ({
+                name: s.name,
+                order: s.order,
+                assignedTo: s.assignedTo,
+              })),
             })
           }
         }
@@ -217,7 +224,7 @@ export function createPartService(
         let currentStepName = 'Completed'
         let assignedTo: string | undefined
         if (part.currentStepIndex >= 0) {
-          const currentStep = steps.find(s => s.order === part.currentStepIndex)
+          const currentStep = steps.find((s) => s.order === part.currentStepIndex)
           currentStepName = currentStep?.name ?? ''
           assignedTo = currentStep?.assignedTo
         }
@@ -240,7 +247,7 @@ export function createPartService(
           createdAt: part.createdAt,
         }
       })
-    }
+    },
   }
 }
 

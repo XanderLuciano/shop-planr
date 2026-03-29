@@ -29,7 +29,7 @@ describe('Property 1: Bug Condition — Back Arrow Returns to Job Detail Page', 
         expect(result.to).toBe(jobPath)
         expect(result.label).toBe('Back to Job')
       }),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 })
@@ -50,9 +50,9 @@ describe('Property 2: Preservation — Default Back Navigation to Parts', () => 
 
           expect(result.to).toBe('/parts')
           expect(result.label).toBe('Back to Parts')
-        },
+        }
       ),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 

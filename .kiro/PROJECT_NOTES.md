@@ -40,6 +40,7 @@ Or use the deploy script: `./deploy.sh` (configure server details first).
 ## Kiro Powers
 
 ### nuxtui-components
+
 Complete reference guide for NuxtUI 4.3.0 components.
 
 ## Resources

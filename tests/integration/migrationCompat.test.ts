@@ -40,7 +40,7 @@ describe('Migration Backwards Compatibility Integration', () => {
 
     // Load and sort migration files
     const files = readdirSync(migrationsDir)
-      .filter(f => f.endsWith('.sql'))
+      .filter((f) => f.endsWith('.sql'))
       .sort()
 
     // Run migrations 001-003 only (pre-lifecycle)
@@ -62,27 +62,39 @@ describe('Migration Backwards Compatibility Integration', () => {
     // Insert "old schema" data — a job, path with steps, and serials
     const now = new Date().toISOString()
 
-    db.prepare(`INSERT INTO jobs (id, name, goal_quantity, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?)`).run('job_old', 'Old Job', 10, now, now)
+    db.prepare(
+      `INSERT INTO jobs (id, name, goal_quantity, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?)`
+    ).run('job_old', 'Old Job', 10, now, now)
 
-    db.prepare(`INSERT INTO paths (id, job_id, name, goal_quantity, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?)`).run('path_old', 'job_old', 'Old Path', 10, now, now)
+    db.prepare(
+      `INSERT INTO paths (id, job_id, name, goal_quantity, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)`
+    ).run('path_old', 'job_old', 'Old Path', 10, now, now)
 
-    db.prepare(`INSERT INTO process_steps (id, path_id, name, step_order)
-      VALUES (?, ?, ?, ?)`).run('step_old_1', 'path_old', 'Step A', 0)
-    db.prepare(`INSERT INTO process_steps (id, path_id, name, step_order)
-      VALUES (?, ?, ?, ?)`).run('step_old_2', 'path_old', 'Step B', 1)
+    db.prepare(
+      `INSERT INTO process_steps (id, path_id, name, step_order)
+      VALUES (?, ?, ?, ?)`
+    ).run('step_old_1', 'path_old', 'Step A', 0)
+    db.prepare(
+      `INSERT INTO process_steps (id, path_id, name, step_order)
+      VALUES (?, ?, ?, ?)`
+    ).run('step_old_2', 'path_old', 'Step B', 1)
 
     // Create an in-progress serial (step 0)
-    db.prepare(`INSERT INTO serials (id, job_id, path_id, current_step_index, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?)`).run('sn_ip', 'job_old', 'path_old', 0, now, now)
+    db.prepare(
+      `INSERT INTO serials (id, job_id, path_id, current_step_index, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)`
+    ).run('sn_ip', 'job_old', 'path_old', 0, now, now)
 
     // Create a completed serial (step -1)
-    db.prepare(`INSERT INTO serials (id, job_id, path_id, current_step_index, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?)`).run('sn_done', 'job_old', 'path_old', -1, now, now)
+    db.prepare(
+      `INSERT INTO serials (id, job_id, path_id, current_step_index, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)`
+    ).run('sn_done', 'job_old', 'path_old', -1, now, now)
 
     // Now run migration 004
-    const migration004File = files.find(f => f.startsWith('004'))
+    const migration004File = files.find((f) => f.startsWith('004'))
     expect(migration004File).toBeDefined()
 
     const migration004Sql = readFileSync(resolve(migrationsDir, migration004File!), 'utf-8')
@@ -94,29 +106,39 @@ describe('Migration Backwards Compatibility Integration', () => {
     })()
 
     // Verify: completed serial has status = 'completed'
-    const completedSerial = db.prepare('SELECT status FROM serials WHERE id = ?').get('sn_done') as { status: string }
+    const completedSerial = db
+      .prepare('SELECT status FROM serials WHERE id = ?')
+      .get('sn_done') as { status: string }
     expect(completedSerial.status).toBe('completed')
 
     // Verify: in-progress serial has status = 'in_progress' (default)
-    const ipSerial = db.prepare('SELECT status FROM serials WHERE id = ?').get('sn_ip') as { status: string }
+    const ipSerial = db.prepare('SELECT status FROM serials WHERE id = ?').get('sn_ip') as {
+      status: string
+    }
     expect(ipSerial.status).toBe('in_progress')
 
     // Verify: process steps have optional = 0 (false) and dependency_type = 'preferred'
-    const steps = db.prepare('SELECT optional, dependency_type FROM process_steps WHERE path_id = ?').all('path_old') as { optional: number; dependency_type: string }[]
+    const steps = db
+      .prepare('SELECT optional, dependency_type FROM process_steps WHERE path_id = ?')
+      .all('path_old') as { optional: number; dependency_type: string }[]
     for (const step of steps) {
       expect(step.optional).toBe(0)
       expect(step.dependency_type).toBe('preferred')
     }
 
     // Verify: path has advancement_mode = 'strict'
-    const pathRow = db.prepare('SELECT advancement_mode FROM paths WHERE id = ?').get('path_old') as { advancement_mode: string }
+    const pathRow = db
+      .prepare('SELECT advancement_mode FROM paths WHERE id = ?')
+      .get('path_old') as { advancement_mode: string }
     expect(pathRow.advancement_mode).toBe('strict')
 
     // Verify: new tables exist
-    const tables = db.prepare(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('sn_step_statuses', 'sn_step_overrides', 'bom_versions', 'process_library', 'location_library')"
-    ).all() as { name: string }[]
-    const tableNames = tables.map(t => t.name)
+    const tables = db
+      .prepare(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('sn_step_statuses', 'sn_step_overrides', 'bom_versions', 'process_library', 'location_library')"
+      )
+      .all() as { name: string }[]
+    const tableNames = tables.map((t) => t.name)
     expect(tableNames).toContain('sn_step_statuses')
     expect(tableNames).toContain('sn_step_overrides')
     expect(tableNames).toContain('bom_versions')
@@ -124,11 +146,15 @@ describe('Migration Backwards Compatibility Integration', () => {
     expect(tableNames).toContain('location_library')
 
     // Verify: seed data in process_library
-    const processCount = db.prepare('SELECT COUNT(*) as cnt FROM process_library').get() as { cnt: number }
+    const processCount = db.prepare('SELECT COUNT(*) as cnt FROM process_library').get() as {
+      cnt: number
+    }
     expect(processCount.cnt).toBeGreaterThanOrEqual(8)
 
     // Verify: seed data in location_library
-    const locationCount = db.prepare('SELECT COUNT(*) as cnt FROM location_library').get() as { cnt: number }
+    const locationCount = db.prepare('SELECT COUNT(*) as cnt FROM location_library').get() as {
+      cnt: number
+    }
     expect(locationCount.cnt).toBeGreaterThanOrEqual(3)
   })
 })

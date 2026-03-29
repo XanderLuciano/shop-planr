@@ -111,58 +111,58 @@ The page already has all required IDs available: `job.value.id`, `path.value.id`
 
 ## Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+_A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
 
 ### Property 1: Add Note button visibility matches serial status
 
-*For any* serial number, the "Add Note" button should be visible if and only if the serial's status is in-progress. For completed or scrapped serials, the button must not be rendered.
+_For any_ serial number, the "Add Note" button should be visible if and only if the serial's status is in-progress. For completed or scrapped serials, the button must not be rendered.
 
 **Validates: Requirements 1.1, 1.2**
 
 ### Property 2: Cancel resets form state
 
-*For any* string entered in the note textarea, clicking "Cancel" should result in the form being hidden and the textarea content being empty.
+_For any_ string entered in the note textarea, clicking "Cancel" should result in the form being hidden and the textarea content being empty.
 
 **Validates: Requirements 2.2**
 
 ### Property 3: Add Note button and form are mutually exclusive
 
-*For any* UI state, the "Add Note" button and the inline note form must never both be visible simultaneously. When the form is shown, the button is hidden, and vice versa.
+_For any_ UI state, the "Add Note" button and the inline note form must never both be visible simultaneously. When the form is shown, the button is hidden, and vice versa.
 
 **Validates: Requirements 2.3**
 
 ### Property 4: Note creation round trip
 
-*For any* valid (non-whitespace) note text, after a successful `createNote` call, the shared `notes` ref should contain a note whose `text` matches the submitted text, whose `serialIds` includes the current serial ID, and whose `stepId` matches the current step.
+_For any_ valid (non-whitespace) note text, after a successful `createNote` call, the shared `notes` ref should contain a note whose `text` matches the submitted text, whose `serialIds` includes the current serial ID, and whose `stepId` matches the current step.
 
 **Validates: Requirements 3.1, 3.2**
 
 ### Property 5: Whitespace-only text disables Save
 
-*For any* string composed entirely of whitespace characters (including the empty string), the "Save" button should be disabled and the form should not attempt submission.
+_For any_ string composed entirely of whitespace characters (including the empty string), the "Save" button should be disabled and the form should not attempt submission.
 
 **Validates: Requirements 4.1**
 
 ### Property 6: Error preserves form state
 
-*For any* note text and any error response from the Note_Service, the form should remain open and the textarea should still contain the original text, allowing the operator to retry.
+_For any_ note text and any error response from the Note_Service, the form should remain open and the textarea should still contain the original text, allowing the operator to retry.
 
 **Validates: Requirements 4.3**
 
 ### Property 7: Successful save resets form state
 
-*For any* valid note text, after a successful `createNote` call, the form should be hidden and the textarea content should be empty.
+_For any_ valid note text, after a successful `createNote` call, the form should be hidden and the textarea content should be empty.
 
 **Validates: Requirements 3.3**
 
 ## Error Handling
 
-| Scenario | Behavior |
-|----------|----------|
-| `createNote` throws | Show error toast with `e?.data?.message ?? e?.message ?? 'Failed to create note'`. Form stays open, text preserved. `noteSaving` set to `false`. |
-| `currentStep` is null (serial completed/scrapped) | "Add Note" button not rendered — form cannot be opened. |
-| `operatorId` is null | Falls back to `'system'` as userId (matches existing `handleAdvance` pattern on the page). |
-| Network timeout / 500 | Caught by the same try/catch — error toast shown, form preserved for retry. |
+| Scenario                                          | Behavior                                                                                                                                         |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `createNote` throws                               | Show error toast with `e?.data?.message ?? e?.message ?? 'Failed to create note'`. Form stays open, text preserved. `noteSaving` set to `false`. |
+| `currentStep` is null (serial completed/scrapped) | "Add Note" button not rendered — form cannot be opened.                                                                                          |
+| `operatorId` is null                              | Falls back to `'system'` as userId (matches existing `handleAdvance` pattern on the page).                                                       |
+| Network timeout / 500                             | Caught by the same try/catch — error toast shown, form preserved for retry.                                                                      |
 
 The error message extraction follows the same pattern already used in `useNotes.ts`: `e?.data?.message ?? e?.message ?? fallback`.
 
@@ -182,15 +182,15 @@ Specific example-based tests using Vitest + happy-dom:
 
 Using `fast-check` with minimum 100 iterations per property. Each test references its design property.
 
-| Property | Test Description | Generator |
-|----------|-----------------|-----------|
-| P1 | Button visibility vs serial status | `fc.oneof(fc.constant('in_progress'), fc.constant('completed'), fc.constant('scrapped'))` |
-| P2 | Cancel clears any text | `fc.string({ minLength: 0, maxLength: 500 })` |
-| P3 | Button/form mutual exclusivity | `fc.boolean()` (showNoteForm state) |
-| P4 | Note round trip after create | `fc.string({ minLength: 1 }).filter(s => s.trim().length > 0)` |
-| P5 | Whitespace disables Save | `fc.stringOf(fc.constantFrom(' ', '\t', '\n', '\r'))` |
-| P6 | Error preserves form text | `fc.string({ minLength: 1 }).filter(s => s.trim().length > 0)` |
-| P7 | Success clears form | `fc.string({ minLength: 1 }).filter(s => s.trim().length > 0)` |
+| Property | Test Description                   | Generator                                                                                 |
+| -------- | ---------------------------------- | ----------------------------------------------------------------------------------------- |
+| P1       | Button visibility vs serial status | `fc.oneof(fc.constant('in_progress'), fc.constant('completed'), fc.constant('scrapped'))` |
+| P2       | Cancel clears any text             | `fc.string({ minLength: 0, maxLength: 500 })`                                             |
+| P3       | Button/form mutual exclusivity     | `fc.boolean()` (showNoteForm state)                                                       |
+| P4       | Note round trip after create       | `fc.string({ minLength: 1 }).filter(s => s.trim().length > 0)`                            |
+| P5       | Whitespace disables Save           | `fc.stringOf(fc.constantFrom(' ', '\t', '\n', '\r'))`                                     |
+| P6       | Error preserves form text          | `fc.string({ minLength: 1 }).filter(s => s.trim().length > 0)`                            |
+| P7       | Success clears form                | `fc.string({ minLength: 1 }).filter(s => s.trim().length > 0)`                            |
 
 **PBT Library**: `fast-check` (already in project dependencies)
 

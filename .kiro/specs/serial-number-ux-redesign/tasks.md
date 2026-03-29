@@ -14,7 +14,7 @@ Reorganize the serial detail page's Routing tab into four section cards (Routing
     - Use `ui` prop to set consistent header/body padding: `{ header: 'px-4 py-3 sm:px-4', body: 'p-4 sm:p-4' }`
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-  - [ ]* 1.2 Write unit tests for `SectionCard`
+  - [ ]\* 1.2 Write unit tests for `SectionCard`
     - Test that the component renders the provided icon and title in the header
     - Test that default slot content is rendered in the card body
     - Test each section header icon: `i-lucide-route`, `i-lucide-file-badge`, `i-lucide-message-square`, `i-lucide-arrow-right-circle`
@@ -28,7 +28,7 @@ Reorganize the serial detail page's Routing tab into four section cards (Routing
     - No other changes to the component's behavior, data fetching, or template
     - _Requirements: 4.1, 4.3_
 
-  - [ ]* 2.2 Write unit tests for `PartDetailNotes` hideHeading behavior
+  - [ ]\* 2.2 Write unit tests for `PartDetailNotes` hideHeading behavior
     - Test that heading is visible when `hideHeading` is `false` or omitted
     - Test that heading is hidden when `hideHeading` is `true`
     - Test file: `tests/unit/components/SectionCard.test.ts` (append to same file)
@@ -74,27 +74,27 @@ Reorganize the serial detail page's Routing tab into four section cards (Routing
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 6. Write property-based tests for section rendering invariants
-  - [ ]* 6.1 Write property test: Section card count and order matches serial status
+  - [ ]\* 6.1 Write property test: Section card count and order matches serial status
     - **Property 1: Section card count and order matches serial status**
     - **Validates: Requirements 1.1, 1.2, 1.3, 5.3**
     - Test file: `tests/properties/serialDetailSections.property.test.ts`
 
-  - [ ]* 6.2 Write property test: Routing section conditional content matches data presence
+  - [ ]\* 6.2 Write property test: Routing section conditional content matches data presence
     - **Property 2: Routing section conditional content matches data presence**
     - **Validates: Requirements 2.2, 2.3, 2.4**
     - Test file: `tests/properties/serialDetailSections.property.test.ts`
 
-  - [ ]* 6.3 Write property test: CertAttachButton visibility matches in-progress status
+  - [ ]\* 6.3 Write property test: CertAttachButton visibility matches in-progress status
     - **Property 3: CertAttachButton visibility matches in-progress status**
     - **Validates: Requirements 3.1, 3.2**
     - Test file: `tests/properties/serialDetailSections.property.test.ts`
 
-  - [ ]* 6.4 Write property test: Certificate list and empty state are mutually exclusive
+  - [ ]\* 6.4 Write property test: Certificate list and empty state are mutually exclusive
     - **Property 4: Certificate list and empty state are mutually exclusive**
     - **Validates: Requirements 3.3, 3.4**
     - Test file: `tests/properties/serialDetailSections.property.test.ts`
 
-  - [ ]* 6.5 Write property test: No duplicate Notes heading
+  - [ ]\* 6.5 Write property test: No duplicate Notes heading
     - **Property 5: No duplicate Notes heading**
     - **Validates: Requirements 4.3**
     - Test file: `tests/properties/serialDetailSections.property.test.ts`

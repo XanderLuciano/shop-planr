@@ -24,7 +24,9 @@ vi.stubGlobal('usePaths', () => ({
 import { useJobForm } from '~/app/composables/useJobForm'
 
 // Arbitrary that produces whitespace-only strings (including empty)
-const whitespaceArb = fc.array(fc.constantFrom(' ', '\t', '\n', '\r'), { minLength: 0, maxLength: 10 }).map(chars => chars.join(''))
+const whitespaceArb = fc
+  .array(fc.constantFrom(' ', '\t', '\n', '\r'), { minLength: 0, maxLength: 10 })
+  .map((chars) => chars.join(''))
 
 describe('Property 2: Validation rejects empty/whitespace names', () => {
   it('rejects whitespace-only job name', () => {
@@ -36,9 +38,9 @@ describe('Property 2: Validation rejects empty/whitespace names', () => {
 
         const result = validate()
         expect(result.valid).toBe(false)
-        expect(result.errors.some(e => e.field === 'job.name')).toBe(true)
+        expect(result.errors.some((e) => e.field === 'job.name')).toBe(true)
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -57,9 +59,9 @@ describe('Property 2: Validation rejects empty/whitespace names', () => {
 
         const result = validate()
         expect(result.valid).toBe(false)
-        expect(result.errors.some(e => e.field === 'paths[0].name')).toBe(true)
+        expect(result.errors.some((e) => e.field === 'paths[0].name')).toBe(true)
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -78,9 +80,9 @@ describe('Property 2: Validation rejects empty/whitespace names', () => {
 
         const result = validate()
         expect(result.valid).toBe(false)
-        expect(result.errors.some(e => e.field === 'paths[0].steps[0].name')).toBe(true)
+        expect(result.errors.some((e) => e.field === 'paths[0].steps[0].name')).toBe(true)
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

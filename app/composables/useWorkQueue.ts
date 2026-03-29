@@ -11,24 +11,27 @@ export function useWorkQueue() {
     const jobs = queue.value?.jobs ?? []
     const q = searchQuery.value.trim().toLowerCase()
     if (!q) return jobs
-    return jobs.filter(job =>
-      job.jobName.toLowerCase().includes(q)
-      || job.pathName.toLowerCase().includes(q)
-      || job.stepName.toLowerCase().includes(q),
+    return jobs.filter(
+      (job) =>
+        job.jobName.toLowerCase().includes(q) ||
+        job.pathName.toLowerCase().includes(q) ||
+        job.stepName.toLowerCase().includes(q)
     )
   })
 
   const totalParts = computed<number>(() => queue.value?.totalParts ?? 0)
 
   const filteredParts = computed<number>(() =>
-    filteredJobs.value.reduce((sum, j) => sum + j.partCount, 0),
+    filteredJobs.value.reduce((sum, j) => sum + j.partCount, 0)
   )
 
   async function fetchQueue(userId: string): Promise<void> {
     loading.value = true
     error.value = null
     try {
-      queue.value = await $fetch<WorkQueueResponse>(`/api/operator/queue/${encodeURIComponent(userId)}`)
+      queue.value = await $fetch<WorkQueueResponse>(
+        `/api/operator/queue/${encodeURIComponent(userId)}`
+      )
     } catch (e: any) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch work queue'
       queue.value = null
@@ -44,12 +47,12 @@ export function useWorkQueue() {
     pathId: string
     stepId: string
     note?: string
-  }): Promise<{ advanced: number, nextStepName?: string }> {
+  }): Promise<{ advanced: number; nextStepName?: string }> {
     const { partIds, userId, jobId, pathId, stepId, note } = params
 
     // Validate quantity against available parts
     const job = queue.value?.jobs.find(
-      j => j.jobId === jobId && j.pathId === pathId && j.stepId === stepId,
+      (j) => j.jobId === jobId && j.pathId === pathId && j.stepId === stepId
     )
     if (job && partIds.length > job.partCount) {
       throw new Error(`Cannot advance ${partIds.length} parts — only ${job.partCount} available`)

@@ -1,12 +1,12 @@
 ---
-title: "Create Path"
-description: "Create a new manufacturing path with ordered process steps for a production job"
-method: "POST"
-endpoint: "/api/paths"
-service: "pathService"
-category: "Paths"
-requestBody: "CreatePathInput"
-responseType: "Path"
+title: 'Create Path'
+description: 'Create a new manufacturing path with ordered process steps for a production job'
+method: 'POST'
+endpoint: '/api/paths'
+service: 'pathService'
+category: 'Paths'
+requestBody: 'CreatePathInput'
+responseType: 'Path'
 errorCodes: [400, 404, 500]
 navigation:
   order: 3
@@ -26,22 +26,22 @@ After creating a path, the next step is typically to create serial numbers again
 
 ### Request Body
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `jobId` | `string` | Yes | — | The unique identifier of the parent job this path belongs to (e.g. `"job_abc123"`). The job must already exist. |
-| `name` | `string` | Yes | — | A human-readable name for the path (e.g. `"Main Route"`, `"Rework Path"`). Must be a non-empty string. Leading and trailing whitespace is trimmed. |
-| `goalQuantity` | `number` | Yes | — | The target number of units to produce on this path. Must be a positive integer greater than zero. |
-| `advancementMode` | `"strict" \| "flexible" \| "per_step"` | No | `"strict"` | Controls how serial numbers advance through steps. `strict` requires sequential completion of all steps. `flexible` allows skipping optional steps. `per_step` defers to each step's individual configuration. |
-| `steps` | `object[]` | Yes | — | An ordered array of process step definitions. Must contain at least one step. Array order determines step sequence (index 0 = first step). |
+| Field             | Type                                   | Required | Default    | Description                                                                                                                                                                                                    |
+| ----------------- | -------------------------------------- | -------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `jobId`           | `string`                               | Yes      | —          | The unique identifier of the parent job this path belongs to (e.g. `"job_abc123"`). The job must already exist.                                                                                                |
+| `name`            | `string`                               | Yes      | —          | A human-readable name for the path (e.g. `"Main Route"`, `"Rework Path"`). Must be a non-empty string. Leading and trailing whitespace is trimmed.                                                             |
+| `goalQuantity`    | `number`                               | Yes      | —          | The target number of units to produce on this path. Must be a positive integer greater than zero.                                                                                                              |
+| `advancementMode` | `"strict" \| "flexible" \| "per_step"` | No       | `"strict"` | Controls how serial numbers advance through steps. `strict` requires sequential completion of all steps. `flexible` allows skipping optional steps. `per_step` defers to each step's individual configuration. |
+| `steps`           | `object[]`                             | Yes      | —          | An ordered array of process step definitions. Must contain at least one step. Array order determines step sequence (index 0 = first step).                                                                     |
 
 #### `steps[]` — Step Definition objects
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `name` | `string` | Yes | — | The name of the process step (e.g. `"CNC Machining"`, `"QC Inspection"`). Describes the manufacturing operation performed at this step. |
-| `location` | `string` | No | `undefined` | The physical workstation, bay, or area where this step is performed (e.g. `"Bay 3"`, `"QC Lab"`). Used for operator routing and dashboard display. |
-| `optional` | `boolean` | No | `false` | Whether this step can be skipped without blocking serial advancement. Only relevant when `advancementMode` is `"flexible"` or `"per_step"`. |
-| `dependencyType` | `"physical" \| "preferred" \| "completion_gate"` | No | `"preferred"` | How strictly this step's completion is enforced. `physical` = must be performed, `preferred` = should be completed but can be bypassed, `completion_gate` = hard gate that blocks all downstream steps. |
+| Field            | Type                                             | Required | Default       | Description                                                                                                                                                                                             |
+| ---------------- | ------------------------------------------------ | -------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`           | `string`                                         | Yes      | —             | The name of the process step (e.g. `"CNC Machining"`, `"QC Inspection"`). Describes the manufacturing operation performed at this step.                                                                 |
+| `location`       | `string`                                         | No       | `undefined`   | The physical workstation, bay, or area where this step is performed (e.g. `"Bay 3"`, `"QC Lab"`). Used for operator routing and dashboard display.                                                      |
+| `optional`       | `boolean`                                        | No       | `false`       | Whether this step can be skipped without blocking serial advancement. Only relevant when `advancementMode` is `"flexible"` or `"per_step"`.                                                             |
+| `dependencyType` | `"physical" \| "preferred" \| "completion_gate"` | No       | `"preferred"` | How strictly this step's completion is enforced. `physical` = must be performed, `preferred` = should be completed but can be bypassed, `completion_gate` = hard gate that blocks all downstream steps. |
 
 ## Response
 
@@ -49,54 +49,54 @@ After creating a path, the next step is typically to create serial numbers again
 
 Returned when the path is successfully created. The response contains the complete `Path` object with server-generated fields (`id`, step `id`s, `order` values, `createdAt`, `updatedAt`).
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Server-generated unique identifier for the new path |
-| `jobId` | `string` | The parent job's ID as provided in the request |
-| `name` | `string` | The path name as provided (trimmed) |
-| `goalQuantity` | `number` | The goal quantity as provided |
-| `advancementMode` | `"strict" \| "flexible" \| "per_step"` | The advancement mode — either as provided or the default `"strict"` |
-| `steps` | `ProcessStep[]` | The created process steps with server-generated IDs and computed order values |
-| `createdAt` | `string` | ISO 8601 timestamp of when the path was created |
-| `updatedAt` | `string` | ISO 8601 timestamp — same as `createdAt` for newly created paths |
+| Field             | Type                                   | Description                                                                   |
+| ----------------- | -------------------------------------- | ----------------------------------------------------------------------------- |
+| `id`              | `string`                               | Server-generated unique identifier for the new path                           |
+| `jobId`           | `string`                               | The parent job's ID as provided in the request                                |
+| `name`            | `string`                               | The path name as provided (trimmed)                                           |
+| `goalQuantity`    | `number`                               | The goal quantity as provided                                                 |
+| `advancementMode` | `"strict" \| "flexible" \| "per_step"` | The advancement mode — either as provided or the default `"strict"`           |
+| `steps`           | `ProcessStep[]`                        | The created process steps with server-generated IDs and computed order values |
+| `createdAt`       | `string`                               | ISO 8601 timestamp of when the path was created                               |
+| `updatedAt`       | `string`                               | ISO 8601 timestamp — same as `createdAt` for newly created paths              |
 
 #### `steps[]` — Created Process Step objects
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Server-generated unique identifier for the step (e.g. `"step_abc123"`) |
-| `name` | `string` | Step name as provided in the request |
-| `order` | `number` | Zero-based position derived from the step's index in the input array |
-| `location` | `string \| undefined` | Physical location, if provided |
-| `optional` | `boolean` | Whether the step is optional — `false` if not specified in the request |
-| `dependencyType` | `"physical" \| "preferred" \| "completion_gate"` | Dependency type — `"preferred"` if not specified in the request |
+| Field            | Type                                             | Description                                                            |
+| ---------------- | ------------------------------------------------ | ---------------------------------------------------------------------- |
+| `id`             | `string`                                         | Server-generated unique identifier for the step (e.g. `"step_abc123"`) |
+| `name`           | `string`                                         | Step name as provided in the request                                   |
+| `order`          | `number`                                         | Zero-based position derived from the step's index in the input array   |
+| `location`       | `string \| undefined`                            | Physical location, if provided                                         |
+| `optional`       | `boolean`                                        | Whether the step is optional — `false` if not specified in the request |
+| `dependencyType` | `"physical" \| "preferred" \| "completion_gate"` | Dependency type — `"preferred"` if not specified in the request        |
 
 ### 400 Bad Request
 
 Returned when the request body fails validation. Validation checks run in order: name, goal quantity, then steps.
 
-| Condition | Message |
-|-----------|---------|
-| `name` is missing or empty | `"name is required"` |
-| `goalQuantity` is missing | `"goalQuantity is required"` |
+| Condition                          | Message                                 |
+| ---------------------------------- | --------------------------------------- |
+| `name` is missing or empty         | `"name is required"`                    |
+| `goalQuantity` is missing          | `"goalQuantity is required"`            |
 | `goalQuantity` is zero or negative | `"goalQuantity must be greater than 0"` |
-| `steps` is missing or empty array | `"steps is required"` |
+| `steps` is missing or empty array  | `"steps is required"`                   |
 
 ### 404 Not Found
 
 Returned when the specified `jobId` does not match any existing job. The job existence check happens during path creation in the repository layer.
 
-| Condition | Message |
-|-----------|---------|
+| Condition          | Message                    |
+| ------------------ | -------------------------- |
 | Job does not exist | `"Job not found: {jobId}"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while persisting the path to the database.
 
-| Condition | Message |
-|-----------|---------|
-| Database write failure | `"Internal Server Error"` |
+| Condition                    | Message                   |
+| ---------------------------- | ------------------------- |
+| Database write failure       | `"Internal Server Error"` |
 | Unexpected runtime exception | `"Internal Server Error"` |
 
 ## Examples

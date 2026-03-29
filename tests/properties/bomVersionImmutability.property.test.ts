@@ -19,10 +19,13 @@ import type { BOM, BomEntry, BomVersion, AuditEntry } from '../../server/types/d
 function createInMemoryBomRepo() {
   const boms = new Map<string, BOM>()
   return {
-    create: (bom: BOM) => { boms.set(bom.id, { ...bom }); return bom },
+    create: (bom: BOM) => {
+      boms.set(bom.id, { ...bom })
+      return bom
+    },
     getById: (id: string) => {
       const b = boms.get(id)
-      return b ? { ...b, entries: b.entries.map(e => ({ ...e })) } : null
+      return b ? { ...b, entries: b.entries.map((e) => ({ ...e })) } : null
     },
     list: () => [...boms.values()],
     update: (id: string, partial: Partial<BOM>) => {
@@ -38,21 +41,31 @@ function createInMemoryBomRepo() {
 function createInMemoryBomVersionRepo() {
   const versions: BomVersion[] = []
   return {
-    create: (v: BomVersion) => { versions.push({ ...v, entriesSnapshot: v.entriesSnapshot.map(e => ({ ...e })) }); return v },
-    listByBomId: (bomId: string) => versions.filter(v => v.bomId === bomId).map(v => ({ ...v, entriesSnapshot: v.entriesSnapshot.map(e => ({ ...e })) })),
-    getLatestByBomId: (bomId: string) => {
-      const bomVersions = versions.filter(v => v.bomId === bomId)
-      if (bomVersions.length === 0) return null
-      return bomVersions.reduce((a, b) => a.versionNumber > b.versionNumber ? a : b)
+    create: (v: BomVersion) => {
+      versions.push({ ...v, entriesSnapshot: v.entriesSnapshot.map((e) => ({ ...e })) })
+      return v
     },
-    getAll: () => versions.map(v => ({ ...v, entriesSnapshot: v.entriesSnapshot.map(e => ({ ...e })) })),
+    listByBomId: (bomId: string) =>
+      versions
+        .filter((v) => v.bomId === bomId)
+        .map((v) => ({ ...v, entriesSnapshot: v.entriesSnapshot.map((e) => ({ ...e })) })),
+    getLatestByBomId: (bomId: string) => {
+      const bomVersions = versions.filter((v) => v.bomId === bomId)
+      if (bomVersions.length === 0) return null
+      return bomVersions.reduce((a, b) => (a.versionNumber > b.versionNumber ? a : b))
+    },
+    getAll: () =>
+      versions.map((v) => ({ ...v, entriesSnapshot: v.entriesSnapshot.map((e) => ({ ...e })) })),
   }
 }
 
 function createInMemoryAuditRepo() {
   const entries: AuditEntry[] = []
   return {
-    create: (entry: AuditEntry) => { entries.push(entry); return entry },
+    create: (entry: AuditEntry) => {
+      entries.push(entry)
+      return entry
+    },
     list: () => [...entries],
     listByPartId: () => [],
     listByJobId: () => [],
@@ -71,7 +84,10 @@ function createInMemoryPartRepo() {
 const arbBomEntry = fc.record({
   partType: fc.string({ minLength: 1, maxLength: 20 }),
   requiredQuantityPerBuild: fc.integer({ min: 1, max: 100 }),
-  contributingJobIds: fc.array(fc.string({ minLength: 1, maxLength: 10 }), { minLength: 0, maxLength: 3 }),
+  contributingJobIds: fc.array(fc.string({ minLength: 1, maxLength: 10 }), {
+    minLength: 0,
+    maxLength: 3,
+  }),
 })
 
 /** Arbitrary for a non-empty array of BOM entries */
@@ -92,7 +108,7 @@ describe('Property 9: BOM Version Immutability', () => {
           const auditService = createAuditService({ audit: auditRepo })
           const bomService = createBomService(
             { bom: bomRepo, parts: partRepo as any, bomVersions: bomVersionRepo },
-            auditService,
+            auditService
           )
 
           // Create initial BOM
@@ -111,7 +127,7 @@ describe('Property 9: BOM Version Immutability', () => {
           // Capture version 1 snapshot
           const versionsAfterEdit1 = bomService.listBomVersions(bom.id)
           expect(versionsAfterEdit1).toHaveLength(1)
-          const version1Snapshot = versionsAfterEdit1[0]!.entriesSnapshot.map(e => ({
+          const version1Snapshot = versionsAfterEdit1[0]!.entriesSnapshot.map((e) => ({
             partType: e.partType,
             requiredQuantityPerBuild: e.requiredQuantityPerBuild,
           }))
@@ -127,8 +143,8 @@ describe('Property 9: BOM Version Immutability', () => {
           const versionsAfterEdit2 = bomService.listBomVersions(bom.id)
           expect(versionsAfterEdit2).toHaveLength(2)
 
-          const version1AfterEdit2 = versionsAfterEdit2.find(v => v.versionNumber === 1)!
-          const version1SnapshotAfter = version1AfterEdit2.entriesSnapshot.map(e => ({
+          const version1AfterEdit2 = versionsAfterEdit2.find((v) => v.versionNumber === 1)!
+          const version1SnapshotAfter = version1AfterEdit2.entriesSnapshot.map((e) => ({
             partType: e.partType,
             requiredQuantityPerBuild: e.requiredQuantityPerBuild,
           }))
@@ -138,9 +154,9 @@ describe('Property 9: BOM Version Immutability', () => {
           // Verify version numbers are sequential
           expect(versionsAfterEdit2[0]!.versionNumber).toBe(1)
           expect(versionsAfterEdit2[1]!.versionNumber).toBe(2)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

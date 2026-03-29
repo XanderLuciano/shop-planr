@@ -17,11 +17,11 @@ function makePath(overrides: Partial<Path> & { steps?: ProcessStep[] } = {}): Pa
     steps: [
       { id: 'step_0', name: 'OP1', order: 0 },
       { id: 'step_1', name: 'OP2', order: 1 },
-      { id: 'step_2', name: 'Final', order: 2 }
+      { id: 'step_2', name: 'Final', order: 2 },
     ],
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
-    ...overrides
+    ...overrides,
   }
 }
 
@@ -33,24 +33,27 @@ function makePart(overrides: Partial<Part> = {}): Part {
     currentStepIndex: 0,
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
-    ...overrides
+    ...overrides,
   }
 }
 
 function createMockPartRepo(): PartRepository {
   const store = new Map<string, Part>()
   return {
-    create: vi.fn((s: Part) => { store.set(s.id, s); return s }),
+    create: vi.fn((s: Part) => {
+      store.set(s.id, s)
+      return s
+    }),
     createBatch: vi.fn((parts: Part[]) => {
       for (const s of parts) store.set(s.id, s)
       return parts
     }),
     getById: vi.fn((id: string) => store.get(id) ?? null),
     getByIdentifier: vi.fn((id: string) => store.get(id) ?? null),
-    listByPathId: vi.fn((pathId: string) => [...store.values()].filter(s => s.pathId === pathId)),
-    listByJobId: vi.fn((jobId: string) => [...store.values()].filter(s => s.jobId === jobId)),
+    listByPathId: vi.fn((pathId: string) => [...store.values()].filter((s) => s.pathId === pathId)),
+    listByJobId: vi.fn((jobId: string) => [...store.values()].filter((s) => s.jobId === jobId)),
     listByStepIndex: vi.fn((pathId: string, stepIndex: number) =>
-      [...store.values()].filter(s => s.pathId === pathId && s.currentStepIndex === stepIndex)
+      [...store.values()].filter((s) => s.pathId === pathId && s.currentStepIndex === stepIndex)
     ),
     update: vi.fn((id: string, partial: Partial<Part>) => {
       const existing = store.get(id)!
@@ -58,12 +61,15 @@ function createMockPartRepo(): PartRepository {
       store.set(id, updated)
       return updated
     }),
-    countByJobId: vi.fn((jobId: string) => [...store.values()].filter(s => s.jobId === jobId).length),
-    countCompletedByJobId: vi.fn((jobId: string) =>
-      [...store.values()].filter(s => s.jobId === jobId && s.currentStepIndex === -1).length
+    countByJobId: vi.fn(
+      (jobId: string) => [...store.values()].filter((s) => s.jobId === jobId).length
+    ),
+    countCompletedByJobId: vi.fn(
+      (jobId: string) =>
+        [...store.values()].filter((s) => s.jobId === jobId && s.currentStepIndex === -1).length
     ),
     countScrappedByJobId: vi.fn(() => 0),
-    listAll: vi.fn(() => [...store.values()])
+    listAll: vi.fn(() => [...store.values()]),
   }
 }
 
@@ -71,48 +77,51 @@ function createMockPathRepo(path: Path | null = makePath()): PathRepository {
   return {
     create: vi.fn(),
     getById: vi.fn(() => path),
-    listByJobId: vi.fn(() => path ? [path] : []),
+    listByJobId: vi.fn(() => (path ? [path] : [])),
     update: vi.fn(),
-    delete: vi.fn()
+    delete: vi.fn(),
   }
 }
 
 function createMockCertRepo(): CertRepository {
   const certs = new Map<string, Certificate>()
   return {
-    create: vi.fn((c: Certificate) => { certs.set(c.id, c); return c }),
+    create: vi.fn((c: Certificate) => {
+      certs.set(c.id, c)
+      return c
+    }),
     getById: vi.fn((id: string) => certs.get(id) ?? null),
     list: vi.fn(() => [...certs.values()]),
-    attachToPart: vi.fn(a => a),
+    attachToPart: vi.fn((a) => a),
     getAttachmentsForPart: vi.fn(() => []),
     listAttachmentsByCertId: vi.fn(() => []),
-    batchAttach: vi.fn(a => a)
+    batchAttach: vi.fn((a) => a),
   }
 }
 
 function createMockAuditService(): AuditService {
   return {
-    recordCertAttachment: vi.fn(() => ({} as any)),
-    recordPartCreation: vi.fn(() => ({} as any)),
-    recordPartAdvancement: vi.fn(() => ({} as any)),
-    recordPartCompletion: vi.fn(() => ({} as any)),
-    recordNoteCreation: vi.fn(() => ({} as any)),
+    recordCertAttachment: vi.fn(() => ({}) as any),
+    recordPartCreation: vi.fn(() => ({}) as any),
+    recordPartAdvancement: vi.fn(() => ({}) as any),
+    recordPartCompletion: vi.fn(() => ({}) as any),
+    recordNoteCreation: vi.fn(() => ({}) as any),
     getPartAuditTrail: vi.fn(() => []),
     getJobAuditTrail: vi.fn(() => []),
     listAuditEntries: vi.fn(() => []),
-    recordPartCreation: vi.fn(() => ({} as any)),
-    recordPartAdvancement: vi.fn(() => ({} as any)),
-    recordPartCompletion: vi.fn(() => ({} as any)),
+    recordPartCreation: vi.fn(() => ({}) as any),
+    recordPartAdvancement: vi.fn(() => ({}) as any),
+    recordPartCompletion: vi.fn(() => ({}) as any),
     getPartAuditTrail: vi.fn(() => []),
-    recordStepSkipped: vi.fn(() => ({} as any)),
-    recordStepDeferred: vi.fn(() => ({} as any)),
-    recordScrap: vi.fn(() => ({} as any)),
-    recordForceComplete: vi.fn(() => ({} as any)),
-    recordDeferredStepCompleted: vi.fn(() => ({} as any)),
-    recordStepWaived: vi.fn(() => ({} as any)),
-    recordStepOverrideCreated: vi.fn(() => ({} as any)),
-    recordStepOverrideReversed: vi.fn(() => ({} as any)),
-    recordBomEdited: vi.fn(() => ({} as any)),
+    recordStepSkipped: vi.fn(() => ({}) as any),
+    recordStepDeferred: vi.fn(() => ({}) as any),
+    recordScrap: vi.fn(() => ({}) as any),
+    recordForceComplete: vi.fn(() => ({}) as any),
+    recordDeferredStepCompleted: vi.fn(() => ({}) as any),
+    recordStepWaived: vi.fn(() => ({}) as any),
+    recordStepOverrideCreated: vi.fn(() => ({}) as any),
+    recordStepOverrideReversed: vi.fn(() => ({}) as any),
+    recordBomEdited: vi.fn(() => ({}) as any),
   }
 }
 
@@ -130,7 +139,7 @@ function createMockPartIdGenerator(startAt = 0): PartIdGenerator {
         ids.push(`part_${String(counter).padStart(5, '0')}`)
       }
       return ids
-    })
+    }),
   }
 }
 
@@ -171,15 +180,12 @@ describe('PartService', () => {
     })
 
     it('records audit entry for batch creation', () => {
-      service.batchCreateParts(
-        { jobId: 'job_1', pathId: 'path_1', quantity: 5 },
-        'user_1'
-      )
+      service.batchCreateParts({ jobId: 'job_1', pathId: 'path_1', quantity: 5 }, 'user_1')
       expect(auditService.recordPartCreation).toHaveBeenCalledWith({
         userId: 'user_1',
         jobId: 'job_1',
         pathId: 'path_1',
-        batchQuantity: 5
+        batchQuantity: 5,
       })
     })
 
@@ -189,7 +195,7 @@ describe('PartService', () => {
         id: 'cert_1',
         type: 'material',
         name: 'Steel Cert',
-        createdAt: '2024-01-01T00:00:00.000Z'
+        createdAt: '2024-01-01T00:00:00.000Z',
       }
       certRepo.create(cert)
 
@@ -204,7 +210,7 @@ describe('PartService', () => {
           partId: 'part_00001',
           certId: 'cert_1',
           stepId: 'step_0',
-          attachedBy: 'user_1'
+          attachedBy: 'user_1',
         })
       )
     })
@@ -220,19 +226,13 @@ describe('PartService', () => {
 
     it('throws ValidationError for quantity of zero', () => {
       expect(() =>
-        service.batchCreateParts(
-          { jobId: 'job_1', pathId: 'path_1', quantity: 0 },
-          'user_1'
-        )
+        service.batchCreateParts({ jobId: 'job_1', pathId: 'path_1', quantity: 0 }, 'user_1')
       ).toThrow(ValidationError)
     })
 
     it('throws ValidationError for negative quantity', () => {
       expect(() =>
-        service.batchCreateParts(
-          { jobId: 'job_1', pathId: 'path_1', quantity: -3 },
-          'user_1'
-        )
+        service.batchCreateParts({ jobId: 'job_1', pathId: 'path_1', quantity: -3 }, 'user_1')
       ).toThrow(ValidationError)
     })
 
@@ -244,10 +244,7 @@ describe('PartService', () => {
         partIdGenerator
       )
       expect(() =>
-        service.batchCreateParts(
-          { jobId: 'job_1', pathId: 'missing', quantity: 1 },
-          'user_1'
-        )
+        service.batchCreateParts({ jobId: 'job_1', pathId: 'missing', quantity: 1 }, 'user_1')
       ).toThrow(NotFoundError)
     })
 
@@ -259,10 +256,7 @@ describe('PartService', () => {
         partIdGenerator
       )
       expect(() =>
-        service.batchCreateParts(
-          { jobId: 'job_1', pathId: 'path_1', quantity: 1 },
-          'user_1'
-        )
+        service.batchCreateParts({ jobId: 'job_1', pathId: 'path_1', quantity: 1 }, 'user_1')
       ).toThrow(ValidationError)
     })
   })
@@ -286,7 +280,7 @@ describe('PartService', () => {
         jobId: 'job_1',
         pathId: 'path_1',
         fromStepId: 'step_0',
-        toStepId: 'step_1'
+        toStepId: 'step_1',
       })
     })
 
@@ -307,7 +301,7 @@ describe('PartService', () => {
         partId: 'part_00001',
         jobId: 'job_1',
         pathId: 'path_1',
-        fromStepId: 'step_2'
+        fromStepId: 'step_2',
       })
     })
 

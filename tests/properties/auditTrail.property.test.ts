@@ -38,17 +38,19 @@ function setupServices(db: Database.default.Database) {
     paths: new SQLitePathRepository(db),
     parts: new SQLitePartRepository(db),
     certs: new SQLiteCertRepository(db),
-    audit: new SQLiteAuditRepository(db)
+    audit: new SQLiteAuditRepository(db),
   }
 
   const partIdGenerator = createSequentialPartIdGenerator({
     getCounter: () => {
-      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
+      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as
+        | { value: number }
+        | undefined
       return row?.value ?? 0
     },
     setCounter: (v: number) => {
       db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-    }
+    },
   })
 
   const auditService = createAuditService({ audit: repos.audit })
@@ -78,11 +80,12 @@ describe('Property 6: Audit Trail Immutability and Completeness', () => {
           stepCount: fc.integer({ min: 2, max: 5 }),
           partQuantity: fc.integer({ min: 1, max: 10 }),
           advanceCount: fc.integer({ min: 0, max: 8 }),
-          certAttachCount: fc.integer({ min: 0, max: 5 })
+          certAttachCount: fc.integer({ min: 0, max: 5 }),
         }),
         ({ stepCount, partQuantity, advanceCount, certAttachCount }) => {
           db = createTestDb()
-          const { jobService, pathService, partService, certService, auditService } = setupServices(db)
+          const { jobService, pathService, partService, certService, auditService } =
+            setupServices(db)
 
           const job = jobService.createJob({ name: 'Audit Test Job', goalQuantity: 100 })
           const steps = Array.from({ length: stepCount }, (_, i) => ({ name: `Step ${i}` }))
@@ -90,7 +93,7 @@ describe('Property 6: Audit Trail Immutability and Completeness', () => {
             jobId: job.id,
             name: 'Route',
             goalQuantity: partQuantity,
-            steps
+            steps,
           })
 
           // Track expected audit counts
@@ -138,7 +141,7 @@ describe('Property 6: Audit Trail Immutability and Completeness', () => {
                 stepId,
                 userId: 'user_test',
                 jobId: job.id,
-                pathId: path.id
+                pathId: path.id,
               })
               expectedCertAudits++
             }
@@ -146,14 +149,18 @@ describe('Property 6: Audit Trail Immutability and Completeness', () => {
 
           // ASSERT: total audit entries match expected operation count
           const allAudits = auditService.listAuditEntries({ limit: 10000 })
-          const expectedTotal = expectedCreationAudits + expectedAdvancementAudits + expectedCompletionAudits + expectedCertAudits
+          const expectedTotal =
+            expectedCreationAudits +
+            expectedAdvancementAudits +
+            expectedCompletionAudits +
+            expectedCertAudits
           expect(allAudits.length).toBe(expectedTotal)
 
           // Verify counts by action type
-          const creationAudits = allAudits.filter(a => a.action === 'part_created')
-          const advancementAudits = allAudits.filter(a => a.action === 'part_advanced')
-          const completionAudits = allAudits.filter(a => a.action === 'part_completed')
-          const certAudits = allAudits.filter(a => a.action === 'cert_attached')
+          const creationAudits = allAudits.filter((a) => a.action === 'part_created')
+          const advancementAudits = allAudits.filter((a) => a.action === 'part_advanced')
+          const completionAudits = allAudits.filter((a) => a.action === 'part_completed')
+          const certAudits = allAudits.filter((a) => a.action === 'cert_attached')
 
           expect(creationAudits.length).toBe(expectedCreationAudits)
           expect(advancementAudits.length).toBe(expectedAdvancementAudits)
@@ -173,7 +180,7 @@ describe('Property 6: Audit Trail Immutability and Completeness', () => {
       fc.property(
         fc.record({
           stepCount: fc.integer({ min: 2, max: 5 }),
-          advanceTimes: fc.integer({ min: 1, max: 4 })
+          advanceTimes: fc.integer({ min: 1, max: 4 }),
         }),
         ({ stepCount, advanceTimes }) => {
           db = createTestDb()
@@ -185,7 +192,7 @@ describe('Property 6: Audit Trail Immutability and Completeness', () => {
             jobId: job.id,
             name: 'Route',
             goalQuantity: 1,
-            steps
+            steps,
           })
 
           const [part] = partService.batchCreateParts(

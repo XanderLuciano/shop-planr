@@ -25,8 +25,8 @@ onMounted(() => {
 const filteredCerts = computed(() => {
   const q = searchQuery.value.trim().toLowerCase()
   if (!q) return certs.value
-  return certs.value.filter(c =>
-    c.name.toLowerCase().includes(q) || c.type.toLowerCase().includes(q),
+  return certs.value.filter(
+    (c) => c.name.toLowerCase().includes(q) || c.type.toLowerCase().includes(q)
   )
 })
 
@@ -65,15 +65,13 @@ async function handleAttach() {
 <template>
   <div class="space-y-2">
     <div class="flex items-center gap-2">
-      <UInput
-        v-model="searchQuery"
-        placeholder="Search certificates..."
-        size="sm"
-        class="flex-1"
-      />
+      <UInput v-model="searchQuery" placeholder="Search certificates..." size="sm" class="flex-1" />
     </div>
 
-    <div v-if="filteredCerts.length" class="border border-(--ui-border) rounded-md max-h-32 overflow-y-auto divide-y divide-(--ui-border)">
+    <div
+      v-if="filteredCerts.length"
+      class="border border-(--ui-border) rounded-md max-h-32 overflow-y-auto divide-y divide-(--ui-border)"
+    >
       <button
         v-for="cert in filteredCerts"
         :key="cert.id"
@@ -83,7 +81,11 @@ async function handleAttach() {
         @click="selectedCertId = cert.id"
       >
         <span class="text-(--ui-text-highlighted)">{{ cert.name }}</span>
-        <UBadge :color="cert.type === 'material' ? 'primary' : 'neutral'" variant="subtle" size="xs">
+        <UBadge
+          :color="cert.type === 'material' ? 'primary' : 'neutral'"
+          variant="subtle"
+          size="xs"
+        >
           {{ cert.type }}
         </UBadge>
       </button>

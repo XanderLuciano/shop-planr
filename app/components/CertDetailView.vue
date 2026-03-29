@@ -43,7 +43,9 @@ function formatDate(iso: string): string {
           <UBadge :color="cert.type === 'material' ? 'primary' : 'neutral'" variant="subtle">
             {{ cert.type }}
           </UBadge>
-          <span class="text-xs text-(--ui-text-muted)">Created {{ formatDate(cert.createdAt) }}</span>
+          <span class="text-xs text-(--ui-text-muted)"
+            >Created {{ formatDate(cert.createdAt) }}</span
+          >
         </div>
       </div>
 
@@ -68,7 +70,10 @@ function formatDate(iso: string): string {
         <div v-if="!attachments.length" class="text-sm text-(--ui-text-muted)">
           No parts attached
         </div>
-        <div v-else class="border border-(--ui-border) rounded-md divide-y divide-(--ui-border) max-h-60 overflow-y-auto">
+        <div
+          v-else
+          class="border border-(--ui-border) rounded-md divide-y divide-(--ui-border) max-h-60 overflow-y-auto"
+        >
           <div
             v-for="att in attachments"
             :key="`${att.partId}-${att.stepId}`"

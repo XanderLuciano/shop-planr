@@ -12,7 +12,7 @@ inclusion: always
    - `feat/` — new features or functionality
    - `chore/` — cleanup, refactoring, UI polish, dependency updates
    - `fix/` — bug fixes
-   Example: `git checkout -b feat/barcode-improvements`
+     Example: `git checkout -b feat/barcode-improvements`
 
 3. Make as many commits as needed on the branch. Use clear, descriptive commit messages.
 

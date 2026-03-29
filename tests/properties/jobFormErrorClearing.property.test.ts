@@ -30,7 +30,8 @@ describe('Property 11: Error clearing on field correction', () => {
         fc.integer({ min: 1, max: 4 }),
         fc.integer({ min: 1, max: 3 }),
         (pathCount, stepsPerPath) => {
-          const { jobDraft, pathDrafts, addPath, addStep, validate, errors, clearFieldError } = useJobForm('create')
+          const { jobDraft, pathDrafts, addPath, addStep, validate, errors, clearFieldError } =
+            useJobForm('create')
 
           // Leave job name empty to trigger job.name error
           jobDraft.value.name = ''
@@ -53,28 +54,28 @@ describe('Property 11: Error clearing on field correction', () => {
           expect(errors.value.length).toBeGreaterThan(1)
 
           // Pick a random error field to clear
-          const errorFields = errors.value.map(e => e.field)
+          const errorFields = errors.value.map((e) => e.field)
           const fieldToClear = errorFields[0]
-          const otherFields = errorFields.filter(f => f !== fieldToClear)
+          const otherFields = errorFields.filter((f) => f !== fieldToClear)
           const errorCountBefore = errors.value.length
 
           // Clear the targeted field error
           clearFieldError(fieldToClear)
 
           // The cleared field should no longer have an error
-          expect(errors.value.find(e => e.field === fieldToClear)).toBeUndefined()
+          expect(errors.value.find((e) => e.field === fieldToClear)).toBeUndefined()
 
           // All other errors should remain
           for (const otherField of otherFields) {
-            expect(errors.value.find(e => e.field === otherField)).toBeDefined()
+            expect(errors.value.find((e) => e.field === otherField)).toBeDefined()
           }
 
           // Total errors decreased by exactly the number of errors for that field
           // (should be 1 since each field produces at most 1 error)
           expect(errors.value.length).toBe(errorCountBefore - 1)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

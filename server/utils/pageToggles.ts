@@ -33,12 +33,12 @@ export const ROUTE_TOGGLE_MAP: Record<string, keyof PageToggles> = {
 }
 
 /** The set of valid toggle keys. */
-export const VALID_TOGGLE_KEYS: ReadonlySet<string> = new Set<string>(Object.keys(DEFAULT_PAGE_TOGGLES))
+export const VALID_TOGGLE_KEYS: ReadonlySet<string> = new Set<string>(
+  Object.keys(DEFAULT_PAGE_TOGGLES)
+)
 
 /** Sub-route prefixes that bypass their parent's toggle and are always accessible. */
-export const ALWAYS_ENABLED_ROUTES: readonly string[] = Object.freeze([
-  '/parts/step',
-])
+export const ALWAYS_ENABLED_ROUTES: readonly string[] = Object.freeze(['/parts/step'])
 
 /**
  * Merge a partial update into the current page toggles.
@@ -50,7 +50,7 @@ export const ALWAYS_ENABLED_ROUTES: readonly string[] = Object.freeze([
  */
 export function mergePageToggles(
   current: Partial<PageToggles>,
-  partial: Record<string, unknown>,
+  partial: Record<string, unknown>
 ): PageToggles {
   const merged: PageToggles = { ...DEFAULT_PAGE_TOGGLES, ...current }
 
@@ -70,10 +70,7 @@ export function mergePageToggles(
  * - Detail routes (e.g., `/jobs/123`) inherit their parent page's toggle.
  * - Routes with no toggle mapping return `true`.
  */
-export function isPageEnabled(
-  pageToggles: PageToggles,
-  routePath: string,
-): boolean {
+export function isPageEnabled(pageToggles: PageToggles, routePath: string): boolean {
   if (routePath === '/' || routePath === '/settings') {
     return true
   }

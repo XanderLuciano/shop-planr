@@ -14,13 +14,13 @@ import { createTestContext, type TestContext } from '../integration/helpers'
 // ---- Arbitraries ----
 
 /** Generate a numeric suffix between 1 and 99999 */
-const arbIdSuffix = () => fc.integer({ min: 1, max: 99999 }).map(n => String(n).padStart(5, '0'))
+const arbIdSuffix = () => fc.integer({ min: 1, max: 99999 }).map((n) => String(n).padStart(5, '0'))
 
 /** Generate a legacy SN- prefixed ID */
-const arbSnId = () => arbIdSuffix().map(s => `SN-${s}`)
+const arbSnId = () => arbIdSuffix().map((s) => `SN-${s}`)
 
 /** Generate a new part_ prefixed ID */
-const arbPartId = () => arbIdSuffix().map(s => `part_${s}`)
+const arbPartId = () => arbIdSuffix().map((s) => `part_${s}`)
 
 /** Generate either prefix type */
 const arbDualId = () => fc.oneof(arbSnId(), arbPartId())
@@ -31,7 +31,7 @@ const arbScrapReason = () =>
     'process_defect' as const,
     'damaged' as const,
     'operator_error' as const,
-    'other' as const,
+    'other' as const
   )
 
 // ---- Helpers ----
@@ -41,15 +41,23 @@ function seedJobAndPath(ctx: TestContext): { jobId: string; pathId: string } {
   const pathId = 'path_dual_compat'
   const now = new Date().toISOString()
 
-  ctx.db.prepare(`
+  ctx.db
+    .prepare(
+      `
     INSERT OR IGNORE INTO jobs (id, name, goal_quantity, created_at, updated_at)
     VALUES (?, 'Dual Compat Job', 100, ?, ?)
-  `).run(jobId, now, now)
+  `
+    )
+    .run(jobId, now, now)
 
-  ctx.db.prepare(`
+  ctx.db
+    .prepare(
+      `
     INSERT OR IGNORE INTO paths (id, job_id, name, goal_quantity, advancement_mode, created_at, updated_at)
     VALUES (?, ?, 'Dual Compat Path', 100, 'flexible', ?, ?)
-  `).run(pathId, jobId, now, now)
+  `
+    )
+    .run(pathId, jobId, now, now)
 
   // Insert 3 steps so we can advance and test lifecycle operations
   const steps = [
@@ -58,10 +66,14 @@ function seedJobAndPath(ctx: TestContext): { jobId: string; pathId: string } {
     { id: 'step_dc_3', name: 'Step 3', order: 2, optional: false, dependencyType: 'preferred' },
   ]
   for (const step of steps) {
-    ctx.db.prepare(`
+    ctx.db
+      .prepare(
+        `
       INSERT OR IGNORE INTO process_steps (id, path_id, name, step_order, location, optional, dependency_type)
       VALUES (?, ?, ?, ?, NULL, ?, ?)
-    `).run(step.id, pathId, step.name, step.order, step.optional ? 1 : 0, step.dependencyType)
+    `
+      )
+      .run(step.id, pathId, step.name, step.order, step.optional ? 1 : 0, step.dependencyType)
   }
 
   return { jobId, pathId }
@@ -69,10 +81,14 @@ function seedJobAndPath(ctx: TestContext): { jobId: string; pathId: string } {
 
 function insertPartDirectly(ctx: TestContext, id: string, jobId: string, pathId: string) {
   const now = new Date().toISOString()
-  ctx.db.prepare(`
+  ctx.db
+    .prepare(
+      `
     INSERT INTO parts (id, job_id, path_id, current_step_index, status, force_completed, created_at, updated_at)
     VALUES (?, ?, ?, 0, 'in_progress', 0, ?, ?)
-  `).run(id, jobId, pathId, now, now)
+  `
+    )
+    .run(id, jobId, pathId, now, now)
 
   // Initialize step statuses so lifecycle operations work
   ctx.lifecycleService.initializeStepStatuses(id, pathId)
@@ -107,7 +123,7 @@ describe('Property 5: Dual ID Prefix Compatibility', () => {
         ctx.cleanup()
         ctx = null as any
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -130,7 +146,7 @@ describe('Property 5: Dual ID Prefix Compatibility', () => {
         ctx.cleanup()
         ctx = null as any
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -164,36 +180,47 @@ describe('Property 5: Dual ID Prefix Compatibility', () => {
         ctx.cleanup()
         ctx = null as any
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
   it('repository update works for both SN- and part_ prefixed IDs', () => {
     fc.assert(
-      fc.property(arbSnId(), arbPartId(), fc.integer({ min: 1, max: 2 }), (snId, partId, newIndex) => {
-        ctx = createTestContext()
-        const { jobId, pathId } = seedJobAndPath(ctx)
+      fc.property(
+        arbSnId(),
+        arbPartId(),
+        fc.integer({ min: 1, max: 2 }),
+        (snId, partId, newIndex) => {
+          ctx = createTestContext()
+          const { jobId, pathId } = seedJobAndPath(ctx)
 
-        insertPartDirectly(ctx, snId, jobId, pathId)
-        insertPartDirectly(ctx, partId, jobId, pathId)
+          insertPartDirectly(ctx, snId, jobId, pathId)
+          insertPartDirectly(ctx, partId, jobId, pathId)
 
-        const now = new Date().toISOString()
-        const updatedSn = ctx.repos.parts.update(snId, { currentStepIndex: newIndex, updatedAt: now })
-        const updatedPart = ctx.repos.parts.update(partId, { currentStepIndex: newIndex, updatedAt: now })
+          const now = new Date().toISOString()
+          const updatedSn = ctx.repos.parts.update(snId, {
+            currentStepIndex: newIndex,
+            updatedAt: now,
+          })
+          const updatedPart = ctx.repos.parts.update(partId, {
+            currentStepIndex: newIndex,
+            updatedAt: now,
+          })
 
-        expect(updatedSn.currentStepIndex).toBe(newIndex)
-        expect(updatedPart.currentStepIndex).toBe(newIndex)
+          expect(updatedSn.currentStepIndex).toBe(newIndex)
+          expect(updatedPart.currentStepIndex).toBe(newIndex)
 
-        // Verify round-trip
-        const fetchedSn = ctx.repos.parts.getById(snId)
-        const fetchedPart = ctx.repos.parts.getById(partId)
-        expect(fetchedSn!.currentStepIndex).toBe(newIndex)
-        expect(fetchedPart!.currentStepIndex).toBe(newIndex)
+          // Verify round-trip
+          const fetchedSn = ctx.repos.parts.getById(snId)
+          const fetchedPart = ctx.repos.parts.getById(partId)
+          expect(fetchedSn!.currentStepIndex).toBe(newIndex)
+          expect(fetchedPart!.currentStepIndex).toBe(newIndex)
 
-        ctx.cleanup()
-        ctx = null as any
-      }),
-      { numRuns: 100 },
+          ctx.cleanup()
+          ctx = null as any
+        }
+      ),
+      { numRuns: 100 }
     )
   })
 
@@ -217,7 +244,7 @@ describe('Property 5: Dual ID Prefix Compatibility', () => {
         ctx.cleanup()
         ctx = null as any
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

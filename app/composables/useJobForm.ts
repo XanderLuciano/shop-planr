@@ -48,7 +48,10 @@ function createStepDraft(overrides?: Partial<Omit<StepDraft, '_clientId'>>): Ste
   }
 }
 
-function createPathDraft(goalQuantity: number, overrides?: Partial<Omit<PathDraft, '_clientId' | 'steps'>> & { steps?: StepDraft[] }): PathDraft {
+function createPathDraft(
+  goalQuantity: number,
+  overrides?: Partial<Omit<PathDraft, '_clientId' | 'steps'>> & { steps?: StepDraft[] }
+): PathDraft {
   return {
     _clientId: nanoid(),
     _existingId: overrides?._existingId,
@@ -77,14 +80,14 @@ function hasPathChanges(draft: PathDraft, original: Path): boolean {
 
 export function computePathChanges(originalPaths: Path[], currentDrafts: PathDraft[]) {
   const draftExistingIds = new Set(
-    currentDrafts.filter(d => d._existingId).map(d => d._existingId!),
+    currentDrafts.filter((d) => d._existingId).map((d) => d._existingId!)
   )
 
-  const toDelete = originalPaths.filter(p => !draftExistingIds.has(p.id))
-  const toCreate = currentDrafts.filter(d => !d._existingId)
+  const toDelete = originalPaths.filter((p) => !draftExistingIds.has(p.id))
+  const toCreate = currentDrafts.filter((d) => !d._existingId)
   const toUpdate = currentDrafts.filter((d) => {
     if (!d._existingId) return false
-    const original = originalPaths.find(p => p.id === d._existingId)
+    const original = originalPaths.find((p) => p.id === d._existingId)
     return original ? hasPathChanges(d, original) : false
   })
 
@@ -101,27 +104,31 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
   const jobDraft = ref<JobDraft>(
     mode === 'edit' && existingJob
       ? { name: existingJob.name, goalQuantity: existingJob.goalQuantity }
-      : { name: '', goalQuantity: 1 },
+      : { name: '', goalQuantity: 1 }
   )
 
   const pathDrafts = ref<PathDraft[]>(
     mode === 'edit' && existingJob
-      ? existingJob.paths.map(p => createPathDraft(p.goalQuantity, {
-          _existingId: p.id,
-          name: p.name,
-          goalQuantity: p.goalQuantity,
-          advancementMode: p.advancementMode,
-          steps: p.steps
-            .slice()
-            .sort((a, b) => a.order - b.order)
-            .map(s => createStepDraft({
-              name: s.name,
-              location: s.location ?? '',
-              optional: s.optional,
-              dependencyType: s.dependencyType,
-            })),
-        }))
-      : [],
+      ? existingJob.paths.map((p) =>
+          createPathDraft(p.goalQuantity, {
+            _existingId: p.id,
+            name: p.name,
+            goalQuantity: p.goalQuantity,
+            advancementMode: p.advancementMode,
+            steps: p.steps
+              .slice()
+              .sort((a, b) => a.order - b.order)
+              .map((s) =>
+                createStepDraft({
+                  name: s.name,
+                  location: s.location ?? '',
+                  optional: s.optional,
+                  dependencyType: s.dependencyType,
+                })
+              ),
+          })
+        )
+      : []
   )
 
   const originalPaths = mode === 'edit' && existingJob ? [...existingJob.paths] : []
@@ -137,28 +144,28 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
   }
 
   function removePath(clientId: string): void {
-    pathDrafts.value = pathDrafts.value.filter(p => p._clientId !== clientId)
+    pathDrafts.value = pathDrafts.value.filter((p) => p._clientId !== clientId)
   }
 
   // ---- Step Operations ----
 
   function addStep(pathClientId: string): void {
-    const path = pathDrafts.value.find(p => p._clientId === pathClientId)
+    const path = pathDrafts.value.find((p) => p._clientId === pathClientId)
     if (!path) return
     path.steps.push(createStepDraft())
   }
 
   function removeStep(pathClientId: string, stepClientId: string): void {
-    const path = pathDrafts.value.find(p => p._clientId === pathClientId)
+    const path = pathDrafts.value.find((p) => p._clientId === pathClientId)
     if (!path) return
     if (path.steps.length <= 1) return
-    path.steps = path.steps.filter(s => s._clientId !== stepClientId)
+    path.steps = path.steps.filter((s) => s._clientId !== stepClientId)
   }
 
   function moveStep(pathClientId: string, stepClientId: string, direction: -1 | 1): void {
-    const path = pathDrafts.value.find(p => p._clientId === pathClientId)
+    const path = pathDrafts.value.find((p) => p._clientId === pathClientId)
     if (!path) return
-    const idx = path.steps.findIndex(s => s._clientId === stepClientId)
+    const idx = path.steps.findIndex((s) => s._clientId === stepClientId)
     if (idx === -1) return
     const targetIdx = idx + direction
     if (targetIdx < 0 || targetIdx >= path.steps.length) return
@@ -170,17 +177,19 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
   // ---- Template Application ----
 
   function applyTemplate(pathClientId: string, template: TemplateRoute): void {
-    const path = pathDrafts.value.find(p => p._clientId === pathClientId)
+    const path = pathDrafts.value.find((p) => p._clientId === pathClientId)
     if (!path) return
     path.steps = template.steps
       .slice()
       .sort((a, b) => a.order - b.order)
-      .map(ts => createStepDraft({
-        name: ts.name,
-        location: ts.location ?? '',
-        optional: ts.optional,
-        dependencyType: ts.dependencyType,
-      }))
+      .map((ts) =>
+        createStepDraft({
+          name: ts.name,
+          location: ts.location ?? '',
+          optional: ts.optional,
+          dependencyType: ts.dependencyType,
+        })
+      )
   }
 
   // ---- Validation ----
@@ -200,10 +209,16 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
         errs.push({ field: `paths[${pi}].name`, message: 'Path name is required' })
       }
       if (p.goalQuantity < 1) {
-        errs.push({ field: `paths[${pi}].goalQuantity`, message: 'Path goal quantity must be at least 1' })
+        errs.push({
+          field: `paths[${pi}].goalQuantity`,
+          message: 'Path goal quantity must be at least 1',
+        })
       }
       if (p.steps.length === 0) {
-        errs.push({ field: `paths[${pi}].steps`, message: 'At least one step is required per path' })
+        errs.push({
+          field: `paths[${pi}].steps`,
+          message: 'At least one step is required per path',
+        })
       }
       p.steps.forEach((s, si) => {
         if (!s.name.trim()) {
@@ -254,7 +269,7 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
         name: draft.name.trim(),
         goalQuantity: draft.goalQuantity,
         advancementMode: draft.advancementMode,
-        steps: draft.steps.map(s => ({
+        steps: draft.steps.map((s) => ({
           name: s.name.trim(),
           location: s.location.trim() || undefined,
           optional: s.optional,
@@ -289,7 +304,7 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
         name: draft.name.trim(),
         goalQuantity: draft.goalQuantity,
         advancementMode: draft.advancementMode,
-        steps: draft.steps.map(s => ({
+        steps: draft.steps.map((s) => ({
           name: s.name.trim(),
           location: s.location.trim() || undefined,
           optional: s.optional,
@@ -305,7 +320,7 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
         name: draft.name.trim(),
         goalQuantity: draft.goalQuantity,
         advancementMode: draft.advancementMode,
-        steps: draft.steps.map(s => ({
+        steps: draft.steps.map((s) => ({
           name: s.name.trim(),
           location: s.location.trim() || undefined,
           optional: s.optional,
@@ -320,11 +335,11 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
   // ---- Error Helpers ----
 
   function getFieldError(field: string): string | undefined {
-    return errors.value.find(e => e.field === field)?.message
+    return errors.value.find((e) => e.field === field)?.message
   }
 
   function clearFieldError(field: string): void {
-    errors.value = errors.value.filter(e => e.field !== field)
+    errors.value = errors.value.filter((e) => e.field !== field)
   }
 
   return {

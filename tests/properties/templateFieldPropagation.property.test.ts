@@ -18,20 +18,20 @@ function createInMemoryTemplateRepo() {
   const templates = new Map<string, TemplateRoute>()
   return {
     create: (t: TemplateRoute) => {
-      const stored = { ...t, steps: t.steps.map(s => ({ ...s })) }
+      const stored = { ...t, steps: t.steps.map((s) => ({ ...s })) }
       templates.set(t.id, stored)
-      return { ...stored, steps: stored.steps.map(s => ({ ...s })) }
+      return { ...stored, steps: stored.steps.map((s) => ({ ...s })) }
     },
     getById: (id: string) => {
       const t = templates.get(id)
-      return t ? { ...t, steps: t.steps.map(s => ({ ...s })) } : null
+      return t ? { ...t, steps: t.steps.map((s) => ({ ...s })) } : null
     },
     list: () => [...templates.values()],
     update: (id: string, partial: Partial<TemplateRoute>) => {
       const existing = templates.get(id)!
       const updated = { ...existing, ...partial }
       templates.set(id, updated)
-      return { ...updated, steps: (updated.steps || []).map(s => ({ ...s })) }
+      return { ...updated, steps: (updated.steps || []).map((s) => ({ ...s })) }
     },
     delete: () => true,
   }
@@ -41,24 +41,28 @@ function createInMemoryPathRepo() {
   const paths = new Map<string, Path>()
   return {
     create: (p: Path) => {
-      const stored = { ...p, steps: p.steps.map(s => ({ ...s })) }
+      const stored = { ...p, steps: p.steps.map((s) => ({ ...s })) }
       paths.set(p.id, stored)
-      return { ...stored, steps: stored.steps.map(s => ({ ...s })) }
+      return { ...stored, steps: stored.steps.map((s) => ({ ...s })) }
     },
     getById: (id: string) => {
       const p = paths.get(id)
-      return p ? { ...p, steps: p.steps.map(s => ({ ...s })) } : null
+      return p ? { ...p, steps: p.steps.map((s) => ({ ...s })) } : null
     },
     listByJobId: () => [],
-    update: () => ({} as Path),
+    update: () => ({}) as Path,
     delete: () => true,
     getStepById: () => null,
-    updateStepAssignment: () => ({} as ProcessStep),
-    updateStep: () => ({} as ProcessStep),
+    updateStepAssignment: () => ({}) as ProcessStep,
+    updateStep: () => ({}) as ProcessStep,
   }
 }
 
-const arbDependencyType = fc.constantFrom('physical' as const, 'preferred' as const, 'completion_gate' as const)
+const arbDependencyType = fc.constantFrom(
+  'physical' as const,
+  'preferred' as const,
+  'completion_gate' as const
+)
 
 const arbNonEmptyName = fc.stringMatching(/^[a-zA-Z][a-zA-Z0-9 ]{0,18}[a-zA-Z0-9]$/)
 
@@ -73,8 +77,8 @@ describe('Property 14: Template Field Propagation', () => {
   it('applying a template copies optional and dependencyType to ProcessSteps', () => {
     fc.assert(
       fc.property(
-        arbNonEmptyName,  // template name
-        fc.array(arbTemplateStep, { minLength: 1, maxLength: 8 }),  // steps
+        arbNonEmptyName, // template name
+        fc.array(arbTemplateStep, { minLength: 1, maxLength: 8 }), // steps
         (templateName, steps) => {
           const templateRepo = createInMemoryTemplateRepo()
           const pathRepo = createInMemoryPathRepo()
@@ -83,7 +87,7 @@ describe('Property 14: Template Field Propagation', () => {
           // Create template with optional/dependencyType values
           const template = service.createTemplate({
             name: templateName,
-            steps: steps.map(s => ({ name: s.name, location: s.location })),
+            steps: steps.map((s) => ({ name: s.name, location: s.location })),
           })
 
           // Manually update the template steps with optional/dependencyType
@@ -120,9 +124,9 @@ describe('Property 14: Template Field Propagation', () => {
             expect(templateAfter.steps[i]!.optional).toBe(updatedSteps[i]!.optional)
             expect(templateAfter.steps[i]!.dependencyType).toBe(updatedSteps[i]!.dependencyType)
           }
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

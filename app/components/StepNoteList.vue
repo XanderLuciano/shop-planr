@@ -19,22 +19,16 @@ function formatTime(ts: string): string {
   return d.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
-    year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+    year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
   })
 }
 </script>
 
 <template>
-  <div
-    v-if="!notes.length"
-    class="text-xs text-(--ui-text-muted) py-2 text-center"
-  >
+  <div v-if="!notes.length" class="text-xs text-(--ui-text-muted) py-2 text-center">
     No notes yet.
   </div>
-  <div
-    v-else
-    class="space-y-1.5"
-  >
+  <div v-else class="space-y-1.5">
     <div
       v-for="note in notes"
       :key="note.id"
@@ -42,15 +36,14 @@ function formatTime(ts: string): string {
     >
       <div class="flex items-center justify-between gap-2">
         <span class="font-medium text-(--ui-text-highlighted)">{{ note.createdBy }}</span>
-        <span class="text-(--ui-text-muted) whitespace-nowrap">{{ formatTime(note.createdAt) }}</span>
+        <span class="text-(--ui-text-muted) whitespace-nowrap">{{
+          formatTime(note.createdAt)
+        }}</span>
       </div>
       <p class="text-(--ui-text) whitespace-pre-wrap break-words">
         {{ note.text }}
       </p>
-      <div
-        v-if="note.partIds.length"
-        class="flex items-center gap-1 flex-wrap"
-      >
+      <div v-if="note.partIds.length" class="flex items-center gap-1 flex-wrap">
         <UBadge
           v-for="pid in note.partIds"
           :key="pid"
@@ -61,14 +54,7 @@ function formatTime(ts: string): string {
         >
           {{ pid }}
         </UBadge>
-        <UBadge
-          v-if="note.pushedToJira"
-          size="xs"
-          variant="subtle"
-          color="info"
-        >
-          Jira
-        </UBadge>
+        <UBadge v-if="note.pushedToJira" size="xs" variant="subtle" color="info"> Jira </UBadge>
       </div>
     </div>
   </div>

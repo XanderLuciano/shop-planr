@@ -53,7 +53,7 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
           stepOrder: step.order,
           stepLocation: step.location,
           totalSteps,
-          partIds: parts.map(s => s.id),
+          partIds: parts.map((s) => s.id),
           partCount: parts.length,
           previousStepId: prevStep?.id,
           previousStepName: prevStep?.name,
@@ -78,20 +78,23 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
 
 /** Arbitrary for a single job with one path, random steps, and random parts */
 const jobPathConfigArb = fc.record({
-  jobName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
-  pathName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
+  jobName: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
+  pathName: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
   stepCount: fc.integer({ min: 1, max: 5 }),
   partCount: fc.integer({ min: 1, max: 8 }),
   stepLocations: fc.array(
-    fc.option(fc.string({ minLength: 1, maxLength: 15 }).filter(s => s.trim().length > 0), { nil: undefined }),
-    { minLength: 5, maxLength: 5 },
+    fc.option(
+      fc.string({ minLength: 1, maxLength: 15 }).filter((s) => s.trim().length > 0),
+      { nil: undefined }
+    ),
+    { minLength: 5, maxLength: 5 }
   ),
   advancementSpecs: fc.array(
     fc.record({
       partIndex: fc.integer({ min: 0, max: 7 }),
       advanceTimes: fc.integer({ min: 0, max: 4 }),
     }),
-    { minLength: 0, maxLength: 8 },
+    { minLength: 0, maxLength: 8 }
   ),
   /** Index of the step to query (clamped to stepCount at runtime) */
   targetStepIndex: fc.integer({ min: 0, max: 4 }),
@@ -174,7 +177,7 @@ describe('Property 4: Step Endpoint Correctness', () => {
           // Create parts
           const parts = partService.batchCreateParts(
             { jobId: job.id, pathId: path.id, quantity: config.partCount },
-            'user_test',
+            'user_test'
           )
 
           for (const s of parts) {
@@ -189,7 +192,7 @@ describe('Property 4: Step Endpoint Correctness', () => {
           for (const spec of config.advancementSpecs) {
             if (spec.partIndex >= parts.length) continue
             const part = parts[spec.partIndex]
-            const tracked = allTrackedParts.find(t => t.id === part.id)!
+            const tracked = allTrackedParts.find((t) => t.id === part.id)!
 
             for (let i = 0; i < spec.advanceTimes; i++) {
               if (tracked.currentStepIndex === -1) break
@@ -210,7 +213,7 @@ describe('Property 4: Step Endpoint Correctness', () => {
         // Find steps that have active parts
         const stepsWithActiveParts = allStepRecords.filter((rec) => {
           return allTrackedParts.some(
-            s => s.pathId === rec.pathId && s.currentStepIndex === rec.stepOrder,
+            (s) => s.pathId === rec.pathId && s.currentStepIndex === rec.stepOrder
           )
         })
 
@@ -243,8 +246,10 @@ describe('Property 4: Step Endpoint Correctness', () => {
 
         // Verify partIds contains exactly the active parts at this step
         const expectedPartIds = allTrackedParts
-          .filter(s => s.pathId === targetStep.pathId && s.currentStepIndex === targetStep.stepOrder)
-          .map(s => s.id)
+          .filter(
+            (s) => s.pathId === targetStep.pathId && s.currentStepIndex === targetStep.stepOrder
+          )
+          .map((s) => s.id)
 
         expect(job.partIds.length).toBe(expectedPartIds.length)
         expect(new Set(job.partIds)).toEqual(new Set(expectedPartIds))
@@ -264,7 +269,7 @@ describe('Property 4: Step Endpoint Correctness', () => {
         ctx.cleanup()
         ctx = null as any
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

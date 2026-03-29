@@ -1,11 +1,11 @@
 ---
-title: "Get Certificate"
-description: "Retrieve a single certificate by ID"
-method: "GET"
-endpoint: "/api/certs/:id"
-service: "certService"
-category: "Certs"
-responseType: "Certificate"
+title: 'Get Certificate'
+description: 'Retrieve a single certificate by ID'
+method: 'GET'
+endpoint: '/api/certs/:id'
+service: 'certService'
+category: 'Certs'
+responseType: 'Certificate'
 errorCodes: [404, 500]
 navigation:
   order: 2
@@ -23,9 +23,9 @@ This is commonly used when displaying certificate detail views, or when you need
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` | Yes | The unique identifier of the certificate (e.g. `"cert_abc123"`) |
+| Parameter | Type     | Required | Description                                                     |
+| --------- | -------- | -------- | --------------------------------------------------------------- |
+| `id`      | `string` | Yes      | The unique identifier of the certificate (e.g. `"cert_abc123"`) |
 
 ## Response
 
@@ -33,28 +33,28 @@ This is commonly used when displaying certificate detail views, or when you need
 
 Returns the `Certificate` object matching the provided ID.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | Unique identifier for the certificate |
-| `type` | `'material' \| 'process'` | Classification of the certificate |
-| `name` | `string` | Human-readable name or identifier |
-| `metadata` | `Record<string, unknown> \| undefined` | Optional free-form metadata object |
-| `createdAt` | `string` | ISO 8601 timestamp of when the certificate was created |
+| Field       | Type                                   | Description                                            |
+| ----------- | -------------------------------------- | ------------------------------------------------------ |
+| `id`        | `string`                               | Unique identifier for the certificate                  |
+| `type`      | `'material' \| 'process'`              | Classification of the certificate                      |
+| `name`      | `string`                               | Human-readable name or identifier                      |
+| `metadata`  | `Record<string, unknown> \| undefined` | Optional free-form metadata object                     |
+| `createdAt` | `string`                               | ISO 8601 timestamp of when the certificate was created |
 
 ### 404 Not Found
 
 Returned when no certificate exists with the given ID.
 
-| Condition | Message |
-|-----------|---------|
+| Condition                  | Message                                |
+| -------------------------- | -------------------------------------- |
 | Certificate does not exist | `"Certificate not found: cert_abc123"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while querying the database.
 
-| Condition | Message |
-|-----------|---------|
+| Condition             | Message                   |
+| --------------------- | ------------------------- |
 | Database read failure | `"Internal Server Error"` |
 
 ## Examples

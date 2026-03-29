@@ -34,13 +34,13 @@ describe('Library CRUD Integration', () => {
 
     // 3. Verify processes in list (includes seed data + new entries)
     const processes = libraryService.listProcesses()
-    const processNames = processes.map(p => p.name)
+    const processNames = processes.map((p) => p.name)
     expect(processNames).toContain('Custom CNC Op')
     expect(processNames).toContain('Grinding')
 
     // 4. Verify locations in list (includes seed data + new entries)
     const locations = libraryService.listLocations()
-    const locationNames = locations.map(l => l.name)
+    const locationNames = locations.map((l) => l.name)
     expect(locationNames).toContain('Bay 1')
     expect(locationNames).toContain('Bay 2')
 
@@ -64,12 +64,12 @@ describe('Library CRUD Integration', () => {
 
     // 7. Verify removed entries are gone from lists
     const processesAfter = libraryService.listProcesses()
-    expect(processesAfter.map(p => p.name)).not.toContain('Custom CNC Op')
-    expect(processesAfter.map(p => p.name)).toContain('Grinding') // still there
+    expect(processesAfter.map((p) => p.name)).not.toContain('Custom CNC Op')
+    expect(processesAfter.map((p) => p.name)).toContain('Grinding') // still there
 
     const locationsAfter = libraryService.listLocations()
-    expect(locationsAfter.map(l => l.name)).not.toContain('Bay 1')
-    expect(locationsAfter.map(l => l.name)).toContain('Bay 2') // still there
+    expect(locationsAfter.map((l) => l.name)).not.toContain('Bay 1')
+    expect(locationsAfter.map((l) => l.name)).toContain('Bay 2') // still there
 
     // 8. Verify existing steps retain their names even after library entry removal
     const refreshedPath = pathService.getPath(path.id)
@@ -103,7 +103,7 @@ describe('Library CRUD Integration', () => {
     const processes = libraryService.listProcesses()
     expect(processes.length).toBeGreaterThanOrEqual(8)
 
-    const processNames = processes.map(p => p.name)
+    const processNames = processes.map((p) => p.name)
     expect(processNames).toContain('CNC Machine')
     expect(processNames).toContain('Inspection')
     expect(processNames).toContain('Coating')
@@ -111,7 +111,7 @@ describe('Library CRUD Integration', () => {
     const locations = libraryService.listLocations()
     expect(locations.length).toBeGreaterThanOrEqual(3)
 
-    const locationNames = locations.map(l => l.name)
+    const locationNames = locations.map((l) => l.name)
     expect(locationNames).toContain('Machine Shop')
     expect(locationNames).toContain('QC Lab')
     expect(locationNames).toContain('Vendor')

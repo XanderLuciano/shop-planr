@@ -17,7 +17,7 @@ function rowToDomain(row: UserRow): ShopUser {
     name: row.name,
     department: row.department ?? undefined,
     active: row.active === 1,
-    createdAt: row.created_at
+    createdAt: row.created_at,
   }
 }
 
@@ -29,10 +29,14 @@ export class SQLiteUserRepository implements UserRepository {
   }
 
   create(user: ShopUser): ShopUser {
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO users (id, name, department, active, created_at)
       VALUES (?, ?, ?, ?, ?)
-    `).run(user.id, user.name, user.department ?? null, user.active ? 1 : 0, user.createdAt)
+    `
+      )
+      .run(user.id, user.name, user.department ?? null, user.active ? 1 : 0, user.createdAt)
     return user
   }
 
@@ -47,7 +51,9 @@ export class SQLiteUserRepository implements UserRepository {
   }
 
   listActive(): ShopUser[] {
-    const rows = this.db.prepare('SELECT * FROM users WHERE active = 1 ORDER BY name').all() as UserRow[]
+    const rows = this.db
+      .prepare('SELECT * FROM users WHERE active = 1 ORDER BY name')
+      .all() as UserRow[]
     return rows.map(rowToDomain)
   }
 
@@ -57,10 +63,14 @@ export class SQLiteUserRepository implements UserRepository {
 
     const updated: ShopUser = { ...existing, ...partial, id }
 
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       UPDATE users SET name = ?, department = ?, active = ?
       WHERE id = ?
-    `).run(updated.name, updated.department ?? null, updated.active ? 1 : 0, id)
+    `
+      )
+      .run(updated.name, updated.department ?? null, updated.active ? 1 : 0, id)
     return updated
   }
 }

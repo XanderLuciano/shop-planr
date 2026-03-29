@@ -12,7 +12,7 @@ const emit = defineEmits<{
 const statusOptions = [
   { label: 'All', value: 'all' },
   { label: 'Active', value: 'active' },
-  { label: 'Completed', value: 'completed' }
+  { label: 'Completed', value: 'completed' },
 ]
 
 function update<K extends keyof FilterState>(key: K, value: FilterState[K]) {
@@ -26,7 +26,15 @@ function clearAll() {
 
 const hasActiveFilters = computed(() => {
   const f = props.filters
-  return !!(f.jobName || f.jiraTicketKey || f.stepName || f.assignee || f.priority || f.label || (f.status && f.status !== 'all'))
+  return !!(
+    f.jobName ||
+    f.jiraTicketKey ||
+    f.stepName ||
+    f.assignee ||
+    f.priority ||
+    f.label ||
+    (f.status && f.status !== 'all')
+  )
 })
 </script>
 
@@ -45,7 +53,7 @@ const hasActiveFilters = computed(() => {
       :items="statusOptions"
       size="sm"
       class="w-32"
-      @update:model-value="update('status', ($event as FilterState['status']))"
+      @update:model-value="update('status', $event as FilterState['status'])"
     />
     <UInput
       :model-value="filters.priority ?? ''"

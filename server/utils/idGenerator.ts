@@ -68,7 +68,7 @@ export function createSequentialPartIdGenerator(options: SequentialIdGeneratorOp
       }
       options.setCounter(current + count)
       return ids
-    }
+    },
   }
 }
 

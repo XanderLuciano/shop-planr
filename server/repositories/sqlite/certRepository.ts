@@ -25,7 +25,7 @@ function certRowToDomain(row: CertRow): Certificate {
     type: row.type as Certificate['type'],
     name: row.name,
     metadata: row.metadata ? JSON.parse(row.metadata) : undefined,
-    createdAt: row.created_at
+    createdAt: row.created_at,
   }
 }
 
@@ -36,7 +36,7 @@ function attachmentRowToDomain(row: AttachmentRow): CertAttachment {
     certId: row.cert_id,
     stepId: row.step_id,
     attachedAt: row.attached_at,
-    attachedBy: row.attached_by
+    attachedBy: row.attached_by,
   }
 }
 
@@ -48,10 +48,20 @@ export class SQLiteCertRepository implements CertRepository {
   }
 
   create(cert: Certificate): Certificate {
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO certs (id, type, name, metadata, created_at)
       VALUES (?, ?, ?, ?, ?)
-    `).run(cert.id, cert.type, cert.name, cert.metadata ? JSON.stringify(cert.metadata) : null, cert.createdAt)
+    `
+      )
+      .run(
+        cert.id,
+        cert.type,
+        cert.name,
+        cert.metadata ? JSON.stringify(cert.metadata) : null,
+        cert.createdAt
+      )
     return cert
   }
 
@@ -66,24 +76,34 @@ export class SQLiteCertRepository implements CertRepository {
   }
 
   attachToPart(attachment: CertAttachment): CertAttachment {
-    const result = this.db.prepare(`
+    const result = this.db
+      .prepare(
+        `
       INSERT INTO cert_attachments (part_id, cert_id, step_id, attached_at, attached_by)
       VALUES (?, ?, ?, ?, ?)
-    `).run(attachment.partId, attachment.certId, attachment.stepId, attachment.attachedAt, attachment.attachedBy)
+    `
+      )
+      .run(
+        attachment.partId,
+        attachment.certId,
+        attachment.stepId,
+        attachment.attachedAt,
+        attachment.attachedBy
+      )
     return { ...attachment, id: String(result.lastInsertRowid) }
   }
 
   getAttachmentsForPart(partId: string): CertAttachment[] {
-    const rows = this.db.prepare(
-      'SELECT * FROM cert_attachments WHERE part_id = ? ORDER BY attached_at ASC'
-    ).all(partId) as AttachmentRow[]
+    const rows = this.db
+      .prepare('SELECT * FROM cert_attachments WHERE part_id = ? ORDER BY attached_at ASC')
+      .all(partId) as AttachmentRow[]
     return rows.map(attachmentRowToDomain)
   }
 
   listAttachmentsByCertId(certId: string): CertAttachment[] {
-    const rows = this.db.prepare(
-      'SELECT * FROM cert_attachments WHERE cert_id = ? ORDER BY attached_at ASC'
-    ).all(certId) as AttachmentRow[]
+    const rows = this.db
+      .prepare('SELECT * FROM cert_attachments WHERE cert_id = ? ORDER BY attached_at ASC')
+      .all(certId) as AttachmentRow[]
     return rows.map(attachmentRowToDomain)
   }
 
@@ -105,14 +125,22 @@ export class SQLiteCertRepository implements CertRepository {
     const results: CertAttachment[] = []
     this.db.transaction(() => {
       for (const attachment of attachments) {
-        const result = insert.run(attachment.partId, attachment.certId, attachment.stepId, attachment.attachedAt, attachment.attachedBy)
+        const result = insert.run(
+          attachment.partId,
+          attachment.certId,
+          attachment.stepId,
+          attachment.attachedAt,
+          attachment.attachedBy
+        )
         if (result.changes > 0) {
           results.push({ ...attachment, id: String(result.lastInsertRowid) })
         } else {
           // Already existed (UNIQUE constraint), fetch existing
-          const existing = this.db.prepare(
-            'SELECT * FROM cert_attachments WHERE part_id = ? AND cert_id = ? AND step_id = ?'
-          ).get(attachment.partId, attachment.certId, attachment.stepId) as AttachmentRow
+          const existing = this.db
+            .prepare(
+              'SELECT * FROM cert_attachments WHERE part_id = ? AND cert_id = ? AND step_id = ?'
+            )
+            .get(attachment.partId, attachment.certId, attachment.stepId) as AttachmentRow
           results.push(attachmentRowToDomain(existing))
         }
       }

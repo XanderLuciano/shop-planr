@@ -9,5 +9,5 @@ export interface AuditRepository {
   /** @deprecated Use `listByPartId` instead. */
   listBySerialId?: (serialId: string) => AuditEntry[]
   listByJobId(jobId: string): AuditEntry[]
-  list(options?: { limit?: number, offset?: number }): AuditEntry[]
+  list(options?: { limit?: number; offset?: number }): AuditEntry[]
 }

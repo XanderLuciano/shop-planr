@@ -1,12 +1,12 @@
 ---
-title: "Update Template"
+title: 'Update Template'
 description: "Update an existing route template's name or steps"
-method: "PUT"
-endpoint: "/api/templates/:id"
-service: "templateService"
-category: "Templates"
-requestBody: "Partial<CreateTemplateInput>"
-responseType: "TemplateRoute"
+method: 'PUT'
+endpoint: '/api/templates/:id'
+service: 'templateService'
+category: 'Templates'
+requestBody: 'Partial<CreateTemplateInput>'
+responseType: 'TemplateRoute'
 errorCodes: [400, 404, 500]
 navigation:
   order: 4
@@ -26,20 +26,20 @@ Updating a template does **not** affect any paths that were previously created f
 
 ### Path Parameters
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `id` | `string` | Yes | The unique identifier of the template to update (e.g. `"tmpl_abc123"`) |
+| Parameter | Type     | Required | Description                                                            |
+| --------- | -------- | -------- | ---------------------------------------------------------------------- |
+| `id`      | `string` | Yes      | The unique identifier of the template to update (e.g. `"tmpl_abc123"`) |
 
 ### Request Body
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | `string` | No | Updated template name. Must be non-empty if provided. Leading and trailing whitespace is trimmed. |
-| `steps` | `array` | No | Updated array of step definitions. Must contain at least one step if provided. Replaces the entire existing step array. |
-| `steps[].name` | `string` | Yes (if steps provided) | The name of the process step. |
-| `steps[].location` | `string` | No | The physical location where this step is performed. |
-| `steps[].optional` | `boolean` | No | Whether the step can be skipped. Defaults to `false` if omitted. |
-| `steps[].dependencyType` | `'physical' \| 'preferred' \| 'completion_gate'` | No | How strictly step order is enforced. Defaults to `"preferred"` if omitted. |
+| Field                    | Type                                             | Required                | Description                                                                                                             |
+| ------------------------ | ------------------------------------------------ | ----------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `name`                   | `string`                                         | No                      | Updated template name. Must be non-empty if provided. Leading and trailing whitespace is trimmed.                       |
+| `steps`                  | `array`                                          | No                      | Updated array of step definitions. Must contain at least one step if provided. Replaces the entire existing step array. |
+| `steps[].name`           | `string`                                         | Yes (if steps provided) | The name of the process step.                                                                                           |
+| `steps[].location`       | `string`                                         | No                      | The physical location where this step is performed.                                                                     |
+| `steps[].optional`       | `boolean`                                        | No                      | Whether the step can be skipped. Defaults to `false` if omitted.                                                        |
+| `steps[].dependencyType` | `'physical' \| 'preferred' \| 'completion_gate'` | No                      | How strictly step order is enforced. Defaults to `"preferred"` if omitted.                                              |
 
 ## Response
 
@@ -47,42 +47,42 @@ Updating a template does **not** affect any paths that were previously created f
 
 Returned when the template is successfully updated. The response contains the complete updated `TemplateRoute` object.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `string` | The template's unique identifier (unchanged) |
-| `name` | `string` | The template name (updated or unchanged) |
-| `steps` | `TemplateStep[]` | The step definitions (updated or unchanged) |
-| `steps[].name` | `string` | Step name |
-| `steps[].order` | `number` | Zero-based position re-assigned from array index |
-| `steps[].location` | `string \| undefined` | Location, if provided |
-| `steps[].optional` | `boolean` | Whether the step is optional |
-| `steps[].dependencyType` | `'physical' \| 'preferred' \| 'completion_gate'` | Dependency enforcement level |
-| `createdAt` | `string` | Original creation timestamp (unchanged) |
-| `updatedAt` | `string` | ISO 8601 timestamp of this update |
+| Field                    | Type                                             | Description                                      |
+| ------------------------ | ------------------------------------------------ | ------------------------------------------------ |
+| `id`                     | `string`                                         | The template's unique identifier (unchanged)     |
+| `name`                   | `string`                                         | The template name (updated or unchanged)         |
+| `steps`                  | `TemplateStep[]`                                 | The step definitions (updated or unchanged)      |
+| `steps[].name`           | `string`                                         | Step name                                        |
+| `steps[].order`          | `number`                                         | Zero-based position re-assigned from array index |
+| `steps[].location`       | `string \| undefined`                            | Location, if provided                            |
+| `steps[].optional`       | `boolean`                                        | Whether the step is optional                     |
+| `steps[].dependencyType` | `'physical' \| 'preferred' \| 'completion_gate'` | Dependency enforcement level                     |
+| `createdAt`              | `string`                                         | Original creation timestamp (unchanged)          |
+| `updatedAt`              | `string`                                         | ISO 8601 timestamp of this update                |
 
 ### 400 Bad Request
 
 Returned when the request body fails validation.
 
-| Condition | Message |
-|-----------|---------|
-| `name` is provided but empty | `"name is required"` |
+| Condition                           | Message                               |
+| ----------------------------------- | ------------------------------------- |
+| `name` is provided but empty        | `"name is required"`                  |
 | `steps` is provided but empty array | `"steps must have at least one item"` |
 
 ### 404 Not Found
 
 Returned when no template exists with the given ID.
 
-| Condition | Message |
-|-----------|---------|
+| Condition               | Message                                  |
+| ----------------------- | ---------------------------------------- |
 | Template does not exist | `"TemplateRoute not found: tmpl_abc123"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while persisting the update.
 
-| Condition | Message |
-|-----------|---------|
+| Condition              | Message                   |
+| ---------------------- | ------------------------- |
 | Database write failure | `"Internal Server Error"` |
 
 ## Examples

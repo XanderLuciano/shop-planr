@@ -16,7 +16,7 @@ async function startCamera() {
   errorMessage.value = null
   try {
     const mediaStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment' }
+      video: { facingMode: 'environment' },
     })
     stream.value = mediaStream
     if (videoRef.value) {
@@ -26,7 +26,8 @@ async function startCamera() {
       if (hasBarcodeDetector) {
         detectLoop()
       } else {
-        errorMessage.value = 'BarcodeDetector API not available in this browser. Use Chrome or Edge for camera scanning.'
+        errorMessage.value =
+          'BarcodeDetector API not available in this browser. Use Chrome or Edge for camera scanning.'
         scanning.value = false
       }
     }
@@ -44,7 +45,9 @@ async function startCamera() {
 function detectLoop() {
   if (!scanning.value || !videoRef.value) return
 
-  const detector = new globalThis.BarcodeDetector({ formats: ['qr_code', 'code_128', 'code_39', 'ean_13', 'ean_8'] })
+  const detector = new globalThis.BarcodeDetector({
+    formats: ['qr_code', 'code_128', 'code_39', 'ean_13', 'ean_8'],
+  })
 
   async function tick() {
     if (!scanning.value || !videoRef.value) return
@@ -74,7 +77,7 @@ function stopCamera() {
     animationFrameId = null
   }
   if (stream.value) {
-    stream.value.getTracks().forEach(track => track.stop())
+    stream.value.getTracks().forEach((track) => track.stop())
     stream.value = null
   }
 }
@@ -112,13 +115,7 @@ onUnmounted(() => {
       </div>
 
       <div class="relative aspect-square bg-black">
-        <video
-          ref="videoRef"
-          class="w-full h-full object-cover"
-          autoplay
-          playsinline
-          muted
-        />
+        <video ref="videoRef" class="w-full h-full object-cover" autoplay playsinline muted />
         <!-- Scanning overlay guide -->
         <div
           v-if="scanning"
@@ -128,16 +125,8 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div
-        v-if="errorMessage"
-        class="px-4 py-3"
-      >
-        <UAlert
-          color="error"
-          variant="subtle"
-          :title="errorMessage"
-          icon="i-lucide-alert-circle"
-        />
+      <div v-if="errorMessage" class="px-4 py-3">
+        <UAlert color="error" variant="subtle" :title="errorMessage" icon="i-lucide-alert-circle" />
       </div>
 
       <div class="px-4 py-2 text-center text-xs text-(--ui-text-muted)">

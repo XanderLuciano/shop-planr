@@ -36,7 +36,6 @@ Fix the `GET /api/operator/step/[stepId]` endpoint and `GET /api/operator/queue/
   - _Requirements: 3.1, 3.2, 3.4_
 
 - [x] 3. Implement the fix
-
   - [x] 3.1 Update types in `server/types/computed.ts`
     - Add optional `previousStepWipCount?: number` field to the `StepViewResponse` interface
     - Add optional `previousStepId?: string` and `previousStepName?: string` fields to `WorkQueueJob`

@@ -1,7 +1,7 @@
 ---
-title: "Notes API"
-description: "Process step notes and defect tracking on serials"
-icon: "i-lucide-sticky-note"
+title: 'Notes API'
+description: 'Process step notes and defect tracking on serials'
+icon: 'i-lucide-sticky-note'
 navigation:
   order: 11
 ---
@@ -50,11 +50,11 @@ Notes can be queried two ways:
 
 ## Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | [`/api/notes`](/api-docs/notes/create) | Create a step note for one or more serials |
-| `GET` | [`/api/notes/serial/:id`](/api-docs/notes/by-serial) | Get all notes referencing a serial number |
-| `GET` | [`/api/notes/step/:id`](/api-docs/notes/by-step) | Get all notes attached to a process step |
+| Method | Path                                                 | Description                                |
+| ------ | ---------------------------------------------------- | ------------------------------------------ |
+| `POST` | [`/api/notes`](/api-docs/notes/create)               | Create a step note for one or more serials |
+| `GET`  | [`/api/notes/serial/:id`](/api-docs/notes/by-serial) | Get all notes referencing a serial number  |
+| `GET`  | [`/api/notes/step/:id`](/api-docs/notes/by-step)     | Get all notes attached to a process step   |
 
 ## Related
 

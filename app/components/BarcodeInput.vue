@@ -1,11 +1,14 @@
 <script setup lang="ts">
-type ScanResult = { value: string, type: 'part' | 'certificate' | 'unknown' }
+type ScanResult = { value: string; type: 'part' | 'certificate' | 'unknown' }
 
-const props = withDefaults(defineProps<{
-  placeholder?: string
-}>(), {
-  placeholder: 'Scan or type Part / Cert...'
-})
+const props = withDefaults(
+  defineProps<{
+    placeholder?: string
+  }>(),
+  {
+    placeholder: 'Scan or type Part / Cert...',
+  }
+)
 
 const emit = defineEmits<{
   scanned: [result: ScanResult]
@@ -97,10 +100,6 @@ function setInputRef(el: any) {
       @click="openQRScanner"
     />
 
-    <QRScanner
-      v-if="showQRScanner"
-      @scanned="handleQRScanned"
-      @close="closeQRScanner"
-    />
+    <QRScanner v-if="showQRScanner" @scanned="handleQRScanned" @close="closeQRScanner" />
   </div>
 </template>

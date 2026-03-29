@@ -19,10 +19,11 @@ import type { WorkQueueJob } from '~/server/types/computed'
 function filterJobs(jobs: WorkQueueJob[], query: string): WorkQueueJob[] {
   const q = query.trim().toLowerCase()
   if (!q) return jobs
-  return jobs.filter(job =>
-    job.jobName.toLowerCase().includes(q)
-    || job.pathName.toLowerCase().includes(q)
-    || job.stepName.toLowerCase().includes(q),
+  return jobs.filter(
+    (job) =>
+      job.jobName.toLowerCase().includes(q) ||
+      job.pathName.toLowerCase().includes(q) ||
+      job.stepName.toLowerCase().includes(q)
   )
 }
 
@@ -57,38 +58,38 @@ describe('Property 3: Search filter correctness', () => {
         if (!q) {
           // Empty query returns all jobs
           expect(result).toEqual(jobs)
-        }
-        else {
+        } else {
           // Every returned job must match
           for (const job of result) {
-            const matches
-              = job.jobName.toLowerCase().includes(q)
-              || job.pathName.toLowerCase().includes(q)
-              || job.stepName.toLowerCase().includes(q)
+            const matches =
+              job.jobName.toLowerCase().includes(q) ||
+              job.pathName.toLowerCase().includes(q) ||
+              job.stepName.toLowerCase().includes(q)
             expect(matches).toBe(true)
           }
 
           // Every matching job from the original list must be in the result
           for (const job of jobs) {
-            const matches
-              = job.jobName.toLowerCase().includes(q)
-              || job.pathName.toLowerCase().includes(q)
-              || job.stepName.toLowerCase().includes(q)
+            const matches =
+              job.jobName.toLowerCase().includes(q) ||
+              job.pathName.toLowerCase().includes(q) ||
+              job.stepName.toLowerCase().includes(q)
             if (matches) {
               expect(result).toContain(job)
             }
           }
 
           // Result length matches expected count
-          const expectedCount = jobs.filter(j =>
-            j.jobName.toLowerCase().includes(q)
-            || j.pathName.toLowerCase().includes(q)
-            || j.stepName.toLowerCase().includes(q),
+          const expectedCount = jobs.filter(
+            (j) =>
+              j.jobName.toLowerCase().includes(q) ||
+              j.pathName.toLowerCase().includes(q) ||
+              j.stepName.toLowerCase().includes(q)
           ).length
           expect(result.length).toBe(expectedCount)
         }
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -98,7 +99,7 @@ describe('Property 3: Search filter correctness', () => {
         expect(filterJobs(jobs, '')).toEqual(jobs)
         expect(filterJobs(jobs, '   ')).toEqual(jobs)
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

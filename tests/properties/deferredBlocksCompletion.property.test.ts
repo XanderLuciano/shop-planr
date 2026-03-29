@@ -28,14 +28,14 @@ interface StepStatusRecord {
 function canComplete(
   steps: StepConfig[],
   stepStatuses: StepStatusRecord[],
-  overriddenStepIds: Set<string>,
+  overriddenStepIds: Set<string>
 ): { canComplete: boolean; blockers: string[] } {
   const blockers: string[] = []
   for (const step of steps) {
     if (step.optional) continue
     if (overriddenStepIds.has(step.id)) continue
 
-    const status = stepStatuses.find(s => s.stepId === step.id)
+    const status = stepStatuses.find((s) => s.stepId === step.id)
     if (!status || (status.status !== 'completed' && status.status !== 'waived')) {
       blockers.push(step.id)
     }
@@ -69,9 +69,9 @@ describe('Property 3: Deferred Step Blocks Normal Completion', () => {
 
           expect(result.canComplete).toBe(false)
           expect(result.blockers).toContain(`step-${deferredStepIndex}`)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -101,9 +101,9 @@ describe('Property 3: Deferred Step Blocks Normal Completion', () => {
           for (let i = 0; i < actualDeferred; i++) {
             expect(result.blockers).toContain(`step-${i}`)
           }
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
@@ -129,9 +129,9 @@ describe('Property 3: Deferred Step Blocks Normal Completion', () => {
 
           expect(result.canComplete).toBe(false)
           expect(result.blockers).toContain(`step-${pendingStepIndex}`)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

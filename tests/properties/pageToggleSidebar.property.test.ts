@@ -32,7 +32,7 @@ const TOTAL_ITEMS = navItems.length // 11
 
 /** Replicates the sidebar filtering logic from default.vue. */
 function getFilteredNavItems(toggles: PageToggles) {
-  return navItems.filter(item => isPageEnabled(toggles, item.to))
+  return navItems.filter((item) => isPageEnabled(toggles, item.to))
 }
 
 /** Arbitrary that produces a full PageToggles object with random booleans. */
@@ -59,14 +59,14 @@ describe('Property 2: Toggle-visibility consistency', () => {
     fc.assert(
       fc.property(arbPageToggles, (toggles) => {
         const filtered = getFilteredNavItems(toggles)
-        const filteredRoutes = new Set(filtered.map(item => item.to))
+        const filteredRoutes = new Set(filtered.map((item) => item.to))
 
         for (const item of navItems) {
           const enabled = isPageEnabled(toggles, item.to)
           expect(filteredRoutes.has(item.to)).toBe(enabled)
         }
       }),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 })
@@ -85,7 +85,7 @@ describe('Property 4: Sidebar item count bounds', () => {
         expect(filtered.length).toBeGreaterThanOrEqual(2)
         expect(filtered.length).toBeLessThanOrEqual(TOTAL_ITEMS)
       }),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 })

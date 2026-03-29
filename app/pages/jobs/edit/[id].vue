@@ -13,7 +13,7 @@ async function loadJob() {
   loading.value = true
   error.value = ''
   try {
-    const data = await $fetch<Job & { paths: Path[], progress: JobProgress }>(`/api/jobs/${jobId}`)
+    const data = await $fetch<Job & { paths: Path[]; progress: JobProgress }>(`/api/jobs/${jobId}`)
     const { paths, progress, ...job } = data
     jobWithPaths.value = { ...job, paths }
   } catch (e: any) {
@@ -66,7 +66,9 @@ onMounted(() => {
 
     <!-- Edit form -->
     <template v-else-if="jobWithPaths">
-      <h1 class="text-lg font-bold text-(--ui-text-highlighted)">Edit Job — {{ jobWithPaths.name }}</h1>
+      <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
+        Edit Job — {{ jobWithPaths.name }}
+      </h1>
 
       <JobCreationForm
         mode="edit"

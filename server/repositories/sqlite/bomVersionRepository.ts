@@ -32,32 +32,36 @@ export class SQLiteBomVersionRepository implements BomVersionRepository {
   }
 
   create(version: BomVersion): BomVersion {
-    this.db.prepare(`
+    this.db
+      .prepare(
+        `
       INSERT INTO bom_versions (id, bom_id, version_number, entries_snapshot, change_description, changed_by, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      version.id,
-      version.bomId,
-      version.versionNumber,
-      JSON.stringify(version.entriesSnapshot),
-      version.changeDescription ?? null,
-      version.changedBy,
-      version.createdAt,
-    )
+    `
+      )
+      .run(
+        version.id,
+        version.bomId,
+        version.versionNumber,
+        JSON.stringify(version.entriesSnapshot),
+        version.changeDescription ?? null,
+        version.changedBy,
+        version.createdAt
+      )
     return version
   }
 
   listByBomId(bomId: string): BomVersion[] {
-    const rows = this.db.prepare(
-      'SELECT * FROM bom_versions WHERE bom_id = ? ORDER BY version_number DESC'
-    ).all(bomId) as BomVersionRow[]
+    const rows = this.db
+      .prepare('SELECT * FROM bom_versions WHERE bom_id = ? ORDER BY version_number DESC')
+      .all(bomId) as BomVersionRow[]
     return rows.map(rowToDomain)
   }
 
   getLatestByBomId(bomId: string): BomVersion | null {
-    const row = this.db.prepare(
-      'SELECT * FROM bom_versions WHERE bom_id = ? ORDER BY version_number DESC LIMIT 1'
-    ).get(bomId) as BomVersionRow | undefined
+    const row = this.db
+      .prepare('SELECT * FROM bom_versions WHERE bom_id = ? ORDER BY version_number DESC LIMIT 1')
+      .get(bomId) as BomVersionRow | undefined
     return row ? rowToDomain(row) : null
   }
 }

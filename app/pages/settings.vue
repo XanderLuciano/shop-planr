@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import type { ShopUser, JiraConnectionSettings, JiraFieldMapping, PageToggles } from '~/server/types/domain'
+import type {
+  ShopUser,
+  JiraConnectionSettings,
+  JiraFieldMapping,
+  PageToggles,
+} from '~/server/types/domain'
 
 const { settings, loading, fetchSettings, updateSettings } = useSettings()
 const { users, fetchUsers } = useUsers()
@@ -37,7 +42,7 @@ async function loadAllUsers() {
   }
 }
 
-async function onCreateUser(data: { name: string, department?: string }) {
+async function onCreateUser(data: { name: string; department?: string }) {
   userError.value = ''
   userSuccess.value = ''
   userSaving.value = true
@@ -54,7 +59,7 @@ async function onCreateUser(data: { name: string, department?: string }) {
   }
 }
 
-async function onUpdateUser(data: { name: string, department?: string, active?: boolean }) {
+async function onUpdateUser(data: { name: string; department?: string; active?: boolean }) {
   if (!editingUser.value) return
   userError.value = ''
   userSuccess.value = ''
@@ -77,7 +82,7 @@ async function toggleUserActive(user: ShopUser) {
   try {
     await $fetch(`/api/users/${user.id}`, {
       method: 'PUT',
-      body: { active: !user.active }
+      body: { active: !user.active },
     })
     await loadAllUsers()
     await fetchUsers()
@@ -137,7 +142,7 @@ const defaultConnection: JiraConnectionSettings = {
   username: '',
   apiToken: '',
   enabled: false,
-  pushEnabled: false
+  pushEnabled: false,
 }
 
 onMounted(async () => {
@@ -147,19 +152,11 @@ onMounted(async () => {
 
 <template>
   <div class="p-4 space-y-3 max-w-4xl">
-    <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
-      Settings
-    </h1>
+    <h1 class="text-lg font-bold text-(--ui-text-highlighted)">Settings</h1>
 
     <!-- Loading -->
-    <div
-      v-if="loading"
-      class="flex items-center gap-2 text-sm text-(--ui-text-muted)"
-    >
-      <UIcon
-        name="i-lucide-loader-2"
-        class="animate-spin size-4"
-      />
+    <div v-if="loading" class="flex items-center gap-2 text-sm text-(--ui-text-muted)">
+      <UIcon name="i-lucide-loader-2" class="animate-spin size-4" />
       Loading settings...
     </div>
 
@@ -170,24 +167,20 @@ onMounted(async () => {
           v-for="tab in tabs"
           :key="tab.value"
           class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border-b-2 -mb-px transition-colors"
-          :class="activeTab === tab.value
-            ? 'border-(--ui-color-primary-500) text-(--ui-text-highlighted)'
-            : 'border-transparent text-(--ui-text-muted) hover:text-(--ui-text-highlighted)'"
+          :class="
+            activeTab === tab.value
+              ? 'border-(--ui-color-primary-500) text-(--ui-text-highlighted)'
+              : 'border-transparent text-(--ui-text-muted) hover:text-(--ui-text-highlighted)'
+          "
           @click="activeTab = tab.value"
         >
-          <UIcon
-            :name="tab.icon"
-            class="size-3.5"
-          />
+          <UIcon :name="tab.icon" class="size-3.5" />
           {{ tab.label }}
         </button>
       </div>
 
       <!-- Users tab -->
-      <div
-        v-if="activeTab === 'users'"
-        class="space-y-3"
-      >
+      <div v-if="activeTab === 'users'" class="space-y-3">
         <div class="flex items-center justify-between">
           <span class="text-sm font-medium text-(--ui-text-highlighted)">User Management</span>
           <UButton
@@ -204,13 +197,8 @@ onMounted(async () => {
           v-if="showUserForm"
           class="p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50"
         >
-          <div class="text-xs font-semibold text-(--ui-text-highlighted) mb-2">
-            New User
-          </div>
-          <UserForm
-            @submit="onCreateUser"
-            @cancel="showUserForm = false"
-          />
+          <div class="text-xs font-semibold text-(--ui-text-highlighted) mb-2">New User</div>
+          <UserForm @submit="onCreateUser" @cancel="showUserForm = false" />
         </div>
 
         <!-- Edit user form -->
@@ -218,40 +206,22 @@ onMounted(async () => {
           v-if="editingUser"
           class="p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50"
         >
-          <div class="text-xs font-semibold text-(--ui-text-highlighted) mb-2">
-            Edit User
-          </div>
-          <UserForm
-            :user="editingUser"
-            @submit="onUpdateUser"
-            @cancel="editingUser = null"
-          />
+          <div class="text-xs font-semibold text-(--ui-text-highlighted) mb-2">Edit User</div>
+          <UserForm :user="editingUser" @submit="onUpdateUser" @cancel="editingUser = null" />
         </div>
 
-        <p
-          v-if="userError"
-          class="text-xs text-red-500"
-        >
+        <p v-if="userError" class="text-xs text-red-500">
           {{ userError }}
         </p>
-        <p
-          v-if="userSuccess"
-          class="text-xs text-green-600"
-        >
+        <p v-if="userSuccess" class="text-xs text-green-600">
           {{ userSuccess }}
         </p>
 
         <!-- User list -->
-        <div
-          v-if="!allUsers.length"
-          class="text-sm text-(--ui-text-muted) py-4 text-center"
-        >
+        <div v-if="!allUsers.length" class="text-sm text-(--ui-text-muted) py-4 text-center">
           No users yet. Create a user to get started.
         </div>
-        <div
-          v-else
-          class="space-y-1.5"
-        >
+        <div v-else class="space-y-1.5">
           <div
             v-for="u in allUsers"
             :key="u.id"
@@ -259,15 +229,10 @@ onMounted(async () => {
           >
             <div class="flex items-center gap-2 min-w-0 flex-1">
               <span class="text-sm font-medium text-(--ui-text-highlighted)">{{ u.name }}</span>
-              <span
-                v-if="u.department"
-                class="text-xs text-(--ui-text-muted)"
-              >{{ u.department }}</span>
-              <UBadge
-                size="xs"
-                :color="u.active ? 'success' : 'neutral'"
-                variant="subtle"
-              >
+              <span v-if="u.department" class="text-xs text-(--ui-text-muted)">{{
+                u.department
+              }}</span>
+              <UBadge size="xs" :color="u.active ? 'success' : 'neutral'" variant="subtle">
                 {{ u.active ? 'Active' : 'Inactive' }}
               </UBadge>
             </div>
@@ -277,7 +242,10 @@ onMounted(async () => {
                 size="xs"
                 variant="ghost"
                 color="neutral"
-                @click="editingUser = u; showUserForm = false"
+                @click="
+                  editingUser = u
+                  showUserForm = false
+                "
               />
               <UButton
                 :icon="u.active ? 'i-lucide-user-x' : 'i-lucide-user-check'"
@@ -292,10 +260,7 @@ onMounted(async () => {
       </div>
 
       <!-- Jira Connection tab -->
-      <div
-        v-if="activeTab === 'jira'"
-        class="space-y-3"
-      >
+      <div v-if="activeTab === 'jira'" class="space-y-3">
         <span class="text-sm font-medium text-(--ui-text-highlighted)">Jira Connection</span>
         <div class="p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50">
           <JiraConnectionForm
@@ -303,25 +268,16 @@ onMounted(async () => {
             @save="onSaveConnection"
           />
         </div>
-        <p
-          v-if="settingsError"
-          class="text-xs text-red-500"
-        >
+        <p v-if="settingsError" class="text-xs text-red-500">
           {{ settingsError }}
         </p>
-        <p
-          v-if="settingsSuccess"
-          class="text-xs text-green-600"
-        >
+        <p v-if="settingsSuccess" class="text-xs text-green-600">
           {{ settingsSuccess }}
         </p>
       </div>
 
       <!-- Field Mappings tab -->
-      <div
-        v-if="activeTab === 'mappings'"
-        class="space-y-3"
-      >
+      <div v-if="activeTab === 'mappings'" class="space-y-3">
         <span class="text-sm font-medium text-(--ui-text-highlighted)">Jira Field Mappings</span>
         <div class="p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50">
           <JiraFieldMappingEditor
@@ -329,36 +285,26 @@ onMounted(async () => {
             @save="onSaveMappings"
           />
         </div>
-        <p
-          v-if="settingsError"
-          class="text-xs text-red-500"
-        >
+        <p v-if="settingsError" class="text-xs text-red-500">
           {{ settingsError }}
         </p>
-        <p
-          v-if="settingsSuccess"
-          class="text-xs text-green-600"
-        >
+        <p v-if="settingsSuccess" class="text-xs text-green-600">
           {{ settingsSuccess }}
         </p>
       </div>
 
       <!-- Libraries tab -->
-      <div
-        v-if="activeTab === 'libraries'"
-        class="space-y-3"
-      >
-        <span class="text-sm font-medium text-(--ui-text-highlighted)">Process &amp; Location Libraries</span>
+      <div v-if="activeTab === 'libraries'" class="space-y-3">
+        <span class="text-sm font-medium text-(--ui-text-highlighted)"
+          >Process &amp; Location Libraries</span
+        >
         <div class="p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50">
           <LibraryManager />
         </div>
       </div>
 
       <!-- Page Visibility tab -->
-      <div
-        v-if="activeTab === 'pages'"
-        class="space-y-3"
-      >
+      <div v-if="activeTab === 'pages'" class="space-y-3">
         <span class="text-sm font-medium text-(--ui-text-highlighted)">Page Visibility</span>
         <div class="p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50">
           <PageVisibilitySettings
@@ -366,16 +312,10 @@ onMounted(async () => {
             @update="onSaveToggles"
           />
         </div>
-        <p
-          v-if="settingsError"
-          class="text-xs text-red-500"
-        >
+        <p v-if="settingsError" class="text-xs text-red-500">
           {{ settingsError }}
         </p>
-        <p
-          v-if="settingsSuccess"
-          class="text-xs text-green-600"
-        >
+        <p v-if="settingsSuccess" class="text-xs text-green-600">
           {{ settingsSuccess }}
         </p>
       </div>

@@ -80,20 +80,20 @@ sequenceDiagram
 
 ### New Files
 
-| File | Type | Purpose |
-|------|------|---------|
-| `app/composables/useOperatorIdentity.ts` | Composable | Manages operator selection, localStorage persistence, active user list |
-| `app/composables/useWorkQueue.ts` | Composable | Fetches queue data, handles search/filter, batch advancement + notes |
-| `app/components/WorkQueueList.vue` | Component | Displays jobs grouped with part counts, step info; emits job selection |
-| `app/components/ProcessAdvancementPanel.vue` | Component | Serial selection, quantity input, note textarea, confirm/cancel |
-| `server/api/operator/queue/[userId].get.ts` | API Route | Aggregates work queue data for a specific operator |
+| File                                         | Type       | Purpose                                                                |
+| -------------------------------------------- | ---------- | ---------------------------------------------------------------------- |
+| `app/composables/useOperatorIdentity.ts`     | Composable | Manages operator selection, localStorage persistence, active user list |
+| `app/composables/useWorkQueue.ts`            | Composable | Fetches queue data, handles search/filter, batch advancement + notes   |
+| `app/components/WorkQueueList.vue`           | Component  | Displays jobs grouped with part counts, step info; emits job selection |
+| `app/components/ProcessAdvancementPanel.vue` | Component  | Serial selection, quantity input, note textarea, confirm/cancel        |
+| `server/api/operator/queue/[userId].get.ts`  | API Route  | Aggregates work queue data for a specific operator                     |
 
 ### Modified Files
 
-| File | Change |
-|------|--------|
-| `app/pages/operator.vue` | Replace current step-name UI with work queue UI |
-| `server/types/computed.ts` | Add `WorkQueueJob`, `WorkQueueResponse` types |
+| File                       | Change                                          |
+| -------------------------- | ----------------------------------------------- |
+| `app/pages/operator.vue`   | Replace current step-name UI with work queue UI |
+| `server/types/computed.ts` | Add `WorkQueueJob`, `WorkQueueResponse` types   |
 
 ### Interfaces
 
@@ -178,6 +178,7 @@ export interface WorkQueueResponse {
 ### No Database Schema Changes
 
 The feature requires no new tables or migrations. It queries existing tables:
+
 - `serials` — filter by `current_step_index >= 0` (active parts)
 - `paths` + `process_steps` — resolve step names, locations, ordering
 - `jobs` — job names
@@ -196,73 +197,74 @@ Value: string (ShopUser.id) | null
 
 ## Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+_A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
 
 ### Property 1: Queue aggregation correctness
 
-*For any* set of jobs, paths, and serials in the database where some serials have `currentStepIndex >= 0`, the work queue endpoint should return `WorkQueueJob` entries whose `serialIds` arrays collectively contain exactly the set of all active (non-completed) serial IDs, with each serial appearing in exactly one job group matching its `pathId` and `currentStepIndex`.
+_For any_ set of jobs, paths, and serials in the database where some serials have `currentStepIndex >= 0`, the work queue endpoint should return `WorkQueueJob` entries whose `serialIds` arrays collectively contain exactly the set of all active (non-completed) serial IDs, with each serial appearing in exactly one job group matching its `pathId` and `currentStepIndex`.
 
 **Validates: Requirements 1.1, 3.2**
 
 ### Property 2: Queue structural invariants
 
-*For any* `WorkQueueResponse`, the following must hold: (a) each `WorkQueueJob` has `partCount` equal to `serialIds.length`, (b) each job has a non-empty `stepName` and `stepId`, (c) `totalParts` equals the sum of all `partCount` values across all jobs, and (d) jobs are grouped by the combination of `jobId + pathId + stepOrder`.
+_For any_ `WorkQueueResponse`, the following must hold: (a) each `WorkQueueJob` has `partCount` equal to `serialIds.length`, (b) each job has a non-empty `stepName` and `stepId`, (c) `totalParts` equals the sum of all `partCount` values across all jobs, and (d) jobs are grouped by the combination of `jobId + pathId + stepOrder`.
 
 **Validates: Requirements 1.2, 1.3, 1.4**
 
 ### Property 3: Search filter correctness
 
-*For any* search query string `q` and any list of `WorkQueueJob` items, the filtered result should contain exactly those items where `jobName`, `pathName`, or `stepName` contains `q` as a case-insensitive substring. When `q` is empty, the filtered result should equal the original list.
+_For any_ search query string `q` and any list of `WorkQueueJob` items, the filtered result should contain exactly those items where `jobName`, `pathName`, or `stepName` contains `q` as a case-insensitive substring. When `q` is empty, the filtered result should equal the original list.
 
 **Validates: Requirements 2.2, 2.3, 2.5**
 
 ### Property 4: Batch advancement by quantity in creation order
 
-*For any* valid quantity `Q` (where `1 <= Q <= available parts at step`) and a list of serials sorted by `createdAt` ascending, advancing `Q` serials should advance exactly the first `Q` serials in creation order to the next step index (or to `-1` if at the final step), leaving the remaining serials unchanged.
+_For any_ valid quantity `Q` (where `1 <= Q <= available parts at step`) and a list of serials sorted by `createdAt` ascending, advancing `Q` serials should advance exactly the first `Q` serials in creation order to the next step index (or to `-1` if at the final step), leaving the remaining serials unchanged.
 
 **Validates: Requirements 3.4, 4.4**
 
 ### Property 5: Quantity validation rejects over-limit
 
-*For any* positive integer quantity `Q` and available part count `N` at a step, if `Q > N` then the validation should reject the input, and if `1 <= Q <= N` then the validation should accept it.
+_For any_ positive integer quantity `Q` and available part count `N` at a step, if `Q > N` then the validation should reject the input, and if `1 <= Q <= N` then the validation should accept it.
 
 **Validates: Requirements 4.2, 4.3**
 
 ### Property 6: Note creation on advancement with non-empty text
 
-*For any* non-empty note text (≤ 1000 chars) and any non-empty set of serial IDs, when advancement is performed with a note, a `StepNote` record should be created with `serialIds` matching the advanced serials and `text` matching the provided note. When note text is empty or absent, no `StepNote` should be created.
+_For any_ non-empty note text (≤ 1000 chars) and any non-empty set of serial IDs, when advancement is performed with a note, a `StepNote` record should be created with `serialIds` matching the advanced serials and `text` matching the provided note. When note text is empty or absent, no `StepNote` should be created.
 
 **Validates: Requirements 5.2, 5.3**
 
 ### Property 7: Note length validation
 
-*For any* string of length > 1000 characters, the note input should be rejected or truncated to 1000 characters. *For any* string of length ≤ 1000 characters (including empty), the note input should be accepted as-is.
+_For any_ string of length > 1000 characters, the note input should be rejected or truncated to 1000 characters. _For any_ string of length ≤ 1000 characters (including empty), the note input should be accepted as-is.
 
 **Validates: Requirements 5.4**
 
 ### Property 8: Operator selection localStorage round-trip
 
-*For any* valid ShopUser ID, calling `selectOperator(id)` followed by reading from localStorage should return the same ID. On page reload, the composable should restore this ID and use it to fetch the queue.
+_For any_ valid ShopUser ID, calling `selectOperator(id)` followed by reading from localStorage should return the same ID. On page reload, the composable should restore this ID and use it to fetch the queue.
 
 **Validates: Requirements 6.3, 6.4**
 
 ## Error Handling
 
-| Scenario | Layer | Behavior |
-|----------|-------|----------|
-| No operator selected | Page (UI) | Show operator selector, hide queue |
-| Queue fetch fails (network) | `useWorkQueue` | Set `error` ref, show error message with retry button |
-| Serial advancement fails (already completed) | `serialService` → API 400 | Show toast with error message, re-fetch queue to sync state |
-| Serial advancement fails (not found) | `serialService` → API 404 | Show toast, re-fetch queue |
-| Quantity exceeds available | `useWorkQueue` (client validation) | Prevent submission, show inline validation error |
-| Note text exceeds 1000 chars | Page (UI) | Enforce `maxlength` on textarea, prevent submission if exceeded |
-| Note creation fails | `noteService` → API 400/500 | Show toast with error, but advancement already succeeded (note failure is non-blocking) |
-| User list fetch fails | `useOperatorIdentity` | Show error state with retry option |
-| localStorage unavailable | `useOperatorIdentity` | Graceful degradation — operator must re-select each visit |
+| Scenario                                     | Layer                              | Behavior                                                                                |
+| -------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------- |
+| No operator selected                         | Page (UI)                          | Show operator selector, hide queue                                                      |
+| Queue fetch fails (network)                  | `useWorkQueue`                     | Set `error` ref, show error message with retry button                                   |
+| Serial advancement fails (already completed) | `serialService` → API 400          | Show toast with error message, re-fetch queue to sync state                             |
+| Serial advancement fails (not found)         | `serialService` → API 404          | Show toast, re-fetch queue                                                              |
+| Quantity exceeds available                   | `useWorkQueue` (client validation) | Prevent submission, show inline validation error                                        |
+| Note text exceeds 1000 chars                 | Page (UI)                          | Enforce `maxlength` on textarea, prevent submission if exceeded                         |
+| Note creation fails                          | `noteService` → API 400/500        | Show toast with error, but advancement already succeeded (note failure is non-blocking) |
+| User list fetch fails                        | `useOperatorIdentity`              | Show error state with retry option                                                      |
+| localStorage unavailable                     | `useOperatorIdentity`              | Graceful degradation — operator must re-select each visit                               |
 
 ### Error Flow for Batch Advancement
 
 Batch advancement calls `advanceSerial` sequentially. If one call fails mid-batch:
+
 1. Already-advanced serials remain advanced (no rollback — matches existing behavior)
 2. The error is captured and displayed to the operator
 3. The queue is re-fetched to show current state
@@ -278,19 +280,20 @@ Library: `fast-check` (already installed)
 Minimum iterations: 100 per property
 
 Each property test will be tagged with:
+
 ```
 Feature: operator-work-queue, Property {N}: {title}
 ```
 
 Property tests will live in `tests/properties/` following the existing pattern:
 
-| File | Properties |
-|------|-----------|
+| File                                    | Properties                                       |
+| --------------------------------------- | ------------------------------------------------ |
 | `workQueueAggregation.property.test.ts` | P1: Queue aggregation, P2: Structural invariants |
-| `workQueueFilter.property.test.ts` | P3: Search filter correctness |
-| `workQueueAdvancement.property.test.ts` | P4: Batch advancement, P5: Quantity validation |
-| `workQueueNotes.property.test.ts` | P6: Note creation, P7: Note length validation |
-| `workQueueIdentity.property.test.ts` | P8: localStorage round-trip |
+| `workQueueFilter.property.test.ts`      | P3: Search filter correctness                    |
+| `workQueueAdvancement.property.test.ts` | P4: Batch advancement, P5: Quantity validation   |
+| `workQueueNotes.property.test.ts`       | P6: Note creation, P7: Note length validation    |
+| `workQueueIdentity.property.test.ts`    | P8: localStorage round-trip                      |
 
 ### Unit Tests
 

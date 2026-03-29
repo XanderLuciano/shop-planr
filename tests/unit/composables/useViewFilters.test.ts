@@ -8,9 +8,15 @@ import { useViewFilters } from '~/app/composables/useViewFilters'
 const store: Record<string, string> = {}
 const localStorageMock = {
   getItem: vi.fn((key: string) => store[key] ?? null),
-  setItem: vi.fn((key: string, value: string) => { store[key] = value }),
-  removeItem: vi.fn((key: string) => { delete store[key] }),
-  clear: vi.fn(() => { Object.keys(store).forEach(k => delete store[k]) })
+  setItem: vi.fn((key: string, value: string) => {
+    store[key] = value
+  }),
+  removeItem: vi.fn((key: string) => {
+    delete store[key]
+  }),
+  clear: vi.fn(() => {
+    Object.keys(store).forEach((k) => delete store[k])
+  }),
 }
 Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, writable: true })
 
@@ -47,11 +53,11 @@ describe('useViewFilters', () => {
     const items = [
       { name: 'Alpha Job', id: '1' },
       { name: 'Beta Job', id: '2' },
-      { name: 'ALPHA-2', id: '3' }
+      { name: 'ALPHA-2', id: '3' },
     ]
 
-    const result = applyFilters(items, { jobName: i => i.name })
-    expect(result.map(i => i.id)).toEqual(['1', '3'])
+    const result = applyFilters(items, { jobName: (i) => i.name })
+    expect(result.map((i) => i.id)).toEqual(['1', '3'])
   })
 
   it('applyFilters filters by status', () => {
@@ -61,13 +67,13 @@ describe('useViewFilters', () => {
     const items = [
       { id: '1', done: true },
       { id: '2', done: false },
-      { id: '3', done: true }
+      { id: '3', done: true },
     ]
 
     const result = applyFilters(items, {
-      status: i => i.done ? 'completed' : 'active'
+      status: (i) => (i.done ? 'completed' : 'active'),
     })
-    expect(result.map(i => i.id)).toEqual(['1', '3'])
+    expect(result.map((i) => i.id)).toEqual(['1', '3'])
   })
 
   it('applyFilters with status "all" returns everything', () => {
@@ -76,11 +82,11 @@ describe('useViewFilters', () => {
 
     const items = [
       { id: '1', done: true },
-      { id: '2', done: false }
+      { id: '2', done: false },
     ]
 
     const result = applyFilters(items, {
-      status: i => i.done ? 'completed' : 'active'
+      status: (i) => (i.done ? 'completed' : 'active'),
     })
     expect(result).toHaveLength(2)
   })
@@ -93,14 +99,14 @@ describe('useViewFilters', () => {
     const items = [
       { name: 'Alpha Job', priority: 'High', id: '1' },
       { name: 'Alpha Low', priority: 'Low', id: '2' },
-      { name: 'Beta Job', priority: 'High', id: '3' }
+      { name: 'Beta Job', priority: 'High', id: '3' },
     ]
 
     const result = applyFilters(items, {
-      jobName: i => i.name,
-      priority: i => i.priority
+      jobName: (i) => i.name,
+      priority: (i) => i.priority,
     })
-    expect(result.map(i => i.id)).toEqual(['1'])
+    expect(result.map((i) => i.id)).toEqual(['1'])
   })
 
   it('applyFilters ignores filters without matching accessors', () => {

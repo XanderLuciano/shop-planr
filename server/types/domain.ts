@@ -48,7 +48,12 @@ export interface ProcessStep {
 
 // ---- Part (formerly Serial Number) ----
 
-export type ScrapReason = 'out_of_tolerance' | 'process_defect' | 'damaged' | 'operator_error' | 'other'
+export type ScrapReason =
+  | 'out_of_tolerance'
+  | 'process_defect'
+  | 'damaged'
+  | 'operator_error'
+  | 'other'
 
 export interface Part {
   id: string
@@ -131,21 +136,21 @@ export interface BomEntry {
 
 // ---- Audit Trail ----
 
-export type AuditAction
-  = | 'cert_attached'
-    | 'part_created'
-    | 'part_advanced'
-    | 'part_completed'
-    | 'note_created'
-    | 'part_scrapped'
-    | 'part_force_completed'
-    | 'step_override_created'
-    | 'step_override_reversed'
-    | 'step_deferred'
-    | 'step_skipped'
-    | 'deferred_step_completed'
-    | 'step_waived'
-    | 'bom_edited'
+export type AuditAction =
+  | 'cert_attached'
+  | 'part_created'
+  | 'part_advanced'
+  | 'part_completed'
+  | 'note_created'
+  | 'part_scrapped'
+  | 'part_force_completed'
+  | 'step_override_created'
+  | 'step_override_reversed'
+  | 'step_deferred'
+  | 'step_skipped'
+  | 'deferred_step_completed'
+  | 'step_waived'
+  | 'bom_edited'
 
 export interface AuditEntry {
   id: string
@@ -243,7 +248,13 @@ export interface FilterState {
 
 // ---- Part Step Status (formerly SN Step Status) ----
 
-export type PartStepStatusValue = 'pending' | 'in_progress' | 'completed' | 'skipped' | 'deferred' | 'waived'
+export type PartStepStatusValue =
+  | 'pending'
+  | 'in_progress'
+  | 'completed'
+  | 'skipped'
+  | 'deferred'
+  | 'waived'
 
 /** @deprecated Use `PartStepStatusValue` instead. Backward-compatible alias. */
 export type SnStepStatusValue = PartStepStatusValue

@@ -119,7 +119,7 @@ function safeStringArray(value: unknown): string[] {
  * Find the Jira field ID for a given shopErpField name from the field mappings.
  */
 function findFieldId(mappings: JiraFieldMapping[], shopErpField: string): string | null {
-  const mapping = mappings.find(m => m.shopErpField === shopErpField)
+  const mapping = mappings.find((m) => m.shopErpField === shopErpField)
   return mapping?.jiraFieldId ?? null
 }
 
@@ -165,11 +165,11 @@ export function createJiraService(
       const response = await doFetch(url, {
         method: 'GET',
         headers: {
-          'Authorization': getAuthHeader(),
+          Authorization: getAuthHeader(),
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          Accept: 'application/json',
         },
-        signal: controller.signal
+        signal: controller.signal,
       })
 
       if (!response.ok) {
@@ -197,12 +197,12 @@ export function createJiraService(
       const response = await doFetch(url, {
         method: 'PUT',
         headers: {
-          'Authorization': getAuthHeader(),
+          Authorization: getAuthHeader(),
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          Accept: 'application/json',
         },
         body: JSON.stringify(body),
-        signal: controller.signal
+        signal: controller.signal,
       })
 
       if (!response.ok) {
@@ -232,12 +232,12 @@ export function createJiraService(
       const response = await doFetch(url, {
         method: 'POST',
         headers: {
-          'Authorization': getAuthHeader(),
+          Authorization: getAuthHeader(),
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          Accept: 'application/json',
         },
         body: JSON.stringify(body),
-        signal: controller.signal
+        signal: controller.signal,
       })
 
       if (!response.ok) {
@@ -288,7 +288,7 @@ export function createJiraService(
       epicLink: safeString(fields[epicLinkFieldId]) || null,
       createdAt: safeString(fields.created),
       updatedAt: safeString(fields.updated),
-      rawFields: fields
+      rawFields: fields,
     }
   }
 
@@ -312,15 +312,15 @@ export function createJiraService(
 
         // Include mapped custom fields in the request
         const mappings = settingsService.getFieldMappings()
-        const customFieldIds = mappings.map(m => m.jiraFieldId).join(',')
+        const customFieldIds = mappings.map((m) => m.jiraFieldId).join(',')
         const allFields = customFieldIds ? `${fieldsParam},${customFieldIds}` : fieldsParam
 
-        const data = await jiraGet(
+        const data = (await jiraGet(
           `search?jql=${encodeURIComponent(jql)}&fields=${encodeURIComponent(allFields)}&maxResults=200`
-        ) as { issues?: PITicket[] }
+        )) as { issues?: PITicket[] }
 
         const issues = data.issues ?? []
-        const tickets = issues.map(issue => normalizeTicket(issue))
+        const tickets = issues.map((issue) => normalizeTicket(issue))
 
         // Update cache
         cachedTickets = tickets
@@ -336,7 +336,7 @@ export function createJiraService(
      * Fetch a single ticket's full detail from Jira.
      */
     async fetchTicketDetail(ticketKey: string): Promise<JiraTicket> {
-      const data = await jiraGet(`issue/${encodeURIComponent(ticketKey)}`) as PITicket
+      const data = (await jiraGet(`issue/${encodeURIComponent(ticketKey)}`)) as PITicket
       return normalizeTicket(data)
     },
 
@@ -345,7 +345,7 @@ export function createJiraService(
      * Creates a new Job from the ticket data.
      */
     async linkTicketToJob(input: LinkJiraInput): Promise<Job> {
-      const ticket = await jiraGet(`issue/${encodeURIComponent(input.ticketKey)}`) as PITicket
+      const ticket = (await jiraGet(`issue/${encodeURIComponent(input.ticketKey)}`)) as PITicket
       const normalized = normalizeTicket(ticket)
 
       const goalQuantity = input.goalQuantity ?? normalized.goalQuantity ?? 1
@@ -358,7 +358,7 @@ export function createJiraService(
         jiraPartNumber: normalized.partNumber ?? undefined,
         jiraPriority: normalized.priority || undefined,
         jiraEpicLink: normalized.epicLink ?? undefined,
-        jiraLabels: normalized.labels.length > 0 ? normalized.labels : undefined
+        jiraLabels: normalized.labels.length > 0 ? normalized.labels : undefined,
       })
     },
 
@@ -397,13 +397,13 @@ export function createJiraService(
 
         for (const path of paths) {
           const distribution = deps.pathService.getStepDistribution(path.id)
-          const stepNames = path.steps.map(s => s.name)
+          const stepNames = path.steps.map((s) => s.name)
           const completedCount = distribution.length > 0 ? distribution[0]!.completedCount : 0
 
           // Build header row
           const header = `|| Date || ${stepNames.join(' || ')} || Completed ||`
           // Build data row with counts
-          const counts = distribution.map(d => String(d.partCount))
+          const counts = distribution.map((d) => String(d.partCount))
           const dataRow = `| ${today} | ${counts.join(' | ')} | ${completedCount} |`
 
           tables.push(`*${path.name}*\n${header}\n${dataRow}`)
@@ -412,7 +412,9 @@ export function createJiraService(
         const tableMarkup = '\n\n' + tables.join('\n\n')
 
         // GET current ticket description
-        const ticketData = await jiraGet(`issue/${encodeURIComponent(job.jiraTicketKey)}?fields=description`) as {
+        const ticketData = (await jiraGet(
+          `issue/${encodeURIComponent(job.jiraTicketKey)}?fields=description`
+        )) as {
           fields?: { description?: string }
         }
         const currentDescription = ticketData?.fields?.description ?? ''
@@ -420,7 +422,7 @@ export function createJiraService(
 
         // PUT updated description
         await jiraPut(`issue/${encodeURIComponent(job.jiraTicketKey)}`, {
-          fields: { description: updatedDescription }
+          fields: { description: updatedDescription },
         })
 
         return { success: true }
@@ -460,7 +462,7 @@ export function createJiraService(
         }
 
         await jiraPost(`issue/${encodeURIComponent(job.jiraTicketKey)}/comment`, {
-          body: lines.join('\n')
+          body: lines.join('\n'),
         })
 
         return { success: true }
@@ -487,21 +489,21 @@ export function createJiraService(
 
       try {
         const notes = deps.noteService.getNotesForJob(jobId)
-        const note = notes.find(n => n.id === noteId)
+        const note = notes.find((n) => n.id === noteId)
         if (!note) {
           return { success: false, error: `Note not found: ${noteId}` }
         }
 
         // Find the step name from the path
         const path = deps.pathService.getPath(note.pathId)
-        const step = path.steps.find(s => s.id === note.stepId)
+        const step = path.steps.find((s) => s.id === note.stepId)
         const stepName = step?.name ?? 'Unknown Step'
 
         const partList = note.partIds.join(', ')
         const commentBody = `${stepName} - ${partList}: ${note.text}`
 
         await jiraPost(`issue/${encodeURIComponent(job.jiraTicketKey)}/comment`, {
-          body: commentBody
+          body: commentBody,
         })
 
         return { success: true }
@@ -555,7 +557,7 @@ export function createJiraService(
           `Goal: ${progress.goalQuantity}`,
           `Completed: ${progress.completedParts}`,
           `Total Parts: ${progress.totalParts}`,
-          `Progress: ${progress.progressPercent.toFixed(1)}%`
+          `Progress: ${progress.progressPercent.toFixed(1)}%`,
         ]
 
         if (certLines.length > 0) {
@@ -564,7 +566,7 @@ export function createJiraService(
         }
 
         await jiraPost(`issue/${encodeURIComponent(job.jiraTicketKey)}/comment`, {
-          body: lines.join('\n')
+          body: lines.join('\n'),
         })
 
         return { success: true }
@@ -572,7 +574,7 @@ export function createJiraService(
         const message = err instanceof Error ? err.message : 'Unknown Jira push error'
         return { success: false, error: message }
       }
-    }
+    },
   }
 }
 

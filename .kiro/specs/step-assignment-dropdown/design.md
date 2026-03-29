@@ -20,6 +20,7 @@ The StepAssignmentDropdown component fails to persist user assignments because o
 The bug manifests when a user selects any assignee from the StepAssignmentDropdown. The `USelectMenu` component with `value-key="value"` emits the raw value (a string userId or `null`), but `handleSelection` declares its parameter as `SelectMenuItem | null` and accesses `item?.value`. On a plain string, `.value` is `undefined`, which falls through to `?? null`, so `null` is always sent to the API regardless of which user was selected.
 
 **Formal Specification:**
+
 ```
 FUNCTION isBugCondition(input)
   INPUT: input of type { selectedValue: string | null, handlerReceives: any }
@@ -43,6 +44,7 @@ END FUNCTION
 ### Preservation Requirements
 
 **Unchanged Behaviors:**
+
 - Step distribution display (serial counts, completed counts, bottleneck badges) must continue to render correctly in StepTracker
 - Clicking a step column must continue to navigate to `/parts/step/{stepId}`
 - The `assigned` event must continue to trigger `onStepAssigned` in the parent page, reloading distributions and path data
@@ -53,6 +55,7 @@ END FUNCTION
 
 **Scope:**
 All inputs that do NOT involve the `handleSelection` value extraction are completely unaffected by this fix. This includes:
+
 - Mouse clicks on step columns (navigation)
 - Step distribution data rendering
 - Path CRUD operations
@@ -96,24 +99,18 @@ Assuming our root cause analysis is correct:
 **Function**: `handleSelection`
 
 **Specific Changes**:
+
 1. **Fix handler parameter type**: Change `handleSelection(item: SelectMenuItem | null)` to `handleSelection(value: string | null)` — the parameter is the raw value emitted by `USelectMenu` with `value-key="value"`
 2. **Fix value extraction**: Change `const userId = item?.value ?? null` to `const userId = value ?? null` — use the raw value directly instead of accessing `.value` on it
 3. **Remove unused import**: Remove the `SelectMenuItem` import from `@nuxt/ui` if it's no longer used elsewhere in the component (it's still used by `filterDropdownOptions` return type and `menuItems` computed, so it stays)
 
 **File**: `app/components/StepTracker.vue`
 
-**Specific Changes**:
-4. **Add new props**: Add `users` (ShopUser[]) and `stepAssignments` (Record<string, string | undefined>) props so StepTracker can render the dropdown inside each step column
-5. **Add assigned event**: Add an `assigned` emit so the parent page can react to assignment changes
-6. **Render StepAssignmentDropdown**: Inside each step column `<div>`, add a `<StepAssignmentDropdown>` component below the existing step data
-7. **Widen step columns**: Change `min-w-[80px]` to `min-w-[120px]` on step column divs to accommodate the dropdown
+**Specific Changes**: 4. **Add new props**: Add `users` (ShopUser[]) and `stepAssignments` (Record<string, string | undefined>) props so StepTracker can render the dropdown inside each step column 5. **Add assigned event**: Add an `assigned` emit so the parent page can react to assignment changes 6. **Render StepAssignmentDropdown**: Inside each step column `<div>`, add a `<StepAssignmentDropdown>` component below the existing step data 7. **Widen step columns**: Change `min-w-[80px]` to `min-w-[120px]` on step column divs to accommodate the dropdown
 
 **File**: `app/pages/jobs/[id].vue`
 
-**Specific Changes**:
-8. **Remove separate dropdown rendering**: Remove the `<div v-if="activeUsers.length || p.steps.length">` block that renders StepAssignmentDropdown below StepTracker
-9. **Pass new props to StepTracker**: Add `:users="activeUsers"` prop to the `<StepTracker>` component
-10. **Wire assigned event**: Add `@assigned="onStepAssigned"` to StepTracker to handle assignment events bubbled up from the integrated dropdown
+**Specific Changes**: 8. **Remove separate dropdown rendering**: Remove the `<div v-if="activeUsers.length || p.steps.length">` block that renders StepAssignmentDropdown below StepTracker 9. **Pass new props to StepTracker**: Add `:users="activeUsers"` prop to the `<StepTracker>` component 10. **Wire assigned event**: Add `@assigned="onStepAssigned"` to StepTracker to handle assignment events bubbled up from the integrated dropdown
 
 ## Testing Strategy
 
@@ -128,11 +125,13 @@ The testing strategy follows a two-phase approach: first, surface counterexample
 **Test Plan**: Write a pure-function test that simulates the `handleSelection` value extraction logic. Pass a raw string value (as `USelectMenu` emits) and assert the extracted userId. Run on UNFIXED code to observe the failure.
 
 **Test Cases**:
+
 1. **String Value Extraction Test**: Call the extraction logic with `"user_abc"` — expect `"user_abc"`, but unfixed code produces `null` (will fail on unfixed code)
 2. **Null Value Extraction Test**: Call the extraction logic with `null` — expect `null`, unfixed code produces `null` (passes by coincidence)
 3. **Multiple Users Test**: Simulate selecting different users in sequence — all should produce their respective userIds (will fail on unfixed code)
 
 **Expected Counterexamples**:
+
 - `handleSelection("user_abc")` → `userId` is `null` instead of `"user_abc"`
 - Root cause confirmed: `"user_abc"?.value` is `undefined`, `undefined ?? null` is `null`
 
@@ -141,6 +140,7 @@ The testing strategy follows a two-phase approach: first, surface counterexample
 **Goal**: Verify that for all inputs where the bug condition holds, the fixed function produces the expected behavior.
 
 **Pseudocode:**
+
 ```
 FOR ALL input WHERE typeof input === 'string' DO
   result := handleSelection_fixed(input)
@@ -158,6 +158,7 @@ END FOR
 **Goal**: Verify that for all inputs where the bug condition does NOT hold, the fixed function produces the same result as the original function.
 
 **Pseudocode:**
+
 ```
 FOR ALL input WHERE input === null DO
   ASSERT handleSelection_original(input).sentUserId = handleSelection_fixed(input).sentUserId
@@ -165,6 +166,7 @@ END FOR
 ```
 
 **Testing Approach**: Property-based testing is recommended for preservation checking because:
+
 - It generates many test cases automatically across the input domain
 - It catches edge cases that manual unit tests might miss
 - It provides strong guarantees that behavior is unchanged for all non-buggy inputs
@@ -172,6 +174,7 @@ END FOR
 **Test Plan**: Observe behavior on UNFIXED code first for null/unassign selections, then write property-based tests capturing that behavior.
 
 **Test Cases**:
+
 1. **Unassign Preservation**: Verify selecting "Unassigned" (null value) continues to send `null` to the API after the fix
 2. **Dropdown Filter Preservation**: Verify the existing `filterDropdownOptions` logic continues to work correctly (already covered by existing Property 4 test in `dropdownFilter.property.test.ts`)
 3. **Step Click Preservation**: Verify clicking step columns still emits `step-click` events with correct payload after StepTracker changes

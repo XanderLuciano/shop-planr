@@ -9,10 +9,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
-import {
-  isPageEnabled,
-  ROUTE_TOGGLE_MAP,
-} from '~/server/utils/pageToggles'
+import { isPageEnabled, ROUTE_TOGGLE_MAP } from '~/server/utils/pageToggles'
 import type { PageToggles } from '~/server/types/domain'
 
 /** Arbitrary that produces a full PageToggles object with random booleans. */
@@ -48,7 +45,7 @@ describe('Property 1: Always-visible invariant', () => {
       fc.property(arbPageToggles, (toggles) => {
         expect(isPageEnabled(toggles, '/')).toBe(true)
       }),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 
@@ -57,7 +54,7 @@ describe('Property 1: Always-visible invariant', () => {
       fc.property(arbPageToggles, (toggles) => {
         expect(isPageEnabled(toggles, '/settings')).toBe(true)
       }),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 })
@@ -71,16 +68,12 @@ describe('Property 3: Route access matches toggle state', () => {
    */
   it('base route returns false iff its toggle key is false', () => {
     fc.assert(
-      fc.property(
-        arbPageToggles,
-        fc.constantFrom(...BASE_PATHS),
-        (toggles, basePath) => {
-          const toggleKey = ROUTE_TOGGLE_MAP[basePath]
-          const result = isPageEnabled(toggles, basePath)
-          expect(result).toBe(toggles[toggleKey] !== false)
-        },
-      ),
-      { numRuns: 200 },
+      fc.property(arbPageToggles, fc.constantFrom(...BASE_PATHS), (toggles, basePath) => {
+        const toggleKey = ROUTE_TOGGLE_MAP[basePath]
+        const result = isPageEnabled(toggles, basePath)
+        expect(result).toBe(toggles[toggleKey] !== false)
+      }),
+      { numRuns: 200 }
     )
   })
 
@@ -95,9 +88,9 @@ describe('Property 3: Route access matches toggle state', () => {
           const toggleKey = ROUTE_TOGGLE_MAP[basePath]
           const result = isPageEnabled(toggles, detailRoute)
           expect(result).toBe(toggles[toggleKey] !== false)
-        },
+        }
       ),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 
@@ -115,7 +108,7 @@ describe('Property 3: Route access matches toggle state', () => {
       fc.property(arbPageToggles, arbUnmappedRoute, (toggles, route) => {
         expect(isPageEnabled(toggles, route)).toBe(true)
       }),
-      { numRuns: 200 },
+      { numRuns: 200 }
     )
   })
 })

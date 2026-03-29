@@ -70,7 +70,7 @@ Fix GitHub Issue #24 — the Path "Done" total incorrectly sums `completedCount`
 
   - [x] 4.3 Update `JobExpandableRow.vue` to use path-level `completedCount` for ProgressBar
     - Store `completedCount` from API response per path (new `pathCompletedCounts` ref)
-    - Replace `:completed="pathDistributions[path.id]!.reduce(...)"`  with `:completed="pathCompletedCounts[path.id] ?? 0"`
+    - Replace `:completed="pathDistributions[path.id]!.reduce(...)"` with `:completed="pathCompletedCounts[path.id] ?? 0"`
     - The expanded step table "Completed" column will show `0` per step (correct per design)
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
 

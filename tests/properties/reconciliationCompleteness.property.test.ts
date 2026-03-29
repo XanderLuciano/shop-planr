@@ -16,22 +16,24 @@ import type { StepInput } from '~/server/services/pathService'
 
 // Arbitrary for generating existing ProcessStep arrays with unique IDs
 const arbExistingSteps = (maxLen: number) =>
-  fc.integer({ min: 0, max: maxLen }).chain(n =>
-    fc.array(
-      fc.record({
-        id: fc.string({ minLength: 1, maxLength: 20 }),
-        name: fc.string({ minLength: 1, maxLength: 30 }),
-      }),
-      { minLength: n, maxLength: n }
-    ).map(items =>
-      items.map((item, i) => ({
-        id: `step_${i}_${item.id}`,
-        name: item.name,
-        order: i,
-        optional: false,
-        dependencyType: 'preferred' as const,
-      }))
-    )
+  fc.integer({ min: 0, max: maxLen }).chain((n) =>
+    fc
+      .array(
+        fc.record({
+          id: fc.string({ minLength: 1, maxLength: 20 }),
+          name: fc.string({ minLength: 1, maxLength: 30 }),
+        }),
+        { minLength: n, maxLength: n }
+      )
+      .map((items) =>
+        items.map((item, i) => ({
+          id: `step_${i}_${item.id}`,
+          name: item.name,
+          order: i,
+          optional: false,
+          dependencyType: 'preferred' as const,
+        }))
+      )
   )
 
 // Arbitrary for generating input steps
@@ -46,50 +48,38 @@ const arbInputSteps = (minLen: number, maxLen: number) =>
 describe('Property 2: Reconciliation Completeness (Count Conservation)', () => {
   it('toUpdate + toInsert count equals input step count', () => {
     fc.assert(
-      fc.property(
-        arbExistingSteps(10),
-        arbInputSteps(1, 10),
-        (existingSteps, inputSteps) => {
-          const result = reconcileSteps(existingSteps, inputSteps)
+      fc.property(arbExistingSteps(10), arbInputSteps(1, 10), (existingSteps, inputSteps) => {
+        const result = reconcileSteps(existingSteps, inputSteps)
 
-          expect(result.toUpdate.length + result.toInsert.length).toBe(inputSteps.length)
-        }
-      ),
+        expect(result.toUpdate.length + result.toInsert.length).toBe(inputSteps.length)
+      }),
       { numRuns: 100 }
     )
   })
 
   it('toUpdate + toDelete count equals existing step count', () => {
     fc.assert(
-      fc.property(
-        arbExistingSteps(10),
-        arbInputSteps(1, 10),
-        (existingSteps, inputSteps) => {
-          const result = reconcileSteps(existingSteps, inputSteps)
+      fc.property(arbExistingSteps(10), arbInputSteps(1, 10), (existingSteps, inputSteps) => {
+        const result = reconcileSteps(existingSteps, inputSteps)
 
-          expect(result.toUpdate.length + result.toDelete.length).toBe(existingSteps.length)
-        }
-      ),
+        expect(result.toUpdate.length + result.toDelete.length).toBe(existingSteps.length)
+      }),
       { numRuns: 100 }
     )
   })
 
   it('no step ID appears in both toUpdate and toDelete', () => {
     fc.assert(
-      fc.property(
-        arbExistingSteps(10),
-        arbInputSteps(1, 10),
-        (existingSteps, inputSteps) => {
-          const result = reconcileSteps(existingSteps, inputSteps)
+      fc.property(arbExistingSteps(10), arbInputSteps(1, 10), (existingSteps, inputSteps) => {
+        const result = reconcileSteps(existingSteps, inputSteps)
 
-          const updateIds = new Set(result.toUpdate.map(s => s.id))
-          const deleteIds = new Set(result.toDelete)
+        const updateIds = new Set(result.toUpdate.map((s) => s.id))
+        const deleteIds = new Set(result.toDelete)
 
-          for (const id of deleteIds) {
-            expect(updateIds.has(id)).toBe(false)
-          }
+        for (const id of deleteIds) {
+          expect(updateIds.has(id)).toBe(false)
         }
-      ),
+      }),
       { numRuns: 100 }
     )
   })

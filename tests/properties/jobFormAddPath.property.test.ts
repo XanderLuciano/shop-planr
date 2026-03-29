@@ -66,9 +66,9 @@ describe('Property 4: addPath produces correct defaults', () => {
           expect(newPath._clientId.length).toBeGreaterThan(0)
           expect(typeof step._clientId).toBe('string')
           expect(step._clientId.length).toBeGreaterThan(0)
-        },
+        }
       ),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

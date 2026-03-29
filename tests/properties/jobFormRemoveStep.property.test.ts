@@ -27,70 +27,65 @@ import { useJobForm } from '~/app/composables/useJobForm'
 describe('Property 7: removeStep enforces minimum-one constraint', () => {
   it('does not remove the last step when path has exactly one step', () => {
     fc.assert(
-      fc.property(
-        fc.constant(null),
-        () => {
-          const { pathDrafts, addPath, removeStep } = useJobForm('create')
-          addPath()
+      fc.property(fc.constant(null), () => {
+        const { pathDrafts, addPath, removeStep } = useJobForm('create')
+        addPath()
 
-          const path = pathDrafts.value[0]
-          expect(path.steps.length).toBe(1)
+        const path = pathDrafts.value[0]
+        expect(path.steps.length).toBe(1)
 
-          const onlyStepId = path.steps[0]._clientId
+        const onlyStepId = path.steps[0]._clientId
 
-          removeStep(path._clientId, onlyStepId)
+        removeStep(path._clientId, onlyStepId)
 
-          // Step should still be there
-          expect(path.steps.length).toBe(1)
-          expect(path.steps[0]._clientId).toBe(onlyStepId)
-        },
-      ),
-      { numRuns: 100 },
+        // Step should still be there
+        expect(path.steps.length).toBe(1)
+        expect(path.steps[0]._clientId).toBe(onlyStepId)
+      }),
+      { numRuns: 100 }
     )
   })
 
   it('removes exactly the targeted step when path has >1 steps', () => {
     fc.assert(
-      fc.property(
-        fc.integer({ min: 2, max: 8 }),
-        fc.nat(),
-        (stepCount, removeIdxSeed) => {
-          const { pathDrafts, addPath, addStep, removeStep } = useJobForm('create')
-          addPath()
+      fc.property(fc.integer({ min: 2, max: 8 }), fc.nat(), (stepCount, removeIdxSeed) => {
+        const { pathDrafts, addPath, addStep, removeStep } = useJobForm('create')
+        addPath()
 
-          const path = pathDrafts.value[0]
+        const path = pathDrafts.value[0]
 
-          // Add extra steps (path starts with 1 step)
-          for (let i = 1; i < stepCount; i++) {
-            addStep(path._clientId)
-          }
+        // Add extra steps (path starts with 1 step)
+        for (let i = 1; i < stepCount; i++) {
+          addStep(path._clientId)
+        }
 
-          // Name steps for identification
-          path.steps.forEach((s, i) => { s.name = `Step-${i}` })
+        // Name steps for identification
+        path.steps.forEach((s, i) => {
+          s.name = `Step-${i}`
+        })
 
-          const removeIdx = removeIdxSeed % path.steps.length
-          const targetClientId = path.steps[removeIdx]._clientId
-          const lengthBefore = path.steps.length
+        const removeIdx = removeIdxSeed % path.steps.length
+        const targetClientId = path.steps[removeIdx]._clientId
+        const lengthBefore = path.steps.length
 
-          // Snapshot other steps' clientIds
-          const otherClientIds = path.steps
-            .filter(s => s._clientId !== targetClientId)
-            .map(s => s._clientId)
+        // Snapshot other steps' clientIds
+        const otherClientIds = path.steps
+          .filter((s) => s._clientId !== targetClientId)
+          .map((s) => s._clientId)
 
-          removeStep(path._clientId, targetClientId)
+        removeStep(path._clientId, targetClientId)
 
-          // Length decreased by exactly 1
-          expect(path.steps.length).toBe(lengthBefore - 1)
+        // Length decreased by exactly 1
+        expect(path.steps.length).toBe(lengthBefore - 1)
 
-          // Removed step is gone
-          expect(path.steps.find(s => s._clientId === targetClientId)).toBeUndefined()
+        // Removed step is gone
+        expect(path.steps.find((s) => s._clientId === targetClientId)).toBeUndefined()
 
-          // All other steps remain in order
-          const remainingClientIds = path.steps.map(s => s._clientId)
-          expect(remainingClientIds).toEqual(otherClientIds)
-        },
-      ),
-      { numRuns: 100 },
+        // All other steps remain in order
+        const remainingClientIds = path.steps.map((s) => s._clientId)
+        expect(remainingClientIds).toEqual(otherClientIds)
+      }),
+      { numRuns: 100 }
     )
   })
 })

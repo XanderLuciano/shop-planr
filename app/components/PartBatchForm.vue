@@ -33,7 +33,7 @@ async function loadCerts() {
 }
 
 const certOptions = computed(() =>
-  certs.value.map(c => ({ label: `${c.name} (${c.type})`, value: c.id }))
+  certs.value.map((c) => ({ label: `${c.name} (${c.type})`, value: c.id }))
 )
 
 async function onSubmit() {
@@ -58,7 +58,7 @@ async function onSubmit() {
       pathId: props.pathId,
       quantity: quantity.value,
       certId: selectedCertId.value || undefined,
-      userId
+      userId,
     })
     quantity.value = 1
     selectedCertId.value = undefined
@@ -76,19 +76,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <form
-    class="flex items-end gap-2 flex-wrap"
-    @submit.prevent="onSubmit"
-  >
+  <form class="flex items-end gap-2 flex-wrap" @submit.prevent="onSubmit">
     <div>
       <label class="block text-xs text-(--ui-text-muted) mb-0.5">Quantity</label>
-      <UInput
-        v-model.number="quantity"
-        type="number"
-        size="sm"
-        :min="1"
-        class="w-20"
-      />
+      <UInput v-model.number="quantity" type="number" size="sm" :min="1" class="w-20" />
     </div>
     <div>
       <label class="block text-xs text-(--ui-text-muted) mb-0.5">Cert (optional)</label>
@@ -101,17 +92,8 @@ onMounted(() => {
         value-key="value"
       />
     </div>
-    <UButton
-      type="submit"
-      size="sm"
-      icon="i-lucide-plus"
-      label="Create Parts"
-      :loading="saving"
-    />
-    <p
-      v-if="error"
-      class="text-xs text-red-500 w-full"
-    >
+    <UButton type="submit" size="sm" icon="i-lucide-plus" label="Create Parts" :loading="saving" />
+    <p v-if="error" class="text-xs text-red-500 w-full">
       {{ error }}
     </p>
   </form>

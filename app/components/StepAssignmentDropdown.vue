@@ -34,8 +34,11 @@ function filterDropdownOptions(users: ShopUser[], search: string): SelectMenuIte
   const normalizedSearch = search.toLowerCase().trim()
 
   const userOptions: SelectMenuItem[] = users
-    .filter(u => u.active && (normalizedSearch === '' || u.name.toLowerCase().includes(normalizedSearch)))
-    .map(u => ({
+    .filter(
+      (u) =>
+        u.active && (normalizedSearch === '' || u.name.toLowerCase().includes(normalizedSearch))
+    )
+    .map((u) => ({
       label: u.name,
       value: u.id,
       icon: 'i-lucide-user',
@@ -50,10 +53,13 @@ const previousValue = ref<string | null>(props.currentAssignee ?? null)
 const assigning = ref(false)
 
 // Sync with prop changes from parent
-watch(() => props.currentAssignee, (val) => {
-  selectedValue.value = val ?? null
-  previousValue.value = val ?? null
-})
+watch(
+  () => props.currentAssignee,
+  (val) => {
+    selectedValue.value = val ?? null
+    previousValue.value = val ?? null
+  }
+)
 
 // Build items for USelectMenu
 const menuItems = computed<SelectMenuItem[]>(() => {
@@ -63,7 +69,7 @@ const menuItems = computed<SelectMenuItem[]>(() => {
 // Display label for current selection
 const displayLabel = computed(() => {
   if (!selectedValue.value) return 'Unassigned'
-  const user = props.users.find(u => u.id === selectedValue.value)
+  const user = props.users.find((u) => u.id === selectedValue.value)
   return user?.name ?? 'Unassigned'
 })
 

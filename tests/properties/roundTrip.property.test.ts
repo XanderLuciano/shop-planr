@@ -11,26 +11,39 @@ import { describe, it } from 'vitest'
 import fc from 'fast-check'
 import { serialize, deserialize, prettyPrint } from '../../server/utils/serialization'
 import type {
-  Job, Path, ProcessStep, Part, Certificate,
-  CertAttachment, TemplateRoute, TemplateStep, BOM, BomEntry,
-  AuditEntry, ShopUser, StepNote, AppSettings, JiraConnectionSettings,
-  JiraFieldMapping
+  Job,
+  Path,
+  ProcessStep,
+  Part,
+  Certificate,
+  CertAttachment,
+  TemplateRoute,
+  TemplateStep,
+  BOM,
+  BomEntry,
+  AuditEntry,
+  ShopUser,
+  StepNote,
+  AppSettings,
+  JiraConnectionSettings,
+  JiraFieldMapping,
 } from '../../server/types/domain'
 
 // ---- Arbitraries for domain objects ----
 
 const arbId = () => fc.stringMatching(/^[a-zA-Z0-9_-]{5,20}$/)
 const arbIsoDate = () =>
-  fc.integer({ min: new Date('2020-01-01').getTime(), max: new Date('2030-01-01').getTime() })
-    .map(ts => new Date(ts).toISOString())
-const arbName = () => fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length > 0)
+  fc
+    .integer({ min: new Date('2020-01-01').getTime(), max: new Date('2030-01-01').getTime() })
+    .map((ts) => new Date(ts).toISOString())
+const arbName = () => fc.string({ minLength: 1, maxLength: 50 }).filter((s) => s.trim().length > 0)
 
 const arbProcessStep = (): fc.Arbitrary<ProcessStep> =>
   fc.record({
     id: arbId(),
     name: arbName(),
     order: fc.nat({ max: 20 }),
-    location: fc.option(fc.string({ minLength: 1, maxLength: 30 }), { nil: undefined })
+    location: fc.option(fc.string({ minLength: 1, maxLength: 30 }), { nil: undefined }),
   })
 
 const arbJob = (): fc.Arbitrary<Job> =>
@@ -43,9 +56,11 @@ const arbJob = (): fc.Arbitrary<Job> =>
     jiraPartNumber: fc.option(fc.string({ minLength: 1, maxLength: 30 }), { nil: undefined }),
     jiraPriority: fc.option(fc.string({ minLength: 1, maxLength: 20 }), { nil: undefined }),
     jiraEpicLink: fc.option(fc.string({ minLength: 1, maxLength: 30 }), { nil: undefined }),
-    jiraLabels: fc.option(fc.array(fc.string({ minLength: 1, maxLength: 20 }), { maxLength: 5 }), { nil: undefined }),
+    jiraLabels: fc.option(fc.array(fc.string({ minLength: 1, maxLength: 20 }), { maxLength: 5 }), {
+      nil: undefined,
+    }),
     createdAt: arbIsoDate(),
-    updatedAt: arbIsoDate()
+    updatedAt: arbIsoDate(),
   })
 
 const arbPath = (): fc.Arbitrary<Path> =>
@@ -56,7 +71,7 @@ const arbPath = (): fc.Arbitrary<Path> =>
     goalQuantity: fc.integer({ min: 1, max: 10000 }),
     steps: fc.array(arbProcessStep(), { minLength: 1, maxLength: 5 }),
     createdAt: arbIsoDate(),
-    updatedAt: arbIsoDate()
+    updatedAt: arbIsoDate(),
   })
 
 const arbPart = (): fc.Arbitrary<Part> =>
@@ -66,7 +81,7 @@ const arbPart = (): fc.Arbitrary<Part> =>
     pathId: arbId(),
     currentStepIndex: fc.integer({ min: -1, max: 20 }),
     createdAt: arbIsoDate(),
-    updatedAt: arbIsoDate()
+    updatedAt: arbIsoDate(),
   })
 
 const arbCertificate = (): fc.Arbitrary<Certificate> =>
@@ -74,7 +89,7 @@ const arbCertificate = (): fc.Arbitrary<Certificate> =>
     id: arbId(),
     type: fc.constantFrom('material' as const, 'process' as const),
     name: arbName(),
-    createdAt: arbIsoDate()
+    createdAt: arbIsoDate(),
   })
 
 const arbCertAttachment = (): fc.Arbitrary<CertAttachment> =>
@@ -83,14 +98,14 @@ const arbCertAttachment = (): fc.Arbitrary<CertAttachment> =>
     certId: arbId(),
     stepId: arbId(),
     attachedAt: arbIsoDate(),
-    attachedBy: arbId()
+    attachedBy: arbId(),
   })
 
 const arbTemplateStep = (): fc.Arbitrary<TemplateStep> =>
   fc.record({
     name: arbName(),
     order: fc.nat({ max: 20 }),
-    location: fc.option(fc.string({ minLength: 1, maxLength: 30 }), { nil: undefined })
+    location: fc.option(fc.string({ minLength: 1, maxLength: 30 }), { nil: undefined }),
   })
 
 const arbTemplateRoute = (): fc.Arbitrary<TemplateRoute> =>
@@ -99,14 +114,14 @@ const arbTemplateRoute = (): fc.Arbitrary<TemplateRoute> =>
     name: arbName(),
     steps: fc.array(arbTemplateStep(), { minLength: 1, maxLength: 5 }),
     createdAt: arbIsoDate(),
-    updatedAt: arbIsoDate()
+    updatedAt: arbIsoDate(),
   })
 
 const arbBomEntry = (): fc.Arbitrary<BomEntry> =>
   fc.record({
     partType: arbName(),
     requiredQuantityPerBuild: fc.integer({ min: 1, max: 1000 }),
-    contributingJobIds: fc.array(arbId(), { maxLength: 5 })
+    contributingJobIds: fc.array(arbId(), { maxLength: 5 }),
   })
 
 const arbBom = (): fc.Arbitrary<BOM> =>
@@ -115,7 +130,7 @@ const arbBom = (): fc.Arbitrary<BOM> =>
     name: arbName(),
     entries: fc.array(arbBomEntry(), { minLength: 1, maxLength: 5 }),
     createdAt: arbIsoDate(),
-    updatedAt: arbIsoDate()
+    updatedAt: arbIsoDate(),
   })
 
 const arbAuditEntry = (): fc.Arbitrary<AuditEntry> =>
@@ -137,7 +152,7 @@ const arbAuditEntry = (): fc.Arbitrary<AuditEntry> =>
     stepId: fc.option(arbId(), { nil: undefined }),
     fromStepId: fc.option(arbId(), { nil: undefined }),
     toStepId: fc.option(arbId(), { nil: undefined }),
-    batchQuantity: fc.option(fc.integer({ min: 1, max: 1000 }), { nil: undefined })
+    batchQuantity: fc.option(fc.integer({ min: 1, max: 1000 }), { nil: undefined }),
   })
 
 const arbShopUser = (): fc.Arbitrary<ShopUser> =>
@@ -146,7 +161,7 @@ const arbShopUser = (): fc.Arbitrary<ShopUser> =>
     name: arbName(),
     department: fc.option(fc.string({ minLength: 1, maxLength: 30 }), { nil: undefined }),
     active: fc.boolean(),
-    createdAt: arbIsoDate()
+    createdAt: arbIsoDate(),
   })
 
 const arbStepNote = (): fc.Arbitrary<StepNote> =>
@@ -160,7 +175,7 @@ const arbStepNote = (): fc.Arbitrary<StepNote> =>
     createdBy: arbId(),
     createdAt: arbIsoDate(),
     pushedToJira: fc.boolean(),
-    jiraCommentId: fc.option(arbId(), { nil: undefined })
+    jiraCommentId: fc.option(arbId(), { nil: undefined }),
   })
 
 const arbJiraConnectionSettings = (): fc.Arbitrary<JiraConnectionSettings> =>
@@ -170,7 +185,7 @@ const arbJiraConnectionSettings = (): fc.Arbitrary<JiraConnectionSettings> =>
     username: fc.string({ minLength: 1, maxLength: 30 }),
     apiToken: fc.string({ minLength: 1, maxLength: 50 }),
     enabled: fc.boolean(),
-    pushEnabled: fc.boolean()
+    pushEnabled: fc.boolean(),
   })
 
 const arbJiraFieldMapping = (): fc.Arbitrary<JiraFieldMapping> =>
@@ -179,7 +194,7 @@ const arbJiraFieldMapping = (): fc.Arbitrary<JiraFieldMapping> =>
     jiraFieldId: fc.string({ minLength: 1, maxLength: 30 }),
     label: arbName(),
     shopErpField: fc.string({ minLength: 1, maxLength: 30 }),
-    isDefault: fc.boolean()
+    isDefault: fc.boolean(),
   })
 
 const arbAppSettings = (): fc.Arbitrary<AppSettings> =>
@@ -187,7 +202,7 @@ const arbAppSettings = (): fc.Arbitrary<AppSettings> =>
     id: arbId(),
     jiraConnection: arbJiraConnectionSettings(),
     jiraFieldMappings: fc.array(arbJiraFieldMapping(), { maxLength: 5 }),
-    updatedAt: arbIsoDate()
+    updatedAt: arbIsoDate(),
   })
 
 // ---- Helper: strip undefined keys for comparison ----
@@ -199,9 +214,8 @@ function stripUndefined(obj: unknown): unknown {
 // ---- Tests ----
 
 describe('Property 5: Domain Object Round-Trip Serialization', () => {
-  const cases: Array<{ typeName: string, arb: () => fc.Arbitrary<unknown>, domainType: string }> = [
-    { typeName:
-'Job', arb: arbJob, domainType: 'Job' },
+  const cases: Array<{ typeName: string; arb: () => fc.Arbitrary<unknown>; domainType: string }> = [
+    { typeName: 'Job', arb: arbJob, domainType: 'Job' },
     { typeName: 'Path', arb: arbPath, domainType: 'Path' },
     { typeName: 'ProcessStep', arb: arbProcessStep, domainType: 'ProcessStep' },
     { typeName: 'Part', arb: arbPart, domainType: 'Part' },
@@ -215,8 +229,12 @@ describe('Property 5: Domain Object Round-Trip Serialization', () => {
     { typeName: 'ShopUser', arb: arbShopUser, domainType: 'ShopUser' },
     { typeName: 'StepNote', arb: arbStepNote, domainType: 'StepNote' },
     { typeName: 'AppSettings', arb: arbAppSettings, domainType: 'AppSettings' },
-    { typeName: 'JiraConnectionSettings', arb: arbJiraConnectionSettings, domainType: 'JiraConnectionSettings' },
-    { typeName: 'JiraFieldMapping', arb: arbJiraFieldMapping, domainType: 'JiraFieldMapping' }
+    {
+      typeName: 'JiraConnectionSettings',
+      arb: arbJiraConnectionSettings,
+      domainType: 'JiraConnectionSettings',
+    },
+    { typeName: 'JiraFieldMapping', arb: arbJiraFieldMapping, domainType: 'JiraFieldMapping' },
   ]
 
   for (const { typeName, arb, domainType } of cases) {

@@ -1,13 +1,13 @@
 <script setup lang="ts">
 const props = defineProps<{
   partId: string
-  incompleteSteps: { stepId: string, stepName: string }[]
+  incompleteSteps: { stepId: string; stepName: string }[]
   modelValue: boolean
 }>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  'completed': []
+  completed: []
 }>()
 
 const { forceComplete, loading, error } = useLifecycle()
@@ -57,16 +57,17 @@ function handleCancel() {
   <UModal v-model:open="isOpen">
     <template #content>
       <div class="p-6 space-y-4">
-        <h3 class="text-lg font-semibold text-(--ui-text-highlighted)">
-          Force Complete
-        </h3>
+        <h3 class="text-lg font-semibold text-(--ui-text-highlighted)">Force Complete</h3>
         <p class="text-sm text-(--ui-text-muted)">
           <span class="font-mono font-medium">{{ partId }}</span> has
           <span class="font-bold text-amber-600">{{ incompleteSteps.length }}</span>
-          required step{{ incompleteSteps.length !== 1 ? 's' : '' }} incomplete — force complete anyway?
+          required step{{ incompleteSteps.length !== 1 ? 's' : '' }} incomplete — force complete
+          anyway?
         </p>
 
-        <div class="border border-(--ui-border) rounded-md divide-y divide-(--ui-border) max-h-40 overflow-y-auto">
+        <div
+          class="border border-(--ui-border) rounded-md divide-y divide-(--ui-border) max-h-40 overflow-y-auto"
+        >
           <div
             v-for="step in incompleteSteps"
             :key="step.stepId"
@@ -78,7 +79,9 @@ function handleCancel() {
         </div>
 
         <div>
-          <label class="text-sm font-medium text-(--ui-text-highlighted) block mb-1">Reason (optional)</label>
+          <label class="text-sm font-medium text-(--ui-text-highlighted) block mb-1"
+            >Reason (optional)</label
+          >
           <UInput
             v-model="reason"
             placeholder="Why is this being force completed?"

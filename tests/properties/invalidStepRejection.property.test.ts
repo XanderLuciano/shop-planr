@@ -52,7 +52,7 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
           stepOrder: step.order,
           stepLocation: step.location,
           totalSteps,
-          partIds: parts.map(s => s.id),
+          partIds: parts.map((s) => s.id),
           partCount: parts.length,
           previousStepId: prevStep?.id,
           previousStepName: prevStep?.name,
@@ -86,7 +86,9 @@ describe('Property 5: Invalid Step Rejection', () => {
   })
 
   it('returns null (404) for any non-existent step ID', () => {
-    const nonExistentIdArb = fc.string({ minLength: 1, maxLength: 40 }).filter(s => s.trim().length > 0)
+    const nonExistentIdArb = fc
+      .string({ minLength: 1, maxLength: 40 })
+      .filter((s) => s.trim().length > 0)
 
     fc.assert(
       fc.property(nonExistentIdArb, (fakeStepId) => {
@@ -99,14 +101,14 @@ describe('Property 5: Invalid Step Rejection', () => {
         ctx.cleanup()
         ctx = null as any
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 
   it('returns valid response for step 0 with zero active parts (fixed behavior)', () => {
     const configArb = fc.record({
-      jobName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
-      pathName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
+      jobName: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
+      pathName: fc.string({ minLength: 1, maxLength: 20 }).filter((s) => s.trim().length > 0),
       stepCount: fc.integer({ min: 2, max: 5 }),
       partCount: fc.integer({ min: 1, max: 6 }),
     })
@@ -136,7 +138,7 @@ describe('Property 5: Invalid Step Rejection', () => {
         // Create parts (they start at step 0)
         const parts = partService.batchCreateParts(
           { jobId: job.id, pathId: path.id, quantity: config.partCount },
-          'user_test',
+          'user_test'
         )
 
         // Advance ALL parts past step 0 so step 0 has zero active parts
@@ -147,7 +149,10 @@ describe('Property 5: Invalid Step Rejection', () => {
         // Step 0 now has zero active parts — fixed lookup returns valid response with partCount: 0
         const step0Id = path.steps[0].id
         const result = lookupStep(ctx, step0Id)
-        expect(result, `Expected non-null for step 0 ${step0Id} with zero active parts`).not.toBeNull()
+        expect(
+          result,
+          `Expected non-null for step 0 ${step0Id} with zero active parts`
+        ).not.toBeNull()
         expect(result!.job.partCount).toBe(0)
         expect(result!.job.partIds).toEqual([])
         expect(result!.job.stepOrder).toBe(0)
@@ -155,7 +160,7 @@ describe('Property 5: Invalid Step Rejection', () => {
         ctx.cleanup()
         ctx = null as any
       }),
-      { numRuns: 100 },
+      { numRuns: 100 }
     )
   })
 })

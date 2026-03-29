@@ -12,14 +12,14 @@ const navItems: NavigationMenuItem[] = [
   { label: 'Certs', icon: 'i-lucide-shield-check', to: '/certs' },
   { label: 'Jira', icon: 'i-lucide-ticket', to: '/jira' },
   { label: 'Audit', icon: 'i-lucide-scroll-text', to: '/audit' },
-  { label: 'Settings', icon: 'i-lucide-settings', to: '/settings' }
+  { label: 'Settings', icon: 'i-lucide-settings', to: '/settings' },
 ]
 
 const { settings } = useSettings()
 
 const filteredNavItems = computed(() => {
   const toggles = settings.value?.pageToggles ?? DEFAULT_PAGE_TOGGLES
-  return navItems.filter(item => isPageEnabled(toggles, item.to as string))
+  return navItems.filter((item) => isPageEnabled(toggles, item.to as string))
 })
 
 const { handleScan } = useBarcode()
@@ -40,20 +40,16 @@ function onScanned(result: ScanResult) {
       :max-size="20"
     >
       <template #header>
-        <NuxtLink
-          to="/"
-          class="flex items-center gap-2 px-1"
-        >
-          <span class="font-bold text-lg bg-gradient-to-r from-violet-500 to-violet-400 bg-clip-text text-transparent tracking-wide">
+        <NuxtLink to="/" class="flex items-center gap-2 px-1">
+          <span
+            class="font-bold text-lg bg-gradient-to-r from-violet-500 to-violet-400 bg-clip-text text-transparent tracking-wide"
+          >
             Shop Planr
           </span>
         </NuxtLink>
       </template>
 
-      <UNavigationMenu
-        :items="filteredNavItems"
-        orientation="vertical"
-      />
+      <UNavigationMenu :items="filteredNavItems" orientation="vertical" />
 
       <template #footer>
         <div class="flex flex-col gap-2">
@@ -64,7 +60,10 @@ function onScanned(result: ScanResult) {
           >
             <UIcon name="i-lucide-book-open" class="size-4" />
             <span class="truncate group-data-[collapsed]:hidden">API Docs</span>
-            <UIcon name="i-lucide-external-link" class="size-3 ml-auto opacity-50 group-data-[collapsed]:hidden" />
+            <UIcon
+              name="i-lucide-external-link"
+              class="size-3 ml-auto opacity-50 group-data-[collapsed]:hidden"
+            />
           </NuxtLink>
           <div class="flex items-center justify-between">
             <UDashboardSidebarCollapse />

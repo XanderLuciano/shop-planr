@@ -1,5 +1,10 @@
 import type { SettingsRepository } from '../repositories/interfaces/settingsRepository'
-import type { AppSettings, JiraConnectionSettings, JiraFieldMapping, PageToggles } from '../types/domain'
+import type {
+  AppSettings,
+  JiraConnectionSettings,
+  JiraFieldMapping,
+  PageToggles,
+} from '../types/domain'
 import { DEFAULT_PAGE_TOGGLES, mergePageToggles } from '../utils/pageToggles'
 
 export interface SettingsRuntimeConfig {
@@ -10,11 +15,35 @@ export interface SettingsRuntimeConfig {
 }
 
 const DEFAULT_FIELD_MAPPINGS: JiraFieldMapping[] = [
-  { id: 'fm_1', jiraFieldId: 'customfield_10908', label: 'Part Number / Rev', shopErpField: 'partNumber', isDefault: true },
-  { id: 'fm_2', jiraFieldId: 'customfield_10900', label: 'Quantity', shopErpField: 'goalQuantity', isDefault: true },
-  { id: 'fm_3', jiraFieldId: 'customfield_10014', label: 'Epic Link', shopErpField: 'epicLink', isDefault: true },
-  { id: 'fm_4', jiraFieldId: 'priority', label: 'Priority', shopErpField: 'priority', isDefault: true },
-  { id: 'fm_5', jiraFieldId: 'labels', label: 'Labels', shopErpField: 'labels', isDefault: true }
+  {
+    id: 'fm_1',
+    jiraFieldId: 'customfield_10908',
+    label: 'Part Number / Rev',
+    shopErpField: 'partNumber',
+    isDefault: true,
+  },
+  {
+    id: 'fm_2',
+    jiraFieldId: 'customfield_10900',
+    label: 'Quantity',
+    shopErpField: 'goalQuantity',
+    isDefault: true,
+  },
+  {
+    id: 'fm_3',
+    jiraFieldId: 'customfield_10014',
+    label: 'Epic Link',
+    shopErpField: 'epicLink',
+    isDefault: true,
+  },
+  {
+    id: 'fm_4',
+    jiraFieldId: 'priority',
+    label: 'Priority',
+    shopErpField: 'priority',
+    isDefault: true,
+  },
+  { id: 'fm_5', jiraFieldId: 'labels', label: 'Labels', shopErpField: 'labels', isDefault: true },
 ]
 
 function buildDefaultJiraConnection(runtimeConfig: SettingsRuntimeConfig): JiraConnectionSettings {
@@ -24,7 +53,7 @@ function buildDefaultJiraConnection(runtimeConfig: SettingsRuntimeConfig): JiraC
     username: runtimeConfig.jiraUsername || '',
     apiToken: runtimeConfig.jiraApiToken || '',
     enabled: false,
-    pushEnabled: false
+    pushEnabled: false,
   }
 }
 
@@ -34,7 +63,7 @@ function buildDefaultSettings(runtimeConfig: SettingsRuntimeConfig): AppSettings
     jiraConnection: buildDefaultJiraConnection(runtimeConfig),
     jiraFieldMappings: [...DEFAULT_FIELD_MAPPINGS],
     pageToggles: { ...DEFAULT_PAGE_TOGGLES },
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
   }
 }
 
@@ -60,7 +89,7 @@ export function createSettingsService(
 
       const updated: AppSettings = {
         ...current,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       }
 
       if (input.jiraConnection) {
@@ -92,7 +121,7 @@ export function createSettingsService(
         return settings.jiraFieldMappings
       }
       return [...DEFAULT_FIELD_MAPPINGS]
-    }
+    },
   }
 }
 

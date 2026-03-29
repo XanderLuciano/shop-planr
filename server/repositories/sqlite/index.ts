@@ -80,13 +80,15 @@ export function loadMigrationFiles(migrationsDir?: string): MigrationFile[] {
     dir = resolve(process.cwd(), 'server/repositories/sqlite/migrations')
   }
   const files = readdirSync(dir)
-    .filter(f => f.endsWith('.sql'))
+    .filter((f) => f.endsWith('.sql'))
     .sort()
 
   return files.map((filename) => {
     const match = filename.match(/^(\d+)_(.+)\.sql$/)
     if (!match) {
-      throw new Error(`Invalid migration filename: ${filename}. Expected format: NNN_description.sql`)
+      throw new Error(
+        `Invalid migration filename: ${filename}. Expected format: NNN_description.sql`
+      )
     }
     const version = parseInt(match[1]!, 10)
     const name = match[2] ?? filename
@@ -110,8 +112,11 @@ export function runMigrations(db: Database.Database, migrationsDir?: string): vo
     )
   `)
 
-  const applied = db.prepare('SELECT version, checksum FROM _migrations').all() as { version: number, checksum: string }[]
-  const appliedMap = new Map(applied.map(m => [m.version, m.checksum]))
+  const applied = db.prepare('SELECT version, checksum FROM _migrations').all() as {
+    version: number
+    checksum: string
+  }[]
+  const appliedMap = new Map(applied.map((m) => [m.version, m.checksum]))
 
   const migrations = loadMigrationFiles(migrationsDir)
 
@@ -119,14 +124,14 @@ export function runMigrations(db: Database.Database, migrationsDir?: string): vo
     const existingChecksum = appliedMap.get(migration.version)
     if (existingChecksum && existingChecksum !== migration.checksum) {
       console.warn(
-        `WARNING: Migration ${migration.version} (${migration.name}) has been modified after being applied. `
-        + `Expected checksum ${existingChecksum}, got ${migration.checksum}. `
-        + `Do not edit migrations that have already been applied.`
+        `WARNING: Migration ${migration.version} (${migration.name}) has been modified after being applied. ` +
+          `Expected checksum ${existingChecksum}, got ${migration.checksum}. ` +
+          `Do not edit migrations that have already been applied.`
       )
     }
   }
 
-  const pending = migrations.filter(m => !appliedMap.has(m.version))
+  const pending = migrations.filter((m) => !appliedMap.has(m.version))
 
   for (const migration of pending) {
     db.transaction(() => {

@@ -8,7 +8,10 @@ function createMockSettingsRepo(): SettingsRepository {
   let stored: AppSettings | null = null
   return {
     get: vi.fn(() => stored),
-    upsert: vi.fn((settings: AppSettings) => { stored = settings; return settings })
+    upsert: vi.fn((settings: AppSettings) => {
+      stored = settings
+      return settings
+    }),
   }
 }
 
@@ -16,7 +19,7 @@ const defaultRuntimeConfig: SettingsRuntimeConfig = {
   jiraBaseUrl: '',
   jiraProjectKey: '',
   jiraUsername: '',
-  jiraApiToken: ''
+  jiraApiToken: '',
 }
 
 describe('SettingsService', () => {
@@ -47,7 +50,7 @@ describe('SettingsService', () => {
         jiraBaseUrl: 'https://custom.jira.com',
         jiraProjectKey: 'CUSTOM',
         jiraUsername: 'admin',
-        jiraApiToken: 'secret-token'
+        jiraApiToken: 'secret-token',
       }
       const svc = createSettingsService({ settings: settingsRepo }, config)
       const settings = svc.getSettings()
@@ -67,11 +70,21 @@ describe('SettingsService', () => {
           username: 'saved-user',
           apiToken: 'saved-token',
           enabled: true,
-          pushEnabled: true
+          pushEnabled: true,
         },
         jiraFieldMappings: [],
-        pageToggles: { jobs: true, partsBrowser: true, parts: true, queue: true, templates: true, bom: true, certs: true, jira: true, audit: true },
-        updatedAt: '2024-01-01T00:00:00.000Z'
+        pageToggles: {
+          jobs: true,
+          partsBrowser: true,
+          parts: true,
+          queue: true,
+          templates: true,
+          bom: true,
+          certs: true,
+          jira: true,
+          audit: true,
+        },
+        updatedAt: '2024-01-01T00:00:00.000Z',
       }
       settingsRepo.upsert(dbSettings)
 
@@ -86,8 +99,11 @@ describe('SettingsService', () => {
 
       expect(mappings).toHaveLength(5)
       expect(mappings[0]).toEqual({
-        id: 'fm_1', jiraFieldId: 'customfield_10908',
-        label: 'Part Number / Rev', shopErpField: 'partNumber', isDefault: true
+        id: 'fm_1',
+        jiraFieldId: 'customfield_10908',
+        label: 'Part Number / Rev',
+        shopErpField: 'partNumber',
+        isDefault: true,
       })
       expect(mappings[1].shopErpField).toBe('goalQuantity')
       expect(mappings[2].shopErpField).toBe('epicLink')
@@ -99,10 +115,18 @@ describe('SettingsService', () => {
       const settings = service.getSettings()
       const toggles = settings.pageToggles
 
-      expect(Object.keys(toggles).sort()).toEqual(
-        ['audit', 'bom', 'certs', 'jira', 'jobs', 'parts', 'partsBrowser', 'queue', 'templates']
-      )
-      expect(Object.values(toggles).every(v => v === true)).toBe(true)
+      expect(Object.keys(toggles).sort()).toEqual([
+        'audit',
+        'bom',
+        'certs',
+        'jira',
+        'jobs',
+        'parts',
+        'partsBrowser',
+        'queue',
+        'templates',
+      ])
+      expect(Object.values(toggles).every((v) => v === true)).toBe(true)
     })
 
     it('returns pageToggles from DB settings', () => {
@@ -114,11 +138,21 @@ describe('SettingsService', () => {
           username: '',
           apiToken: '',
           enabled: false,
-          pushEnabled: false
+          pushEnabled: false,
         },
         jiraFieldMappings: [],
-        pageToggles: { jobs: false, partsBrowser: false, parts: true, queue: true, templates: true, bom: false, certs: true, jira: true, audit: false },
-        updatedAt: '2024-01-01T00:00:00.000Z'
+        pageToggles: {
+          jobs: false,
+          partsBrowser: false,
+          parts: true,
+          queue: true,
+          templates: true,
+          bom: false,
+          certs: true,
+          jira: true,
+          audit: false,
+        },
+        updatedAt: '2024-01-01T00:00:00.000Z',
       }
       settingsRepo.upsert(dbSettings)
 
@@ -135,7 +169,7 @@ describe('SettingsService', () => {
   describe('updateSettings', () => {
     it('merges jiraConnection with existing settings', () => {
       const updated = service.updateSettings({
-        jiraConnection: { enabled: true, baseUrl: 'https://new.jira.com' }
+        jiraConnection: { enabled: true, baseUrl: 'https://new.jira.com' },
       })
 
       expect(updated.jiraConnection.enabled).toBe(true)
@@ -147,7 +181,13 @@ describe('SettingsService', () => {
 
     it('replaces jiraFieldMappings entirely', () => {
       const customMappings = [
-        { id: 'fm_custom', jiraFieldId: 'custom_1', label: 'Custom', shopErpField: 'custom', isDefault: false }
+        {
+          id: 'fm_custom',
+          jiraFieldId: 'custom_1',
+          label: 'Custom',
+          shopErpField: 'custom',
+          isDefault: false,
+        },
       ]
       const updated = service.updateSettings({ jiraFieldMappings: customMappings })
 
@@ -168,12 +208,12 @@ describe('SettingsService', () => {
     it('merges with DB settings when they already exist', () => {
       // First save
       service.updateSettings({
-        jiraConnection: { baseUrl: 'https://first.jira.com', enabled: true }
+        jiraConnection: { baseUrl: 'https://first.jira.com', enabled: true },
       })
 
       // Second save — should merge with first
       const updated = service.updateSettings({
-        jiraConnection: { pushEnabled: true }
+        jiraConnection: { pushEnabled: true },
       })
 
       expect(updated.jiraConnection.baseUrl).toBe('https://first.jira.com')
@@ -185,12 +225,12 @@ describe('SettingsService', () => {
       it('partial merge preserves existing toggle values', () => {
         // First: disable jobs and jira
         service.updateSettings({
-          pageToggles: { jobs: false, jira: false }
+          pageToggles: { jobs: false, jira: false },
         })
 
         // Second: disable only partsBrowser — jobs and jira should stay false
         const updated = service.updateSettings({
-          pageToggles: { partsBrowser: false }
+          pageToggles: { partsBrowser: false },
         })
 
         expect(updated.pageToggles.jobs).toBe(false)
@@ -207,7 +247,7 @@ describe('SettingsService', () => {
 
       it('unknown keys are ignored during merge', () => {
         const updated = service.updateSettings({
-          pageToggles: { jobs: false, foo: false, dashboard: false } as any
+          pageToggles: { jobs: false, foo: false, dashboard: false } as any,
         })
 
         expect(updated.pageToggles.jobs).toBe(false)
@@ -215,14 +255,22 @@ describe('SettingsService', () => {
         expect((updated.pageToggles as any).foo).toBeUndefined()
         expect((updated.pageToggles as any).dashboard).toBeUndefined()
         // All valid keys still present
-        expect(Object.keys(updated.pageToggles).sort()).toEqual(
-          ['audit', 'bom', 'certs', 'jira', 'jobs', 'parts', 'partsBrowser', 'queue', 'templates']
-        )
+        expect(Object.keys(updated.pageToggles).sort()).toEqual([
+          'audit',
+          'bom',
+          'certs',
+          'jira',
+          'jobs',
+          'parts',
+          'partsBrowser',
+          'queue',
+          'templates',
+        ])
       })
 
       it('non-boolean values are rejected and ignored', () => {
         const updated = service.updateSettings({
-          pageToggles: { jobs: 'no', partsBrowser: 0, parts: null, queue: false } as any
+          pageToggles: { jobs: 'no', partsBrowser: 0, parts: null, queue: false } as any,
         })
 
         // Only the valid boolean (queue: false) should be applied
@@ -239,7 +287,7 @@ describe('SettingsService', () => {
 
         // Set initial state
         service.updateSettings({
-          pageToggles: { jobs: false, audit: false }
+          pageToggles: { jobs: false, audit: false },
         })
 
         const before = service.getSettings()
@@ -249,7 +297,7 @@ describe('SettingsService', () => {
 
         // Apply the same toggles again
         const after = service.updateSettings({
-          pageToggles: { jobs: false, audit: false }
+          pageToggles: { jobs: false, audit: false },
         })
 
         // Toggle values should be identical
@@ -271,7 +319,7 @@ describe('SettingsService', () => {
 
     it('returns saved connection from DB', () => {
       service.updateSettings({
-        jiraConnection: { baseUrl: 'https://saved.jira.com', enabled: true }
+        jiraConnection: { baseUrl: 'https://saved.jira.com', enabled: true },
       })
 
       const conn = service.getJiraConnection()
@@ -284,12 +332,12 @@ describe('SettingsService', () => {
     it('returns default mappings when no DB settings', () => {
       const mappings = service.getFieldMappings()
       expect(mappings).toHaveLength(5)
-      expect(mappings.every(m => m.isDefault)).toBe(true)
+      expect(mappings.every((m) => m.isDefault)).toBe(true)
     })
 
     it('returns saved mappings from DB', () => {
       const custom = [
-        { id: 'fm_x', jiraFieldId: 'x', label: 'X', shopErpField: 'x', isDefault: false }
+        { id: 'fm_x', jiraFieldId: 'x', label: 'X', shopErpField: 'x', isDefault: false },
       ]
       service.updateSettings({ jiraFieldMappings: custom })
 

@@ -32,14 +32,24 @@ export interface CreatePathInput {
   name: string
   goalQuantity: number
   advancementMode?: 'strict' | 'flexible' | 'per_step'
-  steps: { name: string, location?: string, optional?: boolean, dependencyType?: 'physical' | 'preferred' | 'completion_gate' }[]
+  steps: {
+    name: string
+    location?: string
+    optional?: boolean
+    dependencyType?: 'physical' | 'preferred' | 'completion_gate'
+  }[]
 }
 
 export interface UpdatePathInput {
   name?: string
   goalQuantity?: number
   advancementMode?: 'strict' | 'flexible' | 'per_step'
-  steps?: { name: string, location?: string, optional?: boolean, dependencyType?: 'physical' | 'preferred' | 'completion_gate' }[]
+  steps?: {
+    name: string
+    location?: string
+    optional?: boolean
+    dependencyType?: 'physical' | 'preferred' | 'completion_gate'
+  }[]
 }
 
 // ---- Parts (formerly Serial Numbers) ----
@@ -87,7 +97,7 @@ export type BatchAttachCertInputLegacy = BatchAttachCertInput
 
 export interface CreateTemplateInput {
   name: string
-  steps: { name: string, location?: string }[]
+  steps: { name: string; location?: string }[]
 }
 
 export interface ApplyTemplateInput {

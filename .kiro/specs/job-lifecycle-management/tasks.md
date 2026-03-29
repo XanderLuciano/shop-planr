@@ -39,7 +39,6 @@ Extend Shop Planr from sequential-only advancement to a full manufacturing lifec
     - INSERT seed data for process library (8 entries) and location library (3 entries)
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.7, 16.8_
 
-
 - [x] 2. Checkpoint — Migration and types
   - Ensure migration runs cleanly on a fresh DB and on a DB with existing data. Verify all new types compile. Ask the user if questions arise.
 
@@ -212,7 +211,6 @@ Extend Shop Planr from sequential-only advancement to a full manufacturing lifec
     - For any step with 'completion_gate' dependency, verify serial can advance past it (deferred) but normal completion is blocked until resolved
     - **Validates: Requirements 6.7, 12.4**
 
-
 - [x] 5. Checkpoint — Lifecycle service core
   - Ensure all tests pass, ask the user if questions arise.
 
@@ -341,7 +339,6 @@ Extend Shop Planr from sequential-only advancement to a full manufacturing lifec
     - `server/api/certs/[id]/attachments.get.ts` — list serial attachments for a cert
     - `server/api/templates/[id].put.ts` — update an existing template's steps
     - _Requirements: 18.3, 20.3_
-
 
 - [x] 9. Checkpoint — All API routes
   - Ensure all tests pass, ask the user if questions arise.

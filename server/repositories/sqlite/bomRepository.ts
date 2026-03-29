@@ -33,15 +33,15 @@ function buildBomDomain(row: BomRow, entryRows: BomEntryRow[], contribRows: Cont
   return {
     id: row.id,
     name: row.name,
-    entries: entryRows.map(e => ({
+    entries: entryRows.map((e) => ({
       id: String(e.id),
       bomId: e.bom_id,
       partType: e.part_type,
       requiredQuantityPerBuild: e.required_quantity_per_build,
-      contributingJobIds: contribMap.get(e.id) ?? []
+      contributingJobIds: contribMap.get(e.id) ?? [],
     })),
     createdAt: row.created_at,
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
   }
 }
 
@@ -81,17 +81,17 @@ export class SQLiteBomRepository implements BomRepository {
     const row = this.db.prepare('SELECT * FROM boms WHERE id = ?').get(id) as BomRow | undefined
     if (!row) return null
 
-    const entryRows = this.db.prepare(
-      'SELECT * FROM bom_entries WHERE bom_id = ?'
-    ).all(id) as BomEntryRow[]
+    const entryRows = this.db
+      .prepare('SELECT * FROM bom_entries WHERE bom_id = ?')
+      .all(id) as BomEntryRow[]
 
-    const entryIds = entryRows.map(e => e.id)
+    const entryIds = entryRows.map((e) => e.id)
     let contribRows: ContribJobRow[] = []
     if (entryIds.length > 0) {
       const placeholders = entryIds.map(() => '?').join(',')
-      contribRows = this.db.prepare(
-        `SELECT * FROM bom_contributing_jobs WHERE bom_entry_id IN (${placeholders})`
-      ).all(...entryIds) as ContribJobRow[]
+      contribRows = this.db
+        .prepare(`SELECT * FROM bom_contributing_jobs WHERE bom_entry_id IN (${placeholders})`)
+        .all(...entryIds) as ContribJobRow[]
     }
 
     return buildBomDomain(row, entryRows, contribRows)
@@ -99,7 +99,7 @@ export class SQLiteBomRepository implements BomRepository {
 
   list(): BOM[] {
     const rows = this.db.prepare('SELECT * FROM boms ORDER BY created_at DESC').all() as BomRow[]
-    return rows.map(row => this.getById(row.id)!)
+    return rows.map((row) => this.getById(row.id)!)
   }
 
   update(id: string, partial: Partial<BOM>): BOM {
@@ -110,7 +110,7 @@ export class SQLiteBomRepository implements BomRepository {
       ...existing,
       ...partial,
       id,
-      updatedAt: partial.updatedAt ?? new Date().toISOString()
+      updatedAt: partial.updatedAt ?? new Date().toISOString(),
     }
 
     const updateBom = this.db.prepare('UPDATE boms SET name = ?, updated_at = ? WHERE id = ?')

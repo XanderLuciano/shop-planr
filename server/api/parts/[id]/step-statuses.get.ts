@@ -14,16 +14,24 @@ export default defineEventHandler(async (event) => {
   if (!part) throw createError({ statusCode: 404, message: 'Part not found' })
 
   const path = paths.getById(part.pathId)
-  if (!path) return statuses.map(s => ({ ...s, stepName: '', stepOrder: 0, optional: false, dependencyType: 'preferred', hasOverride: false }))
+  if (!path)
+    return statuses.map((s) => ({
+      ...s,
+      stepName: '',
+      stepOrder: 0,
+      optional: false,
+      dependencyType: 'preferred',
+      hasOverride: false,
+    }))
 
   // Get overrides
   const { partStepOverrides } = getRepositories()
   const overrides = partStepOverrides.listByPartId(partId)
-  const activeOverrideStepIds = new Set(overrides.filter(o => o.active).map(o => o.stepId))
+  const activeOverrideStepIds = new Set(overrides.filter((o) => o.active).map((o) => o.stepId))
 
   // Enrich with step info
-  return statuses.map(s => {
-    const step = path.steps.find(ps => ps.id === s.stepId)
+  return statuses.map((s) => {
+    const step = path.steps.find((ps) => ps.id === s.stepId)
     return {
       stepId: s.stepId,
       stepName: step?.name ?? '',

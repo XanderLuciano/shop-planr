@@ -10,25 +10,25 @@
 
 ## Core Tables
 
-| Table | Purpose | Key columns |
-|-------|---------|-------------|
-| `jobs` | Production orders | id, name, goal_quantity, jira_ticket_key, jira_* fields |
-| `paths` | Route instances per job | id, job_id (FK), name, goal_quantity |
-| `process_steps` | Ordered steps in a path | id, path_id (FK), name, step_order, location |
-| `serials` | Individual tracked parts | id, job_id, path_id, current_step_index (-1=done) |
-| `certs` | Quality certificates | id, type (material/process), name, metadata (JSON) |
-| `cert_attachments` | Serial↔cert join | serial_id, cert_id, step_id, attached_by |
-| `templates` | Reusable route definitions | id, name |
-| `template_steps` | Steps in a template | template_id, name, step_order, location |
-| `boms` | Bill of materials | id, name |
-| `bom_entries` | Part types in a BOM | bom_id, part_type, required_quantity_per_build |
-| `bom_contributing_jobs` | Jobs feeding a BOM entry | bom_entry_id, job_id |
-| `users` | Kiosk-mode user profiles | id, name, department, active |
-| `audit_entries` | Append-only action log | id, action, user_id, timestamp, serial_id, etc. |
-| `settings` | Singleton app config | id='app_settings', jira_connection (JSON), jira_field_mappings (JSON), page_toggles (JSON) |
-| `step_notes` | Defect/note records | id, step_id, serial_ids (JSON), text, created_by |
-| `_migrations` | Migration tracking | version, name, applied_at, checksum |
-| `counters` | SN sequential counter | (planned in migration 002) |
+| Table                   | Purpose                    | Key columns                                                                                |
+| ----------------------- | -------------------------- | ------------------------------------------------------------------------------------------ |
+| `jobs`                  | Production orders          | id, name, goal*quantity, jira_ticket_key, jira*\* fields                                   |
+| `paths`                 | Route instances per job    | id, job_id (FK), name, goal_quantity                                                       |
+| `process_steps`         | Ordered steps in a path    | id, path_id (FK), name, step_order, location                                               |
+| `serials`               | Individual tracked parts   | id, job_id, path_id, current_step_index (-1=done)                                          |
+| `certs`                 | Quality certificates       | id, type (material/process), name, metadata (JSON)                                         |
+| `cert_attachments`      | Serial↔cert join           | serial_id, cert_id, step_id, attached_by                                                   |
+| `templates`             | Reusable route definitions | id, name                                                                                   |
+| `template_steps`        | Steps in a template        | template_id, name, step_order, location                                                    |
+| `boms`                  | Bill of materials          | id, name                                                                                   |
+| `bom_entries`           | Part types in a BOM        | bom_id, part_type, required_quantity_per_build                                             |
+| `bom_contributing_jobs` | Jobs feeding a BOM entry   | bom_entry_id, job_id                                                                       |
+| `users`                 | Kiosk-mode user profiles   | id, name, department, active                                                               |
+| `audit_entries`         | Append-only action log     | id, action, user_id, timestamp, serial_id, etc.                                            |
+| `settings`              | Singleton app config       | id='app_settings', jira_connection (JSON), jira_field_mappings (JSON), page_toggles (JSON) |
+| `step_notes`            | Defect/note records        | id, step_id, serial_ids (JSON), text, created_by                                           |
+| `_migrations`           | Migration tracking         | version, name, applied_at, checksum                                                        |
+| `counters`              | SN sequential counter      | (planned in migration 002)                                                                 |
 
 ## Key Constraints
 
@@ -53,6 +53,7 @@ Computed view types (planned: `server/types/computed.ts`): `JobProgress`, `StepD
 ## JSON Fields
 
 These columns store `JSON.stringify()` output as TEXT:
+
 - `certs.metadata` — `Record<string, string>`
 - `jobs.jira_labels` — `string[]`
 - `settings.jira_connection` — `JiraConnectionSettings`

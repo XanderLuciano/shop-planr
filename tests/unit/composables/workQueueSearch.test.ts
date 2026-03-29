@@ -10,10 +10,11 @@ import type { WorkQueueJob } from '~/server/types/computed'
 function filterJobs(jobs: WorkQueueJob[], query: string): WorkQueueJob[] {
   const q = query.trim().toLowerCase()
   if (!q) return jobs
-  return jobs.filter(job =>
-    job.jobName.toLowerCase().includes(q)
-    || job.pathName.toLowerCase().includes(q)
-    || job.stepName.toLowerCase().includes(q),
+  return jobs.filter(
+    (job) =>
+      job.jobName.toLowerCase().includes(q) ||
+      job.pathName.toLowerCase().includes(q) ||
+      job.stepName.toLowerCase().includes(q)
   )
 }
 
@@ -35,10 +36,34 @@ function makeJob(overrides: Partial<WorkQueueJob> = {}): WorkQueueJob {
 }
 
 const sampleJobs: WorkQueueJob[] = [
-  makeJob({ jobId: 'j1', jobName: 'Bracket Assembly', pathName: 'Main Route', stepName: 'Milling', stepId: 's1' }),
-  makeJob({ jobId: 'j2', jobName: 'Housing Unit', pathName: 'Primary Path', stepName: 'Receiving', stepId: 's2' }),
-  makeJob({ jobId: 'j3', jobName: 'Shaft Job', pathName: 'Main Route', stepName: 'Turning', stepId: 's3' }),
-  makeJob({ jobId: 'j1', jobName: 'Bracket Assembly', pathName: 'Main Route', stepName: 'Deburring', stepId: 's4' }),
+  makeJob({
+    jobId: 'j1',
+    jobName: 'Bracket Assembly',
+    pathName: 'Main Route',
+    stepName: 'Milling',
+    stepId: 's1',
+  }),
+  makeJob({
+    jobId: 'j2',
+    jobName: 'Housing Unit',
+    pathName: 'Primary Path',
+    stepName: 'Receiving',
+    stepId: 's2',
+  }),
+  makeJob({
+    jobId: 'j3',
+    jobName: 'Shaft Job',
+    pathName: 'Main Route',
+    stepName: 'Turning',
+    stepId: 's3',
+  }),
+  makeJob({
+    jobId: 'j1',
+    jobName: 'Bracket Assembly',
+    pathName: 'Main Route',
+    stepName: 'Deburring',
+    stepId: 's4',
+  }),
 ]
 
 describe('Work Queue Search Filter', () => {
@@ -62,7 +87,7 @@ describe('Work Queue Search Filter', () => {
   it('"bracket" matches jobs with jobName "Bracket Assembly"', () => {
     const result = filterJobs(sampleJobs, 'bracket')
     expect(result).toHaveLength(2)
-    expect(result.every(j => j.jobName === 'Bracket Assembly')).toBe(true)
+    expect(result.every((j) => j.jobName === 'Bracket Assembly')).toBe(true)
   })
 
   it('"primary" matches by pathName', () => {

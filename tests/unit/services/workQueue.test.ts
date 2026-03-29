@@ -10,7 +10,13 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { createTestContext, type TestContext } from '../../integration/helpers'
 import { SQLiteUserRepository } from '../../../server/repositories/sqlite/userRepository'
 import { createUserService } from '../../../server/services/userService'
-import type { WorkQueueJob, WorkQueueResponse, OperatorGroup, WorkQueueGroupedResponse, StepViewResponse } from '../../../server/types/computed'
+import type {
+  WorkQueueJob,
+  WorkQueueResponse,
+  OperatorGroup,
+  WorkQueueGroupedResponse,
+  StepViewResponse,
+} from '../../../server/types/computed'
 
 // ---- Pure function replications of endpoint logic ----
 
@@ -33,10 +39,20 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
         const isFinalStep = step.order === totalSteps - 1
         const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
         groupMap.set(key, {
-          jobId: job.id, jobName: job.name, pathId: path.id, pathName: path.name,
-          stepId: step.id, stepName: step.name, stepOrder: step.order, stepLocation: step.location,
-          totalSteps, partIds: parts.map(s => s.id), partCount: parts.length,
-          nextStepName: nextStep?.name, nextStepLocation: nextStep?.location, isFinalStep,
+          jobId: job.id,
+          jobName: job.name,
+          pathId: path.id,
+          pathName: path.name,
+          stepId: step.id,
+          stepName: step.name,
+          stepOrder: step.order,
+          stepLocation: step.location,
+          totalSteps,
+          partIds: parts.map((s) => s.id),
+          partCount: parts.length,
+          nextStepName: nextStep?.name,
+          nextStepLocation: nextStep?.location,
+          isFinalStep,
         })
       }
     }
@@ -74,12 +90,23 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
 
         return {
           job: {
-            jobId: job.id, jobName: job.name, pathId: path.id, pathName: path.name,
-            stepId: step.id, stepName: step.name, stepOrder: step.order, stepLocation: step.location,
-            totalSteps, partIds: parts.map(s => s.id), partCount: parts.length,
-            previousStepId: prevStep?.id, previousStepName: prevStep?.name,
+            jobId: job.id,
+            jobName: job.name,
+            pathId: path.id,
+            pathName: path.name,
+            stepId: step.id,
+            stepName: step.name,
+            stepOrder: step.order,
+            stepLocation: step.location,
+            totalSteps,
+            partIds: parts.map((s) => s.id),
+            partCount: parts.length,
+            previousStepId: prevStep?.id,
+            previousStepName: prevStep?.name,
             nextStepId: nextStep?.id,
-            nextStepName: nextStep?.name, nextStepLocation: nextStep?.location, isFinalStep,
+            nextStepName: nextStep?.name,
+            nextStepLocation: nextStep?.location,
+            isFinalStep,
           },
           notes: noteService.getNotesForStep(stepId),
           ...(previousStepWipCount !== undefined && { previousStepWipCount }),
@@ -95,7 +122,7 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
  */
 function aggregateGroupedWork(
   ctx: TestContext,
-  userService: ReturnType<typeof createUserService>,
+  userService: ReturnType<typeof createUserService>
 ): WorkQueueGroupedResponse {
   const { jobService, pathService, partService } = ctx
   const jobs = jobService.listJobs()
@@ -113,10 +140,20 @@ function aggregateGroupedWork(
         entries.push({
           assignedTo: step.assignedTo,
           job: {
-            jobId: job.id, jobName: job.name, pathId: path.id, pathName: path.name,
-            stepId: step.id, stepName: step.name, stepOrder: step.order, stepLocation: step.location,
-            totalSteps, partIds: parts.map(s => s.id), partCount: parts.length,
-            nextStepName: nextStep?.name, nextStepLocation: nextStep?.location, isFinalStep,
+            jobId: job.id,
+            jobName: job.name,
+            pathId: path.id,
+            pathName: path.name,
+            stepId: step.id,
+            stepName: step.name,
+            stepOrder: step.order,
+            stepLocation: step.location,
+            totalSteps,
+            partIds: parts.map((s) => s.id),
+            partCount: parts.length,
+            nextStepName: nextStep?.name,
+            nextStepLocation: nextStep?.location,
+            isFinalStep,
           },
         })
       }
@@ -195,10 +232,7 @@ describe('Work Queue API Endpoint Unit Tests', () => {
         goalQuantity: 3,
         steps: [{ name: 'Cutting' }, { name: 'Welding' }],
       })
-      ctx.partService.batchCreateParts(
-        { jobId: job.id, pathId: path.id, quantity: 3 },
-        'user_test',
-      )
+      ctx.partService.batchCreateParts({ jobId: job.id, pathId: path.id, quantity: 3 }, 'user_test')
 
       const result = lookupStep(ctx, 'step_does_not_exist')
       expect(result).toBeNull()
@@ -218,7 +252,7 @@ describe('Work Queue API Endpoint Unit Tests', () => {
       // Create parts — they start at step 0
       const parts = ctx.partService.batchCreateParts(
         { jobId: job.id, pathId: path.id, quantity: 2 },
-        'user_test',
+        'user_test'
       )
 
       // Advance all parts past step 0 so it has zero active parts
@@ -274,10 +308,7 @@ describe('Work Queue API Endpoint Unit Tests', () => {
         goalQuantity: 3,
         steps: [{ name: 'Milling' }, { name: 'Deburring' }],
       })
-      ctx.partService.batchCreateParts(
-        { jobId: job.id, pathId: path.id, quantity: 3 },
-        'user_test',
-      )
+      ctx.partService.batchCreateParts({ jobId: job.id, pathId: path.id, quantity: 3 }, 'user_test')
 
       const response = aggregateGroupedWork(ctx, userService)
 
