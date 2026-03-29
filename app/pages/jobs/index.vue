@@ -61,6 +61,17 @@ const filteredJobs = computed(() =>
   })
 )
 
+// Prune jobsWithExpandedPaths when filtered jobs change (removes stale entries for jobs no longer visible)
+watch(filteredJobs, (visibleJobs) => {
+  if (jobsWithExpandedPaths.value.size === 0) return
+  const visibleIds = new Set(visibleJobs.map(j => j.id))
+  for (const jobId of jobsWithExpandedPaths.value) {
+    if (!visibleIds.has(jobId)) {
+      jobsWithExpandedPaths.value.delete(jobId)
+    }
+  }
+})
+
 function onFiltersChange(f: typeof filters.value) {
   Object.keys(f).forEach((key) => {
     updateFilter(key as keyof typeof f, f[key as keyof typeof f])

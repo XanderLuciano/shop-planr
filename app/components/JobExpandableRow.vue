@@ -38,7 +38,9 @@ const expandedPathIds = ref<Set<string>>(new Set())
 const pathDistributions = ref<Record<string, StepDist[]>>({})
 const pathCompletedCounts = ref<Record<string, number>>({})
 const loadingPathIds = ref<Set<string>>(new Set())
+const failedPathIds = ref<Set<string>>(new Set())
 const fetchPathsPromise = ref<Promise<void> | null>(null)
+let bulkExpandPromise: Promise<void> | null = null
 
 async function fetchPaths() {
   loading.value = true
@@ -63,7 +65,8 @@ async function togglePath(pathId: string) {
   expandedPathIds.value = new Set(expandedPathIds.value)
   emit('paths-expanded-change', { jobId: props.jobId, hasExpandedPaths: true })
 
-  if (!pathDistributions.value[pathId] || pathDistributions.value[pathId].length === 0) {
+  if (!pathDistributions.value[pathId] || failedPathIds.value.has(pathId)) {
+    failedPathIds.value.delete(pathId)
     loadingPathIds.value.add(pathId)
     loadingPathIds.value = new Set(loadingPathIds.value)
     try {
@@ -72,6 +75,7 @@ async function togglePath(pathId: string) {
       pathCompletedCounts.value[pathId] = detail.completedCount ?? 0
     } catch {
       pathDistributions.value[pathId] = []
+      failedPathIds.value.add(pathId)
     } finally {
       loadingPathIds.value.delete(pathId)
       loadingPathIds.value = new Set(loadingPathIds.value)
@@ -80,37 +84,49 @@ async function togglePath(pathId: string) {
 }
 
 async function onExpandAllPaths() {
-  // Wait for paths to load if fetch is still in-flight
-  if (fetchPathsPromise.value) {
-    await fetchPathsPromise.value
+  // Serialize: wait for any in-flight bulk expand to finish first
+  if (bulkExpandPromise) {
+    await bulkExpandPromise
   }
-  const allPathIds = paths.value.map(p => p.id)
-  expandedPathIds.value = new Set(allPathIds)
-  emit('paths-expanded-change', { jobId: props.jobId, hasExpandedPaths: allPathIds.length > 0 })
 
-  const uncachedIds = allPathIds.filter(id => !pathDistributions.value[id])
-  if (uncachedIds.length === 0) return
-
-  const CONCURRENCY = 3
-  for (let i = 0; i < uncachedIds.length; i += CONCURRENCY) {
-    const batch = uncachedIds.slice(i, i + CONCURRENCY)
-    const results = await Promise.allSettled(
-      batch.map(async (pathId) => {
-        loadingPathIds.value.add(pathId)
-        loadingPathIds.value = new Set(loadingPathIds.value)
-        const detail = await $fetch<{ distribution: StepDist[], completedCount?: number }>(`/api/paths/${pathId}`)
-        pathDistributions.value[pathId] = detail.distribution ?? []
-        pathCompletedCounts.value[pathId] = detail.completedCount ?? 0
-      })
-    )
-    for (let j = 0; j < batch.length; j++) {
-      if (results[j]!.status === 'rejected' && !pathDistributions.value[batch[j]!]) {
-        pathDistributions.value[batch[j]!] = []
-      }
-      loadingPathIds.value.delete(batch[j]!)
+  const run = async () => {
+    // Wait for paths to load if fetch is still in-flight
+    if (fetchPathsPromise.value) {
+      await fetchPathsPromise.value
     }
-    loadingPathIds.value = new Set(loadingPathIds.value)
+    const allPathIds = paths.value.map(p => p.id)
+    expandedPathIds.value = new Set(allPathIds)
+    emit('paths-expanded-change', { jobId: props.jobId, hasExpandedPaths: allPathIds.length > 0 })
+
+    const uncachedIds = allPathIds.filter(id => !pathDistributions.value[id])
+    if (uncachedIds.length === 0) return
+
+    const CONCURRENCY = 3
+    for (let i = 0; i < uncachedIds.length; i += CONCURRENCY) {
+      const batch = uncachedIds.slice(i, i + CONCURRENCY)
+      const results = await Promise.allSettled(
+        batch.map(async (pathId) => {
+          loadingPathIds.value.add(pathId)
+          loadingPathIds.value = new Set(loadingPathIds.value)
+          const detail = await $fetch<{ distribution: StepDist[], completedCount?: number }>(`/api/paths/${pathId}`)
+          pathDistributions.value[pathId] = detail.distribution ?? []
+          pathCompletedCounts.value[pathId] = detail.completedCount ?? 0
+        })
+      )
+      for (let j = 0; j < batch.length; j++) {
+        if (results[j]!.status === 'rejected' && !pathDistributions.value[batch[j]!]) {
+          pathDistributions.value[batch[j]!] = []
+          failedPathIds.value.add(batch[j]!)
+        }
+        loadingPathIds.value.delete(batch[j]!)
+      }
+      loadingPathIds.value = new Set(loadingPathIds.value)
+    }
   }
+
+  bulkExpandPromise = run()
+  await bulkExpandPromise
+  bulkExpandPromise = null
 }
 
 function onCollapseAllPaths() {

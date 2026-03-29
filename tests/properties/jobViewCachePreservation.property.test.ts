@@ -57,7 +57,7 @@ describe('Property: Cache Preservation on Collapse (PBT-JV1)', () => {
           }
 
           // Snapshot the cache before expand/collapse cycle
-          const cacheSnapshot = JSON.parse(JSON.stringify(pathDistributions))
+          const cacheSnapshot = structuredClone(pathDistributions)
 
           // --- Action 1: Expand all paths (set expandedPathIds to all IDs) ---
           let expandedPathIds = new Set<string>(pathIds)
