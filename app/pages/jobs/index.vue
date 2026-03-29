@@ -10,6 +10,42 @@ const { filters, updateFilter, clearFilters, applyFilters } = useViewFilters()
 
 const jobProgressMap = ref<Record<string, JobProgress>>({})
 const expanded = ref<ExpandedState>({})
+const expandAllPathsSignal = ref(0)
+const collapseAllPathsSignal = ref(0)
+const jobsWithExpandedPaths = ref<Set<string>>(new Set())
+
+const hasExpandedJobs = computed(() =>
+  expanded.value === true || Object.keys(expanded.value).length > 0
+)
+
+function expandAllJobs() {
+  expanded.value = true
+}
+
+function collapseAllJobs() {
+  expanded.value = {}
+  jobsWithExpandedPaths.value.clear()
+}
+
+async function expandAllPaths() {
+  if (expanded.value !== true) {
+    expanded.value = true
+  }
+  await nextTick()
+  expandAllPathsSignal.value++
+}
+
+function collapseAllPaths() {
+  collapseAllPathsSignal.value++
+}
+
+function onPathsExpandedChange(payload: { jobId: string, hasExpandedPaths: boolean }) {
+  if (payload.hasExpandedPaths) {
+    jobsWithExpandedPaths.value.add(payload.jobId)
+  } else {
+    jobsWithExpandedPaths.value.delete(payload.jobId)
+  }
+}
 
 const filteredJobs = computed(() =>
   applyFilters(jobs.value, {
@@ -24,6 +60,17 @@ const filteredJobs = computed(() =>
     }
   })
 )
+
+// Prune jobsWithExpandedPaths when filtered jobs change (removes stale entries for jobs no longer visible)
+watch(filteredJobs, (visibleJobs) => {
+  if (jobsWithExpandedPaths.value.size === 0) return
+  const visibleIds = new Set(visibleJobs.map(j => j.id))
+  for (const jobId of jobsWithExpandedPaths.value) {
+    if (!visibleIds.has(jobId)) {
+      jobsWithExpandedPaths.value.delete(jobId)
+    }
+  }
+})
 
 function onFiltersChange(f: typeof filters.value) {
   Object.keys(f).forEach((key) => {
@@ -133,7 +180,18 @@ onMounted(() => {
     <ViewFilters
       :filters="filters"
       @change="onFiltersChange"
-    />
+    >
+      <JobViewToolbar
+        v-if="!loading && filteredJobs.length"
+        :has-expanded-jobs="hasExpandedJobs"
+        :has-expanded-paths="jobsWithExpandedPaths.size > 0"
+        :job-count="filteredJobs.length"
+        @expand-all-jobs="expandAllJobs"
+        @collapse-all-jobs="collapseAllJobs"
+        @expand-all-paths="expandAllPaths"
+        @collapse-all-paths="collapseAllPaths"
+      />
+    </ViewFilters>
 
     <div
       v-if="loading"
@@ -166,7 +224,12 @@ onMounted(() => {
       @select="(_e: any, row: any) => navigateTo(`/jobs/${encodeURIComponent(row.original.id)}`)"
     >
       <template #expanded="{ row }">
-        <JobExpandableRow :job-id="row.original.id" />
+        <JobExpandableRow
+          :job-id="row.original.id"
+          :expand-all-paths-signal="expandAllPathsSignal"
+          :collapse-all-paths-signal="collapseAllPathsSignal"
+          @paths-expanded-change="onPathsExpandedChange"
+        />
       </template>
     </UTable>
   </div>

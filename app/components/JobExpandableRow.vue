@@ -19,16 +19,28 @@ interface PathInfo {
   updatedAt: string
 }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   jobId: string
+  expandAllPathsSignal?: number
+  collapseAllPathsSignal?: number
+}>(), {
+  expandAllPathsSignal: 0,
+  collapseAllPathsSignal: 0,
+})
+
+const emit = defineEmits<{
+  (e: 'paths-expanded-change', payload: { jobId: string, hasExpandedPaths: boolean }): void
 }>()
 
 const paths = ref<PathInfo[]>([])
 const loading = ref(false)
-const expandedPathId = ref<string | null>(null)
+const expandedPathIds = ref<Set<string>>(new Set())
 const pathDistributions = ref<Record<string, StepDist[]>>({})
 const pathCompletedCounts = ref<Record<string, number>>({})
-const loadingPathId = ref<string | null>(null)
+const loadingPathIds = ref<Set<string>>(new Set())
+const failedPathIds = ref<Set<string>>(new Set())
+const fetchPathsPromise = ref<Promise<void> | null>(null)
+let bulkExpandPromise: Promise<void> | null = null
 
 async function fetchPaths() {
   loading.value = true
@@ -43,28 +55,105 @@ async function fetchPaths() {
 }
 
 async function togglePath(pathId: string) {
-  if (expandedPathId.value === pathId) {
-    expandedPathId.value = null
+  if (expandedPathIds.value.has(pathId)) {
+    expandedPathIds.value.delete(pathId)
+    expandedPathIds.value = new Set(expandedPathIds.value)
+    emit('paths-expanded-change', { jobId: props.jobId, hasExpandedPaths: expandedPathIds.value.size > 0 })
     return
   }
-  expandedPathId.value = pathId
+  expandedPathIds.value.add(pathId)
+  expandedPathIds.value = new Set(expandedPathIds.value)
+  emit('paths-expanded-change', { jobId: props.jobId, hasExpandedPaths: true })
 
-  if (!pathDistributions.value[pathId]) {
-    loadingPathId.value = pathId
+  if (!pathDistributions.value[pathId] || failedPathIds.value.has(pathId)) {
+    failedPathIds.value.delete(pathId)
+    loadingPathIds.value.add(pathId)
+    loadingPathIds.value = new Set(loadingPathIds.value)
     try {
       const detail = await $fetch<{ distribution: StepDist[], completedCount?: number }>(`/api/paths/${pathId}`)
       pathDistributions.value[pathId] = detail.distribution ?? []
       pathCompletedCounts.value[pathId] = detail.completedCount ?? 0
     } catch {
       pathDistributions.value[pathId] = []
+      failedPathIds.value.add(pathId)
     } finally {
-      loadingPathId.value = null
+      loadingPathIds.value.delete(pathId)
+      loadingPathIds.value = new Set(loadingPathIds.value)
     }
   }
 }
 
+async function onExpandAllPaths() {
+  // Serialize: wait for any in-flight bulk expand to finish first
+  if (bulkExpandPromise) {
+    await bulkExpandPromise
+  }
+
+  const run = async () => {
+    // Wait for paths to load if fetch is still in-flight
+    if (fetchPathsPromise.value) {
+      await fetchPathsPromise.value
+    }
+    const allPathIds = paths.value.map(p => p.id)
+    expandedPathIds.value = new Set(allPathIds)
+    emit('paths-expanded-change', { jobId: props.jobId, hasExpandedPaths: allPathIds.length > 0 })
+
+    const uncachedIds = allPathIds.filter(id => !pathDistributions.value[id])
+    if (uncachedIds.length === 0) return
+
+    const CONCURRENCY = 3
+    for (let i = 0; i < uncachedIds.length; i += CONCURRENCY) {
+      const batch = uncachedIds.slice(i, i + CONCURRENCY)
+      const results = await Promise.allSettled(
+        batch.map(async (pathId) => {
+          loadingPathIds.value.add(pathId)
+          loadingPathIds.value = new Set(loadingPathIds.value)
+          const detail = await $fetch<{ distribution: StepDist[], completedCount?: number }>(`/api/paths/${pathId}`)
+          pathDistributions.value[pathId] = detail.distribution ?? []
+          pathCompletedCounts.value[pathId] = detail.completedCount ?? 0
+        })
+      )
+      for (let j = 0; j < batch.length; j++) {
+        if (results[j]!.status === 'rejected' && !pathDistributions.value[batch[j]!]) {
+          pathDistributions.value[batch[j]!] = []
+          failedPathIds.value.add(batch[j]!)
+        }
+        loadingPathIds.value.delete(batch[j]!)
+      }
+      loadingPathIds.value = new Set(loadingPathIds.value)
+    }
+  }
+
+  bulkExpandPromise = run()
+  await bulkExpandPromise
+  bulkExpandPromise = null
+}
+
+function onCollapseAllPaths() {
+  expandedPathIds.value = new Set()
+  emit('paths-expanded-change', { jobId: props.jobId, hasExpandedPaths: false })
+}
+
+watch(() => props.expandAllPathsSignal, (newVal, oldVal) => {
+  if (newVal > (oldVal ?? 0)) {
+    onExpandAllPaths()
+  }
+}, { immediate: true })
+
+watch(() => props.collapseAllPathsSignal, (newVal, oldVal) => {
+  if (newVal > (oldVal ?? 0)) {
+    onCollapseAllPaths()
+  }
+}, { immediate: true })
+
 onMounted(() => {
-  fetchPaths()
+  fetchPathsPromise.value = fetchPaths()
+})
+
+onUnmounted(() => {
+  if (expandedPathIds.value.size > 0) {
+    emit('paths-expanded-change', { jobId: props.jobId, hasExpandedPaths: false })
+  }
 })
 </script>
 
@@ -91,7 +180,15 @@ onMounted(() => {
     <table
       v-else
       class="w-full text-xs"
+      style="table-layout: fixed"
     >
+      <colgroup>
+        <col style="width: 35%">
+        <col style="width: 15%">
+        <col style="width: 10%">
+        <col style="width: 30%">
+        <col style="width: 10%">
+      </colgroup>
       <thead>
         <tr class="text-left text-(--ui-text-muted) border-b border-(--ui-border)">
           <th class="py-1 pr-3 font-medium">
@@ -103,10 +200,10 @@ onMounted(() => {
           <th class="py-1 pr-3 font-medium">
             Steps
           </th>
-          <th class="py-1 pr-3 font-medium w-40">
+          <th class="py-1 pr-3 font-medium">
             Progress
           </th>
-          <th class="py-1 w-6" />
+          <th class="py-1" />
         </tr>
       </thead>
       <tbody>
@@ -145,21 +242,21 @@ onMounted(() => {
             </td>
             <td class="py-1.5 text-right">
               <UIcon
-                :name="expandedPathId === path.id ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
+                :name="expandedPathIds.has(path.id) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
                 class="size-3.5 text-(--ui-text-muted)"
               />
             </td>
           </tr>
 
           <!-- Expanded: Process Steps -->
-          <tr v-if="expandedPathId === path.id">
+          <tr v-if="expandedPathIds.has(path.id)">
             <td
               colspan="5"
               class="p-0"
             >
               <div class="pl-6 pr-2 py-2 bg-(--ui-bg-elevated)/30">
                 <div
-                  v-if="loadingPathId === path.id"
+                  v-if="loadingPathIds.has(path.id)"
                   class="flex items-center gap-2 text-xs text-(--ui-text-muted) py-1"
                 >
                   <UIcon
@@ -172,7 +269,14 @@ onMounted(() => {
                 <table
                   v-else-if="pathDistributions[path.id]?.length"
                   class="w-full text-xs"
+                  style="table-layout: fixed"
                 >
+                  <colgroup>
+                    <col style="width: 35%">
+                    <col style="width: 15%">
+                    <col style="width: 15%">
+                    <col style="width: 35%">
+                  </colgroup>
                   <thead>
                     <tr class="text-left text-(--ui-text-muted) border-b border-(--ui-border)/50">
                       <th class="py-1 pr-3 font-medium">
