@@ -57,7 +57,7 @@ sequenceDiagram
 
 ### Component 1: JobViewToolbar
 
-**Purpose**: Renders the four expand/collapse utility buttons in the page header area, between the title row and the filter bar.
+**Purpose**: Renders the four expand/collapse utility buttons inline in the filter bar row, after the filter inputs.
 
 **Interface**:
 ```typescript
@@ -81,7 +81,7 @@ interface JobViewToolbarEmits {
 - Render four icon buttons in a compact horizontal group
 - Disable "Expand All Jobs" when all jobs already expanded
 - Disable "Collapse All Jobs" when no jobs expanded
-- Disable "Expand All Paths" when no jobs are expanded (paths only visible inside expanded jobs)
+- Disable "Expand All Paths" when there are no jobs in the list (empty list)
 - Disable "Collapse All Paths" when no paths are expanded
 - Use Lucide icons: `i-lucide-chevrons-down` (expand all), `i-lucide-chevrons-up` (collapse all), `i-lucide-list-tree` (expand paths), `i-lucide-list-minus` (collapse paths)
 - Include tooltips on each button describing the action
@@ -347,21 +347,21 @@ async function onExpandAllPaths(): Promise<void> {
   <div class="p-4 space-y-3">
     <div class="flex items-center justify-between">
       <h1 class="text-lg font-bold text-(--ui-text-highlighted)">Jobs</h1>
-      <div class="flex items-center gap-2">
-        <JobViewToolbar
-          :has-expanded-jobs="expanded === true || Object.keys(expanded).length > 0"
-          :has-expanded-paths="jobsWithExpandedPaths.size > 0"
-          :job-count="filteredJobs.length"
-          @expand-all-jobs="expandAllJobs"
-          @collapse-all-jobs="collapseAllJobs"
-          @expand-all-paths="expandAllPaths"
-          @collapse-all-paths="collapseAllPaths"
-        />
-        <UButton icon="i-lucide-plus" label="New Job" size="sm" @click="navigateTo('/jobs/new')" />
-      </div>
+      <UButton icon="i-lucide-plus" label="New Job" size="sm" @click="navigateTo('/jobs/new')" />
     </div>
 
-    <ViewFilters :filters="filters" @change="onFiltersChange" />
+    <ViewFilters :filters="filters" @change="onFiltersChange">
+      <JobViewToolbar
+        v-if="!loading && filteredJobs.length"
+        :has-expanded-jobs="hasExpandedJobs"
+        :has-expanded-paths="jobsWithExpandedPaths.size > 0"
+        :job-count="filteredJobs.length"
+        @expand-all-jobs="expandAllJobs"
+        @collapse-all-jobs="collapseAllJobs"
+        @expand-all-paths="expandAllPaths"
+        @collapse-all-paths="collapseAllPaths"
+      />
+    </ViewFilters>
 
     <!-- ... table ... -->
 
@@ -409,7 +409,7 @@ async function onExpandAllPaths(): Promise<void> {
         variant="ghost"
         color="neutral"
         size="xs"
-        :disabled="!hasExpandedJobs"
+        :disabled="!jobCount"
         @click="$emit('expand-all-paths')"
       />
     </UTooltip>

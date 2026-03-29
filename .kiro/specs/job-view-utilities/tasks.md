@@ -39,7 +39,7 @@ Add four expand/collapse utility buttons to the Jobs list page. Implementation m
     - Render four `UButton` (ghost variant, neutral color, xs size) wrapped in `UTooltip`
     - Icons: `i-lucide-chevrons-down`, `i-lucide-chevrons-up`, `i-lucide-list-tree`, `i-lucide-list-minus`
     - Tooltips: "Expand All Jobs", "Collapse All Jobs", "Expand All Paths", "Collapse All Paths"
-    - Disable logic: Expand All Jobs disabled when `jobCount === 0`; Collapse All Jobs disabled when `!hasExpandedJobs`; Expand All Paths disabled when `!hasExpandedJobs`; Collapse All Paths disabled when `!hasExpandedPaths`
+    - Disable logic: Expand All Jobs disabled when `jobCount === 0`; Collapse All Jobs disabled when `!hasExpandedJobs`; Expand All Paths disabled when `jobCount === 0`; Collapse All Paths disabled when `!hasExpandedPaths`
     - _Requirements: 1.1, 1.3, 2.1, 2.3, 3.1, 3.7, 4.1, 4.5, 6.1, 6.2, 6.3, 6.4_
 
   - [x] 2.2 Write unit tests for JobViewToolbar disabled states and emits
@@ -61,7 +61,7 @@ Add four expand/collapse utility buttons to the Jobs list page. Implementation m
     - _Requirements: 1.2, 1.4, 2.2, 3.2, 3.3, 4.2, 7.1, 7.2, 7.3_
 
   - [x] 3.2 Update template in `app/pages/jobs/index.vue`
-    - Add `JobViewToolbar` in the header row, between the title and "New Job" button
+    - Add `JobViewToolbar` inline in the ViewFilters row via its default slot
     - Pass computed `hasExpandedJobs`, `hasExpandedPaths`, and `filteredJobs.length` as props
     - Wire toolbar emits to handler functions
     - Pass `expandAllPathsSignal` and `collapseAllPathsSignal` props to `JobExpandableRow` in the `#expanded` slot

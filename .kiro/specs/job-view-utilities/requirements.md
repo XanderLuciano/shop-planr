@@ -55,7 +55,7 @@
 **User Story**: As a user, I want the expand/collapse controls to be easily accessible but not cluttering the main interface.
 
 **Acceptance Criteria**:
-- [ ] The four utility buttons are grouped in a compact horizontal toolbar in the page header, next to the "New Job" button
+- [ ] The four utility buttons are grouped in a compact horizontal toolbar inline in the filter bar row, after the filter inputs
 - [ ] Buttons use ghost variant, neutral color, and xs size to match existing UI patterns
 - [ ] Each button has a tooltip describing its action
 - [ ] Disabled buttons are visually distinct (reduced opacity) to indicate unavailable actions
