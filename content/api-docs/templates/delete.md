@@ -1,11 +1,11 @@
 ---
-title: 'Delete Template'
-description: 'Permanently delete a route template'
-method: 'DELETE'
-endpoint: '/api/templates/:id'
-service: 'templateService'
-category: 'Templates'
-responseType: '{ success: true }'
+title: "Delete Template"
+description: "Permanently delete a route template"
+method: "DELETE"
+endpoint: "/api/templates/:id"
+service: "templateService"
+category: "Templates"
+responseType: "{ success: true }"
 errorCodes: [404, 500]
 navigation:
   order: 5
@@ -23,9 +23,9 @@ Deleting a template does **not** affect any paths that were previously created f
 
 ### Path Parameters
 
-| Parameter | Type     | Required | Description                                                            |
-| --------- | -------- | -------- | ---------------------------------------------------------------------- |
-| `id`      | `string` | Yes      | The unique identifier of the template to delete (e.g. `"tmpl_abc123"`) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` | Yes | The unique identifier of the template to delete (e.g. `"tmpl_abc123"`) |
 
 No request body is required.
 
@@ -35,24 +35,24 @@ No request body is required.
 
 Returned when the template is successfully deleted.
 
-| Field     | Type      | Description                          |
-| --------- | --------- | ------------------------------------ |
+| Field | Type | Description |
+|-------|------|-------------|
 | `success` | `boolean` | Always `true` on successful deletion |
 
 ### 404 Not Found
 
 Returned when no template exists with the given ID.
 
-| Condition               | Message                                  |
-| ----------------------- | ---------------------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Template does not exist | `"TemplateRoute not found: tmpl_abc123"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while deleting the template.
 
-| Condition              | Message                   |
-| ---------------------- | ------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Database write failure | `"Internal Server Error"` |
 
 ## Examples

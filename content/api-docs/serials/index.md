@@ -1,7 +1,7 @@
 ---
-title: 'Serials API'
-description: 'Serial number lifecycle — creation, advancement, completion, scrap, force-complete, step overrides, waivers, deferred steps, and certificate attachments'
-icon: 'i-lucide-hash'
+title: "Serials API"
+description: "Serial number lifecycle — creation, advancement, completion, scrap, force-complete, step overrides, waivers, deferred steps, and certificate attachments"
+icon: "i-lucide-hash"
 navigation:
   order: 3
 ---
@@ -29,14 +29,14 @@ Every serial number follows a predictable lifecycle:
 
 Each serial maintains a per-step status record (`SnStepStatus`) for every step in its path. These statuses track the granular state of each step independently of the serial's overall position:
 
-| Status        | Meaning                                                |
-| ------------- | ------------------------------------------------------ |
-| `pending`     | Step has not been reached yet                          |
-| `in_progress` | Serial is currently at this step                       |
-| `completed`   | Step was completed normally                            |
-| `skipped`     | Optional step was bypassed during advancement          |
-| `deferred`    | Required step was bypassed but must be completed later |
-| `waived`      | Deferred step was formally waived by an approver       |
+| Status | Meaning |
+|--------|---------|
+| `pending` | Step has not been reached yet |
+| `in_progress` | Serial is currently at this step |
+| `completed` | Step was completed normally |
+| `skipped` | Optional step was bypassed during advancement |
+| `deferred` | Required step was bypassed but must be completed later |
+| `waived` | Deferred step was formally waived by an approver |
 
 ### Advancement Modes
 
@@ -71,23 +71,23 @@ Serials exist within the hierarchy: **Job → Path → Serial Numbers**. A job r
 
 ## Endpoints
 
-| Method   | Path                                                                                | Description                                |
-| -------- | ----------------------------------------------------------------------------------- | ------------------------------------------ |
-| `GET`    | [`/api/serials`](/api-docs/serials/list)                                            | List all serial numbers with enriched data |
-| `GET`    | [`/api/serials/:id`](/api-docs/serials/get)                                         | Get a single serial with certificate data  |
-| `POST`   | [`/api/serials`](/api-docs/serials/create)                                          | Batch create serial numbers for a job path |
-| `POST`   | [`/api/serials/:id/advance`](/api-docs/serials/advance)                             | Advance to the next process step           |
-| `POST`   | [`/api/serials/:id/advance-to`](/api-docs/serials/advance-to)                       | Advance to a specific target step          |
-| `POST`   | [`/api/serials/:id/scrap`](/api-docs/serials/scrap)                                 | Scrap a serial number                      |
-| `POST`   | [`/api/serials/:id/force-complete`](/api-docs/serials/force-complete)               | Force-complete bypassing remaining steps   |
-| `POST`   | [`/api/serials/:id/attach-cert`](/api-docs/serials/attach-cert)                     | Attach a certificate at the current step   |
-| `GET`    | [`/api/serials/:id/cert-attachments`](/api-docs/serials/cert-attachments)           | List all certificate attachments           |
-| `GET`    | [`/api/serials/:id/step-statuses`](/api-docs/serials/step-statuses)                 | Get per-step status tracking               |
-| `GET`    | [`/api/serials/:id/overrides`](/api-docs/serials/overrides)                         | List step overrides                        |
-| `POST`   | [`/api/serials/:id/overrides`](/api-docs/serials/overrides)                         | Create a step override                     |
-| `DELETE` | [`/api/serials/:id/overrides/:stepId`](/api-docs/serials/override-delete)           | Reverse a step override                    |
-| `POST`   | [`/api/serials/:id/waive-step/:stepId`](/api-docs/serials/waive-step)               | Waive a deferred step                      |
-| `POST`   | [`/api/serials/:id/complete-deferred/:stepId`](/api-docs/serials/complete-deferred) | Complete a deferred step                   |
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | [`/api/serials`](/api-docs/serials/list) | List all serial numbers with enriched data |
+| `GET` | [`/api/serials/:id`](/api-docs/serials/get) | Get a single serial with certificate data |
+| `POST` | [`/api/serials`](/api-docs/serials/create) | Batch create serial numbers for a job path |
+| `POST` | [`/api/serials/:id/advance`](/api-docs/serials/advance) | Advance to the next process step |
+| `POST` | [`/api/serials/:id/advance-to`](/api-docs/serials/advance-to) | Advance to a specific target step |
+| `POST` | [`/api/serials/:id/scrap`](/api-docs/serials/scrap) | Scrap a serial number |
+| `POST` | [`/api/serials/:id/force-complete`](/api-docs/serials/force-complete) | Force-complete bypassing remaining steps |
+| `POST` | [`/api/serials/:id/attach-cert`](/api-docs/serials/attach-cert) | Attach a certificate at the current step |
+| `GET` | [`/api/serials/:id/cert-attachments`](/api-docs/serials/cert-attachments) | List all certificate attachments |
+| `GET` | [`/api/serials/:id/step-statuses`](/api-docs/serials/step-statuses) | Get per-step status tracking |
+| `GET` | [`/api/serials/:id/overrides`](/api-docs/serials/overrides) | List step overrides |
+| `POST` | [`/api/serials/:id/overrides`](/api-docs/serials/overrides) | Create a step override |
+| `DELETE` | [`/api/serials/:id/overrides/:stepId`](/api-docs/serials/override-delete) | Reverse a step override |
+| `POST` | [`/api/serials/:id/waive-step/:stepId`](/api-docs/serials/waive-step) | Waive a deferred step |
+| `POST` | [`/api/serials/:id/complete-deferred/:stepId`](/api-docs/serials/complete-deferred) | Complete a deferred step |
 
 ## Related APIs
 

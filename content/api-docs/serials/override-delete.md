@@ -1,12 +1,12 @@
 ---
-title: 'Delete Override'
-description: 'Reverse (deactivate) a step override for a serial number'
-method: 'DELETE'
-endpoint: '/api/serials/:id/overrides/:stepId'
-service: 'lifecycleService'
-category: 'Serials'
-requestBody: '{ userId: string }'
-responseType: '{ success: true }'
+title: "Delete Override"
+description: "Reverse (deactivate) a step override for a serial number"
+method: "DELETE"
+endpoint: "/api/serials/:id/overrides/:stepId"
+service: "lifecycleService"
+category: "Serials"
+requestBody: "{ userId: string }"
+responseType: "{ success: true }"
 errorCodes: [400, 404, 500]
 navigation:
   order: 12
@@ -24,16 +24,16 @@ Reversing an override restores the step to its original required/optional status
 
 ### Path Parameters
 
-| Parameter | Type     | Required | Description                                                                                     |
-| --------- | -------- | -------- | ----------------------------------------------------------------------------------------------- |
-| `id`      | `string` | Yes      | The unique identifier of the serial number (e.g. `"SN-00001"`)                                  |
-| `stepId`  | `string` | Yes      | The unique identifier of the process step whose override should be reversed (e.g. `"step_003"`) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` | Yes | The unique identifier of the serial number (e.g. `"SN-00001"`) |
+| `stepId` | `string` | Yes | The unique identifier of the process step whose override should be reversed (e.g. `"step_003"`) |
 
 ### Request Body
 
-| Field    | Type     | Required | Description                                                              |
-| -------- | -------- | -------- | ------------------------------------------------------------------------ |
-| `userId` | `string` | Yes      | ID of the user reversing the override. Used for audit trail attribution. |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `userId` | `string` | Yes | ID of the user reversing the override. Used for audit trail attribution. |
 
 ## Response
 
@@ -41,35 +41,35 @@ Reversing an override restores the step to its original required/optional status
 
 Returned when the override is successfully reversed.
 
-| Field     | Type      | Description                               |
-| --------- | --------- | ----------------------------------------- |
+| Field | Type | Description |
+|-------|------|-------------|
 | `success` | `boolean` | Always `true` when the operation succeeds |
 
 ### 400 Bad Request
 
 Returned when the override cannot be reversed due to its current state.
 
-| Condition                                                  | Message                                                       |
-| ---------------------------------------------------------- | ------------------------------------------------------------- |
-| No active override exists for this serial-step combination | `"No active override found for this step"`                    |
-| Step has already been skipped (override was acted upon)    | `"Cannot reverse override — step has already been skipped"`   |
-| Step has already been completed                            | `"Cannot reverse override — step has already been completed"` |
+| Condition | Message |
+|-----------|---------|
+| No active override exists for this serial-step combination | `"No active override found for this step"` |
+| Step has already been skipped (override was acted upon) | `"Cannot reverse override — step has already been skipped"` |
+| Step has already been completed | `"Cannot reverse override — step has already been completed"` |
 
 ### 404 Not Found
 
 Returned when the serial does not exist.
 
-| Condition             | Message                    |
-| --------------------- | -------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Serial does not exist | `"Serial not found: {id}"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs during the reversal.
 
-| Condition                    | Message                   |
-| ---------------------------- | ------------------------- |
-| Database write failure       | `"Internal Server Error"` |
+| Condition | Message |
+|-----------|---------|
+| Database write failure | `"Internal Server Error"` |
 | Unexpected runtime exception | `"Internal Server Error"` |
 
 ## Examples

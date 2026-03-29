@@ -1,12 +1,12 @@
 ---
-title: 'Edit BOM (Versioned)'
-description: 'Create a versioned edit of a BOM with change tracking and audit trail'
-method: 'POST'
-endpoint: '/api/bom/:id/edit'
-service: 'bomService'
-category: 'BOM'
-requestBody: 'EditBomInput'
-responseType: 'BOM'
+title: "Edit BOM (Versioned)"
+description: "Create a versioned edit of a BOM with change tracking and audit trail"
+method: "POST"
+endpoint: "/api/bom/:id/edit"
+service: "bomService"
+category: "BOM"
+requestBody: "EditBomInput"
+responseType: "BOM"
 errorCodes: [400, 404, 500]
 navigation:
   order: 5
@@ -21,7 +21,6 @@ Creates a versioned edit of a bill of materials. Unlike the simple [Update BOM](
 This is the recommended way to modify BOM entries in production, as it provides a complete audit trail of what changed, when, and why. The operation also generates a `bom_edited` entry in the [Audit API](/api-docs/audit).
 
 The workflow is:
-
 1. The current BOM entries are snapshotted into a new `BomVersion` record.
 2. The BOM's entries are replaced with the new entries from the request.
 3. A `bom_edited` audit entry is created with the user ID, change description, and version number.
@@ -31,20 +30,20 @@ The workflow is:
 
 ### Path Parameters
 
-| Parameter | Type     | Required | Description                                                    |
-| --------- | -------- | -------- | -------------------------------------------------------------- |
-| `id`      | `string` | Yes      | The unique identifier of the BOM to edit (e.g. `"bom_abc123"`) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` | Yes | The unique identifier of the BOM to edit (e.g. `"bom_abc123"`) |
 
 ### Request Body
 
-| Field                                | Type       | Required | Description                                                                                                                                      |
-| ------------------------------------ | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `entries`                            | `array`    | Yes      | The new array of part entries that will replace the current entries. Must contain at least one entry.                                            |
-| `entries[].partType`                 | `string`   | Yes      | Part type name or identifier.                                                                                                                    |
-| `entries[].requiredQuantityPerBuild` | `number`   | Yes      | Quantity needed per build.                                                                                                                       |
-| `entries[].contributingJobIds`       | `string[]` | Yes      | Job IDs that supply this part.                                                                                                                   |
-| `changeDescription`                  | `string`   | Yes      | A human-readable description of what changed and why (e.g. `"Increased bolt quantity from 12 to 16 per engineering review"`). Must be non-empty. |
-| `userId`                             | `string`   | Yes      | The ID of the user making the edit. Recorded in the version snapshot and the audit trail.                                                        |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `entries` | `array` | Yes | The new array of part entries that will replace the current entries. Must contain at least one entry. |
+| `entries[].partType` | `string` | Yes | Part type name or identifier. |
+| `entries[].requiredQuantityPerBuild` | `number` | Yes | Quantity needed per build. |
+| `entries[].contributingJobIds` | `string[]` | Yes | Job IDs that supply this part. |
+| `changeDescription` | `string` | Yes | A human-readable description of what changed and why (e.g. `"Increased bolt quantity from 12 to 16 per engineering review"`). Must be non-empty. |
+| `userId` | `string` | Yes | The ID of the user making the edit. Recorded in the version snapshot and the audit trail. |
 
 ## Response
 
@@ -52,42 +51,42 @@ The workflow is:
 
 Returned when the edit is successfully applied. The response contains the **updated** BOM with the new entries. The version snapshot of the previous state can be retrieved via [List BOM Versions](/api-docs/bom/versions).
 
-| Field                                | Type                  | Description                                                       |
-| ------------------------------------ | --------------------- | ----------------------------------------------------------------- |
-| `id`                                 | `string`              | The BOM's unique identifier (unchanged)                           |
-| `name`                               | `string`              | The BOM name (unchanged — this endpoint does not modify the name) |
-| `entries`                            | `BomEntry[]`          | The **new** entries as provided in the request                    |
-| `entries[].id`                       | `string \| undefined` | Entry ID, if assigned                                             |
-| `entries[].bomId`                    | `string \| undefined` | Parent BOM ID reference                                           |
-| `entries[].partType`                 | `string`              | Part type name                                                    |
-| `entries[].requiredQuantityPerBuild` | `number`              | Required quantity per build                                       |
-| `entries[].contributingJobIds`       | `string[]`            | Contributing job IDs                                              |
-| `createdAt`                          | `string`              | Original creation timestamp (unchanged)                           |
-| `updatedAt`                          | `string`              | ISO 8601 timestamp of this edit                                   |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | The BOM's unique identifier (unchanged) |
+| `name` | `string` | The BOM name (unchanged — this endpoint does not modify the name) |
+| `entries` | `BomEntry[]` | The **new** entries as provided in the request |
+| `entries[].id` | `string \| undefined` | Entry ID, if assigned |
+| `entries[].bomId` | `string \| undefined` | Parent BOM ID reference |
+| `entries[].partType` | `string` | Part type name |
+| `entries[].requiredQuantityPerBuild` | `number` | Required quantity per build |
+| `entries[].contributingJobIds` | `string[]` | Contributing job IDs |
+| `createdAt` | `string` | Original creation timestamp (unchanged) |
+| `updatedAt` | `string` | ISO 8601 timestamp of this edit |
 
 ### 400 Bad Request
 
 Returned when the request body fails validation.
 
-| Condition                               | Message                                 |
-| --------------------------------------- | --------------------------------------- |
-| `entries` is missing or empty array     | `"entries must have at least one item"` |
-| `changeDescription` is missing or empty | `"changeDescription is required"`       |
+| Condition | Message |
+|-----------|---------|
+| `entries` is missing or empty array | `"entries must have at least one item"` |
+| `changeDescription` is missing or empty | `"changeDescription is required"` |
 
 ### 404 Not Found
 
 Returned when no BOM exists with the given ID.
 
-| Condition          | Message                       |
-| ------------------ | ----------------------------- |
+| Condition | Message |
+|-----------|---------|
 | BOM does not exist | `"BOM not found: bom_abc123"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs during the edit operation.
 
-| Condition              | Message                   |
-| ---------------------- | ------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Database write failure | `"Internal Server Error"` |
 
 ## Examples

@@ -1,12 +1,12 @@
 ---
-title: 'Batch Attach Certificate'
-description: 'Attach a certificate to multiple serial numbers in a single operation'
-method: 'POST'
-endpoint: '/api/certs/batch-attach'
-service: 'certService'
-category: 'Certs'
-requestBody: 'BatchAttachCertInput'
-responseType: 'CertAttachment[]'
+title: "Batch Attach Certificate"
+description: "Attach a certificate to multiple serial numbers in a single operation"
+method: "POST"
+endpoint: "/api/certs/batch-attach"
+service: "certService"
+category: "Certs"
+requestBody: "BatchAttachCertInput"
+responseType: "CertAttachment[]"
 errorCodes: [400, 404, 500]
 navigation:
   order: 4
@@ -26,11 +26,11 @@ The attachment is recorded against the serial's current process step at the time
 
 ### Request Body
 
-| Field       | Type       | Required | Description                                                                                                        |
-| ----------- | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------ |
-| `certId`    | `string`   | Yes      | The unique identifier of the certificate to attach (e.g. `"cert_abc123"`). Must reference an existing certificate. |
-| `serialIds` | `string[]` | Yes      | An array of serial number IDs to attach the certificate to. Must contain at least one ID.                          |
-| `userId`    | `string`   | Yes      | The ID of the user performing the attachment. Recorded in the `CertAttachment` and the audit trail.                |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `certId` | `string` | Yes | The unique identifier of the certificate to attach (e.g. `"cert_abc123"`). Must reference an existing certificate. |
+| `serialIds` | `string[]` | Yes | An array of serial number IDs to attach the certificate to. Must contain at least one ID. |
+| `userId` | `string` | Yes | The ID of the user performing the attachment. Recorded in the `CertAttachment` and the audit trail. |
 
 ## Response
 
@@ -38,39 +38,39 @@ The attachment is recorded against the serial's current process step at the time
 
 Returned when all attachments are successfully created. The response contains an array of `CertAttachment` objects — one for each serial in the request.
 
-| Field        | Type                  | Description                                                   |
-| ------------ | --------------------- | ------------------------------------------------------------- |
-| `id`         | `string \| undefined` | Server-generated attachment ID, if assigned by the repository |
-| `serialId`   | `string`              | The serial number this attachment belongs to                  |
-| `certId`     | `string`              | The certificate that was attached                             |
-| `stepId`     | `string`              | The process step ID where the attachment was recorded         |
-| `attachedAt` | `string`              | ISO 8601 timestamp of when the attachment was created         |
-| `attachedBy` | `string`              | The user ID who performed the attachment                      |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string \| undefined` | Server-generated attachment ID, if assigned by the repository |
+| `serialId` | `string` | The serial number this attachment belongs to |
+| `certId` | `string` | The certificate that was attached |
+| `stepId` | `string` | The process step ID where the attachment was recorded |
+| `attachedAt` | `string` | ISO 8601 timestamp of when the attachment was created |
+| `attachedBy` | `string` | The user ID who performed the attachment |
 
 ### 400 Bad Request
 
 Returned when the request body fails validation.
 
-| Condition                             | Message                                   |
-| ------------------------------------- | ----------------------------------------- |
-| `certId` is missing or empty          | `"certId is required"`                    |
+| Condition | Message |
+|-----------|---------|
+| `certId` is missing or empty | `"certId is required"` |
 | `serialIds` is missing or empty array | `"serialIds must have at least one item"` |
-| `userId` is missing or empty          | `"userId is required"`                    |
+| `userId` is missing or empty | `"userId is required"` |
 
 ### 404 Not Found
 
 Returned when the referenced certificate does not exist.
 
-| Condition                  | Message                                |
-| -------------------------- | -------------------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Certificate does not exist | `"Certificate not found: cert_abc123"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs during the batch operation.
 
-| Condition              | Message                   |
-| ---------------------- | ------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Database write failure | `"Internal Server Error"` |
 
 ## Examples

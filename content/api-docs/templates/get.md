@@ -1,11 +1,11 @@
 ---
-title: 'Get Template'
-description: 'Retrieve a single route template by ID'
-method: 'GET'
-endpoint: '/api/templates/:id'
-service: 'templateService'
-category: 'Templates'
-responseType: 'TemplateRoute'
+title: "Get Template"
+description: "Retrieve a single route template by ID"
+method: "GET"
+endpoint: "/api/templates/:id"
+service: "templateService"
+category: "Templates"
+responseType: "TemplateRoute"
 errorCodes: [404, 500]
 navigation:
   order: 2
@@ -21,9 +21,9 @@ Retrieves a single route template by its unique identifier, including the full l
 
 ### Path Parameters
 
-| Parameter | Type     | Required | Description                                                  |
-| --------- | -------- | -------- | ------------------------------------------------------------ |
-| `id`      | `string` | Yes      | The unique identifier of the template (e.g. `"tmpl_abc123"`) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` | Yes | The unique identifier of the template (e.g. `"tmpl_abc123"`) |
 
 ## Response
 
@@ -31,33 +31,33 @@ Retrieves a single route template by its unique identifier, including the full l
 
 Returns the `TemplateRoute` object matching the provided ID.
 
-| Field                    | Type                                             | Description                                         |
-| ------------------------ | ------------------------------------------------ | --------------------------------------------------- |
-| `id`                     | `string`                                         | Unique identifier for the template                  |
-| `name`                   | `string`                                         | Human-readable template name                        |
-| `steps`                  | `TemplateStep[]`                                 | Ordered array of process step definitions           |
-| `steps[].name`           | `string`                                         | Step name                                           |
-| `steps[].order`          | `number`                                         | Zero-based position in the sequence                 |
-| `steps[].location`       | `string \| undefined`                            | Physical location for the step, if assigned         |
-| `steps[].optional`       | `boolean`                                        | Whether the step can be skipped during advancement  |
-| `steps[].dependencyType` | `'physical' \| 'preferred' \| 'completion_gate'` | How strictly the step order is enforced             |
-| `createdAt`              | `string`                                         | ISO 8601 timestamp of when the template was created |
-| `updatedAt`              | `string`                                         | ISO 8601 timestamp of the last modification         |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique identifier for the template |
+| `name` | `string` | Human-readable template name |
+| `steps` | `TemplateStep[]` | Ordered array of process step definitions |
+| `steps[].name` | `string` | Step name |
+| `steps[].order` | `number` | Zero-based position in the sequence |
+| `steps[].location` | `string \| undefined` | Physical location for the step, if assigned |
+| `steps[].optional` | `boolean` | Whether the step can be skipped during advancement |
+| `steps[].dependencyType` | `'physical' \| 'preferred' \| 'completion_gate'` | How strictly the step order is enforced |
+| `createdAt` | `string` | ISO 8601 timestamp of when the template was created |
+| `updatedAt` | `string` | ISO 8601 timestamp of the last modification |
 
 ### 404 Not Found
 
 Returned when no template exists with the given ID.
 
-| Condition               | Message                                  |
-| ----------------------- | ---------------------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Template does not exist | `"TemplateRoute not found: tmpl_abc123"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while querying the database.
 
-| Condition             | Message                   |
-| --------------------- | ------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Database read failure | `"Internal Server Error"` |
 
 ## Examples

@@ -70,16 +70,17 @@ const ROUTE_TOGGLE_MAP: Record<string, keyof PageToggles> = {
 ### Function 1: isPageEnabled() — updated
 
 ```typescript
-function isPageEnabled(pageToggles: PageToggles, routePath: string): boolean
+function isPageEnabled(
+  pageToggles: PageToggles,
+  routePath: string,
+): boolean
 ```
 
 **Preconditions:**
-
 - `pageToggles` is a valid `PageToggles` object (all 9 keys present, boolean values)
 - `routePath` is a non-empty string starting with `/`
 
 **Postconditions:**
-
 - Returns `true` for `/` and `/settings` (always-enabled routes — unchanged)
 - Returns `true` for any route starting with `/parts/step/` regardless of `pageToggles.parts` value
 - Returns `pageToggles[toggleKey]` for all other mapped routes (unchanged behavior)
@@ -87,7 +88,6 @@ function isPageEnabled(pageToggles: PageToggles, routePath: string): boolean
 - `/parts` and `/parts?query=...` still respect the `parts` toggle (only `/parts/step/` is exempt)
 
 **Loop Invariants:**
-
 - Iteration over `ROUTE_TOGGLE_MAP` entries is order-independent for non-overlapping prefixes
 - The always-enabled sub-route check (`ALWAYS_ENABLED_ROUTES`) is evaluated before the prefix match loop
 
@@ -98,11 +98,9 @@ function resolveBackNavigation(from: string | undefined | null): BackNavigation
 ```
 
 **Preconditions:**
-
 - `from` may be `undefined`, `null`, or a string
 
 **Postconditions:**
-
 - If `from` starts with `/jobs/`, returns `{ to: from, label: 'Back to Job' }`
 - Otherwise returns `{ to: '/parts', label: 'Back to Parts' }`
 - No side effects
@@ -114,10 +112,13 @@ function resolveBackNavigation(from: string | undefined | null): BackNavigation
 ```typescript
 // New constant: sub-route prefixes that bypass their parent's toggle
 const ALWAYS_ENABLED_ROUTES: readonly string[] = [
-  '/parts/step', // Step view is reachable from Jobs, Parts, and Work Queue
+  '/parts/step',  // Step view is reachable from Jobs, Parts, and Work Queue
 ]
 
-function isPageEnabled(pageToggles: PageToggles, routePath: string): boolean {
+function isPageEnabled(
+  pageToggles: PageToggles,
+  routePath: string,
+): boolean {
   // 1. Dashboard and Settings are always enabled (unchanged)
   if (routePath === '/' || routePath === '/settings') {
     return true
@@ -143,19 +144,16 @@ function isPageEnabled(pageToggles: PageToggles, routePath: string): boolean {
 ```
 
 **Preconditions:**
-
 - `pageToggles` is a valid PageToggles object
 - `routePath` starts with `/`
 
 **Postconditions:**
-
 - `/parts/step/abc123` → `true` (always, regardless of parts toggle)
 - `/parts` → `pageToggles.parts` (unchanged)
 - `/parts?foo=bar` → `pageToggles.parts` (unchanged, no startsWith match on `/parts/step`)
 - `/jobs/abc123` → `pageToggles.jobs` (unchanged)
 
 **Loop Invariants:**
-
 - All previously checked ALWAYS_ENABLED_ROUTES prefixes did not match when loop continues
 - All previously checked ROUTE_TOGGLE_MAP entries did not match when loop continues
 
@@ -184,47 +182,47 @@ const toggles = { ...DEFAULT_PAGE_TOGGLES, parts: false }
 
 // BEFORE fix: returns false → redirects to Dashboard
 // AFTER fix: returns true → step view loads correctly
-isPageEnabled(toggles, '/parts/step/step_abc123') // true
+isPageEnabled(toggles, '/parts/step/step_abc123')  // true
 
 // Parts list page still respects the toggle
-isPageEnabled(toggles, '/parts') // false
-isPageEnabled(toggles, '/parts?search=foo') // false (no prefix match on /parts/step)
+isPageEnabled(toggles, '/parts')                     // false
+isPageEnabled(toggles, '/parts?search=foo')           // false (no prefix match on /parts/step)
 
 // Jobs page unaffected
-isPageEnabled(toggles, '/jobs/job_123') // true (jobs toggle is true)
+isPageEnabled(toggles, '/jobs/job_123')               // true (jobs toggle is true)
 
 // Step view from Work Queue also works
-isPageEnabled(toggles, '/parts/step/step_xyz') // true (always enabled)
+isPageEnabled(toggles, '/parts/step/step_xyz')        // true (always enabled)
 
 // All toggles ON — everything works as before
 isPageEnabled(DEFAULT_PAGE_TOGGLES, '/parts/step/s1') // true
-isPageEnabled(DEFAULT_PAGE_TOGGLES, '/parts') // true
+isPageEnabled(DEFAULT_PAGE_TOGGLES, '/parts')          // true
 ```
 
 ## Correctness Properties
 
-_A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
+*A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
 ### Property 1: Step view routes are always enabled
 
-_For any_ step ID string and _for any_ page toggle configuration, `isPageEnabled(toggles, /parts/step/${stepId})` should return `true`.
+*For any* step ID string and *for any* page toggle configuration, `isPageEnabled(toggles, /parts/step/${stepId})` should return `true`.
 
 **Validates: Requirements 1.1, 1.2, 1.3, 4.3**
 
 ### Property 2: Non-step /parts routes respect the parts toggle
 
-_For any_ page toggle configuration and _for any_ `/parts` sub-route that does not match an ALWAYS_ENABLED_ROUTES prefix, `isPageEnabled(toggles, path)` should equal `toggles.parts`.
+*For any* page toggle configuration and *for any* `/parts` sub-route that does not match an ALWAYS_ENABLED_ROUTES prefix, `isPageEnabled(toggles, path)` should equal `toggles.parts`.
 
 **Validates: Requirements 2.1, 2.2**
 
 ### Property 3: All other toggle-mapped routes are unaffected
 
-_For any_ page toggle configuration and _for any_ route in ROUTE_TOGGLE_MAP (excluding `/parts/step` sub-routes), `isPageEnabled(toggles, route)` should equal the value of the corresponding toggle key.
+*For any* page toggle configuration and *for any* route in ROUTE_TOGGLE_MAP (excluding `/parts/step` sub-routes), `isPageEnabled(toggles, route)` should equal the value of the corresponding toggle key.
 
 **Validates: Requirements 3.1, 3.2**
 
 ### Property 4: Dashboard and Settings are always enabled
 
-_For any_ page toggle configuration, `isPageEnabled(toggles, '/')` and `isPageEnabled(toggles, '/settings')` should both return `true`.
+*For any* page toggle configuration, `isPageEnabled(toggles, '/')` and `isPageEnabled(toggles, '/settings')` should both return `true`.
 
 **Validates: Requirements 5.1, 5.2**

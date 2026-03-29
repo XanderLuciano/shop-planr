@@ -1,12 +1,12 @@
 ---
-title: 'Link Jira Ticket'
-description: 'Link a Jira ticket to a new production job, optionally applying a route template'
-method: 'POST'
-endpoint: '/api/jira/link'
-service: 'jiraService'
-category: 'Jira'
-requestBody: 'LinkJiraInput'
-responseType: '{ job: Job, path: Path | null }'
+title: "Link Jira Ticket"
+description: "Link a Jira ticket to a new production job, optionally applying a route template"
+method: "POST"
+endpoint: "/api/jira/link"
+service: "jiraService"
+category: "Jira"
+requestBody: "LinkJiraInput"
+responseType: "{ job: Job, path: Path | null }"
 errorCodes: [400, 404, 502]
 navigation:
   order: 3
@@ -30,11 +30,11 @@ The Jira connection must be enabled in settings. Only the `enabled` toggle is re
 
 ### Request Body
 
-| Field          | Type     | Required | Description                                                                                                                                                    |
-| -------------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ticketKey`    | `string` | Yes      | The Jira issue key to link (e.g. `"PI-42"`). Must be a non-empty string. The ticket must exist in Jira.                                                        |
-| `templateId`   | `string` | No       | ID of a route template to apply to the new job. When provided, a path is created from the template's steps. If the template is not found, a `404` is returned. |
-| `goalQuantity` | `number` | No       | Override goal quantity for the new job. If omitted, the quantity is read from the Jira ticket's custom field. If that is also empty, defaults to `1`.          |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `ticketKey` | `string` | Yes | The Jira issue key to link (e.g. `"PI-42"`). Must be a non-empty string. The ticket must exist in Jira. |
+| `templateId` | `string` | No | ID of a route template to apply to the new job. When provided, a path is created from the template's steps. If the template is not found, a `404` is returned. |
+| `goalQuantity` | `number` | No | Override goal quantity for the new job. If omitted, the quantity is read from the Jira ticket's custom field. If that is also empty, defaults to `1`. |
 
 ## Response
 
@@ -42,45 +42,45 @@ The Jira connection must be enabled in settings. Only the `enabled` toggle is re
 
 Returns an object containing the newly created `Job` and optionally the `Path` created from the template.
 
-| Field  | Type           | Description                                                                   |
-| ------ | -------------- | ----------------------------------------------------------------------------- |
-| `job`  | `Job`          | The newly created job with Jira metadata populated                            |
+| Field | Type | Description |
+|-------|------|-------------|
+| `job` | `Job` | The newly created job with Jira metadata populated |
 | `path` | `Path \| null` | The path created from the template, or `null` if no `templateId` was provided |
 
 #### Job Fields
 
-| Field               | Type                    | Description                                         |
-| ------------------- | ----------------------- | --------------------------------------------------- |
-| `id`                | `string`                | Server-generated unique identifier                  |
-| `name`              | `string`                | Job name (defaults to ticket summary or ticket key) |
-| `goalQuantity`      | `number`                | Target production quantity                          |
-| `jiraTicketKey`     | `string`                | The linked Jira ticket key                          |
-| `jiraTicketSummary` | `string \| undefined`   | Ticket summary from Jira                            |
-| `jiraPartNumber`    | `string \| undefined`   | Part number from Jira custom field                  |
-| `jiraPriority`      | `string \| undefined`   | Priority from Jira                                  |
-| `jiraEpicLink`      | `string \| undefined`   | Epic link from Jira                                 |
-| `jiraLabels`        | `string[] \| undefined` | Labels from Jira                                    |
-| `createdAt`         | `string`                | ISO 8601 creation timestamp                         |
-| `updatedAt`         | `string`                | ISO 8601 update timestamp                           |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Server-generated unique identifier |
+| `name` | `string` | Job name (defaults to ticket summary or ticket key) |
+| `goalQuantity` | `number` | Target production quantity |
+| `jiraTicketKey` | `string` | The linked Jira ticket key |
+| `jiraTicketSummary` | `string \| undefined` | Ticket summary from Jira |
+| `jiraPartNumber` | `string \| undefined` | Part number from Jira custom field |
+| `jiraPriority` | `string \| undefined` | Priority from Jira |
+| `jiraEpicLink` | `string \| undefined` | Epic link from Jira |
+| `jiraLabels` | `string[] \| undefined` | Labels from Jira |
+| `createdAt` | `string` | ISO 8601 creation timestamp |
+| `updatedAt` | `string` | ISO 8601 update timestamp |
 
 ### 400 Bad Request
 
-| Condition                       | Message                             |
-| ------------------------------- | ----------------------------------- |
-| Jira integration is disabled    | `"Jira integration is not enabled"` |
-| `ticketKey` is missing or empty | `"ticketKey is required"`           |
+| Condition | Message |
+|-----------|---------|
+| Jira integration is disabled | `"Jira integration is not enabled"` |
+| `ticketKey` is missing or empty | `"ticketKey is required"` |
 
 ### 404 Not Found
 
-| Condition                                         | Message                                   |
-| ------------------------------------------------- | ----------------------------------------- |
+| Condition | Message |
+|-----------|---------|
 | `templateId` provided but template does not exist | `"TemplateRoute not found: {templateId}"` |
-| Ticket key does not exist in Jira                 | Jira API 404 re-thrown                    |
+| Ticket key does not exist in Jira | Jira API 404 re-thrown |
 
 ### 502 Bad Gateway
 
-| Condition                                 | Message                                   |
-| ----------------------------------------- | ----------------------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Jira API unreachable or returned an error | `"Jira API error: {status} {statusText}"` |
 
 ## Examples
@@ -120,29 +120,9 @@ curl -X POST http://localhost:3000/api/jira/link \
     "name": "Standard Route",
     "goalQuantity": 50,
     "steps": [
-      {
-        "id": "step_001",
-        "name": "CNC Machining",
-        "order": 0,
-        "location": "Bay 1",
-        "optional": false,
-        "dependencyType": "preferred"
-      },
-      {
-        "id": "step_002",
-        "name": "Deburring",
-        "order": 1,
-        "optional": false,
-        "dependencyType": "preferred"
-      },
-      {
-        "id": "step_003",
-        "name": "Inspection",
-        "order": 2,
-        "location": "QC Lab",
-        "optional": false,
-        "dependencyType": "physical"
-      }
+      { "id": "step_001", "name": "CNC Machining", "order": 0, "location": "Bay 1", "optional": false, "dependencyType": "preferred" },
+      { "id": "step_002", "name": "Deburring", "order": 1, "optional": false, "dependencyType": "preferred" },
+      { "id": "step_003", "name": "Inspection", "order": 2, "location": "QC Lab", "optional": false, "dependencyType": "physical" }
     ],
     "advancementMode": "strict",
     "createdAt": "2024-01-15T10:30:00.000Z",

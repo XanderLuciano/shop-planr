@@ -38,6 +38,7 @@ Fix the `handleSelection` type mismatch in `StepAssignmentDropdown.vue` where `U
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
 - [x] 3. Fix for handleSelection type mismatch and StepTracker integration
+
   - [x] 3.1 Fix handleSelection parameter type in StepAssignmentDropdown.vue
     - Change `handleSelection(item: SelectMenuItem | null)` to `handleSelection(value: string | null)`
     - Change `const userId = item?.value ?? null` to `const userId = value`

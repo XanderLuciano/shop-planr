@@ -11,19 +11,19 @@ Shop Planr (package name: `shop-erp`) is a job routing and ERP application for m
 
 ## Tech Stack
 
-| Layer         | Tech                                                                 |
-| ------------- | -------------------------------------------------------------------- |
-| Framework     | Nuxt 4.2.2 (Vue 3, Nitro server)                                     |
-| UI Library    | Nuxt UI 4.3.0 (Tailwind CSS v4, Reka UI)                             |
-| Content CMS   | Nuxt Content 3.x (Markdown/MDC, SQLite, MiniSearch)                  |
-| Language      | TypeScript 5.9                                                       |
-| Icons         | `@iconify-json/lucide`                                               |
-| Database      | SQLite via `better-sqlite3`                                          |
-| ID Generation | `nanoid`                                                             |
-| Testing       | Vitest 3.2 + `happy-dom` + `fast-check` (PBT) + `tsx` (seed scripts) |
-| Linting       | ESLint 9 via `@nuxt/eslint`                                          |
-| Deployment    | Docker (single container, copies `.output/`)                         |
-| Font          | Public Sans (custom)                                                 |
+| Layer | Tech |
+|-------|------|
+| Framework | Nuxt 4.2.2 (Vue 3, Nitro server) |
+| UI Library | Nuxt UI 4.3.0 (Tailwind CSS v4, Reka UI) |
+| Content CMS | Nuxt Content 3.x (Markdown/MDC, SQLite, MiniSearch) |
+| Language | TypeScript 5.9 |
+| Icons | `@iconify-json/lucide` |
+| Database | SQLite via `better-sqlite3` |
+| ID Generation | `nanoid` |
+| Testing | Vitest 3.2 + `happy-dom` + `fast-check` (PBT) + `tsx` (seed scripts) |
+| Linting | ESLint 9 via `@nuxt/eslint` |
+| Deployment | Docker (single container, copies `.output/`) |
+| Font | Public Sans (custom) |
 
 ## Project Structure
 
@@ -96,38 +96,38 @@ tests/
 
 ## Run Commands
 
-| Action       | Command                      | Notes                                            |
-| ------------ | ---------------------------- | ------------------------------------------------ |
-| Dev server   | `npm run dev`                | Nuxt dev with HMR                                |
-| Build        | `npm run build`              | Production build to `.output/`                   |
-| Preview      | `npm run preview`            | Preview production build locally                 |
-| Test         | `npm run test`               | `vitest run` — 785 tests, 134 files              |
-| Test watch   | `npm run test:watch`         | `vitest` in watch mode                           |
-| Lint         | `npm run lint`               | ESLint with Nuxt config                          |
-| Typecheck    | `npm run typecheck`          | `nuxt typecheck`                                 |
-| Docker build | `docker build -t shop-erp .` | Requires `npm run build` first                   |
-| Docker run   | `docker-compose up -d`       | Runs on port 3000                                |
-| Deploy       | `./deploy.sh`                | Build + docker save + rsync to server            |
-| Seed         | `npm run seed`               | Idempotent SAMPLE- data creation                 |
-| Seed reset   | `npm run seed:reset`         | Delete SAMPLE- data + re-seed                    |
-| Screenshots  | `npm run screenshots`        | Puppeteer captures 9 pages → `docs/screenshots/` |
+| Action | Command | Notes |
+|--------|---------|-------|
+| Dev server | `npm run dev` | Nuxt dev with HMR |
+| Build | `npm run build` | Production build to `.output/` |
+| Preview | `npm run preview` | Preview production build locally |
+| Test | `npm run test` | `vitest run` — 785 tests, 134 files |
+| Test watch | `npm run test:watch` | `vitest` in watch mode |
+| Lint | `npm run lint` | ESLint with Nuxt config |
+| Typecheck | `npm run typecheck` | `nuxt typecheck` |
+| Docker build | `docker build -t shop-erp .` | Requires `npm run build` first |
+| Docker run | `docker-compose up -d` | Runs on port 3000 |
+| Deploy | `./deploy.sh` | Build + docker save + rsync to server |
+| Seed | `npm run seed` | Idempotent SAMPLE- data creation |
+| Seed reset | `npm run seed:reset` | Delete SAMPLE- data + re-seed |
+| Screenshots | `npm run screenshots` | Puppeteer captures 9 pages → `docs/screenshots/` |
 
 ## Key Entry Points
 
-| What                   | File                                         |
-| ---------------------- | -------------------------------------------- |
-| App root               | `app/app.vue`                                |
-| App config (UI colors) | `app/app.config.ts`                          |
-| Nuxt config            | `nuxt.config.ts`                             |
-| CSS / theme            | `app/assets/css/main.css`                    |
-| Homepage               | `app/pages/index.vue`                        |
-| Service singleton      | `server/utils/services.ts` → `getServices()` |
-| Repository singleton   | `server/utils/db.ts` → `getRepositories()`   |
-| Content config         | `content.config.ts`                          |
-| Vitest config          | `vitest.config.ts`                           |
-| ESLint config          | `eslint.config.mjs`                          |
-| Docker                 | `Dockerfile` + `docker-compose.yml`          |
-| Deploy script          | `deploy.sh`                                  |
+| What | File |
+|------|------|
+| App root | `app/app.vue` |
+| App config (UI colors) | `app/app.config.ts` |
+| Nuxt config | `nuxt.config.ts` |
+| CSS / theme | `app/assets/css/main.css` |
+| Homepage | `app/pages/index.vue` |
+| Service singleton | `server/utils/services.ts` → `getServices()` |
+| Repository singleton | `server/utils/db.ts` → `getRepositories()` |
+| Content config | `content.config.ts` |
+| Vitest config | `vitest.config.ts` |
+| ESLint config | `eslint.config.mjs` |
+| Docker | `Dockerfile` + `docker-compose.yml` |
+| Deploy script | `deploy.sh` |
 
 ## Architecture
 
@@ -141,47 +141,47 @@ Dependencies flow left-to-right only. All business logic lives in services. See 
 
 ## Backend: Routes → Services Map (Implemented)
 
-| Route prefix                      | Service                             | Domain                                                                                                   |
-| --------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| `/api/jobs/**`                    | `jobService`                        | Production orders (CRUD + progress)                                                                      |
-| `/api/paths/**`                   | `pathService`                       | Route instances with process steps                                                                       |
-| `/api/serials/**`                 | `serialService`, `lifecycleService` | Serial number tracking + advancement + lifecycle (scrap, force-complete, advance-to, overrides, waivers) |
-| `/api/certs/**`                   | `certService`                       | Certificate management + attachment + detail view                                                        |
-| `/api/templates/**`               | `templateService`                   | Reusable route templates + apply + edit                                                                  |
-| `/api/audit/**`                   | `auditService`                      | Immutable audit trail                                                                                    |
-| `/api/jira/**`                    | `jiraService`                       | Jira read/push integration (tickets, link, push, comment)                                                |
-| `/api/bom/**`                     | `bomService`                        | Bill of materials roll-ups + edit + version history                                                      |
-| `/api/settings/**`                | `settingsService`                   | Jira config + field mappings + page toggles                                                              |
-| `/api/notes/**`                   | `noteService`                       | Process step notes/defects                                                                               |
-| `/api/users/**`                   | `userService`                       | Simple kiosk-mode user profiles                                                                          |
-| `/api/operator/**`                | (aggregates job/path/serial)        | Workstation view data                                                                                    |
-| `/api/steps/:id/assign`           | `pathService`                       | Step assignment (PATCH)                                                                                  |
-| `/api/steps/:id/config`           | `pathService`                       | Step config: optional + dependencyType (PATCH)                                                           |
-| `/api/paths/:id/advancement-mode` | `pathService`                       | Path advancement mode (PATCH)                                                                            |
-| `/api/library/**`                 | `libraryService`                    | Process + location library CRUD                                                                          |
+| Route prefix | Service | Domain |
+|-------------|---------|--------|
+| `/api/jobs/**` | `jobService` | Production orders (CRUD + progress) |
+| `/api/paths/**` | `pathService` | Route instances with process steps |
+| `/api/serials/**` | `serialService`, `lifecycleService` | Serial number tracking + advancement + lifecycle (scrap, force-complete, advance-to, overrides, waivers) |
+| `/api/certs/**` | `certService` | Certificate management + attachment + detail view |
+| `/api/templates/**` | `templateService` | Reusable route templates + apply + edit |
+| `/api/audit/**` | `auditService` | Immutable audit trail |
+| `/api/jira/**` | `jiraService` | Jira read/push integration (tickets, link, push, comment) |
+| `/api/bom/**` | `bomService` | Bill of materials roll-ups + edit + version history |
+| `/api/settings/**` | `settingsService` | Jira config + field mappings + page toggles |
+| `/api/notes/**` | `noteService` | Process step notes/defects |
+| `/api/users/**` | `userService` | Simple kiosk-mode user profiles |
+| `/api/operator/**` | (aggregates job/path/serial) | Workstation view data |
+| `/api/steps/:id/assign` | `pathService` | Step assignment (PATCH) |
+| `/api/steps/:id/config` | `pathService` | Step config: optional + dependencyType (PATCH) |
+| `/api/paths/:id/advancement-mode` | `pathService` | Path advancement mode (PATCH) |
+| `/api/library/**` | `libraryService` | Process + location library CRUD |
 
 ## Frontend: Pages (Implemented — tasks 5–10)
 
-| Page           | File                                | Purpose                                                                                                                                                                 |
-| -------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Dashboard      | `app/pages/index.vue`               | Summary cards, job progress chart, bottleneck alerts                                                                                                                    |
-| Jobs list      | `app/pages/jobs/index.vue`          | Expandable table: jobs → paths → steps                                                                                                                                  |
-| Job detail     | `app/pages/jobs/[id].vue`           | Tabbed: Job Routing (paths, steps, config) + Serial Numbers tab                                                                                                         |
-| Job create     | `app/pages/jobs/new.vue`            | Dedicated job creation form via `JobCreationForm` component                                                                                                             |
-| Job edit       | `app/pages/jobs/edit/[id].vue`      | Edit existing job (paths, steps) via `JobCreationForm` component                                                                                                        |
-| Operator       | `app/pages/operator.vue`            | ~~Removed~~ — replaced by Parts View + Work Queue                                                                                                                       |
-| Assignees      | `app/pages/assignees.vue`           | ~~Removed~~ — subsumed by Work Queue                                                                                                                                    |
-| Parts View     | `app/pages/parts/index.vue`         | All active parts grouped by job/step, click navigates to Step View                                                                                                      |
-| Step View      | `app/pages/parts/step/[stepId].vue` | Dedicated step page: advancement panel or serial creation, bookmarkable URL                                                                                             |
-| Work Queue     | `app/pages/queue.vue`               | Work grouped by operator/assignee, URL-synced operator filter                                                                                                           |
-| Templates      | `app/pages/templates.vue`           | Route template CRUD with library dropdowns + editing                                                                                                                    |
-| BOM            | `app/pages/bom.vue`                 | Bill of materials roll-ups + edit + version history                                                                                                                     |
-| Jira           | `app/pages/jira.vue`                | Jira ticket dashboard (conditional)                                                                                                                                     |
-| Audit          | `app/pages/audit.vue`               | Audit trail viewer with filters (action type, user, serial, job, date range)                                                                                            |
-| Settings       | `app/pages/settings.vue`            | Users, Jira connection, field mappings, process/location libraries, page visibility toggles                                                                             |
-| API Docs CMS   | `app/pages/api-docs/[...slug].vue`  | Nuxt Content v3 docs site (67+ endpoint docs)                                                                                                                           |
-| Serial browser | `app/pages/serials/index.vue`       | Searchable/filterable serial number list                                                                                                                                |
-| Part detail    | `app/pages/serials/[id].vue`        | Tabbed part view: routing (SectionCard sections: routing, certificates, notes, advance process; lifecycle features, deferred steps, overrides, certs) + sibling serials |
+| Page | File | Purpose |
+|------|------|---------|
+| Dashboard | `app/pages/index.vue` | Summary cards, job progress chart, bottleneck alerts |
+| Jobs list | `app/pages/jobs/index.vue` | Expandable table: jobs → paths → steps |
+| Job detail | `app/pages/jobs/[id].vue` | Tabbed: Job Routing (paths, steps, config) + Serial Numbers tab |
+| Job create | `app/pages/jobs/new.vue` | Dedicated job creation form via `JobCreationForm` component |
+| Job edit | `app/pages/jobs/edit/[id].vue` | Edit existing job (paths, steps) via `JobCreationForm` component |
+| Operator | `app/pages/operator.vue` | ~~Removed~~ — replaced by Parts View + Work Queue |
+| Assignees | `app/pages/assignees.vue` | ~~Removed~~ — subsumed by Work Queue |
+| Parts View | `app/pages/parts/index.vue` | All active parts grouped by job/step, click navigates to Step View |
+| Step View | `app/pages/parts/step/[stepId].vue` | Dedicated step page: advancement panel or serial creation, bookmarkable URL |
+| Work Queue | `app/pages/queue.vue` | Work grouped by operator/assignee, URL-synced operator filter |
+| Templates | `app/pages/templates.vue` | Route template CRUD with library dropdowns + editing |
+| BOM | `app/pages/bom.vue` | Bill of materials roll-ups + edit + version history |
+| Jira | `app/pages/jira.vue` | Jira ticket dashboard (conditional) |
+| Audit | `app/pages/audit.vue` | Audit trail viewer with filters (action type, user, serial, job, date range) |
+| Settings | `app/pages/settings.vue` | Users, Jira connection, field mappings, process/location libraries, page visibility toggles |
+| API Docs CMS | `app/pages/api-docs/[...slug].vue` | Nuxt Content v3 docs site (67+ endpoint docs) |
+| Serial browser | `app/pages/serials/index.vue` | Searchable/filterable serial number list |
+| Part detail | `app/pages/serials/[id].vue` | Tabbed part view: routing (SectionCard sections: routing, certificates, notes, advance process; lifecycle features, deferred steps, overrides, certs) + sibling serials |
 
 ## Domain Model
 
@@ -206,12 +206,12 @@ Core entities and relationships:
 
 ## Sub-Maps (`.ai/` folder)
 
-| File                      | Covers                                                         |
-| ------------------------- | -------------------------------------------------------------- |
-| `.ai/architecture.md`     | Layer boundaries, separation of concerns, dependency injection |
-| `.ai/data-model.md`       | SQLite schema, domain types, serialization, migration strategy |
-| `.ai/jira-integration.md` | PI project custom fields, REST API patterns, push/pull flow    |
-| `.ai/testing.md`          | Property-based tests, integration tests, seed data strategy    |
+| File | Covers |
+|------|--------|
+| `.ai/architecture.md` | Layer boundaries, separation of concerns, dependency injection |
+| `.ai/data-model.md` | SQLite schema, domain types, serialization, migration strategy |
+| `.ai/jira-integration.md` | PI project custom fields, REST API patterns, push/pull flow |
+| `.ai/testing.md` | Property-based tests, integration tests, seed data strategy |
 
 ## Known Quirks
 

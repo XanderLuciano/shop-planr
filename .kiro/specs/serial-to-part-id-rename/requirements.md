@@ -70,7 +70,7 @@ Rename the internal concept of "serial" / "serial number" to "part_id" across th
 3. THE Service_Layer SHALL update `lifecycleService.ts` to use "part" naming in all method signatures and internal references
 4. THE Service_Layer SHALL update the service singleton in `server/utils/services.ts` to expose `partService` instead of `serialService`
 5. THE Service_Layer SHALL update `auditService.ts` to log renamed action values (e.g., `part_created` instead of `serial_created`)
-6. THE Service*Layer SHALL update `server/utils/idGenerator.ts` to use a `part*`prefix instead of`sn\_` for generated part IDs, while preserving the sequential format
+6. THE Service_Layer SHALL update `server/utils/idGenerator.ts` to use a `part_` prefix instead of `sn_` for generated part IDs, while preserving the sequential format
 
 ### Requirement 5: API Layer Rename
 
@@ -120,7 +120,7 @@ Rename the internal concept of "serial" / "serial number" to "part_id" across th
 
 #### Acceptance Criteria
 
-1. THE Rename*Tool SHALL update `server/utils/idGenerator.ts` to generate IDs with a `part*`prefix instead of`sn\_` for new part records
+1. THE Rename_Tool SHALL update `server/utils/idGenerator.ts` to generate IDs with a `part_` prefix instead of `sn_` for new part records
 2. THE Repository_Layer SHALL continue to read and return existing records that have `SN-` prefixed IDs without error
-3. THE Service*Layer SHALL treat both `SN-` and `part*` prefixed IDs as valid part identifiers
+3. THE Service_Layer SHALL treat both `SN-` and `part_` prefixed IDs as valid part identifiers
 4. IF a lookup is performed with an `SN-` prefixed ID, THEN THE Repository_Layer SHALL return the matching record from the `parts` table

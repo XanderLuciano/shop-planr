@@ -1,11 +1,11 @@
 ---
-title: 'Get Step View'
-description: 'Retrieve the operator step view data for a specific step instance'
-method: 'GET'
-endpoint: '/api/operator/step/:stepId'
-service: 'jobService, pathService, serialService, noteService'
-category: 'Operator'
-responseType: 'StepViewResponse'
+title: "Get Step View"
+description: "Retrieve the operator step view data for a specific step instance"
+method: "GET"
+endpoint: "/api/operator/step/:stepId"
+service: "jobService, pathService, serialService, noteService"
+category: "Operator"
+responseType: "StepViewResponse"
 errorCodes: [400, 404, 500]
 navigation:
   order: 1
@@ -27,9 +27,9 @@ The endpoint scans all jobs and paths to locate the step by ID, then assembles a
 
 ### Path Parameters
 
-| Parameter | Type     | Required | Description                                                                                  |
-| --------- | -------- | -------- | -------------------------------------------------------------------------------------------- |
-| `stepId`  | `string` | Yes      | The unique process step ID (e.g. `"step_001"`). This is the step's `id` field, not its name. |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `stepId` | `string` | Yes | The unique process step ID (e.g. `"step_001"`). This is the step's `id` field, not its name. |
 
 ## Response
 
@@ -37,50 +37,50 @@ The endpoint scans all jobs and paths to locate the step by ID, then assembles a
 
 Returns a `StepViewResponse` object.
 
-| Field                  | Type                  | Description                                                                                                           |
-| ---------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `job`                  | `WorkQueueJob`        | Aggregated job/path/step data with serial list                                                                        |
-| `notes`                | `StepNote[]`          | All notes attached to this step                                                                                       |
+| Field | Type | Description |
+|-------|------|-------------|
+| `job` | `WorkQueueJob` | Aggregated job/path/step data with serial list |
+| `notes` | `StepNote[]` | All notes attached to this step |
 | `previousStepWipCount` | `number \| undefined` | Count of serials at the previous step, included only when the current step has zero serials and is not the first step |
 
 #### WorkQueueJob Fields
 
-| Field              | Type                  | Description                                        |
-| ------------------ | --------------------- | -------------------------------------------------- |
-| `jobId`            | `string`              | Job ID                                             |
-| `jobName`          | `string`              | Job name                                           |
-| `pathId`           | `string`              | Path ID                                            |
-| `pathName`         | `string`              | Path name                                          |
-| `stepId`           | `string`              | Step ID (matches the queried parameter)            |
-| `stepName`         | `string`              | Step name (e.g. `"Assembly"`)                      |
-| `stepOrder`        | `number`              | Zero-based step index within the path              |
-| `stepLocation`     | `string \| undefined` | Physical location of the step                      |
-| `totalSteps`       | `number`              | Total number of steps in the path                  |
-| `serialIds`        | `string[]`            | IDs of serials currently at this step              |
-| `partCount`        | `number`              | Count of serials at this step (`serialIds.length`) |
-| `previousStepId`   | `string \| undefined` | ID of the previous step (absent for first step)    |
-| `previousStepName` | `string \| undefined` | Name of the previous step                          |
-| `nextStepId`       | `string \| undefined` | ID of the next step (absent for final step)        |
-| `nextStepName`     | `string \| undefined` | Name of the next step                              |
-| `nextStepLocation` | `string \| undefined` | Location of the next step                          |
-| `isFinalStep`      | `boolean`             | `true` if this is the last step in the path        |
+| Field | Type | Description |
+|-------|------|-------------|
+| `jobId` | `string` | Job ID |
+| `jobName` | `string` | Job name |
+| `pathId` | `string` | Path ID |
+| `pathName` | `string` | Path name |
+| `stepId` | `string` | Step ID (matches the queried parameter) |
+| `stepName` | `string` | Step name (e.g. `"Assembly"`) |
+| `stepOrder` | `number` | Zero-based step index within the path |
+| `stepLocation` | `string \| undefined` | Physical location of the step |
+| `totalSteps` | `number` | Total number of steps in the path |
+| `serialIds` | `string[]` | IDs of serials currently at this step |
+| `partCount` | `number` | Count of serials at this step (`serialIds.length`) |
+| `previousStepId` | `string \| undefined` | ID of the previous step (absent for first step) |
+| `previousStepName` | `string \| undefined` | Name of the previous step |
+| `nextStepId` | `string \| undefined` | ID of the next step (absent for final step) |
+| `nextStepName` | `string \| undefined` | Name of the next step |
+| `nextStepLocation` | `string \| undefined` | Location of the next step |
+| `isFinalStep` | `boolean` | `true` if this is the last step in the path |
 
 ### 400 Bad Request
 
-| Condition           | Message                |
-| ------------------- | ---------------------- |
+| Condition | Message |
+|-----------|---------|
 | `stepId` is missing | `"stepId is required"` |
 
 ### 404 Not Found
 
-| Condition                                           | Message                             |
-| --------------------------------------------------- | ----------------------------------- |
+| Condition | Message |
+|-----------|---------|
 | No step found with the given ID across any job/path | `"ProcessStep not found: {stepId}"` |
 
 ### 500 Internal Server Error
 
-| Condition                | Message                   |
-| ------------------------ | ------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Unexpected runtime error | `"Internal server error"` |
 
 ## Examples

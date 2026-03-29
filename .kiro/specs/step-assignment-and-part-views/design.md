@@ -72,13 +72,13 @@ sequenceDiagram
     API->>Svc: jobService.getJob()
     Svc-->>Page: Job details
     Page->>Page: Render Routing tab (default)
-
+    
     alt User clicks Serials tab
         Page->>API: GET /api/serials?pathId=X
         API->>Svc: serialService.listSerialsByPath()
         Svc-->>Page: SerialNumber[]
     end
-
+    
     alt User advances serial
         Page->>API: POST /api/serials/:id/advance
         API->>Svc: serialService.advanceSerial()
@@ -110,33 +110,33 @@ sequenceDiagram
 
 ### New Files
 
-| File                                                                | Type       | Purpose                                                    |
-| ------------------------------------------------------------------- | ---------- | ---------------------------------------------------------- |
-| `server/repositories/sqlite/migrations/003_add_step_assignment.sql` | Migration  | Adds `assigned_to` column to `process_steps`               |
-| `app/components/StepAssignmentDropdown.vue`                         | Component  | Searchable dropdown for assigning operators to steps       |
-| `app/pages/serials/[id].vue`                                        | Page       | Part detail page with Routing and Serials tabs             |
-| `app/pages/serials/index.vue`                                       | Page       | Serial number browser with search/filter/sort              |
-| `app/composables/useSerialBrowser.ts`                               | Composable | Manages serial browser state (fetch, search, filter, sort) |
-| `app/composables/usePartDetail.ts`                                  | Composable | Fetches and composes data for the part detail page         |
-| `server/api/steps/[id]/assign.patch.ts`                             | API Route  | Step assignment endpoint                                   |
-| `server/api/serials/index.get.ts`                                   | API Route  | List all serials with enriched data (job/path/step names)  |
+| File | Type | Purpose |
+|------|------|---------|
+| `server/repositories/sqlite/migrations/003_add_step_assignment.sql` | Migration | Adds `assigned_to` column to `process_steps` |
+| `app/components/StepAssignmentDropdown.vue` | Component | Searchable dropdown for assigning operators to steps |
+| `app/pages/serials/[id].vue` | Page | Part detail page with Routing and Serials tabs |
+| `app/pages/serials/index.vue` | Page | Serial number browser with search/filter/sort |
+| `app/composables/useSerialBrowser.ts` | Composable | Manages serial browser state (fetch, search, filter, sort) |
+| `app/composables/usePartDetail.ts` | Composable | Fetches and composes data for the part detail page |
+| `server/api/steps/[id]/assign.patch.ts` | API Route | Step assignment endpoint |
+| `server/api/serials/index.get.ts` | API Route | List all serials with enriched data (job/path/step names) |
 
 ### Modified Files
 
-| File                                                 | Change                                                                                    |
-| ---------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `server/types/domain.ts`                             | Add optional `assignedTo?: string` to `ProcessStep`                                       |
-| `server/types/computed.ts`                           | Add `EnrichedSerial` type for browser listing                                             |
-| `server/repositories/interfaces/pathRepository.ts`   | Add `updateStepAssignment(stepId, userId)` method                                         |
-| `server/repositories/sqlite/pathRepository.ts`       | Implement `updateStepAssignment`                                                          |
-| `server/services/pathService.ts`                     | Add `assignStep(stepId, userId)` method                                                   |
-| `app/components/StepTracker.vue`                     | Add click handler, emit `step-click` event, cursor pointer styling                        |
-| `app/pages/jobs/[id].vue`                            | Handle `step-click` → navigate to operator page; render `StepAssignmentDropdown` per step |
-| `app/pages/operator.vue`                             | Read query params on mount, auto-select matching queue entry                              |
-| `app/composables/useSerials.ts`                      | Add `listAllSerials()` and `listSerialsByPath()` methods                                  |
-| `server/services/serialService.ts`                   | Add `listAllSerials()` method                                                             |
-| `server/repositories/interfaces/serialRepository.ts` | Add `listAll()` method                                                                    |
-| `server/repositories/sqlite/serialRepository.ts`     | Implement `listAll()`                                                                     |
+| File | Change |
+|------|--------|
+| `server/types/domain.ts` | Add optional `assignedTo?: string` to `ProcessStep` |
+| `server/types/computed.ts` | Add `EnrichedSerial` type for browser listing |
+| `server/repositories/interfaces/pathRepository.ts` | Add `updateStepAssignment(stepId, userId)` method |
+| `server/repositories/sqlite/pathRepository.ts` | Implement `updateStepAssignment` |
+| `server/services/pathService.ts` | Add `assignStep(stepId, userId)` method |
+| `app/components/StepTracker.vue` | Add click handler, emit `step-click` event, cursor pointer styling |
+| `app/pages/jobs/[id].vue` | Handle `step-click` → navigate to operator page; render `StepAssignmentDropdown` per step |
+| `app/pages/operator.vue` | Read query params on mount, auto-select matching queue entry |
+| `app/composables/useSerials.ts` | Add `listAllSerials()` and `listSerialsByPath()` methods |
+| `server/services/serialService.ts` | Add `listAllSerials()` method |
+| `server/repositories/interfaces/serialRepository.ts` | Add `listAll()` method |
+| `server/repositories/sqlite/serialRepository.ts` | Implement `listAll()` |
 
 ### Interfaces
 
@@ -146,8 +146,8 @@ sequenceDiagram
 // Props
 interface StepAssignmentDropdownProps {
   stepId: string
-  currentAssignee?: string // user ID or undefined for Unassigned
-  users: ShopUser[] // active users list
+  currentAssignee?: string  // user ID or undefined for Unassigned
+  users: ShopUser[]         // active users list
 }
 
 // Emits
@@ -168,7 +168,7 @@ assignStep(stepId: string, userId: string | null): ProcessStep
 ```typescript
 // Request body
 interface AssignStepInput {
-  userId: string | null // null = unassign
+  userId: string | null  // null = unassign
 }
 
 // Response: ProcessStep (with assignedTo field)
@@ -184,8 +184,8 @@ interface EnrichedSerial {
   pathId: string
   pathName: string
   currentStepIndex: number
-  currentStepName: string // "Completed" when index = -1
-  assignedTo?: string // user name at current step, if any
+  currentStepName: string  // "Completed" when index = -1
+  assignedTo?: string      // user name at current step, if any
   status: 'in-progress' | 'completed'
   createdAt: string
 }
@@ -214,7 +214,7 @@ interface SerialBrowserFilters {
   pathName?: string
   stepName?: string
   status?: 'in-progress' | 'completed' | 'all'
-  assignee?: string // user name or 'Unassigned'
+  assignee?: string  // user name or 'Unassigned'
 }
 ```
 
@@ -259,7 +259,7 @@ export interface ProcessStep {
   name: string
   order: number
   location?: string
-  assignedTo?: string // NEW: user ID or undefined for Unassigned
+  assignedTo?: string  // NEW: user ID or undefined for Unassigned
 }
 ```
 
@@ -293,96 +293,97 @@ getStepById(stepId: string): ProcessStep | null
 
 The `ALTER TABLE ADD COLUMN` migration sets the default to NULL for all existing rows, which correctly represents "Unassigned" — no data backfill needed.
 
+
 ## Correctness Properties
 
-_A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
+*A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
 ### Property 1: Step assignment round-trip
 
-_For any_ ProcessStep and any active ShopUser, assigning that user to the step and then reading the step back should return a ProcessStep with `assignedTo` equal to the assigned user's ID. Similarly, _for any_ ProcessStep with an existing assignment, assigning `null` and reading back should return a ProcessStep with `assignedTo` undefined.
+*For any* ProcessStep and any active ShopUser, assigning that user to the step and then reading the step back should return a ProcessStep with `assignedTo` equal to the assigned user's ID. Similarly, *for any* ProcessStep with an existing assignment, assigning `null` and reading back should return a ProcessStep with `assignedTo` undefined.
 
 **Validates: Requirements 1.5, 2.1, 2.2, 2.5**
 
 ### Property 2: Invalid assignment rejection
 
-_For any_ string that does not correspond to an active ShopUser ID (and is not null), calling `assignStep` with that string should throw a ValidationError. The step's `assigned_to` value should remain unchanged.
+*For any* string that does not correspond to an active ShopUser ID (and is not null), calling `assignStep` with that string should throw a ValidationError. The step's `assigned_to` value should remain unchanged.
 
 **Validates: Requirements 1.2, 1.3, 2.3**
 
 ### Property 3: Non-existent step assignment error
 
-_For any_ string that does not correspond to an existing ProcessStep ID, calling `assignStep` should throw a NotFoundError.
+*For any* string that does not correspond to an existing ProcessStep ID, calling `assignStep` should throw a NotFoundError.
 
 **Validates: Requirements 2.4**
 
 ### Property 4: Dropdown option list with search filtering
 
-_For any_ list of active ShopUsers and any search string, the filtered dropdown options should contain "Unassigned" as the first element, followed by exactly those users whose name contains the search string as a case-insensitive substring. When the search string is empty, all users should appear after "Unassigned".
+*For any* list of active ShopUsers and any search string, the filtered dropdown options should contain "Unassigned" as the first element, followed by exactly those users whose name contains the search string as a case-insensitive substring. When the search string is empty, all users should appear after "Unassigned".
 
 **Validates: Requirements 3.2, 3.3**
 
 ### Property 5: Serial status derivation
 
-_For any_ SerialNumber, if `currentStepIndex` equals -1 then the derived status should be `'completed'`, otherwise the derived status should be `'in-progress'`. The advancement panel should be shown if and only if the status is `'in-progress'`.
+*For any* SerialNumber, if `currentStepIndex` equals -1 then the derived status should be `'completed'`, otherwise the derived status should be `'in-progress'`. The advancement panel should be shown if and only if the status is `'in-progress'`.
 
 **Validates: Requirements 4.7, 5.4**
 
 ### Property 6: Step navigation URL round-trip
 
-_For any_ job ID, path ID, and step ID, constructing a navigation URL with these as query parameters and then parsing the query parameters from that URL should yield the original job ID, path ID, and step ID. Furthermore, _for any_ work queue containing a matching entry, the matching logic should find exactly that entry.
+*For any* job ID, path ID, and step ID, constructing a navigation URL with these as query parameters and then parsing the query parameters from that URL should yield the original job ID, path ID, and step ID. Furthermore, *for any* work queue containing a matching entry, the matching logic should find exactly that entry.
 
 **Validates: Requirements 6.2, 6.3**
 
 ### Property 7: Serial enrichment completeness
 
-_For any_ SerialNumber in the system with associated Job, Path, and ProcessSteps, the enriched serial object should contain: a non-empty `id`, a non-empty `jobName`, a non-empty `pathName`, a non-empty `currentStepName` (or "Completed" when `currentStepIndex` is -1), a valid `status` of either `'in-progress'` or `'completed'`, and a non-empty `createdAt`.
+*For any* SerialNumber in the system with associated Job, Path, and ProcessSteps, the enriched serial object should contain: a non-empty `id`, a non-empty `jobName`, a non-empty `pathName`, a non-empty `currentStepName` (or "Completed" when `currentStepIndex` is -1), a valid `status` of either `'in-progress'` or `'completed'`, and a non-empty `createdAt`.
 
 **Validates: Requirements 7.3, 11.2**
 
 ### Property 8: Serial search filter correctness
 
-_For any_ search query string and any list of EnrichedSerials, the filtered result should contain exactly those serials whose `id` contains the query as a case-insensitive substring. When the query is empty, the result should equal the original list.
+*For any* search query string and any list of EnrichedSerials, the filtered result should contain exactly those serials whose `id` contains the query as a case-insensitive substring. When the query is empty, the result should equal the original list.
 
 **Validates: Requirements 8.2**
 
 ### Property 9: Serial multi-filter AND logic
 
-_For any_ combination of filter criteria (jobName, pathName, stepName, status, assignee) and any list of EnrichedSerials, the filtered result should contain exactly those serials matching ALL active (non-empty) filter criteria simultaneously. When the assignee filter is "Unassigned", only serials with `assignedTo` undefined/null should pass. When all filters are empty/cleared, the result should equal the original list.
+*For any* combination of filter criteria (jobName, pathName, stepName, status, assignee) and any list of EnrichedSerials, the filtered result should contain exactly those serials matching ALL active (non-empty) filter criteria simultaneously. When the assignee filter is "Unassigned", only serials with `assignedTo` undefined/null should pass. When all filters are empty/cleared, the result should equal the original list.
 
 **Validates: Requirements 9.2, 9.3**
 
 ### Property 10: Serial sort correctness
 
-_For any_ list of EnrichedSerials and any valid sort column (id, jobName, currentStepName, status, createdAt), sorting in ascending order should produce a list where each element is less than or equal to the next element by that column's value. Sorting in descending order should produce the reverse. Toggling sort direction on the same column should reverse the order.
+*For any* list of EnrichedSerials and any valid sort column (id, jobName, currentStepName, status, createdAt), sorting in ascending order should produce a list where each element is less than or equal to the next element by that column's value. Sorting in descending order should produce the reverse. Toggling sort direction on the same column should reverse the order.
 
 **Validates: Requirements 10.1, 10.2, 10.3, 11.5**
 
 ### Property 11: Sibling serial filtering
 
-_For any_ SerialNumber with a given `jobId` and `pathId`, the sibling serial list should contain exactly those SerialNumbers in the system that share the same `jobId` and `pathId`, including the current serial itself.
+*For any* SerialNumber with a given `jobId` and `pathId`, the sibling serial list should contain exactly those SerialNumbers in the system that share the same `jobId` and `pathId`, including the current serial itself.
 
 **Validates: Requirements 11.1**
 
 ### Property 12: Serial summary counts
 
-_For any_ list of SerialNumbers, the summary counts should satisfy: `totalCount` equals the list length, `completedCount` equals the number of serials with `currentStepIndex === -1`, `inProgressCount` equals the number of serials with `currentStepIndex >= 0`, and `completedCount + inProgressCount === totalCount`.
+*For any* list of SerialNumbers, the summary counts should satisfy: `totalCount` equals the list length, `completedCount` equals the number of serials with `currentStepIndex === -1`, `inProgressCount` equals the number of serials with `currentStepIndex >= 0`, and `completedCount + inProgressCount === totalCount`.
 
 **Validates: Requirements 11.6**
 
 ## Error Handling
 
-| Scenario                                        | Layer                          | Behavior                                                                      |
-| ----------------------------------------------- | ------------------------------ | ----------------------------------------------------------------------------- |
-| Assign non-existent user to step                | `pathService` → API 400        | Return ValidationError: "User not found or inactive"                          |
-| Assign to non-existent step                     | `pathService` → API 404        | Return NotFoundError: "ProcessStep not found"                                 |
-| Assignment API call fails                       | `StepAssignmentDropdown`       | Show error toast, revert dropdown to previous value                           |
-| Serial not found on part detail page            | `serialService` → API 404      | Show "Serial not found" error with back link                                  |
-| Path/Job fetch fails on part detail             | `usePartDetail`                | Show error message with retry button                                          |
-| Serial advancement fails (already completed)    | `serialService` → API 400      | Show toast, refresh page to reflect current state                             |
-| Serial browser fetch fails                      | `useSerialBrowser`             | Show error state with retry button                                            |
-| Operator page receives invalid query params     | `operator.vue`                 | Ignore params, show normal queue (no auto-select)                             |
-| Operator page query params match no queue entry | `operator.vue`                 | Show queue list normally, no auto-select                                      |
-| Step click on step with 0 parts                 | `StepTracker` → `operator.vue` | Navigate to operator page; queue shows entry only if parts exist at that step |
+| Scenario | Layer | Behavior |
+|----------|-------|----------|
+| Assign non-existent user to step | `pathService` → API 400 | Return ValidationError: "User not found or inactive" |
+| Assign to non-existent step | `pathService` → API 404 | Return NotFoundError: "ProcessStep not found" |
+| Assignment API call fails | `StepAssignmentDropdown` | Show error toast, revert dropdown to previous value |
+| Serial not found on part detail page | `serialService` → API 404 | Show "Serial not found" error with back link |
+| Path/Job fetch fails on part detail | `usePartDetail` | Show error message with retry button |
+| Serial advancement fails (already completed) | `serialService` → API 400 | Show toast, refresh page to reflect current state |
+| Serial browser fetch fails | `useSerialBrowser` | Show error state with retry button |
+| Operator page receives invalid query params | `operator.vue` | Ignore params, show normal queue (no auto-select) |
+| Operator page query params match no queue entry | `operator.vue` | Show queue list normally, no auto-select |
+| Step click on step with 0 parts | `StepTracker` → `operator.vue` | Navigate to operator page; queue shows entry only if parts exist at that step |
 
 ### Error Recovery Patterns
 
@@ -398,21 +399,20 @@ Library: `fast-check` (already installed)
 Minimum iterations: 100 per property
 
 Each property test will be tagged with:
-
 ```
 Feature: step-assignment-and-part-views, Property {N}: {title}
 ```
 
 Property tests will live in `tests/properties/` following the existing pattern:
 
-| File                                | Properties                                                                               |
-| ----------------------------------- | ---------------------------------------------------------------------------------------- |
-| `stepAssignment.property.test.ts`   | P1: Assignment round-trip, P2: Invalid assignment rejection, P3: Non-existent step error |
-| `dropdownFilter.property.test.ts`   | P4: Dropdown option list with search filtering                                           |
-| `serialEnrichment.property.test.ts` | P5: Status derivation, P7: Enrichment completeness, P12: Summary counts                  |
-| `serialBrowser.property.test.ts`    | P8: Search filter, P9: Multi-filter AND logic, P10: Sort correctness                     |
-| `stepNavigation.property.test.ts`   | P6: URL round-trip                                                                       |
-| `siblingSerials.property.test.ts`   | P11: Sibling serial filtering                                                            |
+| File | Properties |
+|------|-----------|
+| `stepAssignment.property.test.ts` | P1: Assignment round-trip, P2: Invalid assignment rejection, P3: Non-existent step error |
+| `dropdownFilter.property.test.ts` | P4: Dropdown option list with search filtering |
+| `serialEnrichment.property.test.ts` | P5: Status derivation, P7: Enrichment completeness, P12: Summary counts |
+| `serialBrowser.property.test.ts` | P8: Search filter, P9: Multi-filter AND logic, P10: Sort correctness |
+| `stepNavigation.property.test.ts` | P6: URL round-trip |
+| `siblingSerials.property.test.ts` | P11: Sibling serial filtering |
 
 ### Unit Tests
 

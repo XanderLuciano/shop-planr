@@ -1,7 +1,7 @@
 ---
-title: 'Audit API'
-description: 'Immutable audit trail — query logs of all production events by action, user, serial, or date range'
-icon: 'i-lucide-scroll-text'
+title: "Audit API"
+description: "Immutable audit trail — query logs of all production events by action, user, serial, or date range"
+icon: "i-lucide-scroll-text"
 navigation:
   order: 7
 ---
@@ -26,22 +26,22 @@ Each audit entry records a single event with the following core fields:
 
 The `AuditAction` type defines 14 distinct event types:
 
-| Action                    | Description                                                                             |
-| ------------------------- | --------------------------------------------------------------------------------------- |
-| `cert_attached`           | A certificate was attached to a serial number at a process step                         |
-| `serial_created`          | A batch of serial numbers was created                                                   |
-| `serial_advanced`         | A serial number was advanced from one step to the next                                  |
-| `serial_completed`        | A serial number completed its final step                                                |
-| `note_created`            | A process step note or defect was recorded                                              |
-| `serial_scrapped`         | A serial number was scrapped (metadata includes reason)                                 |
-| `serial_force_completed`  | A serial was force-completed, bypassing remaining steps                                 |
-| `step_override_created`   | A step override was created for a serial                                                |
-| `step_override_reversed`  | A step override was reversed                                                            |
-| `step_deferred`           | A step was deferred during advancement                                                  |
-| `step_skipped`            | An optional step was skipped during advancement                                         |
-| `deferred_step_completed` | A previously deferred step was completed                                                |
-| `step_waived`             | A step was waived with approval (metadata includes reason and approver)                 |
-| `bom_edited`              | A BOM was edited via the versioned edit endpoint (metadata includes change description) |
+| Action | Description |
+|--------|-------------|
+| `cert_attached` | A certificate was attached to a serial number at a process step |
+| `serial_created` | A batch of serial numbers was created |
+| `serial_advanced` | A serial number was advanced from one step to the next |
+| `serial_completed` | A serial number completed its final step |
+| `note_created` | A process step note or defect was recorded |
+| `serial_scrapped` | A serial number was scrapped (metadata includes reason) |
+| `serial_force_completed` | A serial was force-completed, bypassing remaining steps |
+| `step_override_created` | A step override was created for a serial |
+| `step_override_reversed` | A step override was reversed |
+| `step_deferred` | A step was deferred during advancement |
+| `step_skipped` | An optional step was skipped during advancement |
+| `deferred_step_completed` | A previously deferred step was completed |
+| `step_waived` | A step was waived with approval (metadata includes reason and approver) |
+| `bom_edited` | A BOM was edited via the versioned edit endpoint (metadata includes change description) |
 
 ### Immutability
 
@@ -60,10 +60,10 @@ Audit entries are created automatically by the service layer. You do not need to
 
 ## Endpoints
 
-| Method | Path                                              | Description                                               |
-| ------ | ------------------------------------------------- | --------------------------------------------------------- |
-| `GET`  | [`/api/audit`](/api-docs/audit/list)              | List audit entries with optional pagination               |
-| `GET`  | [`/api/audit/serial/:id`](/api-docs/audit/serial) | Get the complete audit trail for a specific serial number |
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | [`/api/audit`](/api-docs/audit/list) | List audit entries with optional pagination |
+| `GET` | [`/api/audit/serial/:id`](/api-docs/audit/serial) | Get the complete audit trail for a specific serial number |
 
 ## Related APIs
 

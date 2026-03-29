@@ -1,7 +1,7 @@
 ---
-title: 'Paths API'
-description: 'Manufacturing route management — define ordered process steps, configure advancement modes, and track serial number distribution across production stages'
-icon: 'i-lucide-route'
+title: "Paths API"
+description: "Manufacturing route management — define ordered process steps, configure advancement modes, and track serial number distribution across production stages"
+icon: "i-lucide-route"
 navigation:
   order: 2
 ---
@@ -14,7 +14,7 @@ The Paths API manages manufacturing routes within production jobs. A **path** de
 
 ### Paths and Jobs
 
-A path always belongs to a single job (referenced by `jobId`). While the job defines _what_ is being produced and _how many_, the path defines _how_ — the ordered sequence of operations that each unit must pass through. A job with a goal quantity of 100 might split production across two paths: a "Main Route" handling 80 units and a "Rework Path" handling 20 units that failed initial QC.
+A path always belongs to a single job (referenced by `jobId`). While the job defines *what* is being produced and *how many*, the path defines *how* — the ordered sequence of operations that each unit must pass through. A job with a goal quantity of 100 might split production across two paths: a "Main Route" handling 80 units and a "Rework Path" handling 20 units that failed initial QC.
 
 Each path carries its own `goalQuantity`, which represents the number of units expected to travel that specific route. Path-level goal quantities do not need to sum to the job-level goal — they are independent targets used for per-path progress tracking.
 
@@ -54,13 +54,13 @@ When retrieving a path via `GET /api/paths/:id`, the response includes a `distri
 
 ## Endpoints
 
-| Method   | Path                                                                  | Description                                |
-| -------- | --------------------------------------------------------------------- | ------------------------------------------ |
-| `GET`    | [`/api/paths/:id`](/api-docs/paths/get)                               | Get a path with step distribution          |
-| `POST`   | [`/api/paths`](/api-docs/paths/create)                                | Create a new path with process steps       |
-| `PUT`    | [`/api/paths/:id`](/api-docs/paths/update)                            | Update a path's name, goal, mode, or steps |
-| `DELETE` | [`/api/paths/:id`](/api-docs/paths/delete)                            | Delete a path                              |
-| `PATCH`  | [`/api/paths/:id/advancement-mode`](/api-docs/paths/advancement-mode) | Update only the advancement mode           |
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | [`/api/paths/:id`](/api-docs/paths/get) | Get a path with step distribution |
+| `POST` | [`/api/paths`](/api-docs/paths/create) | Create a new path with process steps |
+| `PUT` | [`/api/paths/:id`](/api-docs/paths/update) | Update a path's name, goal, mode, or steps |
+| `DELETE` | [`/api/paths/:id`](/api-docs/paths/delete) | Delete a path |
+| `PATCH` | [`/api/paths/:id/advancement-mode`](/api-docs/paths/advancement-mode) | Update only the advancement mode |
 
 ## Related APIs
 

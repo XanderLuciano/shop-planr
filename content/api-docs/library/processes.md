@@ -1,11 +1,11 @@
 ---
-title: 'List & Create Processes'
-description: 'Retrieve all process library entries or create a new one'
-method: 'GET'
-endpoint: '/api/library/processes'
-service: 'libraryService'
-category: 'Library'
-responseType: 'ProcessLibraryEntry[]'
+title: "List & Create Processes"
+description: "Retrieve all process library entries or create a new one"
+method: "GET"
+endpoint: "/api/library/processes"
+service: "libraryService"
+category: "Library"
+responseType: "ProcessLibraryEntry[]"
 errorCodes: [400, 500]
 navigation:
   order: 1
@@ -29,16 +29,16 @@ No request body or query parameters.
 
 Returns an array of `ProcessLibraryEntry` objects. May be empty if no entries exist.
 
-| Field       | Type     | Description                                    |
-| ----------- | -------- | ---------------------------------------------- |
-| `id`        | `string` | Unique entry identifier (e.g. `"plib_a1b2c3"`) |
-| `name`      | `string` | Process step name                              |
-| `createdAt` | `string` | ISO 8601 creation timestamp                    |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique entry identifier (e.g. `"plib_a1b2c3"`) |
+| `name` | `string` | Process step name |
+| `createdAt` | `string` | ISO 8601 creation timestamp |
 
 #### 500 Internal Server Error
 
-| Condition             | Message                   |
-| --------------------- | ------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Database read failure | `"Internal Server Error"` |
 
 ### Examples
@@ -94,9 +94,9 @@ Creates a new entry in the process library. The name must be unique (exact match
 
 #### Request Body
 
-| Field  | Type     | Required | Description                                                                                                                    |
-| ------ | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `name` | `string` | Yes      | The process step name to add. Must be non-empty. Trimmed of leading/trailing whitespace. Must not duplicate an existing entry. |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | `string` | Yes | The process step name to add. Must be non-empty. Trimmed of leading/trailing whitespace. Must not duplicate an existing entry. |
 
 ### Response
 
@@ -104,24 +104,24 @@ Creates a new entry in the process library. The name must be unique (exact match
 
 Returns the newly created `ProcessLibraryEntry` object.
 
-| Field       | Type     | Description                                               |
-| ----------- | -------- | --------------------------------------------------------- |
-| `id`        | `string` | Server-generated unique identifier (e.g. `"plib_m3n4o5"`) |
-| `name`      | `string` | The trimmed process name                                  |
-| `createdAt` | `string` | ISO 8601 creation timestamp                               |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Server-generated unique identifier (e.g. `"plib_m3n4o5"`) |
+| `name` | `string` | The trimmed process name |
+| `createdAt` | `string` | ISO 8601 creation timestamp |
 
 #### 400 Bad Request
 
-| Condition                                             | Message                         |
-| ----------------------------------------------------- | ------------------------------- |
-| `name` is missing or empty                            | `"name is required"`            |
-| `name` is only whitespace                             | `"name is required"`            |
+| Condition | Message |
+|-----------|---------|
+| `name` is missing or empty | `"name is required"` |
+| `name` is only whitespace | `"name is required"` |
 | `name` already exists in the library (after trimming) | `"Process name already exists"` |
 
 #### 500 Internal Server Error
 
-| Condition              | Message                   |
-| ---------------------- | ------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Database write failure | `"Internal Server Error"` |
 
 ### Examples

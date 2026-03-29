@@ -1,12 +1,12 @@
 ---
-title: 'Create Note'
-description: 'Create a step note for one or more serial numbers at a process step'
-method: 'POST'
-endpoint: '/api/notes'
-service: 'noteService'
-category: 'Notes'
-requestBody: '{ jobId, pathId, stepId, serialIds, text, userId }'
-responseType: 'StepNote'
+title: "Create Note"
+description: "Create a step note for one or more serial numbers at a process step"
+method: "POST"
+endpoint: "/api/notes"
+service: "noteService"
+category: "Notes"
+requestBody: "{ jobId, pathId, stepId, serialIds, text, userId }"
+responseType: "StepNote"
 errorCodes: [400, 500]
 navigation:
   order: 1
@@ -26,14 +26,14 @@ Creating a note also generates a `note_created` audit entry with the user, job, 
 
 ### Request Body
 
-| Field       | Type       | Required | Description                                                                                                                                        |
-| ----------- | ---------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `jobId`     | `string`   | Yes      | The job ID this note belongs to. Used for Jira integration (to find the linked ticket) and audit trail recording.                                  |
-| `pathId`    | `string`   | Yes      | The path ID this note belongs to. Used to resolve the step name when pushing to Jira.                                                              |
-| `stepId`    | `string`   | Yes      | The process step ID where the observation was made. Notes are queryable by step.                                                                   |
-| `serialIds` | `string[]` | Yes      | Array of serial number IDs this note applies to. Must contain at least one ID. A single note can reference multiple serials (e.g. a batch defect). |
-| `text`      | `string`   | Yes      | The note content. Must be a non-empty string. Trimmed of leading/trailing whitespace.                                                              |
-| `userId`    | `string`   | Yes      | The user ID of the note author. Stored as `createdBy` on the note and recorded in the audit trail.                                                 |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `jobId` | `string` | Yes | The job ID this note belongs to. Used for Jira integration (to find the linked ticket) and audit trail recording. |
+| `pathId` | `string` | Yes | The path ID this note belongs to. Used to resolve the step name when pushing to Jira. |
+| `stepId` | `string` | Yes | The process step ID where the observation was made. Notes are queryable by step. |
+| `serialIds` | `string[]` | Yes | Array of serial number IDs this note applies to. Must contain at least one ID. A single note can reference multiple serials (e.g. a batch defect). |
+| `text` | `string` | Yes | The note content. Must be a non-empty string. Trimmed of leading/trailing whitespace. |
+| `userId` | `string` | Yes | The user ID of the note author. Stored as `createdBy` on the note and recorded in the audit trail. |
 
 ## Response
 
@@ -41,31 +41,31 @@ Creating a note also generates a `note_created` audit entry with the user, job, 
 
 Returns the newly created `StepNote` object with server-generated fields.
 
-| Field           | Type                  | Description                                               |
-| --------------- | --------------------- | --------------------------------------------------------- |
-| `id`            | `string`              | Server-generated unique identifier (e.g. `"note_a1b2c3"`) |
-| `jobId`         | `string`              | Job ID as provided                                        |
-| `pathId`        | `string`              | Path ID as provided                                       |
-| `stepId`        | `string`              | Step ID as provided                                       |
-| `serialIds`     | `string[]`            | Serial IDs as provided                                    |
-| `text`          | `string`              | Trimmed note text                                         |
-| `createdBy`     | `string`              | User ID of the author (from `userId` input)               |
-| `createdAt`     | `string`              | ISO 8601 timestamp of creation                            |
-| `pushedToJira`  | `boolean`             | Always `false` for newly created notes                    |
-| `jiraCommentId` | `string \| undefined` | Always absent for newly created notes                     |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Server-generated unique identifier (e.g. `"note_a1b2c3"`) |
+| `jobId` | `string` | Job ID as provided |
+| `pathId` | `string` | Path ID as provided |
+| `stepId` | `string` | Step ID as provided |
+| `serialIds` | `string[]` | Serial IDs as provided |
+| `text` | `string` | Trimmed note text |
+| `createdBy` | `string` | User ID of the author (from `userId` input) |
+| `createdAt` | `string` | ISO 8601 timestamp of creation |
+| `pushedToJira` | `boolean` | Always `false` for newly created notes |
+| `jiraCommentId` | `string \| undefined` | Always absent for newly created notes |
 
 ### 400 Bad Request
 
-| Condition                             | Message                   |
-| ------------------------------------- | ------------------------- |
-| `text` is missing or empty            | `"text is required"`      |
-| `text` is only whitespace             | `"text is required"`      |
+| Condition | Message |
+|-----------|---------|
+| `text` is missing or empty | `"text is required"` |
+| `text` is only whitespace | `"text is required"` |
 | `serialIds` is missing or empty array | `"serialIds is required"` |
 
 ### 500 Internal Server Error
 
-| Condition              | Message                   |
-| ---------------------- | ------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Database write failure | `"Internal Server Error"` |
 
 ## Examples

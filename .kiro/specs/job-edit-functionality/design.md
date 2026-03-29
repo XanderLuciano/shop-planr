@@ -54,34 +54,13 @@ interface UpdatePathInput {
   name?: string
   goalQuantity?: number
   advancementMode?: 'strict' | 'flexible' | 'per_step'
-  steps?: {
-    name: string
-    location?: string
-    optional?: boolean
-    dependencyType?: 'physical' | 'preferred' | 'completion_gate'
-  }[]
+  steps?: { name: string; location?: string; optional?: boolean; dependencyType?: 'physical' | 'preferred' | 'completion_gate' }[]
 }
 
 // useJobForm composable types — already defined, no changes needed
-interface JobDraft {
-  name: string
-  goalQuantity: number
-}
-interface PathDraft {
-  _clientId: string
-  _existingId?: string
-  name: string
-  goalQuantity: number
-  advancementMode: string
-  steps: StepDraft[]
-}
-interface StepDraft {
-  _clientId: string
-  name: string
-  location: string
-  optional: boolean
-  dependencyType: string
-}
+interface JobDraft { name: string; goalQuantity: number }
+interface PathDraft { _clientId: string; _existingId?: string; name: string; goalQuantity: number; advancementMode: string; steps: StepDraft[] }
+interface StepDraft { _clientId: string; name: string; location: string; optional: boolean; dependencyType: string }
 ```
 
 ## Key Functions with Formal Specifications
@@ -97,12 +76,10 @@ interface StepDraft {
 ```
 
 **Preconditions:**
-
 - `app/pages/jobs/[id]/edit.vue` exists and contains a working edit page component
 - `app/pages/jobs/[id].vue` does NOT contain `<NuxtPage />` (confirmed)
 
 **Postconditions:**
-
 - `app/pages/jobs/edit/[id].vue` exists with the same component code
 - `app/pages/jobs/[id]/edit.vue` is deleted
 - `app/pages/jobs/[id]/` directory is removed (empty after move)
@@ -119,11 +96,9 @@ navigateTo(`/jobs/edit/${encodeURIComponent(jobId)}`)
 ```
 
 **Preconditions:**
-
 - `jobId` is a valid, non-empty string (extracted from `route.params.id`)
 
 **Postconditions:**
-
 - Clicking the Edit button navigates to `/jobs/edit/:id`
 - The edit page mounts and renders the `JobCreationForm` in edit mode
 
@@ -144,12 +119,10 @@ function onCancel() {
 ```
 
 **Preconditions:**
-
 - `jobId` is extracted from `route.params.id` on the edit page
 - Save or cancel action has been triggered by the user
 
 **Postconditions:**
-
 - After save: user is redirected to `/jobs/:id` detail page showing updated data
 - After cancel: user is redirected to `/jobs/:id` detail page with no changes
 - Back link navigates to the specific job detail page, not the jobs list
@@ -165,12 +138,10 @@ function onCancel() {
 ```
 
 **Preconditions:**
-
 - `ROUTE_TOGGLE_MAP` has entry `'/jobs': 'jobs'`
 - `isPageEnabled()` uses `startsWith(basePath + '/')` matching
 
 **Postconditions:**
-
 - `/jobs/edit/:id` is enabled/disabled based on the `jobs` page toggle
 - No regression in page guard behavior
 

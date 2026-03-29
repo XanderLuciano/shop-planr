@@ -15,7 +15,7 @@ graph TD
     C --> D[settingsService]
     D --> E[settingsRepository]
     E --> F[SQLite settings table]
-
+    
     G[default.vue Sidebar] -->|reads pageToggles| B
     H[Route Middleware] -->|reads pageToggles| B
     H -->|redirect if disabled| I[Dashboard /]
@@ -49,7 +49,6 @@ sequenceDiagram
 **Purpose**: Renders a list of toggleable pages with on/off switches in the Settings page.
 
 **Interface**:
-
 ```typescript
 // Props
 interface PageVisibilitySettingsProps {
@@ -63,7 +62,6 @@ interface PageVisibilitySettingsEmits {
 ```
 
 **Responsibilities**:
-
 - Display each toggleable page with its label, icon, and current state
 - Prevent toggling of always-visible pages (Dashboard, Settings)
 - Emit updated toggles on switch change
@@ -73,7 +71,6 @@ interface PageVisibilitySettingsEmits {
 **Purpose**: Filter `navItems` based on `pageToggles` from settings.
 
 **Responsibilities**:
-
 - Read `pageToggles` from `useSettings()` composable
 - Compute filtered nav items reactively
 - Only show items whose corresponding page is enabled
@@ -83,7 +80,6 @@ interface PageVisibilitySettingsEmits {
 **Purpose**: Prevent navigation to disabled pages via direct URL or programmatic navigation.
 
 **Responsibilities**:
-
 - Run on every client-side navigation
 - Check if the target route's page is disabled in `pageToggles`
 - Redirect to `/` if the page is disabled
@@ -108,7 +104,6 @@ interface PageToggles {
 ```
 
 **Validation Rules**:
-
 - All keys must be boolean values
 - Missing keys default to `true` (page visible)
 - Dashboard and Settings are not included — they are always visible
@@ -120,7 +115,7 @@ interface AppSettings {
   id: string
   jiraConnection: JiraConnectionSettings
   jiraFieldMappings: JiraFieldMapping[]
-  pageToggles: PageToggles // NEW
+  pageToggles: PageToggles          // NEW
   updatedAt: string
 }
 ```
@@ -142,6 +137,7 @@ const ROUTE_TOGGLE_MAP: Record<string, keyof PageToggles> = {
 ```
 
 Detail routes (e.g., `/jobs/123`, `/serials/456`, `/parts/step/abc`) are matched by checking if the route path starts with a disabled base path.
+
 
 ### Default PageToggles
 
@@ -177,18 +173,16 @@ The JSON is stored as TEXT and parsed/serialized in the repository layer, consis
 function updateSettings(input: {
   jiraConnection?: Partial<JiraConnectionSettings>
   jiraFieldMappings?: JiraFieldMapping[]
-  pageToggles?: Partial<PageToggles> // NEW
+  pageToggles?: Partial<PageToggles>           // NEW
 }): AppSettings
 ```
 
 **Preconditions:**
-
 - `input` is a non-null object
 - If `input.pageToggles` is provided, all values must be booleans
 - Keys in `pageToggles` must be valid page identifiers from the `PageToggles` type
 
 **Postconditions:**
-
 - Returns updated `AppSettings` with merged `pageToggles`
 - Existing toggle values not in `input.pageToggles` are preserved
 - `updatedAt` is set to current timestamp
@@ -199,16 +193,17 @@ function updateSettings(input: {
 ### Function 2: isPageEnabled()
 
 ```typescript
-function isPageEnabled(pageToggles: PageToggles, routePath: string): boolean
+function isPageEnabled(
+  pageToggles: PageToggles,
+  routePath: string
+): boolean
 ```
 
 **Preconditions:**
-
 - `pageToggles` is a valid `PageToggles` object (may have missing keys)
 - `routePath` is a non-empty string starting with `/`
 
 **Postconditions:**
-
 - Returns `true` if the route's corresponding page toggle is enabled or if the route has no toggle (always-visible)
 - Returns `false` only if the route maps to a toggle key and that key is `false`
 - Dashboard (`/`) and Settings (`/settings`) always return `true`
@@ -226,12 +221,10 @@ function getFilteredNavItems(
 ```
 
 **Preconditions:**
-
 - `allItems` is the full static nav items array
 - `pageToggles` is a valid `PageToggles` object
 
 **Postconditions:**
-
 - Returns a subset of `allItems` where each item's `to` route is enabled
 - Dashboard and Settings items are always included
 - Order of items is preserved
@@ -239,7 +232,6 @@ function getFilteredNavItems(
 - Length of result ≥ 2 (Dashboard + Settings always present)
 
 **Loop Invariants:**
-
 - For each processed item: item is included iff `isPageEnabled(pageToggles, item.to) === true`
 
 ## Algorithmic Pseudocode
@@ -248,7 +240,10 @@ function getFilteredNavItems(
 
 ```typescript
 // In settingsService.updateSettings() — extended merge logic
-function mergePageToggles(current: PageToggles, partial: Partial<PageToggles>): PageToggles {
+function mergePageToggles(
+  current: PageToggles,
+  partial: Partial<PageToggles>
+): PageToggles {
   // Start with current state (or defaults if first time)
   const merged = { ...DEFAULT_PAGE_TOGGLES, ...current }
 
@@ -273,14 +268,14 @@ function pageGuardMiddleware(to: RouteLocationNormalized): NavigateToResult {
 
   // Always allow: dashboard, settings, and non-page routes
   if (to.path === '/' || to.path === '/settings') {
-    return // allow navigation
+    return  // allow navigation
   }
 
   // Find matching toggle by checking route prefixes
   for (const [basePath, toggleKey] of Object.entries(ROUTE_TOGGLE_MAP)) {
     if (to.path === basePath || to.path.startsWith(basePath + '/')) {
       if (pageToggles[toggleKey] === false) {
-        return navigateTo('/') // redirect to dashboard
+        return navigateTo('/')  // redirect to dashboard
       }
       break
     }
@@ -297,7 +292,7 @@ function pageGuardMiddleware(to: RouteLocationNormalized): NavigateToResult {
 // In default.vue — computed filtered items
 const filteredNavItems = computed(() => {
   const toggles = settings.value?.pageToggles ?? DEFAULT_PAGE_TOGGLES
-  return navItems.filter((item) => isPageEnabled(toggles, item.to as string))
+  return navItems.filter(item => isPageEnabled(toggles, item.to as string))
 })
 ```
 
@@ -335,53 +330,53 @@ await updateSettings({
 
 ## Correctness Properties
 
-_A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
+*A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
 ### Property 1: Always-visible invariant
 
-_For any_ PageToggles configuration (including all-false, partial, or empty), `isPageEnabled(pageToggles, '/')` and `isPageEnabled(pageToggles, '/settings')` always return `true`, and Dashboard and Settings always appear in the filtered sidebar items.
+*For any* PageToggles configuration (including all-false, partial, or empty), `isPageEnabled(pageToggles, '/')` and `isPageEnabled(pageToggles, '/settings')` always return `true`, and Dashboard and Settings always appear in the filtered sidebar items.
 
 **Validates: Requirements 4.2, 5.3, 6.1**
 
 ### Property 2: Toggle-visibility consistency for sidebar
 
-_For any_ PageToggles configuration and any navigation item, the item appears in the filtered sidebar list if and only if `isPageEnabled(pageToggles, item.to)` returns `true`.
+*For any* PageToggles configuration and any navigation item, the item appears in the filtered sidebar list if and only if `isPageEnabled(pageToggles, item.to)` returns `true`.
 
 **Validates: Requirements 4.1**
 
 ### Property 3: Route access matches toggle state
 
-_For any_ route path and any PageToggles configuration, `isPageEnabled` returns `false` only when the route maps to a toggle key in ROUTE_TOGGLE_MAP and that key is `false`. Detail routes (e.g., `/jobs/123`) inherit their parent page's toggle. Routes with no toggle mapping always return `true`.
+*For any* route path and any PageToggles configuration, `isPageEnabled` returns `false` only when the route maps to a toggle key in ROUTE_TOGGLE_MAP and that key is `false`. Detail routes (e.g., `/jobs/123`) inherit their parent page's toggle. Routes with no toggle mapping always return `true`.
 
 **Validates: Requirements 5.1, 5.2, 5.4**
 
 ### Property 4: Sidebar item count bounds
 
-_For any_ PageToggles configuration, the length of the filtered nav items array is at least 2 (Dashboard + Settings) and at most the total number of nav items.
+*For any* PageToggles configuration, the length of the filtered nav items array is at least 2 (Dashboard + Settings) and at most the total number of nav items.
 
 **Validates: Requirements 6.1, 6.2**
 
 ### Property 5: Partial update preservation
 
-_For any_ existing PageToggles state and any partial update containing a subset of keys, the merge result preserves the values of all keys not present in the partial update.
+*For any* existing PageToggles state and any partial update containing a subset of keys, the merge result preserves the values of all keys not present in the partial update.
 
 **Validates: Requirements 2.2**
 
 ### Property 6: Unknown keys ignored in merge
 
-_For any_ input object containing a mix of valid PageToggles keys and unknown keys, the merge result contains only valid PageToggles keys with correct values, and unknown keys are discarded.
+*For any* input object containing a mix of valid PageToggles keys and unknown keys, the merge result contains only valid PageToggles keys with correct values, and unknown keys are discarded.
 
 **Validates: Requirements 2.3**
 
 ### Property 7: Missing keys default to true
 
-_For any_ partial PageToggles object with fewer than 9 keys, the missing keys are treated as `true` (enabled) when used for sidebar filtering or route guarding.
+*For any* partial PageToggles object with fewer than 9 keys, the missing keys are treated as `true` (enabled) when used for sidebar filtering or route guarding.
 
 **Validates: Requirements 3.2**
 
 ### Property 8: Idempotent toggle
 
-_For any_ PageToggles state, merging the state with itself produces an identical PageToggles result (aside from `updatedAt`).
+*For any* PageToggles state, merging the state with itself produces an identical PageToggles result (aside from `updatedAt`).
 
 **Validates: Requirements 7.1**
 

@@ -1,11 +1,11 @@
 ---
-title: 'Delete Location'
-description: 'Delete a location library entry by ID'
-method: 'DELETE'
-endpoint: '/api/library/locations/:id'
-service: 'libraryService'
-category: 'Library'
-responseType: '{ success: true }'
+title: "Delete Location"
+description: "Delete a location library entry by ID"
+method: "DELETE"
+endpoint: "/api/library/locations/:id"
+service: "libraryService"
+category: "Library"
+responseType: "{ success: true }"
 errorCodes: [404, 500]
 navigation:
   order: 4
@@ -23,9 +23,9 @@ Deleting a library entry does **not** affect any existing steps that use the sam
 
 ### Path Parameters
 
-| Parameter | Type     | Required | Description                                                     |
-| --------- | -------- | -------- | --------------------------------------------------------------- |
-| `id`      | `string` | Yes      | The location library entry ID to delete (e.g. `"lloc_a1b2c3"`). |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` | Yes | The location library entry ID to delete (e.g. `"lloc_a1b2c3"`). |
 
 ## Response
 
@@ -33,20 +33,20 @@ Deleting a library entry does **not** affect any existing steps that use the sam
 
 Returns a success confirmation.
 
-| Field     | Type      | Description                          |
-| --------- | --------- | ------------------------------------ |
+| Field | Type | Description |
+|-------|------|-------------|
 | `success` | `boolean` | Always `true` on successful deletion |
 
 ### 404 Not Found
 
-| Condition                                          | Message                                  |
-| -------------------------------------------------- | ---------------------------------------- |
+| Condition | Message |
+|-----------|---------|
 | No location library entry exists with the given ID | `"LocationLibraryEntry not found: {id}"` |
 
 ### 500 Internal Server Error
 
-| Condition               | Message                   |
-| ----------------------- | ------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Database delete failure | `"Internal Server Error"` |
 
 ## Examples

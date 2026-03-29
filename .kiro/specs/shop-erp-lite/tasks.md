@@ -74,7 +74,7 @@ Implement SHOP_ERP as a Nuxt 4 full-stack application with SQLite persistence, r
     - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5, 15.1_
 
   - [x] 2.2 Implement JobService
-    - Create `server/services/jobService.ts` with `createJobService(repos)` — `createJob` (validates goalQuantity > 0, name non-empty), `getJob`, `listJobs`, `updateJob` (recalculates progress on goalQuantity change), `computeJobProgress` (completed / goal \* 100, can exceed 100), `getJobPartCount` (sum of SNs across all paths)
+    - Create `server/services/jobService.ts` with `createJobService(repos)` — `createJob` (validates goalQuantity > 0, name non-empty), `getJob`, `listJobs`, `updateJob` (recalculates progress on goalQuantity change), `computeJobProgress` (completed / goal * 100, can exceed 100), `getJobPartCount` (sum of SNs across all paths)
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 7.1, 7.5, 7.7_
 
   - [x] 2.3 Implement PathService
@@ -386,7 +386,7 @@ Implement SHOP_ERP as a Nuxt 4 full-stack application with SQLite persistence, r
     - Create `tests/properties/templateIndependence.property.test.ts`
     - **Validates: Requirements 8.2, 8.3, 8.4**
 
-  - [ ]\* 15.9 Write property test for BOM Roll-Up Consistency
+  - [ ]* 15.9 Write property test for BOM Roll-Up Consistency
     - **Property 9: BOM Roll-Up Consistency**
     - Test that aggregated completed/in-progress counts equal sums from contributing jobs, zero jobs yields zero counts
     - Create `tests/properties/bomRollUp.property.test.ts`
@@ -410,7 +410,7 @@ Implement SHOP_ERP as a Nuxt 4 full-stack application with SQLite persistence, r
     - Create `tests/properties/malformedJson.property.test.ts`
     - **Validates: Requirements 12.4**
 
-  - [ ]\* 15.13 Write property test for Jira Ticket Filtering
+  - [ ]* 15.13 Write property test for Jira Ticket Filtering
     - **Property 13: Jira Ticket Filtering**
     - Test that Jira dashboard displays only tickets whose keys don't match any existing Job's jiraTicketKey
     - Create `tests/properties/jiraFiltering.property.test.ts`

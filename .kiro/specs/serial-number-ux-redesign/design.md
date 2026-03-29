@@ -64,8 +64,8 @@ SectionCard (new) ← serials/[id].vue → existing child components (unchanged 
 ```typescript
 // Props
 interface SectionCardProps {
-  title: string // Section heading text
-  icon: string // Lucide icon name (e.g. "i-lucide-route")
+  title: string       // Section heading text
+  icon: string        // Lucide icon name (e.g. "i-lucide-route")
 }
 
 // Slots
@@ -73,7 +73,6 @@ interface SectionCardProps {
 ```
 
 **Template structure:**
-
 ```vue
 <UCard variant="outline" :ui="{ header: 'px-4 py-3 sm:px-4', body: 'p-4 sm:p-4' }">
   <template #header>
@@ -96,7 +95,7 @@ interface SectionCardProps {
 // Updated props
 interface PartDetailNotesProps {
   serialId: string
-  hideHeading?: boolean // NEW — suppress internal heading
+  hideHeading?: boolean  // NEW — suppress internal heading
 }
 ```
 
@@ -108,12 +107,12 @@ interface PartDetailNotesProps {
 
 **Section mapping:**
 
-| Section Card    | Icon                          | Title           | Content                                                   |
-| --------------- | ----------------------------- | --------------- | --------------------------------------------------------- |
-| Routing         | `i-lucide-route`              | Routing         | Step list + overrides + deferred steps + completed banner |
-| Certificates    | `i-lucide-file-badge`         | Certificates    | CertAttachButton + cert list + empty state                |
-| Notes           | `i-lucide-message-square`     | Notes           | PartDetailNotes (hideHeading)                             |
-| Advance Process | `i-lucide-arrow-right-circle` | Advance Process | ProcessAdvancementPanel                                   |
+| Section Card | Icon | Title | Content |
+|---|---|---|---|
+| Routing | `i-lucide-route` | Routing | Step list + overrides + deferred steps + completed banner |
+| Certificates | `i-lucide-file-badge` | Certificates | CertAttachButton + cert list + empty state |
+| Notes | `i-lucide-message-square` | Notes | PartDetailNotes (hideHeading) |
+| Advance Process | `i-lucide-arrow-right-circle` | Advance Process | ProcessAdvancementPanel |
 
 ## Data Models
 
@@ -125,43 +124,44 @@ No data model changes. This feature is purely presentational. All existing domai
 - `SnStepStatusView` — used by `DeferredStepsList` (unchanged)
 - `SnStepOverride` — used by overrides display (unchanged)
 
+
 ## Correctness Properties
 
-_A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
+*A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
 ### Property 1: Section card count and order matches serial status
 
-_For any_ serial number, when the Routing tab is displayed: if the serial is in-progress with a valid work queue job, exactly four section cards shall be rendered in the order [Routing, Certificates, Notes, Advance Process]; if the serial is completed or scrapped, exactly three section cards shall be rendered in the order [Routing, Certificates, Notes] with no Advancement section.
+*For any* serial number, when the Routing tab is displayed: if the serial is in-progress with a valid work queue job, exactly four section cards shall be rendered in the order [Routing, Certificates, Notes, Advance Process]; if the serial is completed or scrapped, exactly three section cards shall be rendered in the order [Routing, Certificates, Notes] with no Advancement section.
 
 **Validates: Requirements 1.1, 1.2, 1.3, 5.3**
 
 ### Property 2: Routing section conditional content matches data presence
 
-_For any_ serial number, the Routing section card shall contain the step overrides list if and only if active step overrides exist, and shall contain the DeferredStepsList if and only if deferred steps exist. When neither overrides nor deferred steps exist, only the step list shall be present.
+*For any* serial number, the Routing section card shall contain the step overrides list if and only if active step overrides exist, and shall contain the DeferredStepsList if and only if deferred steps exist. When neither overrides nor deferred steps exist, only the step list shall be present.
 
 **Validates: Requirements 2.2, 2.3, 2.4**
 
 ### Property 3: CertAttachButton visibility matches in-progress status
 
-_For any_ serial number, the CertAttachButton component shall be rendered inside the Certificates section if and only if the serial has status "in_progress".
+*For any* serial number, the CertAttachButton component shall be rendered inside the Certificates section if and only if the serial has status "in_progress".
 
 **Validates: Requirements 3.1, 3.2**
 
 ### Property 4: Certificate list and empty state are mutually exclusive
 
-_For any_ serial number, the Certificates section shall display the attached certificates list if certificate attachments exist, and shall display the empty-state message "No certificates attached" if and only if no attachments exist and the serial is not in-progress.
+*For any* serial number, the Certificates section shall display the attached certificates list if certificate attachments exist, and shall display the empty-state message "No certificates attached" if and only if no attachments exist and the serial is not in-progress.
 
 **Validates: Requirements 3.3, 3.4**
 
 ### Property 5: No duplicate Notes heading
 
-_For any_ rendering of the Notes section, the PartDetailNotes component shall suppress its internal heading when `hideHeading` is true, resulting in exactly one "Notes" title (from the section card header) visible in the Notes section.
+*For any* rendering of the Notes section, the PartDetailNotes component shall suppress its internal heading when `hideHeading` is true, resulting in exactly one "Notes" title (from the section card header) visible in the Notes section.
 
 **Validates: Requirements 4.3**
 
 ### Property 6: Status banner placement above section cards
 
-_For any_ serial number with a terminal status, the appropriate status banner (green for completed, red for scrapped, amber for force-completed) shall be rendered above the section cards and outside of any section card boundary.
+*For any* serial number with a terminal status, the appropriate status banner (green for completed, red for scrapped, amber for force-completed) shall be rendered above the section cards and outside of any section card boundary.
 
 **Validates: Requirements 7.1, 7.2, 7.3**
 
@@ -196,7 +196,6 @@ Each correctness property maps to a single property-based test. The tests genera
 **Test file:** `tests/properties/serialDetailSections.property.test.ts`
 
 Properties to implement:
-
 1. Section card count and order (Property 1)
 2. Routing section conditional content (Property 2)
 3. CertAttachButton visibility (Property 3)
@@ -209,7 +208,6 @@ Properties to implement:
 **Test file:** `tests/unit/components/SectionCard.test.ts`
 
 Unit tests cover:
-
 - SectionCard renders with correct icon and title
 - SectionCard renders slot content
 - Section header icons match spec (i-lucide-route, i-lucide-file-badge, i-lucide-message-square, i-lucide-arrow-right-circle)

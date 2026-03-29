@@ -1,12 +1,12 @@
 ---
-title: 'Advance to Step'
-description: 'Advance a serial number directly to a specific target step, bypassing intermediate steps'
-method: 'POST'
-endpoint: '/api/serials/:id/advance-to'
-service: 'lifecycleService'
-category: 'Serials'
-requestBody: 'AdvanceToStepInput'
-responseType: 'AdvancementResult'
+title: "Advance to Step"
+description: "Advance a serial number directly to a specific target step, bypassing intermediate steps"
+method: "POST"
+endpoint: "/api/serials/:id/advance-to"
+service: "lifecycleService"
+category: "Serials"
+requestBody: "AdvanceToStepInput"
+responseType: "AdvancementResult"
 errorCodes: [400, 404, 500]
 navigation:
   order: 5
@@ -26,16 +26,16 @@ Setting `targetStepIndex` equal to the total number of steps in the path trigger
 
 ### Path Parameters
 
-| Parameter | Type     | Required | Description                                                               |
-| --------- | -------- | -------- | ------------------------------------------------------------------------- |
-| `id`      | `string` | Yes      | The unique identifier of the serial number to advance (e.g. `"SN-00001"`) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` | Yes | The unique identifier of the serial number to advance (e.g. `"SN-00001"`) |
 
 ### Request Body
 
-| Field             | Type     | Required | Description                                                                                                                                                                   |
-| ----------------- | -------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `targetStepIndex` | `number` | Yes      | Zero-based index of the target step to advance to. Must be greater than the serial's current step index. Set to `path.steps.length` to trigger completion past the last step. |
-| `userId`          | `string` | Yes      | ID of the user performing the advancement. Used for audit trail tracking.                                                                                                     |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `targetStepIndex` | `number` | Yes | Zero-based index of the target step to advance to. Must be greater than the serial's current step index. Set to `path.steps.length` to trigger completion past the last step. |
+| `userId` | `string` | Yes | ID of the user performing the advancement. Used for audit trail tracking. |
 
 ## Response
 
@@ -45,63 +45,63 @@ Returned when the serial is successfully advanced. The response is an `Advanceme
 
 #### Top-level fields
 
-| Field      | Type             | Description                                                           |
-| ---------- | ---------------- | --------------------------------------------------------------------- |
-| `serial`   | `SerialNumber`   | The updated serial number object (see below)                          |
+| Field | Type | Description |
+|-------|------|-------------|
+| `serial` | `SerialNumber` | The updated serial number object (see below) |
 | `bypassed` | `BypassedStep[]` | Array of steps that were bypassed during this advancement (see below) |
 
 #### `serial` — Updated SerialNumber
 
-| Field              | Type                           | Description                                          |
-| ------------------ | ------------------------------ | ---------------------------------------------------- |
-| `id`               | `string`                       | Serial identifier                                    |
-| `jobId`            | `string`                       | ID of the parent job                                 |
-| `pathId`           | `string`                       | ID of the manufacturing path                         |
-| `currentStepIndex` | `number`                       | New step index after advancement. `-1` if completed. |
-| `status`           | `"in_progress" \| "completed"` | Updated status                                       |
-| `forceCompleted`   | `boolean`                      | Always `false` for normal advancement                |
-| `createdAt`        | `string`                       | ISO 8601 timestamp of serial creation                |
-| `updatedAt`        | `string`                       | ISO 8601 timestamp reflecting the advancement time   |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Serial identifier |
+| `jobId` | `string` | ID of the parent job |
+| `pathId` | `string` | ID of the manufacturing path |
+| `currentStepIndex` | `number` | New step index after advancement. `-1` if completed. |
+| `status` | `"in_progress" \| "completed"` | Updated status |
+| `forceCompleted` | `boolean` | Always `false` for normal advancement |
+| `createdAt` | `string` | ISO 8601 timestamp of serial creation |
+| `updatedAt` | `string` | ISO 8601 timestamp reflecting the advancement time |
 
 #### `bypassed[]` — Bypassed step details
 
 Each element describes a step that was skipped over during the advancement.
 
-| Field            | Type                      | Description                                                                                                                                            |
-| ---------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `stepId`         | `string`                  | ID of the bypassed step                                                                                                                                |
-| `stepName`       | `string`                  | Human-readable name of the bypassed step                                                                                                               |
+| Field | Type | Description |
+|-------|------|-------------|
+| `stepId` | `string` | ID of the bypassed step |
+| `stepName` | `string` | Human-readable name of the bypassed step |
 | `classification` | `"skipped" \| "deferred"` | How the step was classified. `skipped` = optional or overridden (no further action needed). `deferred` = required (must be completed or waived later). |
 
 ### 400 Bad Request
 
 Returned when the advancement cannot be performed due to validation failures.
 
-| Condition                                                                            | Message                                                                   |
-| ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
-| Serial status is `scrapped`                                                          | `"Cannot advance a scrapped serial"`                                      |
-| Serial status is `completed`                                                         | `"Cannot advance a completed serial"`                                     |
-| `targetStepIndex` is at or before current position                                   | `"Cannot advance to a step at or before the current position"`            |
-| `targetStepIndex` exceeds total steps + 1                                            | `"Target step index is out of range"`                                     |
-| Path is in `strict` mode and target is not N+1                                       | `"Path is in strict mode — can only advance to the next sequential step"` |
-| Intermediate step has `physical` dependency and is not optional/overridden/completed | `"Cannot skip step with physical dependency"`                             |
+| Condition | Message |
+|-----------|---------|
+| Serial status is `scrapped` | `"Cannot advance a scrapped serial"` |
+| Serial status is `completed` | `"Cannot advance a completed serial"` |
+| `targetStepIndex` is at or before current position | `"Cannot advance to a step at or before the current position"` |
+| `targetStepIndex` exceeds total steps + 1 | `"Target step index is out of range"` |
+| Path is in `strict` mode and target is not N+1 | `"Path is in strict mode — can only advance to the next sequential step"` |
+| Intermediate step has `physical` dependency and is not optional/overridden/completed | `"Cannot skip step with physical dependency"` |
 
 ### 404 Not Found
 
 Returned when the serial or its path does not exist.
 
-| Condition                                | Message                      |
-| ---------------------------------------- | ---------------------------- |
-| Serial does not exist                    | `"Serial not found: {id}"`   |
+| Condition | Message |
+|-----------|---------|
+| Serial does not exist | `"Serial not found: {id}"` |
 | Path referenced by serial does not exist | `"Path not found: {pathId}"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs during advancement.
 
-| Condition                    | Message                   |
-| ---------------------------- | ------------------------- |
-| Database write failure       | `"Internal Server Error"` |
+| Condition | Message |
+|-----------|---------|
+| Database write failure | `"Internal Server Error"` |
 | Unexpected runtime exception | `"Internal Server Error"` |
 
 ## Examples

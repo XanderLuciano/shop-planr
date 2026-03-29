@@ -1,7 +1,7 @@
 ---
-title: 'Steps API'
-description: 'Process step assignment and configuration — optional flags, dependency types'
-icon: 'i-lucide-list-checks'
+title: "Steps API"
+description: "Process step assignment and configuration — optional flags, dependency types"
+icon: "i-lucide-list-checks"
 navigation:
   order: 13
 ---
@@ -52,9 +52,9 @@ Steps are embedded within paths. Modifying a step via these endpoints updates th
 
 ## Endpoints
 
-| Method  | Path                                              | Description                                   |
-| ------- | ------------------------------------------------- | --------------------------------------------- |
-| `PATCH` | [`/api/steps/:id/assign`](/api-docs/steps/assign) | Assign or unassign an operator to a step      |
+| Method | Path | Description |
+|--------|------|-------------|
+| `PATCH` | [`/api/steps/:id/assign`](/api-docs/steps/assign) | Assign or unassign an operator to a step |
 | `PATCH` | [`/api/steps/:id/config`](/api-docs/steps/config) | Update step optional flag and dependency type |
 
 ## Related

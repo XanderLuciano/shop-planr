@@ -36,8 +36,8 @@ export interface StepDistribution {
   stepName: string
   stepOrder: number
   location?: string
-  partCount: number // parts currently AT this step
-  completedCount: number // parts that completed THIS step (per-step, not path-wide)
+  partCount: number        // parts currently AT this step
+  completedCount: number   // parts that completed THIS step (per-step, not path-wide)
   isBottleneck: boolean
 }
 
@@ -45,7 +45,7 @@ export interface StepDistribution {
 // returned alongside the distribution array from the API
 interface PathDetailResponse extends Path {
   distribution: StepDistribution[]
-  completedCount: number // distinct parts with currentStepIndex === -1
+  completedCount: number   // distinct parts with currentStepIndex === -1
 }
 ```
 
@@ -58,17 +58,14 @@ function getStepDistribution(pathId: string): StepDistribution[]
 ```
 
 **Preconditions:**
-
 - `pathId` references an existing path in the repository
 - Path has at least one step
 
 **Postconditions (CURRENT — BUGGY):**
-
 - Every entry has `completedCount` set to the same value: total completed parts for the entire path
 - Frontend sums these → `N_steps × actual_completed`
 
 **Postconditions (FIXED):**
-
 - Each entry's `completedCount` is set to 0 (per-step completed count is not meaningful in this context since parts advance through steps sequentially — a completed part has passed through all steps)
 - The path-level completed count is returned separately
 
@@ -81,11 +78,9 @@ function getPathCompletedCount(pathId: string): number
 ```
 
 **Preconditions:**
-
 - `pathId` references an existing path
 
 **Postconditions:**
-
 - Returns the count of non-scrapped parts with `currentStepIndex === -1` for this path
 - Equivalent to `repos.parts.listByStepIndex(pathId, -1).length`
 
@@ -103,11 +98,9 @@ return { ...path, distribution, completedCount }
 ```
 
 **Preconditions:**
-
 - Valid path ID in route params
 
 **Postconditions:**
-
 - Response includes `completedCount` as a top-level integer field
 - `distribution[i].completedCount` is 0 for all entries (no longer carries path-level data)
 
@@ -120,7 +113,7 @@ return { ...path, distribution, completedCount }
 const completedParts = repos.parts.listByStepIndex(pathId, -1)
 const completedCount = completedParts.length
 for (const entry of distribution) {
-  entry.completedCount = completedCount // BUG: same value on every step
+  entry.completedCount = completedCount  // BUG: same value on every step
 }
 
 // In StepTracker.vue "Done" card:
@@ -198,7 +191,7 @@ export default defineEventHandler(async (event) => {
 const props = defineProps<{
   path: Path
   distribution: StepDistribution[]
-  completedCount: number // NEW: path-level completed count
+  completedCount: number   // NEW: path-level completed count
   users?: ShopUser[]
 }>()
 
@@ -265,12 +258,12 @@ const completedCount = pathService.getPathCompletedCount(pathId)
 
 ## Files to Modify
 
-| File                                         | Change                                                                                         |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `server/services/pathService.ts`             | Remove completed-count loop from `getStepDistribution()`; add `getPathCompletedCount()` method |
-| `server/api/paths/[id].get.ts`               | Include `completedCount` in response                                                           |
-| `app/components/StepTracker.vue`             | Add `completedCount` prop; use it in "Done" card instead of `.reduce()`                        |
-| `app/components/JobExpandableRow.vue`        | Store `completedCount` from API; pass to ProgressBar `:completed`                              |
-| `tests/unit/services/pathService.test.ts`    | Update existing `getStepDistribution` tests; add `getPathCompletedCount` tests                 |
-| `tests/properties/` (new)                    | Property test: Done count === parts with stepIndex -1                                          |
-| `tests/integration/progressTracking.test.ts` | Verify end-to-end Done count correctness                                                       |
+| File | Change |
+|------|--------|
+| `server/services/pathService.ts` | Remove completed-count loop from `getStepDistribution()`; add `getPathCompletedCount()` method |
+| `server/api/paths/[id].get.ts` | Include `completedCount` in response |
+| `app/components/StepTracker.vue` | Add `completedCount` prop; use it in "Done" card instead of `.reduce()` |
+| `app/components/JobExpandableRow.vue` | Store `completedCount` from API; pass to ProgressBar `:completed` |
+| `tests/unit/services/pathService.test.ts` | Update existing `getStepDistribution` tests; add `getPathCompletedCount` tests |
+| `tests/properties/` (new) | Property test: Done count === parts with stepIndex -1 |
+| `tests/integration/progressTracking.test.ts` | Verify end-to-end Done count correctness |

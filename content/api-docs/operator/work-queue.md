@@ -1,11 +1,11 @@
 ---
-title: 'Get Work Queue'
-description: 'Retrieve the work queue grouped by assigned operator'
-method: 'GET'
-endpoint: '/api/operator/work-queue'
-service: 'jobService, pathService, serialService, userService'
-category: 'Operator'
-responseType: 'WorkQueueGroupedResponse'
+title: "Get Work Queue"
+description: "Retrieve the work queue grouped by assigned operator"
+method: "GET"
+endpoint: "/api/operator/work-queue"
+service: "jobService, pathService, serialService, userService"
+category: "Operator"
+responseType: "WorkQueueGroupedResponse"
 errorCodes: [500]
 navigation:
   order: 2
@@ -31,43 +31,43 @@ No request body or query parameters.
 
 Returns a `WorkQueueGroupedResponse` object.
 
-| Field        | Type              | Description                                                   |
-| ------------ | ----------------- | ------------------------------------------------------------- |
-| `groups`     | `OperatorGroup[]` | Array of operator groups, each containing their assigned work |
-| `totalParts` | `number`          | Total count of in-progress parts across all groups            |
+| Field | Type | Description |
+|-------|------|-------------|
+| `groups` | `OperatorGroup[]` | Array of operator groups, each containing their assigned work |
+| `totalParts` | `number` | Total count of in-progress parts across all groups |
 
 #### OperatorGroup Fields
 
-| Field          | Type             | Description                                            |
-| -------------- | ---------------- | ------------------------------------------------------ |
-| `operatorId`   | `string \| null` | User ID of the operator, or `null` for unassigned work |
-| `operatorName` | `string`         | Display name of the operator, or `"Unassigned"`        |
-| `jobs`         | `WorkQueueJob[]` | Array of work items assigned to this operator          |
-| `totalParts`   | `number`         | Total part count for this operator                     |
+| Field | Type | Description |
+|-------|------|-------------|
+| `operatorId` | `string \| null` | User ID of the operator, or `null` for unassigned work |
+| `operatorName` | `string` | Display name of the operator, or `"Unassigned"` |
+| `jobs` | `WorkQueueJob[]` | Array of work items assigned to this operator |
+| `totalParts` | `number` | Total part count for this operator |
 
 #### WorkQueueJob Fields
 
-| Field              | Type                  | Description                   |
-| ------------------ | --------------------- | ----------------------------- |
-| `jobId`            | `string`              | Job ID                        |
-| `jobName`          | `string`              | Job name                      |
-| `pathId`           | `string`              | Path ID                       |
-| `pathName`         | `string`              | Path name                     |
-| `stepId`           | `string`              | Step ID                       |
-| `stepName`         | `string`              | Step name                     |
-| `stepOrder`        | `number`              | Zero-based step index         |
-| `stepLocation`     | `string \| undefined` | Physical location             |
-| `totalSteps`       | `number`              | Total steps in the path       |
-| `serialIds`        | `string[]`            | Serial IDs at this step       |
-| `partCount`        | `number`              | Count of serials at this step |
-| `nextStepName`     | `string \| undefined` | Name of the next step         |
-| `nextStepLocation` | `string \| undefined` | Location of the next step     |
-| `isFinalStep`      | `boolean`             | Whether this is the last step |
+| Field | Type | Description |
+|-------|------|-------------|
+| `jobId` | `string` | Job ID |
+| `jobName` | `string` | Job name |
+| `pathId` | `string` | Path ID |
+| `pathName` | `string` | Path name |
+| `stepId` | `string` | Step ID |
+| `stepName` | `string` | Step name |
+| `stepOrder` | `number` | Zero-based step index |
+| `stepLocation` | `string \| undefined` | Physical location |
+| `totalSteps` | `number` | Total steps in the path |
+| `serialIds` | `string[]` | Serial IDs at this step |
+| `partCount` | `number` | Count of serials at this step |
+| `nextStepName` | `string \| undefined` | Name of the next step |
+| `nextStepLocation` | `string \| undefined` | Location of the next step |
+| `isFinalStep` | `boolean` | Whether this is the last step |
 
 ### 500 Internal Server Error
 
-| Condition                | Message                   |
-| ------------------------ | ------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Unexpected runtime error | `"Internal server error"` |
 
 ## Examples

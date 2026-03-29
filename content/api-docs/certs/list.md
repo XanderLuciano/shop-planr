@@ -1,11 +1,11 @@
 ---
-title: 'List Certificates'
-description: 'Retrieve all material and process certificates'
-method: 'GET'
-endpoint: '/api/certs'
-service: 'certService'
-category: 'Certs'
-responseType: 'Certificate[]'
+title: "List Certificates"
+description: "Retrieve all material and process certificates"
+method: "GET"
+endpoint: "/api/certs"
+service: "certService"
+category: "Certs"
+responseType: "Certificate[]"
 errorCodes: [500]
 navigation:
   order: 1
@@ -29,20 +29,20 @@ No request body or query parameters.
 
 Returns an array of `Certificate` objects. If no certificates exist, returns an empty array `[]`.
 
-| Field       | Type                                   | Description                                                   |
-| ----------- | -------------------------------------- | ------------------------------------------------------------- |
-| `id`        | `string`                               | Unique identifier for the certificate (prefixed with `cert_`) |
-| `type`      | `'material' \| 'process'`              | Classification of the certificate                             |
-| `name`      | `string`                               | Human-readable name or identifier for the certificate         |
-| `metadata`  | `Record<string, unknown> \| undefined` | Optional free-form metadata object                            |
-| `createdAt` | `string`                               | ISO 8601 timestamp of when the certificate was created        |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique identifier for the certificate (prefixed with `cert_`) |
+| `type` | `'material' \| 'process'` | Classification of the certificate |
+| `name` | `string` | Human-readable name or identifier for the certificate |
+| `metadata` | `Record<string, unknown> \| undefined` | Optional free-form metadata object |
+| `createdAt` | `string` | ISO 8601 timestamp of when the certificate was created |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while querying the database.
 
-| Condition             | Message                   |
-| --------------------- | ------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Database read failure | `"Internal Server Error"` |
 
 ## Examples

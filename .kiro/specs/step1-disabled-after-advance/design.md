@@ -21,7 +21,6 @@ When all serial numbers at a step are advanced, the `GET /api/operator/step/[ste
 The bug manifests when a user navigates to the Step View page for a process step that has zero active serial numbers. The `[stepId].get.ts` handler finds the step in the database but throws `NotFoundError('No active parts at this step')` when `serials.length === 0`, regardless of whether the step is valid. Similarly, `_all.get.ts` skips steps with zero serials via `if (serials.length === 0) continue`, making first steps unreachable from the Parts View after all serials are advanced.
 
 **Formal Specification:**
-
 ```
 FUNCTION isBugCondition(input)
   INPUT: input of type { stepId: string }
@@ -29,10 +28,10 @@ FUNCTION isBugCondition(input)
 
   step := lookupProcessStepInDatabase(input.stepId)
   IF step IS NULL THEN RETURN false   // truly invalid → not this bug
-
+  
   path := getPathForStep(step)
   serials := listSerialsByStepIndex(path.id, step.order)
-
+  
   RETURN serials.length === 0
 END FUNCTION
 ```
@@ -49,7 +48,6 @@ END FUNCTION
 ### Preservation Requirements
 
 **Unchanged Behaviors:**
-
 - Steps with one or more active serials return the same `StepViewResponse` shape with correct `serialIds`, `partCount`, and step metadata
 - Truly invalid step IDs (not in the database) return 404 "ProcessStep not found"
 - Serial advancement logic (advancing serials between steps) is completely unaffected
@@ -58,7 +56,6 @@ END FUNCTION
 
 **Scope:**
 All inputs where `isBugCondition` returns false (steps with active serials, or invalid step IDs) should be completely unaffected by this fix. This includes:
-
 - Steps with one or more active serials at any step_order
 - Non-existent step IDs
 - All serial creation and advancement operations
@@ -234,7 +231,6 @@ Steps with active serials render the same panel content as today, but the duplic
 **File**: `server/api/operator/step/[stepId].get.ts`
 
 **Specific Changes**:
-
 1. **Remove premature 404 on zero serials**: Delete the `if (serials.length === 0) { throw new NotFoundError(...) }` block. Instead, always build the `WorkQueueJob` response, with `serialIds: []` and `partCount: 0` when no serials exist.
 2. **Add step lookup via path repository**: When the step is not found by iterating jobs/paths (which only finds steps belonging to active jobs), fall back to `pathService.getStepById()` or `repos.paths.getStepById()` to confirm the step exists in the database before returning 404. Actually, the current loop already iterates all jobs and all paths — the step will be found if it exists. The only issue is the zero-serial check.
 3. **Add previous step WIP count**: When `step.order > 0` and `serials.length === 0`, look up the previous step's serial count and include it as `previousStepWipCount` in the response.
@@ -242,20 +238,17 @@ Steps with active serials render the same panel content as today, but the duplic
 **File**: `server/api/operator/queue/_all.get.ts`
 
 **Specific Changes**:
-
 1. **Include first steps with zero serials**: Change the `if (serials.length === 0) continue` to `if (serials.length === 0 && step.order !== 0) continue` so that first steps always appear in the Parts View.
 
 **File**: `server/types/computed.ts`
 
 **Specific Changes**:
-
 1. **Add optional `previousStepWipCount` to `StepViewResponse`**: Add `previousStepWipCount?: number` to the response type so non-first steps with zero serials can communicate upstream WIP.
 2. **Add step navigation fields to `WorkQueueJob`**: Add `previousStepId?: string`, `previousStepName?: string`, `nextStepId?: string` so the frontend can render prev/next navigation buttons. (`nextStepName` already exists; `nextStepId` is new.)
 
 **File**: `app/pages/parts/step/[stepId].vue`
 
 **Specific Changes**:
-
 1. **Deduplicate step header**: The page already renders step name, job name, path name, and location in its own header. Remove the duplicate header rendering from inside `SerialCreationPanel` and `ProcessAdvancementPanel` by not passing header-related props or by having the panels skip their own header when rendered inside this page. The page header becomes the single source of truth.
 2. **Add "Step X of Y" indicator**: Display `Step ${job.stepOrder + 1} of ${job.totalSteps}` next to the step name in the page header.
 3. **Add prev/next step navigation**: Below the header, render two navigation buttons — "← Prev" linking to `previousStepId` (disabled when `stepOrder === 0`) and "Next →" linking to `nextStepId` (disabled when `isFinalStep`).
@@ -265,13 +258,11 @@ Steps with active serials render the same panel content as today, but the duplic
 **File**: `app/components/SerialCreationPanel.vue`
 
 **Specific Changes**:
-
 1. **Remove duplicate header**: Remove the header `<div>` that renders step name, job name, path name, and location — this is now owned by the parent page.
 
 **File**: `app/components/ProcessAdvancementPanel.vue`
 
 **Specific Changes**:
-
 1. **Remove duplicate header**: Remove the header `<div>` that renders step name, job name, path name, and location — this is now owned by the parent page.
 
 ## Testing Strategy
@@ -287,14 +278,12 @@ The testing strategy follows a two-phase approach: first, surface counterexample
 **Test Plan**: Write tests that create jobs with paths and serials, advance all serials past step 1, then call the replicated step endpoint lookup function. Run these tests on the UNFIXED code to observe 404 (null) returns.
 
 **Test Cases**:
-
 1. **First step after full advance**: Create a job, create serials at step 0, advance all to step 1, query step 0 — returns null/404 (will fail on unfixed code)
 2. **Non-first step with no upstream advance**: Create a job with 2+ steps, create serials at step 0, query step 1 — returns null/404 (will fail on unfixed code)
 3. **First step with no serials ever created**: Create a job with a path but no serials, query step 0 — returns null/404 (will fail on unfixed code)
 4. **Parts View omits first step**: Create a job, advance all serials, check `_all` response — step 0 is missing (will fail on unfixed code)
 
 **Expected Counterexamples**:
-
 - `lookupStep(ctx, firstStepId)` returns `null` when all serials are advanced
 - `_all` response omits first steps with zero serials
 - Root cause confirmed: the `serials.length === 0` check in both endpoints
@@ -304,7 +293,6 @@ The testing strategy follows a two-phase approach: first, surface counterexample
 **Goal**: Verify that for all inputs where the bug condition holds, the fixed function produces the expected behavior.
 
 **Pseudocode:**
-
 ```
 FOR ALL input WHERE isBugCondition(input) DO
   result := lookupStep_fixed(input.stepId)
@@ -323,7 +311,6 @@ END FOR
 **Goal**: Verify that for all inputs where the bug condition does NOT hold, the fixed function produces the same result as the original function.
 
 **Pseudocode:**
-
 ```
 FOR ALL input WHERE NOT isBugCondition(input) DO
   ASSERT lookupStep_original(input) = lookupStep_fixed(input)
@@ -331,7 +318,6 @@ END FOR
 ```
 
 **Testing Approach**: Property-based testing is recommended for preservation checking because:
-
 - It generates many random job/path/serial configurations automatically
 - It catches edge cases like single-step paths, many-step paths, partially advanced serials
 - It provides strong guarantees that behavior is unchanged for all non-buggy inputs
@@ -339,7 +325,6 @@ END FOR
 **Test Plan**: Observe behavior on UNFIXED code first for steps with active serials and invalid step IDs, then write property-based tests capturing that behavior.
 
 **Test Cases**:
-
 1. **Active serial step preservation**: Generate random job/path/serial configs, query steps that have serials, verify response matches original logic
 2. **Invalid step ID preservation**: Generate random non-existent step IDs, verify 404 is returned by both original and fixed logic
 3. **Parts View preservation for non-first steps**: Verify `_all` endpoint still skips non-first steps with zero serials

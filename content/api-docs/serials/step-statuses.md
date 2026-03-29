@@ -1,11 +1,11 @@
 ---
-title: 'Get Step Statuses'
-description: 'Retrieve per-step status tracking for a serial number with step metadata and override information'
-method: 'GET'
-endpoint: '/api/serials/:id/step-statuses'
-service: 'lifecycleService'
-category: 'Serials'
-responseType: 'SnStepStatusView[]'
+title: "Get Step Statuses"
+description: "Retrieve per-step status tracking for a serial number with step metadata and override information"
+method: "GET"
+endpoint: "/api/serials/:id/step-statuses"
+service: "lifecycleService"
+category: "Serials"
+responseType: "SnStepStatusView[]"
 errorCodes: [400, 404, 500]
 navigation:
   order: 10
@@ -25,9 +25,9 @@ The response is enriched server-side by joining step status records with the pat
 
 ### Path Parameters
 
-| Parameter | Type     | Required | Description                                                    |
-| --------- | -------- | -------- | -------------------------------------------------------------- |
-| `id`      | `string` | Yes      | The unique identifier of the serial number (e.g. `"SN-00001"`) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` | Yes | The unique identifier of the serial number (e.g. `"SN-00001"`) |
 
 ## Response
 
@@ -35,50 +35,50 @@ The response is enriched server-side by joining step status records with the pat
 
 Returned when the request is successful. The response is an array of `SnStepStatusView` objects, one per step in the serial's path, ordered by step index.
 
-| Field            | Type      | Description                                                                                                                             |
-| ---------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `stepId`         | `string`  | Unique identifier of the process step                                                                                                   |
-| `stepName`       | `string`  | Human-readable step name (e.g. `"CNC Machining"`)                                                                                       |
-| `stepOrder`      | `number`  | Zero-based position of this step in the path sequence                                                                                   |
-| `status`         | `string`  | Current status of this step for this serial. One of: `"pending"`, `"in_progress"`, `"completed"`, `"skipped"`, `"deferred"`, `"waived"` |
-| `optional`       | `boolean` | Whether this step is configured as optional in the path                                                                                 |
-| `dependencyType` | `string`  | Step dependency type. One of: `"physical"`, `"preferred"`, `"completion_gate"`                                                          |
-| `hasOverride`    | `boolean` | Whether an active step override exists for this serial at this step                                                                     |
+| Field | Type | Description |
+|-------|------|-------------|
+| `stepId` | `string` | Unique identifier of the process step |
+| `stepName` | `string` | Human-readable step name (e.g. `"CNC Machining"`) |
+| `stepOrder` | `number` | Zero-based position of this step in the path sequence |
+| `status` | `string` | Current status of this step for this serial. One of: `"pending"`, `"in_progress"`, `"completed"`, `"skipped"`, `"deferred"`, `"waived"` |
+| `optional` | `boolean` | Whether this step is configured as optional in the path |
+| `dependencyType` | `string` | Step dependency type. One of: `"physical"`, `"preferred"`, `"completion_gate"` |
+| `hasOverride` | `boolean` | Whether an active step override exists for this serial at this step |
 
 ### Step Status Values
 
-| Status        | Meaning                                            | How it's set                                                          |
-| ------------- | -------------------------------------------------- | --------------------------------------------------------------------- |
-| `pending`     | Step has not been reached yet                      | Initialized at serial creation for all steps after the first          |
-| `in_progress` | Serial is currently at this step                   | Set when the serial advances to this step, or at creation for step 0  |
-| `completed`   | Step was completed normally                        | Set when the serial advances past this step, or via complete-deferred |
-| `skipped`     | Optional step was bypassed                         | Set during advance-to when an optional/overridden step is bypassed    |
-| `deferred`    | Required step was bypassed, must be resolved later | Set during advance-to when a required step is bypassed                |
-| `waived`      | Deferred step was formally waived                  | Set via the waive-step endpoint with approver authorization           |
+| Status | Meaning | How it's set |
+|--------|---------|-------------|
+| `pending` | Step has not been reached yet | Initialized at serial creation for all steps after the first |
+| `in_progress` | Serial is currently at this step | Set when the serial advances to this step, or at creation for step 0 |
+| `completed` | Step was completed normally | Set when the serial advances past this step, or via complete-deferred |
+| `skipped` | Optional step was bypassed | Set during advance-to when an optional/overridden step is bypassed |
+| `deferred` | Required step was bypassed, must be resolved later | Set during advance-to when a required step is bypassed |
+| `waived` | Deferred step was formally waived | Set via the waive-step endpoint with approver authorization |
 
 ### 400 Bad Request
 
 Returned if the serial ID parameter is missing.
 
-| Condition                         | Message                   |
-| --------------------------------- | ------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Serial ID is missing from the URL | `"Serial ID is required"` |
 
 ### 404 Not Found
 
 Returned when the serial does not exist.
 
-| Condition             | Message              |
-| --------------------- | -------------------- |
+| Condition | Message |
+|-----------|---------|
 | Serial does not exist | `"Serial not found"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while fetching or enriching step status data.
 
-| Condition                    | Message                   |
-| ---------------------------- | ------------------------- |
-| Database connection failure  | `"Internal Server Error"` |
+| Condition | Message |
+|-----------|---------|
+| Database connection failure | `"Internal Server Error"` |
 | Unexpected runtime exception | `"Internal Server Error"` |
 
 ## Examples

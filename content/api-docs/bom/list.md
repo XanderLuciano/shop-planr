@@ -1,11 +1,11 @@
 ---
-title: 'List BOMs'
-description: 'Retrieve all bills of materials'
-method: 'GET'
-endpoint: '/api/bom'
-service: 'bomService'
-category: 'BOM'
-responseType: 'BOM[]'
+title: "List BOMs"
+description: "Retrieve all bills of materials"
+method: "GET"
+endpoint: "/api/bom"
+service: "bomService"
+category: "BOM"
+responseType: "BOM[]"
 errorCodes: [500]
 navigation:
   order: 1
@@ -29,25 +29,25 @@ No request body or query parameters.
 
 Returns an array of `BOM` objects. If no BOMs exist, returns an empty array `[]`.
 
-| Field                                | Type                  | Description                                          |
-| ------------------------------------ | --------------------- | ---------------------------------------------------- |
-| `id`                                 | `string`              | Unique identifier for the BOM (prefixed with `bom_`) |
-| `name`                               | `string`              | Human-readable BOM name                              |
-| `entries`                            | `BomEntry[]`          | Array of part entries                                |
-| `entries[].id`                       | `string \| undefined` | Entry ID, if assigned by the repository              |
-| `entries[].bomId`                    | `string \| undefined` | Parent BOM ID reference                              |
-| `entries[].partType`                 | `string`              | Part type name or identifier                         |
-| `entries[].requiredQuantityPerBuild` | `number`              | Quantity of this part needed per build               |
-| `entries[].contributingJobIds`       | `string[]`            | Job IDs that supply this part                        |
-| `createdAt`                          | `string`              | ISO 8601 timestamp of when the BOM was created       |
-| `updatedAt`                          | `string`              | ISO 8601 timestamp of the last modification          |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique identifier for the BOM (prefixed with `bom_`) |
+| `name` | `string` | Human-readable BOM name |
+| `entries` | `BomEntry[]` | Array of part entries |
+| `entries[].id` | `string \| undefined` | Entry ID, if assigned by the repository |
+| `entries[].bomId` | `string \| undefined` | Parent BOM ID reference |
+| `entries[].partType` | `string` | Part type name or identifier |
+| `entries[].requiredQuantityPerBuild` | `number` | Quantity of this part needed per build |
+| `entries[].contributingJobIds` | `string[]` | Job IDs that supply this part |
+| `createdAt` | `string` | ISO 8601 timestamp of when the BOM was created |
+| `updatedAt` | `string` | ISO 8601 timestamp of the last modification |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while querying the database.
 
-| Condition             | Message                   |
-| --------------------- | ------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Database read failure | `"Internal Server Error"` |
 
 ## Examples

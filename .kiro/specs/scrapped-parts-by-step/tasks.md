@@ -61,50 +61,50 @@ Add visibility into scrapped serial numbers at step-level (within a path) and jo
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 6. Property-based tests
-  - [ ]\* 6.1 Write property test: Status Filter Correctness
+  - [ ]* 6.1 Write property test: Status Filter Correctness
     - **Property 1: Status Filter Correctness**
     - **Validates: Requirements 1.2, 1.3, 1.5, 6.1, 6.3**
     - Test file: `tests/properties/statusFilterCorrectness.property.test.ts`
     - Generate random serial sets with mixed statuses at various steps; verify each filter returns correct subset
 
-  - [ ]\* 6.2 Write property test: ScrapStepId-Based Grouping
+  - [ ]* 6.2 Write property test: ScrapStepId-Based Grouping
     - **Property 2: ScrapStepId-Based Grouping**
     - **Validates: Requirements 1.4, 4.5, 7.7**
     - Test file: `tests/properties/scrapStepGrouping.property.test.ts`
     - Generate paths with multiple steps, serials scrapped at different steps; verify grouping by scrapStepId
 
-  - [ ]\* 6.3 Write property test: Result Ordering
+  - [ ]* 6.3 Write property test: Result Ordering
     - **Property 3: Result Ordering**
     - **Validates: Requirements 1.6**
     - Test file: `tests/properties/statusFilterOrdering.property.test.ts`
     - Generate serial sets with varying createdAt timestamps; verify ASC ordering for all filter values
 
-  - [ ]\* 6.4 Write property test: Operator Queue Preservation
+  - [ ]* 6.4 Write property test: Operator Queue Preservation
     - **Property 4: Operator Queue Preservation**
     - **Validates: Requirements 3.1, 3.2, 3.3**
     - Test file: `tests/properties/operatorQueuePreservation.property.test.ts`
     - Generate job/path/serial configs with scrapped serials; verify queue excludes them
 
-  - [ ]\* 6.5 Write property test: Invalid Status Rejection
+  - [ ]* 6.5 Write property test: Invalid Status Rejection
     - **Property 5: Invalid Status Rejection**
     - **Validates: Requirements 2.4**
     - Test file: `tests/properties/invalidStatusRejection.property.test.ts`
     - Generate random strings that aren't valid status values; verify ValidationError
 
-  - [ ]\* 6.6 Write property test: listByPathId/listByJobId Preservation
+  - [ ]* 6.6 Write property test: listByPathId/listByJobId Preservation
     - **Property 6: listByPathId/listByJobId Preservation**
     - **Validates: Requirements 6.4**
     - Test file: `tests/properties/listByPreservation.property.test.ts`
     - Generate serial sets including scrapped; verify these methods return all serials
 
-  - [ ]\* 6.7 Write property test: Scrapped Group Metadata Completeness
+  - [ ]* 6.7 Write property test: Scrapped Group Metadata Completeness
     - **Property 7: Scrapped Group Metadata Completeness**
     - **Validates: Requirements 4.2, 7.2, 7.3**
     - Test file: `tests/properties/scrappedGroupMetadata.property.test.ts`
     - Generate paths with scrapped serials; verify response metadata matches path steps and serial scrap fields
 
 - [ ] 7. Integration tests
-  - [ ]\* 7.1 Write integration tests in `tests/integration/scrappedParts.test.ts`
+  - [ ]* 7.1 Write integration tests in `tests/integration/scrappedParts.test.ts`
     - Full scrapped-by-path flow: create job → path → serials → scrap some → verify grouped response
     - Full scrapped-by-job flow: create job → multiple paths → scrap across paths → verify job-level grouping
     - Operator queue unchanged: scrap serials → verify operator queue still excludes them

@@ -1,11 +1,11 @@
 ---
-title: 'Get by Step Name'
-description: 'Retrieve parts view data for a named process step across all jobs'
-method: 'GET'
-endpoint: '/api/operator/:stepName'
-service: 'jobService, pathService, serialService'
-category: 'Operator'
-responseType: 'OperatorStepView'
+title: "Get by Step Name"
+description: "Retrieve parts view data for a named process step across all jobs"
+method: "GET"
+endpoint: "/api/operator/:stepName"
+service: "jobService, pathService, serialService"
+category: "Operator"
+responseType: "OperatorStepView"
 errorCodes: [500]
 navigation:
   order: 5
@@ -23,9 +23,9 @@ The endpoint scans all jobs and paths looking for steps whose `name` matches the
 
 ### Path Parameters
 
-| Parameter  | Type     | Required | Description                                                                                                                              |
-| ---------- | -------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `stepName` | `string` | Yes      | The process step name to query (e.g. `"Assembly"`, `"Inspection"`, `"CNC Machining"`). Case-sensitive, must match the step name exactly. |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `stepName` | `string` | Yes | The process step name to query (e.g. `"Assembly"`, `"Inspection"`, `"CNC Machining"`). Case-sensitive, must match the step name exactly. |
 
 ## Response
 
@@ -33,32 +33,32 @@ The endpoint scans all jobs and paths looking for steps whose `name` matches the
 
 Returns an aggregated parts view object.
 
-| Field              | Type                  | Description                                                                         |
-| ------------------ | --------------------- | ----------------------------------------------------------------------------------- |
-| `stepName`         | `string`              | The queried step name (echoed back)                                                 |
-| `location`         | `string \| undefined` | The physical location of the first matching step that has a location set            |
-| `currentParts`     | `PartInfo[]`          | Serials currently at this step (step index matches)                                 |
-| `comingSoon`       | `PartInfo[]`          | Serials one step before this step (will arrive next)                                |
-| `backlog`          | `PartInfo[]`          | Serials two or more steps before this step                                          |
-| `vendorPartsCount` | `number`              | Count of current parts at steps whose location contains "vendor" (case-insensitive) |
-| `stepIds`          | `string[]`            | All unique step IDs that match the given step name across all paths                 |
+| Field | Type | Description |
+|-------|------|-------------|
+| `stepName` | `string` | The queried step name (echoed back) |
+| `location` | `string \| undefined` | The physical location of the first matching step that has a location set |
+| `currentParts` | `PartInfo[]` | Serials currently at this step (step index matches) |
+| `comingSoon` | `PartInfo[]` | Serials one step before this step (will arrive next) |
+| `backlog` | `PartInfo[]` | Serials two or more steps before this step |
+| `vendorPartsCount` | `number` | Count of current parts at steps whose location contains "vendor" (case-insensitive) |
+| `stepIds` | `string[]` | All unique step IDs that match the given step name across all paths |
 
 #### PartInfo Fields
 
-| Field              | Type                  | Description                                                     |
-| ------------------ | --------------------- | --------------------------------------------------------------- |
-| `serialId`         | `string`              | Serial number ID                                                |
-| `jobId`            | `string`              | Job ID the serial belongs to                                    |
-| `jobName`          | `string`              | Job name                                                        |
-| `pathId`           | `string`              | Path ID the serial belongs to                                   |
-| `pathName`         | `string`              | Path name                                                       |
-| `nextStepName`     | `string \| undefined` | Name of the step after the target step (only on `currentParts`) |
-| `nextStepLocation` | `string \| undefined` | Location of the next step (only on `currentParts`)              |
+| Field | Type | Description |
+|-------|------|-------------|
+| `serialId` | `string` | Serial number ID |
+| `jobId` | `string` | Job ID the serial belongs to |
+| `jobName` | `string` | Job name |
+| `pathId` | `string` | Path ID the serial belongs to |
+| `pathName` | `string` | Path name |
+| `nextStepName` | `string \| undefined` | Name of the step after the target step (only on `currentParts`) |
+| `nextStepLocation` | `string \| undefined` | Location of the next step (only on `currentParts`) |
 
 ### 500 Internal Server Error
 
-| Condition                | Message                   |
-| ------------------------ | ------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Unexpected runtime error | `"Internal Server Error"` |
 
 ## Examples

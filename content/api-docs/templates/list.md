@@ -1,11 +1,11 @@
 ---
-title: 'List Templates'
-description: 'Retrieve all route templates'
-method: 'GET'
-endpoint: '/api/templates'
-service: 'templateService'
-category: 'Templates'
-responseType: 'TemplateRoute[]'
+title: "List Templates"
+description: "Retrieve all route templates"
+method: "GET"
+endpoint: "/api/templates"
+service: "templateService"
+category: "Templates"
+responseType: "TemplateRoute[]"
 errorCodes: [500]
 navigation:
   order: 1
@@ -29,25 +29,25 @@ No request body or query parameters.
 
 Returns an array of `TemplateRoute` objects. If no templates exist, returns an empty array `[]`.
 
-| Field                    | Type                                             | Description                                                |
-| ------------------------ | ------------------------------------------------ | ---------------------------------------------------------- |
-| `id`                     | `string`                                         | Unique identifier for the template (prefixed with `tmpl_`) |
-| `name`                   | `string`                                         | Human-readable template name                               |
-| `steps`                  | `TemplateStep[]`                                 | Ordered array of process step definitions                  |
-| `steps[].name`           | `string`                                         | Step name                                                  |
-| `steps[].order`          | `number`                                         | Zero-based position in the sequence                        |
-| `steps[].location`       | `string \| undefined`                            | Physical location for the step, if assigned                |
-| `steps[].optional`       | `boolean`                                        | Whether the step can be skipped during advancement         |
-| `steps[].dependencyType` | `'physical' \| 'preferred' \| 'completion_gate'` | How strictly the step order is enforced                    |
-| `createdAt`              | `string`                                         | ISO 8601 timestamp of when the template was created        |
-| `updatedAt`              | `string`                                         | ISO 8601 timestamp of the last modification                |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique identifier for the template (prefixed with `tmpl_`) |
+| `name` | `string` | Human-readable template name |
+| `steps` | `TemplateStep[]` | Ordered array of process step definitions |
+| `steps[].name` | `string` | Step name |
+| `steps[].order` | `number` | Zero-based position in the sequence |
+| `steps[].location` | `string \| undefined` | Physical location for the step, if assigned |
+| `steps[].optional` | `boolean` | Whether the step can be skipped during advancement |
+| `steps[].dependencyType` | `'physical' \| 'preferred' \| 'completion_gate'` | How strictly the step order is enforced |
+| `createdAt` | `string` | ISO 8601 timestamp of when the template was created |
+| `updatedAt` | `string` | ISO 8601 timestamp of the last modification |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while querying the database.
 
-| Condition             | Message                   |
-| --------------------- | ------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Database read failure | `"Internal Server Error"` |
 
 ## Examples

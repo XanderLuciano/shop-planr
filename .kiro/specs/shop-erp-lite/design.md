@@ -7,7 +7,6 @@ SHOP_ERP is a job routing and ERP application for machine shops, built on Nuxt 4
 The application follows a client-server architecture within Nuxt's full-stack model: Vue components and composables handle the frontend, Nuxt server routes (`/api/...`) provide the API layer, and a repository-pattern persistence layer abstracts database access behind swappable interfaces.
 
 Key design decisions:
-
 - **Repository pattern with database abstraction**: All data access goes through repository interfaces (`JobRepository`, `SerialRepository`, etc.). The initial implementation uses SQLite via `better-sqlite3` (synchronous, zero-config, single-file database). Future implementations can target PostgreSQL, MySQL, or any other backend by implementing the same interfaces — no service layer changes needed.
 - **SQLite as default backend**: Provides real SQL with ACID transactions, handles concurrent reads, and the database is a single file that's trivially backed up. Scales well for single-server deployments. When you outgrow it, swap the repository implementation.
 - **Single Nuxt app (not a monorepo)**: Nuxt's `server/` directory is effectively the backend — separate Node processes, CORS config, and inter-service communication add complexity without benefit at this scale. Docker Compose runs the Nuxt app + nothing else (SQLite is embedded). If a separate API server is ever needed, the service layer and repositories can be extracted cleanly.
@@ -71,15 +70,15 @@ graph TB
 
 ### Layer Responsibilities
 
-| Layer        | Responsibility                                                      |
-| ------------ | ------------------------------------------------------------------- |
-| Pages        | Route-level views, layout composition                               |
-| Components   | Reusable UI elements built with Nuxt UI primitives                  |
-| Composables  | Client-side state, API calls via `$fetch`, reactive data            |
-| API Routes   | HTTP endpoints, request validation, delegate to services            |
-| Services     | Business logic, domain rules, audit trail recording                 |
+| Layer | Responsibility |
+|-------|---------------|
+| Pages | Route-level views, layout composition |
+| Components | Reusable UI elements built with Nuxt UI primitives |
+| Composables | Client-side state, API calls via `$fetch`, reactive data |
+| API Routes | HTTP endpoints, request validation, delegate to services |
+| Services | Business logic, domain rules, audit trail recording |
 | Repositories | Database-agnostic interfaces for CRUD operations on domain entities |
-| SQLite Impl  | Concrete repository implementations using better-sqlite3            |
+| SQLite Impl | Concrete repository implementations using better-sqlite3 |
 
 ### Directory Structure
 
@@ -228,7 +227,6 @@ server/
 ### Layout and Navigation
 
 The app uses the Nuxt UI Pro dashboard layout pattern:
-
 - **Left sidebar**: Primary navigation with links to main views (Dashboard, Jobs, Operator, Assignees, Templates, BOM, Jira, Audit, Settings). Always visible on desktop. Collapsible to icons.
 - **Top sub-navigation**: When a main view has sub-pages (e.g., Jobs → Job Detail), a horizontal tab/breadcrumb bar appears at the top of the content area.
 - **Dashboard homepage**: Landing page with summary cards, charts, and metrics — total active jobs, parts in progress, parts completed today, bottleneck alerts. Cards link out to their respective views.
@@ -236,7 +234,6 @@ The app uses the Nuxt UI Pro dashboard layout pattern:
 ### Visual Density
 
 Desktop-first, data-dense design:
-
 - Smaller text sizes (Nuxt UI `text-sm` / `text-xs` as defaults for table content)
 - Reduced padding on table rows and cards (`py-1` / `py-2` instead of defaults)
 - Compact form inputs
@@ -255,10 +252,10 @@ The primary color requires a custom shade scale since `#8750FF` doesn't map to a
 export default defineAppConfig({
   ui: {
     colors: {
-      primary: 'violet', // closest Tailwind base, overridden with custom shades
-      neutral: 'neutral',
-    },
-  },
+      primary: 'violet',  // closest Tailwind base, overridden with custom shades
+      neutral: 'neutral'
+    }
+  }
 })
 ```
 
@@ -272,7 +269,7 @@ And in `tailwind.config.ts` or `assets/css/main.css`, define the custom violet s
   --ui-color-primary-200: #dccfff;
   --ui-color-primary-300: #c3a8ff;
   --ui-color-primary-400: #a578ff;
-  --ui-color-primary-500: #8750ff; /* anchor */
+  --ui-color-primary-500: #8750ff;  /* anchor */
   --ui-color-primary-600: #7a30f7;
   --ui-color-primary-700: #6b1ee3;
   --ui-color-primary-800: #5a18bf;
@@ -284,7 +281,6 @@ And in `tailwind.config.ts` or `assets/css/main.css`, define the custom violet s
 ### Job List — Expandable Table
 
 The primary job list uses `UTable` with expandable rows:
-
 - **Collapsed row**: Job name, part number, goal qty, progress bar, status, priority, assignee
 - **Expanded (level 1)**: Shows Paths for the job — path name, goal qty, step count, path-level progress
 - **Expanded (level 2)**: Shows Process Steps within a path — step name, parts at step, parts completed through step, bottleneck indicator
@@ -294,14 +290,12 @@ If nesting depth becomes unwieldy in the table, individual paths can link to a d
 ### Dashboard Homepage
 
 Summary cards (top row):
-
 - Active Jobs count
 - Total Parts In Progress
 - Parts Completed Today
 - Bottleneck Alerts (steps with highest wait counts)
 
 Charts (below cards):
-
 - Job progress overview (horizontal bar chart — one bar per active job)
 - Parts by process step (stacked bar or heatmap showing distribution across steps)
 
@@ -311,31 +305,31 @@ Each card/chart links to the relevant detailed view.
 
 ### Frontend Components
 
-| Component                | Props                                                      | Events               | Description                                                                                                       |
-| ------------------------ | ---------------------------------------------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `JobForm`                | `job?: Job`                                                | `@submit(job)`       | Create/edit form with name, goal quantity, optional Jira link                                                     |
-| `PathEditor`             | `jobId: string, path?: Path`                               | `@save(path)`        | Manage ordered process steps, goal quantity                                                                       |
-| `StepTracker`            | `path: Path, serials: SerialNumber[]`                      | `@advance(serialId)` | Visual step-by-step tracker showing SN counts per step                                                            |
-| `SerialBatchForm`        | `jobId: string, pathId: string`                            | `@created(serials)`  | Batch create SNs at OP1 with optional cert attachment                                                             |
-| `CertForm`               | `cert?: Certificate`                                       | `@submit(cert)`      | Create certificate with type and metadata                                                                         |
-| `ProgressBar`            | `completed: number, goal: number`                          | —                    | Dual-color bar (blue in-progress, green completed), supports >100%                                                |
-| `QRScanner`              | —                                                          | `@scanned(value)`    | Camera-based QR reader, dispatches lookup                                                                         |
-| `BomEditor`              | `bom?: BOM`                                                | `@save(bom)`         | Define part types and required quantities                                                                         |
-| `AuditLog`               | `entries: AuditEntry[]`                                    | —                    | Chronological audit trail display                                                                                 |
-| `BottleneckBadge`        | `isBottleneck: boolean`                                    | —                    | Visual indicator for step with most waiting SNs                                                                   |
-| `JiraFieldMappingEditor` | `mappings: JiraFieldMapping[]`                             | `@save(mappings)`    | Table of Jira custom field ID → SHOP_ERP field mappings. Add, edit, remove rows.                                  |
-| `JiraConnectionForm`     | `connection: JiraConnectionSettings`                       | `@save(connection)`  | Jira base URL, project key, username, API token. Test connection button.                                          |
-| `OperatorView`           | `stepName: string`                                         | —                    | Shows work at a step: current parts, coming soon (1 step upstream), backlog (2+ steps upstream), next destination |
-| `JobExpandableRow`       | `job: Job`                                                 | —                    | Expandable job row → paths → process steps with in-progress/completed counts per step                             |
-| `AssigneeView`           | `assignee: string`                                         | —                    | Groups jobs/steps by assignee, shows quantity to produce and next step destination                                |
-| `ViewFilters`            | `filters: FilterState`                                     | `@change(filters)`   | Filter bar: job name, ticket key, step, assignee, priority, label, status                                         |
-| `StepNoteForm`           | `serialIds: string[], stepId: string`                      | `@submit(note)`      | Create a note/defect on serial(s) at a step, optional Jira push                                                   |
-| `StepNoteList`           | `notes: StepNote[]`                                        | —                    | Chronological list of notes for a step or serial                                                                  |
-| `DashboardSummaryCard`   | `title: string, value: number, icon: string, link: string` | —                    | Metric card for dashboard homepage                                                                                |
-| `DashboardJobChart`      | `jobs: JobProgress[]`                                      | —                    | Horizontal bar chart showing progress per active job                                                              |
-| `BarcodeInput`           | `placeholder?: string`                                     | `@scanned(value)`    | Text input for barcode scanner + QR camera button. Global hotkey `/` focuses this field. Auto-detects SN vs cert. |
-| `UserSelector`           | `users: ShopUser[]`                                        | `@select(user)`      | Click-to-select user list for kiosk mode. Persists in session.                                                    |
-| `UserForm`               | `user?: ShopUser`                                          | `@submit(user)`      | Create/edit user profile in Settings (name, department, active toggle).                                           |
+| Component | Props | Events | Description |
+|-----------|-------|--------|-------------|
+| `JobForm` | `job?: Job` | `@submit(job)` | Create/edit form with name, goal quantity, optional Jira link |
+| `PathEditor` | `jobId: string, path?: Path` | `@save(path)` | Manage ordered process steps, goal quantity |
+| `StepTracker` | `path: Path, serials: SerialNumber[]` | `@advance(serialId)` | Visual step-by-step tracker showing SN counts per step |
+| `SerialBatchForm` | `jobId: string, pathId: string` | `@created(serials)` | Batch create SNs at OP1 with optional cert attachment |
+| `CertForm` | `cert?: Certificate` | `@submit(cert)` | Create certificate with type and metadata |
+| `ProgressBar` | `completed: number, goal: number` | — | Dual-color bar (blue in-progress, green completed), supports >100% |
+| `QRScanner` | — | `@scanned(value)` | Camera-based QR reader, dispatches lookup |
+| `BomEditor` | `bom?: BOM` | `@save(bom)` | Define part types and required quantities |
+| `AuditLog` | `entries: AuditEntry[]` | — | Chronological audit trail display |
+| `BottleneckBadge` | `isBottleneck: boolean` | — | Visual indicator for step with most waiting SNs |
+| `JiraFieldMappingEditor` | `mappings: JiraFieldMapping[]` | `@save(mappings)` | Table of Jira custom field ID → SHOP_ERP field mappings. Add, edit, remove rows. |
+| `JiraConnectionForm` | `connection: JiraConnectionSettings` | `@save(connection)` | Jira base URL, project key, username, API token. Test connection button. |
+| `OperatorView` | `stepName: string` | — | Shows work at a step: current parts, coming soon (1 step upstream), backlog (2+ steps upstream), next destination |
+| `JobExpandableRow` | `job: Job` | — | Expandable job row → paths → process steps with in-progress/completed counts per step |
+| `AssigneeView` | `assignee: string` | — | Groups jobs/steps by assignee, shows quantity to produce and next step destination |
+| `ViewFilters` | `filters: FilterState` | `@change(filters)` | Filter bar: job name, ticket key, step, assignee, priority, label, status |
+| `StepNoteForm` | `serialIds: string[], stepId: string` | `@submit(note)` | Create a note/defect on serial(s) at a step, optional Jira push |
+| `StepNoteList` | `notes: StepNote[]` | — | Chronological list of notes for a step or serial |
+| `DashboardSummaryCard` | `title: string, value: number, icon: string, link: string` | — | Metric card for dashboard homepage |
+| `DashboardJobChart` | `jobs: JobProgress[]` | — | Horizontal bar chart showing progress per active job |
+| `BarcodeInput` | `placeholder?: string` | `@scanned(value)` | Text input for barcode scanner + QR camera button. Global hotkey `/` focuses this field. Auto-detects SN vs cert. |
+| `UserSelector` | `users: ShopUser[]` | `@select(user)` | Click-to-select user list for kiosk mode. Persists in session. |
+| `UserForm` | `user?: ShopUser` | `@submit(user)` | Create/edit user profile in Settings (name, department, active toggle). |
 
 ### Composables
 
@@ -348,18 +342,10 @@ export function useJobs() {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  async function fetchJobs() {
-    /* GET /api/jobs */
-  }
-  async function createJob(data: CreateJobInput) {
-    /* POST /api/jobs */
-  }
-  async function updateJob(id: string, data: UpdateJobInput) {
-    /* PUT /api/jobs/:id */
-  }
-  async function getJob(id: string): Promise<Job> {
-    /* GET /api/jobs/:id */
-  }
+  async function fetchJobs() { /* GET /api/jobs */ }
+  async function createJob(data: CreateJobInput) { /* POST /api/jobs */ }
+  async function updateJob(id: string, data: UpdateJobInput) { /* PUT /api/jobs/:id */ }
+  async function getJob(id: string): Promise<Job> { /* GET /api/jobs/:id */ }
 
   return { jobs, loading, error, fetchJobs, createJob, updateJob, getJob }
 }
@@ -402,7 +388,7 @@ export interface AuditRepository {
   create(entry: AuditEntry): AuditEntry
   listBySerialId(serialId: string): AuditEntry[]
   listByJobId(jobId: string): AuditEntry[]
-  list(options?: { limit?: number; offset?: number }): AuditEntry[]
+  list(options?: { limit?: number, offset?: number }): AuditEntry[]
 }
 
 // server/repositories/interfaces/serialRepository.ts
@@ -439,7 +425,7 @@ export type RepositorySet = {
   users: UserRepository
 }
 
-export function createRepositories(config: { type: 'sqlite'; dbPath: string }): RepositorySet {
+export function createRepositories(config: { type: 'sqlite', dbPath: string }): RepositorySet {
   switch (config.type) {
     case 'sqlite':
       return createSQLiteRepositories(config.dbPath)
@@ -460,9 +446,9 @@ import Database from 'better-sqlite3'
 
 export function createSQLiteRepositories(dbPath: string): RepositorySet {
   const db = new Database(dbPath)
-  db.pragma('journal_mode = WAL') // Write-Ahead Logging for better concurrency
-  db.pragma('foreign_keys = ON') // Enforce referential integrity
-  runMigrations(db) // Create/update tables
+  db.pragma('journal_mode = WAL')       // Write-Ahead Logging for better concurrency
+  db.pragma('foreign_keys = ON')        // Enforce referential integrity
+  runMigrations(db)                     // Create/update tables
   return {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
@@ -688,10 +674,10 @@ function runMigrations(db: Database.Database) {
   `)
 
   const applied = db.prepare('SELECT version FROM _migrations').all() as { version: number }[]
-  const appliedVersions = new Set(applied.map((m) => m.version))
+  const appliedVersions = new Set(applied.map(m => m.version))
 
   // Load migration files from disk, sorted by version number
-  const pending = loadMigrationFiles().filter((m) => !appliedVersions.has(m.version))
+  const pending = loadMigrationFiles().filter(m => !appliedVersions.has(m.version))
 
   for (const migration of pending) {
     db.transaction(() => {
@@ -716,12 +702,10 @@ function runMigrations(db: Database.Database) {
 #### Development Workflow
 
 During development, if you need to reset the schema entirely:
-
 1. Delete `data/shop_erp.db`
 2. Restart the app — all migrations re-run from scratch
 
 For adding a new migration:
-
 1. Create a new `.sql` file in `server/repositories/sqlite/migrations/` with the next sequence number
 2. Write the SQL (ALTER TABLE, CREATE TABLE, CREATE INDEX, etc.)
 3. Restart the app — the new migration runs automatically
@@ -732,13 +716,13 @@ SHOP_ERP enforces strict boundaries between layers to prevent business logic fro
 
 ### Layer Rules
 
-| Layer                  | ALLOWED                                                                                                            | FORBIDDEN                                                                          |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
-| **Components / Pages** | Render UI, bind to composable state, emit events, call composable methods                                          | Import services, import repositories, contain domain logic, directly call `$fetch` |
-| **Composables**        | Call `$fetch` to API routes, manage reactive UI state (loading, error, lists), transform API responses for display | Contain business rules, validate domain invariants, compute derived domain state   |
-| **API Routes**         | Parse/validate request input, call service methods, format HTTP responses, handle HTTP errors                      | Contain business logic, call repositories directly, compute domain state           |
-| **Services**           | Implement all business rules, enforce domain invariants, orchestrate repository calls, record audit entries        | Import Vue/Nuxt client code, know about HTTP, access request/response objects      |
-| **Repositories**       | CRUD operations on database, SQL queries, row-to-object mapping                                                    | Contain business logic, enforce domain rules, call other repositories              |
+| Layer | ALLOWED | FORBIDDEN |
+|-------|---------|-----------|
+| **Components / Pages** | Render UI, bind to composable state, emit events, call composable methods | Import services, import repositories, contain domain logic, directly call `$fetch` |
+| **Composables** | Call `$fetch` to API routes, manage reactive UI state (loading, error, lists), transform API responses for display | Contain business rules, validate domain invariants, compute derived domain state |
+| **API Routes** | Parse/validate request input, call service methods, format HTTP responses, handle HTTP errors | Contain business logic, call repositories directly, compute domain state |
+| **Services** | Implement all business rules, enforce domain invariants, orchestrate repository calls, record audit entries | Import Vue/Nuxt client code, know about HTTP, access request/response objects |
+| **Repositories** | CRUD operations on database, SQL queries, row-to-object mapping | Contain business logic, enforce domain rules, call other repositories |
 
 ### Where Business Logic Lives
 
@@ -841,34 +825,35 @@ Components → Composables → API Routes → Services → Repositories → Data
 
 Dependencies flow left-to-right only. No layer reaches backward. Services don't know about HTTP. Repositories don't know about business rules. Composables don't know about the database.
 
+
 ## Data Models
 
 ### Core Domain Types
 
 ```typescript
 // ---- Identifiers ----
-type JobId = string // e.g. "job_abc123"
-type PathId = string // e.g. "path_def456"
-type StepId = string // e.g. "step_ghi789"
-type SerialId = string // e.g. "SN-00001"
-type CertId = string // e.g. "cert_jkl012"
-type TemplateId = string // e.g. "tmpl_mno345"
-type BomId = string // e.g. "bom_pqr678"
-type AuditId = string // e.g. "aud_stu901"
+type JobId = string       // e.g. "job_abc123"
+type PathId = string      // e.g. "path_def456"
+type StepId = string      // e.g. "step_ghi789"
+type SerialId = string    // e.g. "SN-00001"
+type CertId = string      // e.g. "cert_jkl012"
+type TemplateId = string  // e.g. "tmpl_mno345"
+type BomId = string       // e.g. "bom_pqr678"
+type AuditId = string     // e.g. "aud_stu901"
 
 // ---- Job ----
 interface Job {
   id: JobId
   name: string
-  goalQuantity: number // must be > 0
-  pathIds: PathId[] // ordered list of paths
-  jiraTicketKey?: string // e.g. "PI-7987"
+  goalQuantity: number              // must be > 0
+  pathIds: PathId[]                 // ordered list of paths
+  jiraTicketKey?: string            // e.g. "PI-7987"
   jiraTicketSummary?: string
-  jiraPartNumber?: string // from customfield_10908 or parsed from summary
-  jiraPriority?: string // "Critical" | "High" | "Medium" | "Low"
-  jiraEpicLink?: string // parent epic key, e.g. "PI-4294"
-  jiraLabels?: string[] // e.g. ["PI_PCBA"]
-  createdAt: string // ISO 8601
+  jiraPartNumber?: string           // from customfield_10908 or parsed from summary
+  jiraPriority?: string             // "Critical" | "High" | "Medium" | "Low"
+  jiraEpicLink?: string             // parent epic key, e.g. "PI-4294"
+  jiraLabels?: string[]             // e.g. ["PI_PCBA"]
+  createdAt: string                 // ISO 8601
   updatedAt: string
 }
 
@@ -878,7 +863,7 @@ interface Path {
   jobId: JobId
   name: string
   goalQuantity: number
-  steps: ProcessStep[] // ordered sequence
+  steps: ProcessStep[]              // ordered sequence
   createdAt: string
   updatedAt: string
 }
@@ -886,27 +871,27 @@ interface Path {
 // ---- Process Step ----
 interface ProcessStep {
   id: StepId
-  name: string // e.g. "OP1", "Stress Relief", "Final Inspection"
-  order: number // 0-based index in the path
-  location?: string // physical location, e.g. "Machine Shop", "QC Lab", "Vendor - Anodize Co."
+  name: string                      // e.g. "OP1", "Stress Relief", "Final Inspection"
+  order: number                     // 0-based index in the path
+  location?: string                 // physical location, e.g. "Machine Shop", "QC Lab", "Vendor - Anodize Co."
 }
 
 // ---- Serial Number ----
 interface SerialNumber {
-  id: SerialId // globally unique identifier
+  id: SerialId                      // globally unique identifier
   jobId: JobId
   pathId: PathId
-  currentStepIndex: number // index into Path.steps, -1 = completed
-  certIds: CertAttachment[] // certs attached at various steps
+  currentStepIndex: number          // index into Path.steps, -1 = completed
+  certIds: CertAttachment[]         // certs attached at various steps
   createdAt: string
   updatedAt: string
 }
 
 interface CertAttachment {
   certId: CertId
-  stepId: StepId // step where cert was attached
-  attachedAt: string // ISO 8601
-  attachedBy: string // user identity
+  stepId: StepId                    // step where cert was attached
+  attachedAt: string                // ISO 8601
+  attachedBy: string                // user identity
 }
 
 // ---- Certificate ----
@@ -914,7 +899,7 @@ interface Certificate {
   id: CertId
   type: 'material' | 'process'
   name: string
-  metadata: Record<string, string> // flexible key-value pairs
+  metadata: Record<string, string>  // flexible key-value pairs
   createdAt: string
 }
 
@@ -922,7 +907,7 @@ interface Certificate {
 interface TemplateRoute {
   id: TemplateId
   name: string
-  steps: TemplateStep[] // ordered sequence
+  steps: TemplateStep[]             // ordered sequence
   createdAt: string
   updatedAt: string
 }
@@ -930,7 +915,7 @@ interface TemplateRoute {
 interface TemplateStep {
   name: string
   order: number
-  location?: string // default physical location for this step
+  location?: string                 // default physical location for this step
 }
 
 // ---- BOM ----
@@ -943,7 +928,7 @@ interface BOM {
 }
 
 interface BomEntry {
-  partType: string // descriptive name
+  partType: string                  // descriptive name
   requiredQuantityPerBuild: number
   contributingJobIds: JobId[]
 }
@@ -955,15 +940,15 @@ interface AuditEntry {
   id: AuditId
   action: AuditAction
   userId: string
-  timestamp: string // ISO 8601
+  timestamp: string                 // ISO 8601
   serialId?: SerialId
   certId?: CertId
   jobId?: JobId
   pathId?: PathId
   stepId?: StepId
-  fromStepId?: StepId // for advancement
-  toStepId?: StepId // for advancement
-  batchQuantity?: number // for batch creation
+  fromStepId?: StepId              // for advancement
+  toStepId?: StepId                // for advancement
+  batchQuantity?: number           // for batch creation
   metadata?: Record<string, string>
 }
 
@@ -974,7 +959,7 @@ interface JobProgress {
   totalSerials: number
   completedSerials: number
   inProgressSerials: number
-  percentage: number // (completed / goal) * 100, can exceed 100
+  percentage: number                // (completed / goal) * 100, can exceed 100
 }
 
 interface StepDistribution {
@@ -1003,32 +988,32 @@ interface BomEntrySummary {
 // ---- User (Simple / Kiosk Mode) ----
 interface ShopUser {
   id: string
-  name: string // display name, e.g. "Mike Jones"
-  department?: string // optional, e.g. "Machining", "QC"
-  active: boolean // false = hidden from user selector
+  name: string                      // display name, e.g. "Mike Jones"
+  department?: string               // optional, e.g. "Machining", "QC"
+  active: boolean                   // false = hidden from user selector
   createdAt: string
 }
 
 // ---- Settings (Jira Field Mapping & Connection) ----
 interface JiraFieldMapping {
-  id: string // unique mapping ID
-  jiraFieldId: string // e.g. "customfield_10908"
-  label: string // human-readable label, e.g. "Part Number / Rev"
-  shopErpField: string // target field in SHOP_ERP, e.g. "partNumber"
-  isDefault: boolean // true = shipped with app, false = user-added
+  id: string                        // unique mapping ID
+  jiraFieldId: string               // e.g. "customfield_10908"
+  label: string                     // human-readable label, e.g. "Part Number / Rev"
+  shopErpField: string              // target field in SHOP_ERP, e.g. "partNumber"
+  isDefault: boolean                // true = shipped with app, false = user-added
 }
 
 interface JiraConnectionSettings {
-  baseUrl: string // e.g. "https://jira.example.com"
-  projectKey: string // e.g. "PI"
-  username: string // Jira username for API auth
-  apiToken: string // Jira API token (stored server-side only)
-  enabled: boolean // Global toggle — false = all Jira UI hidden, app is standalone
-  pushEnabled: boolean // Push toggle — false = read-only mode (pull tickets only)
+  baseUrl: string                   // e.g. "https://jira.example.com"
+  projectKey: string                // e.g. "PI"
+  username: string                  // Jira username for API auth
+  apiToken: string                  // Jira API token (stored server-side only)
+  enabled: boolean                  // Global toggle — false = all Jira UI hidden, app is standalone
+  pushEnabled: boolean              // Push toggle — false = read-only mode (pull tickets only)
 }
 
 interface AppSettings {
-  id: string // singleton "app_settings"
+  id: string                        // singleton "app_settings"
   jiraConnection: JiraConnectionSettings
   jiraFieldMappings: JiraFieldMapping[]
   updatedAt: string
@@ -1040,21 +1025,21 @@ interface StepNote {
   jobId: JobId
   pathId: PathId
   stepId: StepId
-  serialIds: SerialId[] // one or more affected serial numbers
-  text: string // free-text note content
-  createdBy: string // user identity
-  createdAt: string // ISO 8601
-  pushedToJira: boolean // whether this note was pushed as a Jira comment
-  jiraCommentId?: string // Jira comment ID if pushed
+  serialIds: SerialId[]             // one or more affected serial numbers
+  text: string                      // free-text note content
+  createdBy: string                 // user identity
+  createdAt: string                 // ISO 8601
+  pushedToJira: boolean             // whether this note was pushed as a Jira comment
+  jiraCommentId?: string            // Jira comment ID if pushed
 }
 
 // ---- Operator View Types ----
 interface OperatorStepView {
   stepName: string
   stepId: StepId
-  currentParts: OperatorPartInfo[] // parts at this step right now
-  comingSoon: OperatorPartInfo[] // parts one step upstream
-  backlog: OperatorPartInfo[] // parts two+ steps upstream
+  currentParts: OperatorPartInfo[]      // parts at this step right now
+  comingSoon: OperatorPartInfo[]        // parts one step upstream
+  backlog: OperatorPartInfo[]           // parts two+ steps upstream
 }
 
 interface OperatorPartInfo {
@@ -1063,8 +1048,8 @@ interface OperatorPartInfo {
   jobId: JobId
   pathName: string
   pathId: PathId
-  timeAtStep: number // milliseconds since arriving at current step
-  nextStepName: string | null // where this part goes after current step
+  timeAtStep: number                    // milliseconds since arriving at current step
+  nextStepName: string | null           // where this part goes after current step
 }
 
 // ---- Filter State ----
@@ -1094,7 +1079,7 @@ interface FilterState {
 interface CreateJobInput {
   name: string
   goalQuantity: number
-  jiraTicketKey?: string // "PI-7987"
+  jiraTicketKey?: string            // "PI-7987"
   jiraTicketSummary?: string
   jiraPartNumber?: string
   jiraPriority?: string
@@ -1112,7 +1097,7 @@ interface CreatePathInput {
   jobId: string
   name: string
   goalQuantity: number
-  steps: { name: string }[] // at least one step required
+  steps: { name: string }[]         // at least one step required
 }
 
 interface UpdatePathInput {
@@ -1125,8 +1110,8 @@ interface UpdatePathInput {
 interface BatchCreateSerialsInput {
   jobId: string
   pathId: string
-  quantity: number // how many SNs to create
-  certId?: string // optional material cert to attach to all
+  quantity: number                   // how many SNs to create
+  certId?: string                   // optional material cert to attach to all
 }
 
 interface AdvanceSerialInput {
@@ -1179,53 +1164,53 @@ interface CreateBomInput {
 
 // Custom field ID mapping for the PI project
 const JIRA_CUSTOM_FIELDS = {
-  PART_NUMBER_REV: 'customfield_10908', // "Part Number / Rev" — PRIMARY, e.g. "158041-001-01"
-  QUANTITY: 'customfield_10909', // "Quantity" — integer part count
-  PART_NUMBER: 'customfield_10923', // "Part Number" — alternate PN (less commonly used)
-  MFG_PART_NUMBER: 'customfield_13000', // "MFG Part Number"
-  MATERIAL_CERTS_REQ: 'customfield_10949', // "Material Certs Required"
-  DELIVERY_DATE: 'customfield_10937', // "Delivery Date"
-  START_DATE: 'customfield_10602', // "Start date"
-  END_DATE: 'customfield_10603', // "End date"
-  EPIC_LINK: 'customfield_10101', // "Epic Link" — parent epic key
-  SUBSYSTEM: 'customfield_10926', // "Subsystem"
-  PART_TYPE: 'customfield_10925', // "Part Type"
+  PART_NUMBER_REV:     'customfield_10908', // "Part Number / Rev" — PRIMARY, e.g. "158041-001-01"
+  QUANTITY:            'customfield_10909', // "Quantity" — integer part count
+  PART_NUMBER:         'customfield_10923', // "Part Number" — alternate PN (less commonly used)
+  MFG_PART_NUMBER:     'customfield_13000', // "MFG Part Number"
+  MATERIAL_CERTS_REQ:  'customfield_10949', // "Material Certs Required"
+  DELIVERY_DATE:       'customfield_10937', // "Delivery Date"
+  START_DATE:          'customfield_10602', // "Start date"
+  END_DATE:            'customfield_10603', // "End date"
+  EPIC_LINK:           'customfield_10101', // "Epic Link" — parent epic key
+  SUBSYSTEM:           'customfield_10926', // "Subsystem"
+  PART_TYPE:           'customfield_10925', // "Part Type"
 } as const
 
 // Jira workflow statuses mapped to manufacturing stages
 const JIRA_STATUSES = {
-  Backlog: { id: '10002', category: 'To Do' },
-  'In Review': { id: '10101', category: 'In Progress' },
-  'In Progress': { id: '3', category: 'In Progress' },
-  'PI - Secondary Ops': { id: '11213', category: 'In Progress' },
-  'Quality Check': { id: '11000', category: 'In Progress' },
-  'In Test': { id: '10717', category: 'In Progress' },
-  'On Hold': { id: '10902', category: 'In Progress' },
+  'Backlog':                { id: '10002', category: 'To Do' },
+  'In Review':              { id: '10101', category: 'In Progress' },
+  'In Progress':            { id: '3',     category: 'In Progress' },
+  'PI - Secondary Ops':     { id: '11213', category: 'In Progress' },
+  'Quality Check':          { id: '11000', category: 'In Progress' },
+  'In Test':                { id: '10717', category: 'In Progress' },
+  'On Hold':                { id: '10902', category: 'In Progress' },
   'Pending Requestor Info': { id: '10306', category: 'In Progress' },
-  'Investigating NC': { id: '11002', category: 'In Progress' },
-  'Picked Up': { id: '11214', category: 'Done' },
-  'Moved to Inventory': { id: '11215', category: 'Done' },
-  'PI - Shipped': { id: '11216', category: 'Done' },
-  Done: { id: '10001', category: 'Done' },
-  Cancelled: { id: '10006', category: 'Done' },
+  'Investigating NC':       { id: '11002', category: 'In Progress' },
+  'Picked Up':              { id: '11214', category: 'Done' },
+  'Moved to Inventory':     { id: '11215', category: 'Done' },
+  'PI - Shipped':           { id: '11216', category: 'Done' },
+  'Done':                   { id: '10001', category: 'Done' },
+  'Cancelled':              { id: '10006', category: 'Done' },
 } as const
 
 interface JiraUser {
-  name: string // "jsmith" — username for API calls
-  key: string // "JIRAUSER12345"
-  displayName: string // "Jane Smith"
+  name: string              // "jsmith" — username for API calls
+  key: string               // "JIRAUSER12345"
+  displayName: string       // "Jane Smith"
   emailAddress: string
   active: boolean
   timeZone: string
 }
 
 interface JiraStatus {
-  name: string // e.g. "Quality Check"
-  id: string // e.g. "11000"
+  name: string              // e.g. "Quality Check"
+  id: string                // e.g. "11000"
   statusCategory: {
     id: number
-    key: string // "new" | "indeterminate" | "done"
-    name: string // "To Do" | "In Progress" | "Done"
+    key: string             // "new" | "indeterminate" | "done"
+    name: string            // "To Do" | "In Progress" | "Done"
   }
 }
 
@@ -1234,15 +1219,15 @@ interface JiraAttachment {
   filename: string
   mimeType: string
   size: number
-  content: string // Download URL
+  content: string           // Download URL
   author: JiraUser
-  created: string // ISO datetime
+  created: string           // ISO datetime
 }
 
 // Shape of a PI ticket as returned by the Jira REST API
 interface PITicket {
-  key: string // "PI-7987"
-  summary: string // "1337400-002 Launch Lock Body Rework"
+  key: string               // "PI-7987"
+  summary: string           // "1337400-002 Launch Lock Body Rework"
   description: string
   issuetype: { name: string }
   reporter: JiraUser
@@ -1250,7 +1235,7 @@ interface PITicket {
   priority: { name: string; id: string }
   status: JiraStatus
   resolution: string | null // null = active, "Resolved" = done
-  labels: string[] // e.g. ["PI_PCBA"]
+  labels: string[]          // e.g. ["PI_PCBA"]
   components: string[]
   duedate: string | null
   attachment: JiraAttachment[]
@@ -1259,32 +1244,32 @@ interface PITicket {
   created: string
   updated: string
   // Shop-critical custom fields
-  customfield_10908: string | null // Part Number / Rev (PRIMARY)
-  customfield_10909: number | null // Quantity
-  customfield_10923: string | null // Part Number (alternate)
-  customfield_13000: string | null // MFG Part Number
-  customfield_10949: string | null // Material Certs Required
-  customfield_10937: string | null // Delivery Date
-  customfield_10602: string | null // Start date
-  customfield_10603: string | null // End date
-  customfield_10101: string | null // Epic Link
-  customfield_10926: string | null // Subsystem
-  customfield_10925: string | null // Part Type
+  customfield_10908: string | null  // Part Number / Rev (PRIMARY)
+  customfield_10909: number | null  // Quantity
+  customfield_10923: string | null  // Part Number (alternate)
+  customfield_13000: string | null  // MFG Part Number
+  customfield_10949: string | null  // Material Certs Required
+  customfield_10937: string | null  // Delivery Date
+  customfield_10602: string | null  // Start date
+  customfield_10603: string | null  // End date
+  customfield_10101: string | null  // Epic Link
+  customfield_10926: string | null  // Subsystem
+  customfield_10925: string | null  // Part Type
 }
 
 // Normalized ticket for SHOP_ERP internal use (mapped from PITicket)
 interface JiraTicket {
-  key: string // "PI-7987"
+  key: string               // "PI-7987"
   summary: string
   description: string
   partNumber: string | null // resolved from customfield_10908 or parsed from summary
-  quantity: number | null // from customfield_10909
-  status: string // status.name
-  statusCategory: string // "To Do" | "In Progress" | "Done"
-  priority: string // "Critical" | "High" | "Medium" | "Low"
-  assignee: string | null // displayName
-  reporter: string // displayName
-  epicLink: string | null // parent epic key
+  quantity: number | null   // from customfield_10909
+  status: string            // status.name
+  statusCategory: string    // "To Do" | "In Progress" | "Done"
+  priority: string          // "Critical" | "High" | "Medium" | "Low"
+  assignee: string | null   // displayName
+  reporter: string          // displayName
+  epicLink: string | null   // parent epic key
   labels: string[]
   materialCertsRequired: string | null
   deliveryDate: string | null
@@ -1311,9 +1296,9 @@ interface JiraTicket {
 // By status: project = PI AND status = "Quality Check"
 
 interface LinkJiraInput {
-  ticketKey: string // "PI-7987"
+  ticketKey: string         // "PI-7987"
   templateId?: string
-  goalQuantity?: number // defaults to ticket's customfield_10909 if not provided
+  goalQuantity?: number     // defaults to ticket's customfield_10909 if not provided
 }
 
 interface PushToJiraInput {
@@ -1322,7 +1307,7 @@ interface PushToJiraInput {
 }
 
 interface PushNoteToJiraInput {
-  noteId: string // StepNote to push as Jira comment
+  noteId: string                    // StepNote to push as Jira comment
 }
 ```
 
@@ -1338,7 +1323,6 @@ Single file, trivially backed up with `cp` or `sqlite3 .backup`. WAL mode means 
 ### Jira Configuration (Runtime Config + Settings UI)
 
 Jira connection settings can be configured two ways:
-
 1. **Settings page (primary)**: Admin edits connection and field mappings in the UI → persisted to the `settings` table in SQLite
 2. **Environment variables (fallback)**: Used as defaults when no settings row exists or fields are empty
 
@@ -1350,7 +1334,7 @@ export default defineNuxtConfig({
     jiraUsername: process.env.JIRA_USERNAME || '',
     jiraApiToken: process.env.JIRA_API_TOKEN || '',
     jiraProjectKey: process.env.JIRA_PROJECT_KEY || 'PI',
-  },
+  }
 })
 ```
 
@@ -1369,14 +1353,13 @@ export default defineNuxtConfig({
     jiraUsername: process.env.JIRA_USERNAME || '',
     jiraApiToken: process.env.JIRA_API_TOKEN || '',
     jiraProjectKey: process.env.JIRA_PROJECT_KEY || 'PI',
-  },
+  }
 })
 ```
 
 ### Serialization Strategy
 
 Domain objects use TypeScript interfaces as the canonical types. The SQLite repository layer handles mapping between TypeScript objects and SQL rows:
-
 - Simple fields map directly to columns
 - JSON-typed fields (`metadata`, `jira_labels`, `jira_field_mappings`) are stored as `TEXT` columns containing `JSON.stringify()` output and parsed with `JSON.parse()` on read
 - The `serialization.ts` utility provides `serialize()` / `deserialize()` / `prettyPrint()` functions for API responses and export/import functionality
@@ -1397,85 +1380,86 @@ function generateId(prefix: string): string {
 
 Serial Number IDs use a sequential format with a configurable prefix: `SN-00001`, `SN-00002`, etc. The counter is stored in the database (a `counters` table) to ensure uniqueness across restarts.
 
+
 ## Correctness Properties
 
-_A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
+*A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
 ### Property 1: Job Part Count Invariant
 
-_For any_ Job with any number of Paths, and after any sequence of Serial Number creation, advancement, or completion operations, the Job's total part count SHALL equal the sum of Serial Number counts across all Paths belonging to that Job.
+*For any* Job with any number of Paths, and after any sequence of Serial Number creation, advancement, or completion operations, the Job's total part count SHALL equal the sum of Serial Number counts across all Paths belonging to that Job.
 
 **Validates: Requirements 1.4, 7.5**
 
 ### Property 2: Serial Number Uniqueness
 
-_For any_ sequence of batch Serial Number creation operations across any number of Jobs and Paths, all Serial Number identifiers in the system SHALL be unique — no two Serial Numbers share the same identifier.
+*For any* sequence of batch Serial Number creation operations across any number of Jobs and Paths, all Serial Number identifiers in the system SHALL be unique — no two Serial Numbers share the same identifier.
 
 **Validates: Requirements 4.1, 4.2**
 
 ### Property 3: Sequential Step Advancement
 
-_For any_ Serial Number at Process Step index N in a Path with K steps, advancing that Serial Number SHALL result in the Serial Number being at step index N+1 (if N < K-1) or marked as completed (if N == K-1). No other step transitions are permitted.
+*For any* Serial Number at Process Step index N in a Path with K steps, advancing that Serial Number SHALL result in the Serial Number being at step index N+1 (if N < K-1) or marked as completed (if N == K-1). No other step transitions are permitted.
 
 **Validates: Requirements 3.1, 3.2, 3.3**
 
 ### Property 4: Process Step Count Conservation
 
-_For any_ Path, after any sequence of Serial Number creation and advancement operations, the sum of Serial Numbers at each Process Step plus the count of completed Serial Numbers SHALL equal the total number of Serial Numbers ever created on that Path. No Serial Numbers are lost or duplicated.
+*For any* Path, after any sequence of Serial Number creation and advancement operations, the sum of Serial Numbers at each Process Step plus the count of completed Serial Numbers SHALL equal the total number of Serial Numbers ever created on that Path. No Serial Numbers are lost or duplicated.
 
 **Validates: Requirements 3.4, 2.4, 7.4**
 
 ### Property 5: Domain Object Round-Trip Serialization
 
-_For any_ valid Job, Path, ProcessStep, SerialNumber, or Certificate object, `deserialize(serialize(obj))` SHALL produce an object equivalent to `obj`. Additionally, `deserialize(prettyPrint(obj))` SHALL also produce an equivalent object. No data is lost or corrupted during serialization cycles.
+*For any* valid Job, Path, ProcessStep, SerialNumber, or Certificate object, `deserialize(serialize(obj))` SHALL produce an object equivalent to `obj`. Additionally, `deserialize(prettyPrint(obj))` SHALL also produce an equivalent object. No data is lost or corrupted during serialization cycles.
 
 **Validates: Requirements 12.1, 12.2, 12.3, 12.5**
 
 ### Property 6: Audit Trail Immutability and Completeness
 
-_For any_ Certificate attachment, Serial Number batch creation, or Serial Number advancement operation, exactly one Audit Trail entry SHALL be created containing all required fields (user identity, timestamp, and operation-specific identifiers). The total count of Audit Trail entries for a Serial Number SHALL equal the number of recorded operations performed on that Serial Number. Audit entries cannot be modified or deleted after creation.
+*For any* Certificate attachment, Serial Number batch creation, or Serial Number advancement operation, exactly one Audit Trail entry SHALL be created containing all required fields (user identity, timestamp, and operation-specific identifiers). The total count of Audit Trail entries for a Serial Number SHALL equal the number of recorded operations performed on that Serial Number. Audit entries cannot be modified or deleted after creation.
 
 **Validates: Requirements 5.4, 13.1, 13.2, 13.3, 13.4, 13.5**
 
 ### Property 7: Progress Bar Accuracy
 
-_For any_ Job with a Goal Quantity G and C completed Serial Numbers, the Progress Bar percentage SHALL equal `(C / G) * 100`. This value can exceed 100 when C > G. When G changes, the percentage recalculates immediately using the new G.
+*For any* Job with a Goal Quantity G and C completed Serial Numbers, the Progress Bar percentage SHALL equal `(C / G) * 100`. This value can exceed 100 when C > G. When G changes, the percentage recalculates immediately using the new G.
 
 **Validates: Requirements 1.3, 1.5, 7.1, 7.6**
 
 ### Property 8: Template Route Independence
 
-_For any_ Path created from a Template Route, modifying the Path's Process Steps (add, remove, reorder) SHALL leave the original Template Route's Process Step sequence unchanged. `template.steps_before == template.steps_after` for any modification to a derived Path.
+*For any* Path created from a Template Route, modifying the Path's Process Steps (add, remove, reorder) SHALL leave the original Template Route's Process Step sequence unchanged. `template.steps_before == template.steps_after` for any modification to a derived Path.
 
 **Validates: Requirements 8.2, 8.3, 8.4**
 
 ### Property 9: BOM Roll-Up Consistency
 
-_For any_ BOM, the aggregated completed count for a part type SHALL equal the sum of completed counts from all contributing Jobs for that part type. The aggregated in-progress count SHALL equal the sum of in-progress counts from all contributing Jobs. When a part type has zero contributing Jobs, both counts SHALL be zero.
+*For any* BOM, the aggregated completed count for a part type SHALL equal the sum of completed counts from all contributing Jobs for that part type. The aggregated in-progress count SHALL equal the sum of in-progress counts from all contributing Jobs. When a part type has zero contributing Jobs, both counts SHALL be zero.
 
 **Validates: Requirements 11.2, 11.3, 11.5**
 
 ### Property 10: Batch Certificate Application Idempotence
 
-_For any_ Certificate and any set of Serial Numbers, applying the Certificate to the set a second time SHALL produce the same state as applying it once. The set of Certificates on each Serial Number remains unchanged after re-application. Each application (including the idempotent re-application) records the same audit trail entries only on the first application.
+*For any* Certificate and any set of Serial Numbers, applying the Certificate to the set a second time SHALL produce the same state as applying it once. The set of Certificates on each Serial Number remains unchanged after re-application. Each application (including the idempotent re-application) records the same audit trail entries only on the first application.
 
 **Validates: Requirements 5.3, 5.6**
 
 ### Property 11: Invalid Input Rejection
 
-_For any_ Job creation with a Goal Quantity ≤ 0, or Path creation with zero Process Steps, or Serial Number creation on a Path with no steps, or Certificate attachment referencing a non-existent Certificate, the system SHALL reject the operation and return a descriptive validation error. The system state SHALL remain unchanged after rejection.
+*For any* Job creation with a Goal Quantity ≤ 0, or Path creation with zero Process Steps, or Serial Number creation on a Path with no steps, or Certificate attachment referencing a non-existent Certificate, the system SHALL reject the operation and return a descriptive validation error. The system state SHALL remain unchanged after rejection.
 
 **Validates: Requirements 1.6, 2.6, 4.6, 5.5**
 
 ### Property 12: Malformed JSON Error Reporting
 
-_For any_ malformed JSON string (missing required fields, wrong types, invalid structure), the deserializer SHALL return a descriptive error identifying the problematic field or structure rather than silently producing an invalid object or throwing an unstructured exception.
+*For any* malformed JSON string (missing required fields, wrong types, invalid structure), the deserializer SHALL return a descriptive error identifying the problematic field or structure rather than silently producing an invalid object or throwing an unstructured exception.
 
 **Validates: Requirements 12.4**
 
 ### Property 13: Jira Ticket Filtering
 
-_For any_ set of Jira tickets and existing Jobs with Jira links, the Jira Dashboard SHALL display only those tickets whose keys do not match any existing Job's `jiraTicketKey`. Tickets already linked to Jobs are excluded.
+*For any* set of Jira tickets and existing Jobs with Jira links, the Jira Dashboard SHALL display only those tickets whose keys do not match any existing Job's `jiraTicketKey`. Tickets already linked to Jobs are excluded.
 
 **Validates: Requirements 9.1, 9.5**
 
@@ -1483,20 +1467,20 @@ _For any_ set of Jira tickets and existing Jobs with Jira links, the Jira Dashbo
 
 ### Validation Errors
 
-| Operation      | Condition                  | Error Response                                               |
-| -------------- | -------------------------- | ------------------------------------------------------------ |
-| Create Job     | `goalQuantity <= 0`        | 400: "Goal quantity must be greater than zero"               |
-| Create Job     | `name` empty/missing       | 400: "Job name is required"                                  |
-| Create Path    | `steps` array empty        | 400: "Path must have at least one process step"              |
-| Create Path    | `jobId` not found          | 404: "Job not found"                                         |
-| Create Serials | Path has no steps          | 400: "Cannot create serials on a path with no process steps" |
-| Create Serials | `quantity <= 0`            | 400: "Quantity must be greater than zero"                    |
-| Advance Serial | Serial already completed   | 400: "Serial number is already completed"                    |
-| Advance Serial | Serial not found           | 404: "Serial number not found"                               |
-| Attach Cert    | Cert not found             | 404: "Certificate not found in cert database"                |
-| Attach Cert    | Serial not found           | 404: "Serial number not found"                               |
-| Apply Template | Template deleted/not found | 404: "Template route no longer exists"                       |
-| Deserialize    | Malformed JSON             | 400: "Deserialization error: [field] — [description]"        |
+| Operation | Condition | Error Response |
+|-----------|-----------|---------------|
+| Create Job | `goalQuantity <= 0` | 400: "Goal quantity must be greater than zero" |
+| Create Job | `name` empty/missing | 400: "Job name is required" |
+| Create Path | `steps` array empty | 400: "Path must have at least one process step" |
+| Create Path | `jobId` not found | 404: "Job not found" |
+| Create Serials | Path has no steps | 400: "Cannot create serials on a path with no process steps" |
+| Create Serials | `quantity <= 0` | 400: "Quantity must be greater than zero" |
+| Advance Serial | Serial already completed | 400: "Serial number is already completed" |
+| Advance Serial | Serial not found | 404: "Serial number not found" |
+| Attach Cert | Cert not found | 404: "Certificate not found in cert database" |
+| Attach Cert | Serial not found | 404: "Serial number not found" |
+| Apply Template | Template deleted/not found | 404: "Template route no longer exists" |
+| Deserialize | Malformed JSON | 400: "Deserialization error: [field] — [description]" |
 
 ### External Service Errors (Jira — PI Project)
 
@@ -1570,7 +1554,6 @@ The `jiraService.ts` module handles all Jira REST API communication. It reads fi
 #### Attachment Pattern Recognition
 
 Jira attachments follow naming conventions that SHOP_ERP can use for auto-categorization:
-
 - `*-dwg*.pdf` → Drawings
 - `*_SCAN.pdf` → Inspection scan data
 - `*CERT*.pdf` → Material certificates (can auto-link to Cert Database)
@@ -1603,10 +1586,7 @@ Custom error classes:
 
 ```typescript
 class ValidationError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = 'ValidationError'
-  }
+  constructor(message: string) { super(message); this.name = 'ValidationError' }
 }
 
 class NotFoundError extends Error {
@@ -1685,7 +1665,7 @@ describe('Property N: Title', () => {
   it('should hold for all valid inputs', () => {
     fc.assert(
       fc.property(
-        arbitraryDomainObject(), // custom generator
+        arbitraryDomainObject(),  // custom generator
         (obj) => {
           // exercise the system
           // assert the property holds
@@ -1710,7 +1690,7 @@ const arbCertType = fc.constantFrom('material', 'process')
 
 const arbProcessStep = fc.record({
   name: arbStepName,
-  order: fc.nat(),
+  order: fc.nat()
 })
 
 const arbJob = fc.record({
@@ -1718,8 +1698,8 @@ const arbJob = fc.record({
   name: arbJobName,
   goalQuantity: arbGoalQuantity,
   pathIds: fc.array(fc.string()),
-  createdAt: fc.date().map((d) => d.toISOString()),
-  updatedAt: fc.date().map((d) => d.toISOString()),
+  createdAt: fc.date().map(d => d.toISOString()),
+  updatedAt: fc.date().map(d => d.toISOString())
 })
 
 // ... similar generators for Path, SerialNumber, Certificate, etc.
@@ -1728,7 +1708,6 @@ const arbJob = fc.record({
 ### Unit Test Focus Areas
 
 Unit tests cover:
-
 - **Specific examples**: Creating a job with known values, advancing a serial through 3 steps
 - **Edge cases**: Zero goal quantity rejection, empty step array rejection, completing the final step, >100% progress
 - **Error conditions**: Non-existent cert attachment, duplicate serial IDs (should never happen), malformed JSON with specific missing fields
@@ -1792,7 +1771,6 @@ Seed data provides realistic sample jobs for manual testing in the browser. It c
 #### Naming Convention
 
 All seed data uses a `SAMPLE-` prefix:
-
 - Job names: `SAMPLE-Launch Lock Body`, `SAMPLE-Bracket Assembly`
 - Serial numbers: `SAMPLE-SN-00001`, `SAMPLE-SN-00002`
 - Template names: `SAMPLE-Standard Machining`, `SAMPLE-With Coating`
@@ -1803,13 +1781,11 @@ This makes seed data instantly identifiable and filterable in the UI.
 #### Seed Script Behavior
 
 `npm run seed`:
-
 1. Check if any jobs with `SAMPLE-` prefix exist in the database
 2. If yes → skip (idempotent, no duplicates)
 3. If no → create the full seed dataset
 
 `npm run seed:reset`:
-
 1. Delete all records with `SAMPLE-` prefix (jobs, paths, serials, certs, notes, audit entries)
 2. Re-run the seed script
 

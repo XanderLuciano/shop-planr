@@ -267,41 +267,31 @@ SHOP_ERP is a job routing and ERP application for machine shops. It provides pro
 ## Correctness Properties (for Property-Based Testing)
 
 ### CP-1: Job Part Count Invariant
-
 FOR ALL Jobs, the Job's total part count SHALL equal the sum of Serial Number counts across all Paths belonging to that Job. This invariant holds after any sequence of Serial Number creation, advancement, or deletion operations.
 
 ### CP-2: Serial Number Uniqueness
-
 FOR ALL Serial Numbers in the system, no two Serial Numbers SHALL share the same identifier. This property holds after any sequence of batch creation operations.
 
 ### CP-3: Sequential Step Advancement
-
 FOR ALL Serial Numbers, the current Process Step index SHALL be between 0 and the length of the Path's Process Step sequence minus 1 (inclusive). Advancing a Serial Number at step N always results in step N+1 or completion.
 
 ### CP-4: Process Step Count Conservation
-
 FOR ALL Paths, the sum of Serial Numbers at each Process Step plus the count of completed Serial Numbers SHALL equal the total number of Serial Numbers created on that Path. No Serial Numbers are lost or duplicated during advancement.
 
 ### CP-5: Domain Object Round-Trip Serialization
-
 FOR ALL valid Job, Path, Process Step, Serial Number, and Certificate objects, `deserialize(serialize(obj))` SHALL produce an object equivalent to `obj`. No data is lost or corrupted during serialization cycles.
 
 ### CP-6: Audit Trail Immutability and Completeness
-
 FOR ALL Certificate attachment and Serial Number advancement operations, exactly one Audit Trail entry SHALL be created. The count of Audit Trail entries for a Serial Number SHALL equal the number of recorded operations performed on that Serial Number.
 
 ### CP-7: Progress Bar Accuracy
-
 FOR ALL Jobs, the Progress Bar percentage SHALL equal `(completed Serial Number count / Goal Quantity) * 100`. This value can exceed 100 when completed count exceeds Goal Quantity.
 
 ### CP-8: Template Route Independence
-
 FOR ALL Paths created from a Template Route, modifying the Path's Process Steps SHALL leave the original Template Route's Process Step sequence unchanged. `template_before == template_after` for any modification to a derived Path.
 
 ### CP-9: BOM Roll-Up Consistency
-
 FOR ALL BOMs, the aggregated completed count for a part type SHALL equal the sum of completed counts from all contributing Jobs for that part type. The aggregated in-progress count SHALL equal the sum of in-progress counts from all contributing Jobs.
 
 ### CP-10: Batch Certificate Application Idempotence
-
 FOR ALL batch Certificate attachment operations, applying the same Certificate to the same set of Serial Numbers a second time SHALL produce the same state as applying it once. The set of Certificates on each Serial Number remains unchanged after re-application.

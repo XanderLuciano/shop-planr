@@ -1,11 +1,11 @@
 ---
-title: 'Get Serial'
-description: 'Retrieve a single serial number by ID with its associated certificate data'
-method: 'GET'
-endpoint: '/api/serials/:id'
-service: 'serialService'
-category: 'Serials'
-responseType: 'SerialNumber & { certs: Certificate[] }'
+title: "Get Serial"
+description: "Retrieve a single serial number by ID with its associated certificate data"
+method: "GET"
+endpoint: "/api/serials/:id"
+service: "serialService"
+category: "Serials"
+responseType: "SerialNumber & { certs: Certificate[] }"
 errorCodes: [400, 404, 500]
 navigation:
   order: 2
@@ -23,9 +23,9 @@ The response includes all serial fields — including scrap metadata, force-comp
 
 ### Path Parameters
 
-| Parameter | Type     | Required | Description                                                                |
-| --------- | -------- | -------- | -------------------------------------------------------------------------- |
-| `id`      | `string` | Yes      | The unique identifier of the serial number to retrieve (e.g. `"SN-00001"`) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` | Yes | The unique identifier of the serial number to retrieve (e.g. `"SN-00001"`) |
 
 ## Response
 
@@ -35,60 +35,60 @@ Returned when the serial is found. The response is a single object containing al
 
 #### Serial Fields
 
-| Field                  | Type                                         | Description                                                                                                                                                  |
-| ---------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `id`                   | `string`                                     | Unique serial identifier (e.g. `"SN-00001"`)                                                                                                                 |
-| `jobId`                | `string`                                     | ID of the parent job                                                                                                                                         |
-| `pathId`               | `string`                                     | ID of the manufacturing path                                                                                                                                 |
-| `currentStepIndex`     | `number`                                     | Zero-based index of the current step. `-1` when completed.                                                                                                   |
-| `status`               | `"in_progress" \| "completed" \| "scrapped"` | Current lifecycle status (underscore format)                                                                                                                 |
-| `scrapReason`          | `string \| undefined`                        | Scrap reason code. One of: `"out_of_tolerance"`, `"process_defect"`, `"damaged"`, `"operator_error"`, `"other"`. Present only when `status` is `"scrapped"`. |
-| `scrapExplanation`     | `string \| undefined`                        | Free-text explanation for the scrap. Required when `scrapReason` is `"other"`.                                                                               |
-| `scrapStepId`          | `string \| undefined`                        | ID of the step where the serial was scrapped                                                                                                                 |
-| `scrappedAt`           | `string \| undefined`                        | ISO 8601 timestamp of when the serial was scrapped                                                                                                           |
-| `scrappedBy`           | `string \| undefined`                        | User ID of who scrapped the serial                                                                                                                           |
-| `forceCompleted`       | `boolean`                                    | Whether the serial was force-completed (bypassing remaining steps)                                                                                           |
-| `forceCompletedBy`     | `string \| undefined`                        | User ID of who force-completed the serial                                                                                                                    |
-| `forceCompletedAt`     | `string \| undefined`                        | ISO 8601 timestamp of when the serial was force-completed                                                                                                    |
-| `forceCompletedReason` | `string \| undefined`                        | Reason provided for force-completing                                                                                                                         |
-| `createdAt`            | `string`                                     | ISO 8601 timestamp of when the serial was created                                                                                                            |
-| `updatedAt`            | `string`                                     | ISO 8601 timestamp of the last modification                                                                                                                  |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique serial identifier (e.g. `"SN-00001"`) |
+| `jobId` | `string` | ID of the parent job |
+| `pathId` | `string` | ID of the manufacturing path |
+| `currentStepIndex` | `number` | Zero-based index of the current step. `-1` when completed. |
+| `status` | `"in_progress" \| "completed" \| "scrapped"` | Current lifecycle status (underscore format) |
+| `scrapReason` | `string \| undefined` | Scrap reason code. One of: `"out_of_tolerance"`, `"process_defect"`, `"damaged"`, `"operator_error"`, `"other"`. Present only when `status` is `"scrapped"`. |
+| `scrapExplanation` | `string \| undefined` | Free-text explanation for the scrap. Required when `scrapReason` is `"other"`. |
+| `scrapStepId` | `string \| undefined` | ID of the step where the serial was scrapped |
+| `scrappedAt` | `string \| undefined` | ISO 8601 timestamp of when the serial was scrapped |
+| `scrappedBy` | `string \| undefined` | User ID of who scrapped the serial |
+| `forceCompleted` | `boolean` | Whether the serial was force-completed (bypassing remaining steps) |
+| `forceCompletedBy` | `string \| undefined` | User ID of who force-completed the serial |
+| `forceCompletedAt` | `string \| undefined` | ISO 8601 timestamp of when the serial was force-completed |
+| `forceCompletedReason` | `string \| undefined` | Reason provided for force-completing |
+| `createdAt` | `string` | ISO 8601 timestamp of when the serial was created |
+| `updatedAt` | `string` | ISO 8601 timestamp of the last modification |
 
 #### `certs` — Array of Certificate objects
 
 Each element represents a certificate that has been attached to this serial at some point during production.
 
-| Field       | Type                      | Description                                                                                        |
-| ----------- | ------------------------- | -------------------------------------------------------------------------------------------------- |
-| `id`        | `string`                  | Unique identifier for the certificate                                                              |
-| `type`      | `"material" \| "process"` | Certificate type — material certs cover raw materials, process certs cover manufacturing processes |
-| `name`      | `string`                  | Human-readable certificate name (e.g. `"Steel Grade A Cert"`)                                      |
-| `metadata`  | `object \| undefined`     | Arbitrary key-value metadata stored on the certificate                                             |
-| `createdAt` | `string`                  | ISO 8601 timestamp of when the certificate was created                                             |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique identifier for the certificate |
+| `type` | `"material" \| "process"` | Certificate type — material certs cover raw materials, process certs cover manufacturing processes |
+| `name` | `string` | Human-readable certificate name (e.g. `"Steel Grade A Cert"`) |
+| `metadata` | `object \| undefined` | Arbitrary key-value metadata stored on the certificate |
+| `createdAt` | `string` | ISO 8601 timestamp of when the certificate was created |
 
 ### 400 Bad Request
 
 Returned if a validation error occurs during the request.
 
-| Condition                           | Message                                          |
-| ----------------------------------- | ------------------------------------------------ |
+| Condition | Message |
+|-----------|---------|
 | Malformed or invalid `id` parameter | Varies — describes the specific validation issue |
 
 ### 404 Not Found
 
 Returned when no serial number exists with the given ID.
 
-| Condition             | Message                          |
-| --------------------- | -------------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Serial does not exist | `"SerialNumber not found: {id}"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while fetching the serial or its certificates.
 
-| Condition                    | Message                   |
-| ---------------------------- | ------------------------- |
-| Database connection failure  | `"Internal Server Error"` |
+| Condition | Message |
+|-----------|---------|
+| Database connection failure | `"Internal Server Error"` |
 | Unexpected runtime exception | `"Internal Server Error"` |
 
 ## Examples

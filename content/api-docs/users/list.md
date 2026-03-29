@@ -1,11 +1,11 @@
 ---
-title: 'List Users'
-description: 'Retrieve all active shop users'
-method: 'GET'
-endpoint: '/api/users'
-service: 'userService'
-category: 'Users'
-responseType: 'ShopUser[]'
+title: "List Users"
+description: "Retrieve all active shop users"
+method: "GET"
+endpoint: "/api/users"
+service: "userService"
+category: "Users"
+responseType: "ShopUser[]"
 errorCodes: [500]
 navigation:
   order: 1
@@ -29,18 +29,18 @@ No request body or query parameters.
 
 Returns an array of `ShopUser` objects. May be empty if no active users exist.
 
-| Field        | Type                  | Description                                                      |
-| ------------ | --------------------- | ---------------------------------------------------------------- |
-| `id`         | `string`              | Unique user identifier (e.g. `"user_abc123"`)                    |
-| `name`       | `string`              | Display name of the user                                         |
-| `department` | `string \| undefined` | Department the user belongs to, if set                           |
-| `active`     | `boolean`             | Always `true` in this response (inactive users are filtered out) |
-| `createdAt`  | `string`              | ISO 8601 timestamp of when the user was created                  |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique user identifier (e.g. `"user_abc123"`) |
+| `name` | `string` | Display name of the user |
+| `department` | `string \| undefined` | Department the user belongs to, if set |
+| `active` | `boolean` | Always `true` in this response (inactive users are filtered out) |
+| `createdAt` | `string` | ISO 8601 timestamp of when the user was created |
 
 ### 500 Internal Server Error
 
-| Condition             | Message                   |
-| --------------------- | ------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Database read failure | `"Internal Server Error"` |
 
 ## Examples

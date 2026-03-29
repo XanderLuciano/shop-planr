@@ -218,14 +218,15 @@ type SerialStatusFilter = 'in_progress' | 'scrapped' | 'all'
 
 This is used inline in the method signatures rather than as a named export, keeping it co-located with the methods that use it.
 
+
+
 ## Correctness Properties
 
-_A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
+*A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
 ### Property 1: Status Filter Correctness
 
-_For any_ path with a mix of in_progress, completed, and scrapped serials at various steps, calling `listByStepIndex` with each status filter value should return only the serials matching that filter:
-
+*For any* path with a mix of in_progress, completed, and scrapped serials at various steps, calling `listByStepIndex` with each status filter value should return only the serials matching that filter:
 - No status or `'in_progress'`: only serials where `status != 'scrapped'` at the given `currentStepIndex`
 - `'scrapped'`: only serials where `status = 'scrapped'` and `scrapStepId` matches the step at the given index
 - `'all'`: all serials at the given `currentStepIndex` regardless of status
@@ -234,37 +235,37 @@ _For any_ path with a mix of in_progress, completed, and scrapped serials at var
 
 ### Property 2: ScrapStepId-Based Grouping
 
-_For any_ scrapped serial, when queried via `getScrappedByPath` or `getScrappedByJob`, the serial should appear in the group corresponding to its `scrapStepId` (the step where it was scrapped), not its `currentStepIndex`. Specifically: for any path and any scrapped serial in that path, the serial appears in exactly one `ScrappedSerialGroup` whose `stepId` equals the serial's `scrapStepId`.
+*For any* scrapped serial, when queried via `getScrappedByPath` or `getScrappedByJob`, the serial should appear in the group corresponding to its `scrapStepId` (the step where it was scrapped), not its `currentStepIndex`. Specifically: for any path and any scrapped serial in that path, the serial appears in exactly one `ScrappedSerialGroup` whose `stepId` equals the serial's `scrapStepId`.
 
 **Validates: Requirements 1.4, 4.5, 7.7**
 
 ### Property 3: Result Ordering
 
-_For any_ set of serials returned by `listByStepIndex` (regardless of status filter value), the results should be ordered by `createdAt` ascending — i.e., for every consecutive pair of serials in the result, the first serial's `createdAt` should be less than or equal to the second's.
+*For any* set of serials returned by `listByStepIndex` (regardless of status filter value), the results should be ordered by `createdAt` ascending — i.e., for every consecutive pair of serials in the result, the first serial's `createdAt` should be less than or equal to the second's.
 
 **Validates: Requirements 1.6**
 
 ### Property 4: Operator Queue Preservation
 
-_For any_ job/path/serial configuration where some serials have been scrapped, the operator work queue response (`/api/operator/queue/:userId`) should never include a serial with `status = 'scrapped'` in any `WorkQueueJob`'s `serialIds`. Furthermore, if all serials at a step are scrapped, that step group should not appear in the response.
+*For any* job/path/serial configuration where some serials have been scrapped, the operator work queue response (`/api/operator/queue/:userId`) should never include a serial with `status = 'scrapped'` in any `WorkQueueJob`'s `serialIds`. Furthermore, if all serials at a step are scrapped, that step group should not appear in the response.
 
 **Validates: Requirements 3.1, 3.2, 3.3**
 
 ### Property 5: Invalid Status Rejection
 
-_For any_ string that is not one of `'in_progress'`, `'scrapped'`, or `'all'`, calling `listSerialsByStepIndex` with that string as the status parameter should result in a validation error.
+*For any* string that is not one of `'in_progress'`, `'scrapped'`, or `'all'`, calling `listSerialsByStepIndex` with that string as the status parameter should result in a validation error.
 
 **Validates: Requirements 2.4**
 
 ### Property 6: listByPathId and listByJobId Preservation
 
-_For any_ set of serials (including scrapped ones), `listByPathId` and `listByJobId` should continue to return all serials regardless of status. The count of returned serials should equal the total number of serials created for that path/job.
+*For any* set of serials (including scrapped ones), `listByPathId` and `listByJobId` should continue to return all serials regardless of status. The count of returned serials should equal the total number of serials created for that path/job.
 
 **Validates: Requirements 6.4**
 
 ### Property 7: Scrapped Group Metadata Completeness
 
-_For any_ path or job with scrapped serials, each `ScrappedSerialGroup` in the response should contain the correct step metadata (stepId, stepName, stepOrder) matching the process step in the path, and each `ScrappedSerialInfo` should contain the serial's scrapReason, scrapExplanation, scrappedAt, and scrappedBy fields.
+*For any* path or job with scrapped serials, each `ScrappedSerialGroup` in the response should contain the correct step metadata (stepId, stepName, stepOrder) matching the process step in the path, and each `ScrappedSerialInfo` should contain the serial's scrapReason, scrapExplanation, scrappedAt, and scrappedBy fields.
 
 **Validates: Requirements 4.2, 7.2, 7.3**
 
@@ -315,34 +316,34 @@ This feature uses both unit tests and property-based tests for comprehensive cov
 Each correctness property maps to a single property-based test. Tests are tagged with the format:
 `Feature: scrapped-parts-by-step, Property {number}: {property_text}`
 
-| Property                                  | Test File                                                     | What It Generates                                                                                       |
-| ----------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| P1: Status Filter Correctness             | `tests/properties/statusFilterCorrectness.property.test.ts`   | Random serial sets with mixed statuses at various steps; verifies each filter returns correct subset    |
-| P2: ScrapStepId-Based Grouping            | `tests/properties/scrapStepGrouping.property.test.ts`         | Random paths with multiple steps, serials scrapped at different steps; verifies grouping by scrapStepId |
-| P3: Result Ordering                       | `tests/properties/statusFilterOrdering.property.test.ts`      | Random serial sets with varying createdAt timestamps; verifies ASC ordering                             |
-| P4: Operator Queue Preservation           | `tests/properties/operatorQueuePreservation.property.test.ts` | Random job/path/serial configs with scrapped serials; verifies queue excludes them                      |
-| P5: Invalid Status Rejection              | `tests/properties/invalidStatusRejection.property.test.ts`    | Random strings that aren't valid status values; verifies ValidationError                                |
-| P6: listByPathId/listByJobId Preservation | `tests/properties/listByPreservation.property.test.ts`        | Random serial sets including scrapped; verifies these methods return all                                |
-| P7: Scrapped Group Metadata               | `tests/properties/scrappedGroupMetadata.property.test.ts`     | Random paths with scrapped serials; verifies response metadata matches path steps                       |
+| Property | Test File | What It Generates |
+|----------|-----------|-------------------|
+| P1: Status Filter Correctness | `tests/properties/statusFilterCorrectness.property.test.ts` | Random serial sets with mixed statuses at various steps; verifies each filter returns correct subset |
+| P2: ScrapStepId-Based Grouping | `tests/properties/scrapStepGrouping.property.test.ts` | Random paths with multiple steps, serials scrapped at different steps; verifies grouping by scrapStepId |
+| P3: Result Ordering | `tests/properties/statusFilterOrdering.property.test.ts` | Random serial sets with varying createdAt timestamps; verifies ASC ordering |
+| P4: Operator Queue Preservation | `tests/properties/operatorQueuePreservation.property.test.ts` | Random job/path/serial configs with scrapped serials; verifies queue excludes them |
+| P5: Invalid Status Rejection | `tests/properties/invalidStatusRejection.property.test.ts` | Random strings that aren't valid status values; verifies ValidationError |
+| P6: listByPathId/listByJobId Preservation | `tests/properties/listByPreservation.property.test.ts` | Random serial sets including scrapped; verifies these methods return all |
+| P7: Scrapped Group Metadata | `tests/properties/scrappedGroupMetadata.property.test.ts` | Random paths with scrapped serials; verifies response metadata matches path steps |
 
 ### Unit Tests
 
-| Test                     | File                                        | What It Covers                                                  |
-| ------------------------ | ------------------------------------------- | --------------------------------------------------------------- |
-| Service pass-through     | `tests/unit/services/serialService.test.ts` | `listSerialsByStepIndex` delegates status to repository         |
-| getScrappedByPath empty  | `tests/unit/services/serialService.test.ts` | Returns empty array for path with no scrapped serials           |
-| getScrappedByJob empty   | `tests/unit/services/serialService.test.ts` | Returns empty paths array for job with no scrapped serials      |
-| API 404 for missing path | `tests/integration/scrappedParts.test.ts`   | `GET /api/paths/:id/scrapped` returns 404 for non-existent path |
-| API 404 for missing job  | `tests/integration/scrappedParts.test.ts`   | `GET /api/jobs/:id/scrapped` returns 404 for non-existent job   |
-| Backward compatibility   | `tests/unit/services/serialService.test.ts` | Existing 2-arg calls to `listSerialsByStepIndex` still work     |
+| Test | File | What It Covers |
+|------|------|----------------|
+| Service pass-through | `tests/unit/services/serialService.test.ts` | `listSerialsByStepIndex` delegates status to repository |
+| getScrappedByPath empty | `tests/unit/services/serialService.test.ts` | Returns empty array for path with no scrapped serials |
+| getScrappedByJob empty | `tests/unit/services/serialService.test.ts` | Returns empty paths array for job with no scrapped serials |
+| API 404 for missing path | `tests/integration/scrappedParts.test.ts` | `GET /api/paths/:id/scrapped` returns 404 for non-existent path |
+| API 404 for missing job | `tests/integration/scrappedParts.test.ts` | `GET /api/jobs/:id/scrapped` returns 404 for non-existent job |
+| Backward compatibility | `tests/unit/services/serialService.test.ts` | Existing 2-arg calls to `listSerialsByStepIndex` still work |
 
 ### Integration Tests
 
-| Test                       | File                                      | What It Covers                                                               |
-| -------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------- |
-| Full scrapped-by-path flow | `tests/integration/scrappedParts.test.ts` | Create job → path → serials → scrap some → verify grouped response           |
-| Full scrapped-by-job flow  | `tests/integration/scrappedParts.test.ts` | Create job → multiple paths → scrap across paths → verify job-level grouping |
-| Operator queue unchanged   | `tests/integration/scrappedParts.test.ts` | Scrap serials → verify operator queue still excludes them                    |
+| Test | File | What It Covers |
+|------|------|----------------|
+| Full scrapped-by-path flow | `tests/integration/scrappedParts.test.ts` | Create job → path → serials → scrap some → verify grouped response |
+| Full scrapped-by-job flow | `tests/integration/scrappedParts.test.ts` | Create job → multiple paths → scrap across paths → verify job-level grouping |
+| Operator queue unchanged | `tests/integration/scrappedParts.test.ts` | Scrap serials → verify operator queue still excludes them |
 
 ### Test Configuration
 

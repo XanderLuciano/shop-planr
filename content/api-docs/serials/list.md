@@ -1,11 +1,11 @@
 ---
-title: 'List Serials'
-description: 'Retrieve all serial numbers with enriched job, path, step, and assignment data'
-method: 'GET'
-endpoint: '/api/serials'
-service: 'serialService'
-category: 'Serials'
-responseType: 'EnrichedSerial[]'
+title: "List Serials"
+description: "Retrieve all serial numbers with enriched job, path, step, and assignment data"
+method: "GET"
+endpoint: "/api/serials"
+service: "serialService"
+category: "Serials"
+responseType: "EnrichedSerial[]"
 errorCodes: [400, 500]
 navigation:
   order: 1
@@ -31,36 +31,36 @@ This endpoint accepts no path parameters, query parameters, or request body.
 
 Returned when the request is successful. The response is always an array, even if no serials exist (in which case an empty array `[]` is returned).
 
-| Field              | Type                                         | Description                                                                                                                           |
-| ------------------ | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`               | `string`                                     | Unique serial identifier (e.g. `"SN-00001"`)                                                                                          |
-| `jobId`            | `string`                                     | ID of the parent job                                                                                                                  |
-| `jobName`          | `string`                                     | Human-readable name of the parent job (e.g. `"JOB-2024-001"`)                                                                         |
-| `pathId`           | `string`                                     | ID of the manufacturing path this serial follows                                                                                      |
-| `pathName`         | `string`                                     | Human-readable name of the path (e.g. `"Main Route"`)                                                                                 |
-| `currentStepIndex` | `number`                                     | Zero-based index of the serial's current step. `-1` when completed.                                                                   |
-| `currentStepName`  | `string`                                     | Display name of the current step (e.g. `"Welding"`). Shows `"Completed"` for completed serials and `"Scrapped"` for scrapped serials. |
-| `assignedTo`       | `string \| undefined`                        | User ID of the operator assigned to the serial's current step, if any                                                                 |
-| `status`           | `"in-progress" \| "completed" \| "scrapped"` | Display-friendly status. Note: uses hyphen (`in-progress`) not underscore.                                                            |
-| `scrapReason`      | `string \| undefined`                        | Scrap reason code, present only for scrapped serials                                                                                  |
-| `forceCompleted`   | `boolean \| undefined`                       | `true` if the serial was force-completed, omitted otherwise                                                                           |
-| `createdAt`        | `string`                                     | ISO 8601 timestamp of when the serial was created                                                                                     |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique serial identifier (e.g. `"SN-00001"`) |
+| `jobId` | `string` | ID of the parent job |
+| `jobName` | `string` | Human-readable name of the parent job (e.g. `"JOB-2024-001"`) |
+| `pathId` | `string` | ID of the manufacturing path this serial follows |
+| `pathName` | `string` | Human-readable name of the path (e.g. `"Main Route"`) |
+| `currentStepIndex` | `number` | Zero-based index of the serial's current step. `-1` when completed. |
+| `currentStepName` | `string` | Display name of the current step (e.g. `"Welding"`). Shows `"Completed"` for completed serials and `"Scrapped"` for scrapped serials. |
+| `assignedTo` | `string \| undefined` | User ID of the operator assigned to the serial's current step, if any |
+| `status` | `"in-progress" \| "completed" \| "scrapped"` | Display-friendly status. Note: uses hyphen (`in-progress`) not underscore. |
+| `scrapReason` | `string \| undefined` | Scrap reason code, present only for scrapped serials |
+| `forceCompleted` | `boolean \| undefined` | `true` if the serial was force-completed, omitted otherwise |
+| `createdAt` | `string` | ISO 8601 timestamp of when the serial was created |
 
 ### 400 Bad Request
 
 Returned if an unexpected validation error occurs during the request.
 
-| Condition                   | Message                                          |
-| --------------------------- | ------------------------------------------------ |
+| Condition | Message |
+|-----------|---------|
 | Internal validation failure | Varies — describes the specific validation issue |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while fetching or enriching serial data.
 
-| Condition                    | Message                   |
-| ---------------------------- | ------------------------- |
-| Database connection failure  | `"Internal Server Error"` |
+| Condition | Message |
+|-----------|---------|
+| Database connection failure | `"Internal Server Error"` |
 | Unexpected runtime exception | `"Internal Server Error"` |
 
 ## Examples

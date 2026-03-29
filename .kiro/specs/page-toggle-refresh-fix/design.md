@@ -56,7 +56,6 @@ sequenceDiagram
 **Purpose**: Fetch settings once during app initialization so that `settings.value` is populated before the first render and before route middleware runs.
 
 **Interface**:
-
 ```typescript
 // Nuxt plugin — no props/emits, runs automatically on app init
 export default defineNuxtPlugin(async () => {
@@ -66,7 +65,6 @@ export default defineNuxtPlugin(async () => {
 ```
 
 **Responsibilities**:
-
 - Call `fetchSettings()` exactly once during app startup
 - Await the result so the plugin blocks rendering until settings are loaded
 - If the fetch fails, `useSettings()` already handles the error gracefully (sets `settings.value = null`, which falls back to `DEFAULT_PAGE_TOGGLES`)
@@ -78,7 +76,6 @@ export default defineNuxtPlugin(async () => {
 **Purpose**: Clean up the now-unnecessary `fetchSettings()` calls in individual page `onMounted` hooks, since the plugin handles initialization.
 
 **Files affected**:
-
 - `app/pages/jira.vue` — remove `fetchSettings()` from `onMounted`
 - `app/pages/jobs/[id].vue` — remove `fetchSettings()` from `onMounted`
 - `app/pages/settings.vue` — remove `fetchSettings()` from `onMounted`
@@ -88,7 +85,6 @@ export default defineNuxtPlugin(async () => {
 ### Component 3: No changes needed
 
 The following files require zero modifications:
-
 - `app/middleware/pageGuard.global.ts` — already reads from `useSettings()` correctly
 - `app/layouts/default.vue` — already computes `filteredNavItems` reactively
 - `app/composables/useSettings.ts` — already handles errors and loading state
@@ -113,18 +109,15 @@ export default defineNuxtPlugin(async () => {
 ```
 
 **Preconditions:**
-
 - App is initializing (plugin runs once per app lifecycle)
 - `useSettings()` composable is available (auto-imported)
 
 **Postconditions:**
-
 - `settings.value` is populated with the server's `AppSettings` (including `pageToggles`), OR
 - `settings.value` is `null` if the fetch failed (graceful degradation to `DEFAULT_PAGE_TOGGLES`)
 - The plugin resolves before the first render and before route middleware runs on initial navigation
 
 **Error handling:**
-
 - Network/server errors are caught by `fetchSettings()` internally
 - On failure, `settings.value` remains `null` → `DEFAULT_PAGE_TOGGLES` used → all pages enabled (safe fallback, matches requirement 3.3/3.5 from bugfix.md)
 
@@ -155,31 +148,31 @@ export default defineNuxtPlugin(async () => {
 
 ### Property 1: Settings loaded before first render
 
-_For any_ page refresh or initial load, `settings.value` is non-null (assuming server is reachable) before the layout's `filteredNavItems` computed property is first evaluated.
+*For any* page refresh or initial load, `settings.value` is non-null (assuming server is reachable) before the layout's `filteredNavItems` computed property is first evaluated.
 
 **Validates: Bugfix requirement 2.1, 2.3**
 
 ### Property 2: Middleware has settings on initial navigation
 
-_For any_ page refresh, the `pageGuard.global.ts` middleware reads a non-null `settings.value` (assuming server is reachable) on the initial route navigation, correctly enforcing toggle state.
+*For any* page refresh, the `pageGuard.global.ts` middleware reads a non-null `settings.value` (assuming server is reachable) on the initial route navigation, correctly enforcing toggle state.
 
 **Validates: Bugfix requirement 2.2**
 
 ### Property 3: No flash of all pages
 
-_For any_ page refresh where some pages are toggled off, the sidebar never renders with all pages visible because settings are loaded before the first render.
+*For any* page refresh where some pages are toggled off, the sidebar never renders with all pages visible because settings are loaded before the first render.
 
 **Validates: Bugfix requirement 2.3**
 
 ### Property 4: Graceful degradation preserved
 
-_For any_ page refresh where the settings API is unreachable, the system falls back to `DEFAULT_PAGE_TOGGLES` (all pages enabled), matching the existing error-handling behavior.
+*For any* page refresh where the settings API is unreachable, the system falls back to `DEFAULT_PAGE_TOGGLES` (all pages enabled), matching the existing error-handling behavior.
 
 **Validates: Bugfix requirement 3.3, 3.5**
 
 ### Property 5: Reactive updates still work
 
-_For any_ settings change made on the Settings page via `updateSettings()`, the sidebar and route middleware reactively reflect the new toggle state without requiring a page reload.
+*For any* settings change made on the Settings page via `updateSettings()`, the sidebar and route middleware reactively reflect the new toggle state without requiring a page reload.
 
 **Validates: Bugfix requirement 3.2**
 
@@ -222,9 +215,9 @@ After the plugin loads settings, navigating between pages does not trigger addit
 
 ## Files Changed Summary
 
-| File                      | Change                                    | Type     |
-| ------------------------- | ----------------------------------------- | -------- |
-| `app/plugins/settings.ts` | New plugin: fetch settings on app init    | New      |
-| `app/pages/jira.vue`      | Remove `fetchSettings()` from `onMounted` | Modified |
+| File | Change | Type |
+|------|--------|------|
+| `app/plugins/settings.ts` | New plugin: fetch settings on app init | New |
+| `app/pages/jira.vue` | Remove `fetchSettings()` from `onMounted` | Modified |
 | `app/pages/jobs/[id].vue` | Remove `fetchSettings()` from `onMounted` | Modified |
-| `app/pages/settings.vue`  | Remove `fetchSettings()` from `onMounted` | Modified |
+| `app/pages/settings.vue` | Remove `fetchSettings()` from `onMounted` | Modified |

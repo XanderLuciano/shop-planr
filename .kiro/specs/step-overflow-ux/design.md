@@ -5,7 +5,6 @@
 The StepTracker component currently renders process steps in a single horizontal flex row with `overflow-x-auto`. When a path has many steps (6+), this causes horizontal scrolling within the Path_Card, hiding steps off-screen. Additionally, the Path_Card container uses `overflow-hidden`, which can clip the StepAssignmentDropdown popover even though Nuxt UI's `USelectMenu` already portals its content to the document body.
 
 This design addresses both issues by:
-
 1. Switching StepTracker from `overflow-x-auto` to `flex-wrap` so step cards flow onto multiple rows
 2. Compacting step card dimensions so more steps fit per row before wrapping
 3. Removing `overflow-hidden` from Path_Card (replacing with `overflow-visible`) so portaled popovers aren't clipped during transition animations
@@ -26,11 +25,11 @@ graph TD
 
 Changes are confined to the presentation layer:
 
-| File                                        | Change                                                                                       |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `app/components/StepTracker.vue`            | Replace `overflow-x-auto` with `flex-wrap`, compact step card sizing, responsive breakpoints |
-| `app/components/StepAssignmentDropdown.vue` | Replace fixed `w-44` with `w-full` so trigger fits within step card width                    |
-| `app/pages/jobs/[id].vue`                   | Remove `overflow-hidden` from Path_Card border container, replace with `overflow-visible`    |
+| File | Change |
+|------|--------|
+| `app/components/StepTracker.vue` | Replace `overflow-x-auto` with `flex-wrap`, compact step card sizing, responsive breakpoints |
+| `app/components/StepAssignmentDropdown.vue` | Replace fixed `w-44` with `w-full` so trigger fits within step card width |
+| `app/pages/jobs/[id].vue` | Remove `overflow-hidden` from Path_Card border container, replace with `overflow-visible` |
 
 No new components, composables, services, or API routes are needed.
 
@@ -89,7 +88,6 @@ Steps wrap onto multiple rows. Cards are slightly more compact. Arrow indicators
 ```
 
 Key visual changes:
-
 - Steps flow left-to-right, wrapping to next row when they hit the container edge
 - Arrows (`>`) between every consecutive step, including across row breaks
 - Condensed count format: `12 · 3` means "12 at step · 3 done" (single line)
@@ -179,45 +177,38 @@ Before: the `USelectMenu` trigger has a fixed `w-44` (176px) width that overflow
 ### StepTracker.vue — Layout Changes
 
 **Current layout:**
-
 ```html
-<div class="flex justify-center gap-1.5 items-stretch overflow-x-auto py-1"></div>
+<div class="flex justify-center gap-1.5 items-stretch overflow-x-auto py-1">
 ```
 
 **New layout:**
-
 ```html
-<div class="flex flex-wrap justify-start gap-x-1 gap-y-2 items-stretch py-1"></div>
+<div class="flex flex-wrap justify-start gap-x-1 gap-y-2 items-stretch py-1">
 ```
 
 Key changes:
-
 - `overflow-x-auto` → removed (no horizontal scroll)
 - `flex-wrap` added (cards flow to next row)
 - `justify-center` → `justify-start` (left-aligned rows look cleaner when wrapping)
 - `gap-1.5` → `gap-x-1 gap-y-2` (tighter horizontal gap, slightly more vertical gap between rows for readability)
 
 **Step_Card sizing:**
-
 - Current: `min-w-[120px] px-2 py-1.5`
 - New: `min-w-[110px] max-w-[150px] flex-1 px-1.5 py-1`
 - `flex-1` with `min-w` and `max-w` lets cards grow to fill available space evenly while capping width
 - Reduced padding for compactness
 
 **Arrow indicators between wrapped steps:**
-
 - Arrows (`chevron-right` icons) remain between consecutive steps
 - When steps wrap to a new row, the arrow naturally sits at the end of the previous row before the next card wraps — this is acceptable and maintains sequence clarity
 - The arrow div gets `shrink-0` to prevent compression
 
 **Condensed content layout:**
-
 - Serial count and completed count rendered on a single line: `"3 at step · 1 done"` instead of stacked vertically
 - Step name and location use `truncate` with `title` attribute for tooltip on hover
 - Font sizes remain at current compact levels (`text-xs`, `text-[10px]`)
 
 **Responsive behavior:**
-
 - At narrow viewports, `flex-wrap` naturally stacks cards
 - Add `min-w-[90px]` at small screens via responsive class: `sm:min-w-[110px] min-w-[90px]`
 - When container is narrow enough that only one card fits per row, the layout becomes a vertical stack automatically
@@ -227,7 +218,6 @@ Key changes:
 **Current state:** The `USelectMenu` trigger has a fixed width class `w-44` (176px). When the step card is narrower than 176px (which happens with the new compact sizing of `min-w-[110px] max-w-[150px]`), the dropdown trigger overflows the card boundary.
 
 **Fix:**
-
 1. Replace `class="w-44"` with `class="w-full"` on the `USelectMenu` so the trigger fills the available step card width
 2. The trigger already has `truncate text-xs` on the display label — this will now truncate long names within the card width instead of at 176px
 3. No changes needed to the popover/portal behavior — Nuxt UI 4's `USelectMenu` already portals the dropdown list to the document body by default
@@ -244,21 +234,22 @@ Remove `overflow-hidden` entirely. The `rounded-md` border-radius still applies 
 
 No data model changes. This feature is purely presentational — it modifies CSS classes and template structure in existing Vue components. The `StepDistribution`, `Path`, `ProcessStep`, and `ShopUser` types remain unchanged.
 
+
 ## Correctness Properties
 
-_A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
+*A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
 Most acceptance criteria in this feature are CSS/layout concerns that require a real rendering engine to validate (viewport geometry, flex-wrap behavior, scrollbar presence). Only two criteria produce testable structural properties.
 
 ### Property 1: Arrow count equals step count minus one
 
-_For any_ list of N process steps (N ≥ 1) rendered by StepTracker, the output SHALL contain exactly N - 1 arrow indicators (chevron-right icons between step cards), plus 1 arrow before the "Done" column, for a total of N arrows. This ensures the sequential relationship between steps is always visually represented regardless of how many rows the steps wrap onto.
+*For any* list of N process steps (N ≥ 1) rendered by StepTracker, the output SHALL contain exactly N - 1 arrow indicators (chevron-right icons between step cards), plus 1 arrow before the "Done" column, for a total of N arrows. This ensures the sequential relationship between steps is always visually represented regardless of how many rows the steps wrap onto.
 
 **Validates: Requirements 1.2**
 
 ### Property 2: Truncated text has accessible full text
 
-_For any_ step with a name or location string, the rendered Step_Card SHALL include a `title` attribute containing the full untruncated text, so that truncated content remains accessible on hover.
+*For any* step with a name or location string, the rendered Step_Card SHALL include a `title` attribute containing the full untruncated text, so that truncated content remains accessible on hover.
 
 **Validates: Requirements 2.2**
 
@@ -295,7 +286,6 @@ Minimum iterations: 100 per property
 ### Manual / Visual Testing
 
 Most acceptance criteria in this feature require manual verification:
-
 - Flex-wrap behavior at various viewport widths
 - No horizontal scrollbar on the page body
 - Dropdown popover visibility near container edges

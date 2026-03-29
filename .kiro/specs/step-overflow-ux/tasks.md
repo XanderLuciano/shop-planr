@@ -35,7 +35,7 @@ Fix the StepTracker horizontal overflow by switching from `overflow-x-auto` to `
     - Arrows remain between every consecutive step pair, maintaining sequence clarity across wrapped rows
     - _Requirements: 1.2_
 
-  - [ ]\* 1.6 Write property test: Arrow count equals step count
+  - [ ]* 1.6 Write property test: Arrow count equals step count
     - **Property 1: Arrow count equals step count minus one**
     - **Validates: Requirements 1.2**
     - Test file: `tests/properties/stepTrackerArrowCount.property.test.ts`

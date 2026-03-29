@@ -1,12 +1,12 @@
 ---
-title: 'Apply Template'
-description: 'Apply a route template to a job, creating a new manufacturing path'
-method: 'POST'
-endpoint: '/api/templates/:id/apply'
-service: 'templateService'
-category: 'Templates'
-requestBody: 'ApplyTemplateInput'
-responseType: 'Path'
+title: "Apply Template"
+description: "Apply a route template to a job, creating a new manufacturing path"
+method: "POST"
+endpoint: "/api/templates/:id/apply"
+service: "templateService"
+category: "Templates"
+requestBody: "ApplyTemplateInput"
+responseType: "Path"
 errorCodes: [400, 404, 500]
 navigation:
   order: 6
@@ -26,17 +26,17 @@ The new path is created with `strict` advancement mode by default. You can chang
 
 ### Path Parameters
 
-| Parameter | Type     | Required | Description                                                           |
-| --------- | -------- | -------- | --------------------------------------------------------------------- |
-| `id`      | `string` | Yes      | The unique identifier of the template to apply (e.g. `"tmpl_abc123"`) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` | Yes | The unique identifier of the template to apply (e.g. `"tmpl_abc123"`) |
 
 ### Request Body
 
-| Field          | Type     | Required | Description                                                                                       |
-| -------------- | -------- | -------- | ------------------------------------------------------------------------------------------------- |
-| `jobId`        | `string` | Yes      | The ID of the job to create the path on. Must reference an existing job.                          |
-| `pathName`     | `string` | No       | A custom name for the new path. If omitted, the template's name is used as the path name.         |
-| `goalQuantity` | `number` | Yes      | The target number of units to produce on this path. Must be a positive integer greater than zero. |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `jobId` | `string` | Yes | The ID of the job to create the path on. Must reference an existing job. |
+| `pathName` | `string` | No | A custom name for the new path. If omitted, the template's name is used as the path name. |
+| `goalQuantity` | `number` | Yes | The target number of units to produce on this path. Must be a positive integer greater than zero. |
 
 ## Response
 
@@ -44,48 +44,48 @@ The new path is created with `strict` advancement mode by default. You can chang
 
 Returned when the path is successfully created from the template. The response contains the complete `Path` object with all cloned steps.
 
-| Field                    | Type                                             | Description                                                                 |
-| ------------------------ | ------------------------------------------------ | --------------------------------------------------------------------------- |
-| `id`                     | `string`                                         | Server-generated unique identifier for the new path (prefixed with `path_`) |
-| `jobId`                  | `string`                                         | The job this path belongs to                                                |
-| `name`                   | `string`                                         | The path name — either the custom `pathName` or the template's name         |
-| `goalQuantity`           | `number`                                         | The goal quantity as provided in the request                                |
-| `steps`                  | `ProcessStep[]`                                  | Process steps cloned from the template, each with a fresh ID                |
-| `steps[].id`             | `string`                                         | Server-generated step ID (prefixed with `step_`)                            |
-| `steps[].name`           | `string`                                         | Step name from the template                                                 |
-| `steps[].order`          | `number`                                         | Zero-based position from the template                                       |
-| `steps[].location`       | `string \| undefined`                            | Location from the template, if any                                          |
-| `steps[].optional`       | `boolean`                                        | Whether the step is optional (from template, defaults to `false`)           |
-| `steps[].dependencyType` | `'physical' \| 'preferred' \| 'completion_gate'` | Dependency type (from template, defaults to `"preferred"`)                  |
-| `advancementMode`        | `'strict' \| 'flexible' \| 'per_step'`           | Always `"strict"` for newly applied templates                               |
-| `createdAt`              | `string`                                         | ISO 8601 timestamp of when the path was created                             |
-| `updatedAt`              | `string`                                         | ISO 8601 timestamp — same as `createdAt` for newly created paths            |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Server-generated unique identifier for the new path (prefixed with `path_`) |
+| `jobId` | `string` | The job this path belongs to |
+| `name` | `string` | The path name — either the custom `pathName` or the template's name |
+| `goalQuantity` | `number` | The goal quantity as provided in the request |
+| `steps` | `ProcessStep[]` | Process steps cloned from the template, each with a fresh ID |
+| `steps[].id` | `string` | Server-generated step ID (prefixed with `step_`) |
+| `steps[].name` | `string` | Step name from the template |
+| `steps[].order` | `number` | Zero-based position from the template |
+| `steps[].location` | `string \| undefined` | Location from the template, if any |
+| `steps[].optional` | `boolean` | Whether the step is optional (from template, defaults to `false`) |
+| `steps[].dependencyType` | `'physical' \| 'preferred' \| 'completion_gate'` | Dependency type (from template, defaults to `"preferred"`) |
+| `advancementMode` | `'strict' \| 'flexible' \| 'per_step'` | Always `"strict"` for newly applied templates |
+| `createdAt` | `string` | ISO 8601 timestamp of when the path was created |
+| `updatedAt` | `string` | ISO 8601 timestamp — same as `createdAt` for newly created paths |
 
 ### 400 Bad Request
 
 Returned when the request body fails validation.
 
-| Condition                          | Message                                    |
-| ---------------------------------- | ------------------------------------------ |
-| `jobId` is missing or empty        | `"jobId is required"`                      |
-| `goalQuantity` is missing          | `"goalQuantity is required"`               |
+| Condition | Message |
+|-----------|---------|
+| `jobId` is missing or empty | `"jobId is required"` |
+| `goalQuantity` is missing | `"goalQuantity is required"` |
 | `goalQuantity` is zero or negative | `"goalQuantity must be greater than zero"` |
 
 ### 404 Not Found
 
 Returned when the template or the referenced job does not exist.
 
-| Condition               | Message                                  |
-| ----------------------- | ---------------------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Template does not exist | `"TemplateRoute not found: tmpl_abc123"` |
-| Job does not exist      | `"Job not found: job_xyz"`               |
+| Job does not exist | `"Job not found: job_xyz"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while creating the path.
 
-| Condition              | Message                   |
-| ---------------------- | ------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Database write failure | `"Internal Server Error"` |
 
 ## Examples

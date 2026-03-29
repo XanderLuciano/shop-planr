@@ -5,7 +5,6 @@
 This feature introduces a `SerialCreationPanel` component that replaces the standard `ProcessAdvancementPanel` when an operator views a first step (stepOrder === 0) in the work queue. The first step in a manufacturing process represents cutting raw material — there are no incoming parts to "receive," only new parts to create. The panel lets operators spawn batches of serial numbers, view all accumulated serials at the step, select some or all, and advance them to the next step when ready. A combined "Create & Advance" shortcut supports quick-turnaround workflows.
 
 No new backend API routes are needed. The panel reuses:
-
 - `POST /api/serials` — batch serial creation (via `useSerials().batchCreateSerials()`)
 - `POST /api/serials/[id]/advance` — sequential advancement (via `useWorkQueue().advanceBatch()`)
 - `POST /api/notes` — step notes (via `useWorkQueue().advanceBatch()` note handling)
@@ -62,20 +61,19 @@ SerialCreationPanel → useSerials composable → POST /api/serials → serialSe
 ```typescript
 // Props
 interface SerialCreationPanelProps {
-  job: WorkQueueJob // The first-step work queue job
-  loading: boolean // External loading state for advancement
+  job: WorkQueueJob       // The first-step work queue job
+  loading: boolean        // External loading state for advancement
 }
 
 // Emits
 interface SerialCreationPanelEmits {
-  advance: [payload: { serialIds: string[]; note?: string }]
+  advance: [payload: { serialIds: string[], note?: string }]
   cancel: []
-  created: [count: number] // Emitted after successful batch creation
+  created: [count: number]  // Emitted after successful batch creation
 }
 ```
 
 **Internal state:**
-
 - `quantity: ref<number>` — batch size input, defaults to 1
 - `creating: ref<boolean>` — loading state for creation API call
 - `selectedSerials: ref<Set<string>>` — checked serial IDs for advancement
@@ -85,7 +83,6 @@ interface SerialCreationPanelEmits {
 - `errorMessage: ref<string | null>` — creation/advancement error feedback
 
 **Key behaviors:**
-
 - Calls `useSerials().batchCreateSerials()` with `{ jobId, pathId, quantity, userId }` on "Create" action
 - After successful creation, calls `useWorkQueue().fetchQueue(userId)` to refresh, then emits `created`
 - "Create & Advance" action: creates batch, then immediately emits `advance` with the newly created serial IDs
@@ -95,7 +92,6 @@ interface SerialCreationPanelEmits {
 - Advance button disabled when no serials selected
 
 **Template sections (top to bottom):**
-
 1. Header — job name, path name, step name, step location
 2. Destination info — next step name + location (or "Completed" if final)
 3. Creation form — quantity input + "Create" button + "Create & Advance" button
@@ -125,7 +121,6 @@ async function handleCreated(count: number) {
 ```
 
 **Template change:**
-
 ```vue
 <!-- Replace single ProcessAdvancementPanel with conditional -->
 <SerialCreationPanel
@@ -173,55 +168,56 @@ No data model changes. All existing types are sufficient:
 
 No new API types, domain types, or computed types are needed.
 
+
 ## Correctness Properties
 
-_A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
+*A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
 ### Property 1: Panel type selection based on step order
 
-_For any_ `WorkQueueJob`, if `stepOrder === 0` then the operator page shall render `SerialCreationPanel`; otherwise it shall render `ProcessAdvancementPanel`. The two panels are mutually exclusive — exactly one is rendered for any selected job.
+*For any* `WorkQueueJob`, if `stepOrder === 0` then the operator page shall render `SerialCreationPanel`; otherwise it shall render `ProcessAdvancementPanel`. The two panels are mutually exclusive — exactly one is rendered for any selected job.
 
 **Validates: Requirements 1.1, 1.2, 1.3**
 
 ### Property 2: Context display contains job, path, and step names
 
-_For any_ `WorkQueueJob` passed to `SerialCreationPanel`, the rendered output shall contain the `jobName`, `pathName`, and `stepName` strings from the job object.
+*For any* `WorkQueueJob` passed to `SerialCreationPanel`, the rendered output shall contain the `jobName`, `pathName`, and `stepName` strings from the job object.
 
 **Validates: Requirements 2.2**
 
 ### Property 3: Accumulated serials rendering and count
 
-_For any_ `WorkQueueJob` with `serialIds` of length N (where N ≥ 1), the `SerialCreationPanel` shall render all N serial identifiers in the accumulated list, and shall display the total count as N. When N = 0, an empty state message shall be displayed instead.
+*For any* `WorkQueueJob` with `serialIds` of length N (where N ≥ 1), the `SerialCreationPanel` shall render all N serial identifiers in the accumulated list, and shall display the total count as N. When N = 0, an empty state message shall be displayed instead.
 
 **Validates: Requirements 3.1, 3.3, 3.4, 3.5**
 
 ### Property 4: Invalid quantity rejection
 
-_For any_ integer quantity less than 1 (including 0 and negative numbers), the `SerialCreationPanel` shall display a validation error and the creation submit controls shall be disabled, preventing the API call.
+*For any* integer quantity less than 1 (including 0 and negative numbers), the `SerialCreationPanel` shall display a validation error and the creation submit controls shall be disabled, preventing the API call.
 
 **Validates: Requirements 2.7**
 
 ### Property 5: Selection state drives advance payload and button state
 
-_For any_ set of accumulated serial IDs and any subset selection of size K: the advance action shall emit exactly the K selected IDs in its payload; the displayed selected count shall equal K; and when K = 0, the advance button shall be disabled.
+*For any* set of accumulated serial IDs and any subset selection of size K: the advance action shall emit exactly the K selected IDs in its payload; the displayed selected count shall equal K; and when K = 0, the advance button shall be disabled.
 
 **Validates: Requirements 4.4, 4.5, 4.8**
 
 ### Property 6: Destination display matches WorkQueueJob fields
 
-_For any_ `WorkQueueJob`: if `isFinalStep` is true, the destination shall display "Completed"; if `nextStepLocation` is defined, the destination shall include both `nextStepName` and `nextStepLocation`; otherwise the destination shall display `nextStepName` alone.
+*For any* `WorkQueueJob`: if `isFinalStep` is true, the destination shall display "Completed"; if `nextStepLocation` is defined, the destination shall include both `nextStepName` and `nextStepLocation`; otherwise the destination shall display `nextStepName` alone.
 
 **Validates: Requirements 7.1, 7.2, 7.3**
 
 ### Property 7: Note character count and limit enforcement
 
-_For any_ note text of length L entered in the `SerialCreationPanel`, the displayed character count shall equal L, and the maximum allowed length shall be 1000 characters.
+*For any* note text of length L entered in the `SerialCreationPanel`, the displayed character count shall equal L, and the maximum allowed length shall be 1000 characters.
 
 **Validates: Requirements 8.3, 8.4**
 
 ### Property 8: Loading states disable corresponding controls
 
-_For any_ state where the creation request is in progress (`creating` is true), the creation submit controls shall be disabled and show a loading indicator. _For any_ state where the advancement request is in progress (`loading` prop is true), the advance controls shall be disabled and show a loading indicator.
+*For any* state where the creation request is in progress (`creating` is true), the creation submit controls shall be disabled and show a loading indicator. *For any* state where the advancement request is in progress (`loading` prop is true), the advance controls shall be disabled and show a loading indicator.
 
 **Validates: Requirements 10.1, 10.2**
 
@@ -238,7 +234,6 @@ When `advanceBatch()` throws during normal advancement, the parent (`operator.vu
 ### Create & Advance Partial Failure
 
 When the "Create & Advance" flow succeeds at creation but fails during advancement:
-
 1. The created serials are already persisted (creation succeeded).
 2. The panel displays an error message identifying the failure.
 3. The queue is re-fetched, so the newly created serials appear in the accumulated list.
@@ -274,16 +269,16 @@ This feature uses both unit tests and property-based tests:
 
 Each correctness property maps to a single property-based test:
 
-| Property | Test Description                                                                                             |
-| -------- | ------------------------------------------------------------------------------------------------------------ |
-| 1        | Generate random WorkQueueJob with varying stepOrder; assert panel type selection                             |
-| 2        | Generate random job/path/step names; assert all appear in rendered output                                    |
-| 3        | Generate random serialIds arrays (0 to N); assert all IDs rendered and count matches                         |
-| 4        | Generate random integers < 1; assert validation error shown and submit disabled                              |
-| 5        | Generate random serialIds and random subsets; assert advance payload and button state                        |
-| 6        | Generate random WorkQueueJob with varying isFinalStep/nextStepName/nextStepLocation; assert destination text |
-| 7        | Generate random strings of varying length; assert character count display                                    |
-| 8        | Generate random boolean states for creating/loading; assert button disabled states                           |
+| Property | Test Description |
+|----------|-----------------|
+| 1 | Generate random WorkQueueJob with varying stepOrder; assert panel type selection |
+| 2 | Generate random job/path/step names; assert all appear in rendered output |
+| 3 | Generate random serialIds arrays (0 to N); assert all IDs rendered and count matches |
+| 4 | Generate random integers < 1; assert validation error shown and submit disabled |
+| 5 | Generate random serialIds and random subsets; assert advance payload and button state |
+| 6 | Generate random WorkQueueJob with varying isFinalStep/nextStepName/nextStepLocation; assert destination text |
+| 7 | Generate random strings of varying length; assert character count display |
+| 8 | Generate random boolean states for creating/loading; assert button disabled states |
 
 **Test file:** `tests/properties/firstStepSerialCreation.property.test.ts`
 
@@ -292,7 +287,6 @@ Each correctness property maps to a single property-based test:
 **Test file:** `tests/unit/components/SerialCreationPanel.test.ts`
 
 Unit tests cover:
-
 - Default quantity is 1 (Req 2.6)
 - Create button calls batchCreateSerials with correct parameters (Req 2.3)
 - Success message appears after creation (Req 2.4)

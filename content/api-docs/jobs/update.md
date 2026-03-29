@@ -1,12 +1,12 @@
 ---
-title: 'Update Job'
+title: "Update Job"
 description: "Update an existing production job's name or goal quantity"
-method: 'PUT'
-endpoint: '/api/jobs/:id'
-service: 'jobService'
-category: 'Jobs'
-requestBody: 'UpdateJobInput'
-responseType: 'Job'
+method: "PUT"
+endpoint: "/api/jobs/:id"
+service: "jobService"
+category: "Jobs"
+requestBody: "UpdateJobInput"
+responseType: "Job"
 errorCodes: [400, 404, 500]
 navigation:
   order: 4
@@ -24,18 +24,18 @@ Only `name` and `goalQuantity` can be updated. Jira metadata fields (`jiraTicket
 
 ### Path Parameters
 
-| Parameter | Type     | Required | Description                                                      |
-| --------- | -------- | -------- | ---------------------------------------------------------------- |
-| `id`      | `string` | Yes      | The unique identifier of the job to update (e.g. `"job_abc123"`) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` | Yes | The unique identifier of the job to update (e.g. `"job_abc123"`) |
 
 ### Request Body
 
 All fields are optional. Include only the fields you want to change. An empty body `{}` is technically valid but results in no changes.
 
-| Field          | Type     | Required | Description                                                                                                                                                                                            |
-| -------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `name`         | `string` | No       | The new name for the job. Must be a non-empty string if provided. Useful for correcting typos or updating the work order number.                                                                       |
-| `goalQuantity` | `number` | No       | The new target quantity for the job. Must be a positive integer greater than zero if provided. Changing this value affects the computed progress percentage returned by [Get Job](/api-docs/jobs/get). |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | `string` | No | The new name for the job. Must be a non-empty string if provided. Useful for correcting typos or updating the work order number. |
+| `goalQuantity` | `number` | No | The new target quantity for the job. Must be a positive integer greater than zero if provided. Changing this value affects the computed progress percentage returned by [Get Job](/api-docs/jobs/get). |
 
 ## Response
 
@@ -43,45 +43,45 @@ All fields are optional. Include only the fields you want to change. An empty bo
 
 Returned when the job is successfully updated. The response contains the complete `Job` object with all fields reflecting the current state after the update. The `updatedAt` timestamp is refreshed to the current time.
 
-| Field               | Type                    | Description                                                             |
-| ------------------- | ----------------------- | ----------------------------------------------------------------------- |
-| `id`                | `string`                | Unique identifier for the job (unchanged)                               |
-| `name`              | `string`                | The job name — updated if provided in the request, otherwise unchanged  |
-| `goalQuantity`      | `number`                | The goal quantity — updated if provided, otherwise unchanged            |
-| `jiraTicketKey`     | `string \| undefined`   | Jira issue key (immutable, unchanged)                                   |
-| `jiraTicketSummary` | `string \| undefined`   | Jira ticket summary (immutable, unchanged)                              |
-| `jiraPartNumber`    | `string \| undefined`   | Part number from Jira (immutable, unchanged)                            |
-| `jiraPriority`      | `string \| undefined`   | Priority from Jira (immutable, unchanged)                               |
-| `jiraEpicLink`      | `string \| undefined`   | Epic link from Jira (immutable, unchanged)                              |
-| `jiraLabels`        | `string[] \| undefined` | Labels from Jira (immutable, unchanged)                                 |
-| `createdAt`         | `string`                | ISO 8601 timestamp of original creation (unchanged)                     |
-| `updatedAt`         | `string`                | ISO 8601 timestamp — refreshed to the current time on successful update |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique identifier for the job (unchanged) |
+| `name` | `string` | The job name — updated if provided in the request, otherwise unchanged |
+| `goalQuantity` | `number` | The goal quantity — updated if provided, otherwise unchanged |
+| `jiraTicketKey` | `string \| undefined` | Jira issue key (immutable, unchanged) |
+| `jiraTicketSummary` | `string \| undefined` | Jira ticket summary (immutable, unchanged) |
+| `jiraPartNumber` | `string \| undefined` | Part number from Jira (immutable, unchanged) |
+| `jiraPriority` | `string \| undefined` | Priority from Jira (immutable, unchanged) |
+| `jiraEpicLink` | `string \| undefined` | Epic link from Jira (immutable, unchanged) |
+| `jiraLabels` | `string[] \| undefined` | Labels from Jira (immutable, unchanged) |
+| `createdAt` | `string` | ISO 8601 timestamp of original creation (unchanged) |
+| `updatedAt` | `string` | ISO 8601 timestamp — refreshed to the current time on successful update |
 
 ### 400 Bad Request
 
 Returned when the request body contains invalid values. Validation is only applied to fields that are present in the request.
 
-| Condition                                       | Message                                 |
-| ----------------------------------------------- | --------------------------------------- |
-| `name` is provided but empty                    | `"name cannot be empty"`                |
+| Condition | Message |
+|-----------|---------|
+| `name` is provided but empty | `"name cannot be empty"` |
 | `goalQuantity` is provided but zero or negative | `"goalQuantity must be greater than 0"` |
-| `goalQuantity` is provided but not a number     | `"goalQuantity must be a number"`       |
+| `goalQuantity` is provided but not a number | `"goalQuantity must be a number"` |
 
 ### 404 Not Found
 
 Returned when no job exists with the given ID. The job is looked up before any validation or update logic runs.
 
-| Condition          | Message                 |
-| ------------------ | ----------------------- |
+| Condition | Message |
+|-----------|---------|
 | Job does not exist | `"Job not found: {id}"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while persisting the update to the database.
 
-| Condition                    | Message                   |
-| ---------------------------- | ------------------------- |
-| Database write failure       | `"Internal Server Error"` |
+| Condition | Message |
+|-----------|---------|
+| Database write failure | `"Internal Server Error"` |
 | Unexpected runtime exception | `"Internal Server Error"` |
 
 ## Examples

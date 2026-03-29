@@ -1,11 +1,11 @@
 ---
-title: 'Get Audit by Serial'
-description: 'Retrieve the complete audit trail for a specific serial number'
-method: 'GET'
-endpoint: '/api/audit/serial/:id'
-service: 'auditService'
-category: 'Audit'
-responseType: 'AuditEntry[]'
+title: "Get Audit by Serial"
+description: "Retrieve the complete audit trail for a specific serial number"
+method: "GET"
+endpoint: "/api/audit/serial/:id"
+service: "auditService"
+category: "Audit"
+responseType: "AuditEntry[]"
 errorCodes: [500]
 navigation:
   order: 2
@@ -23,9 +23,9 @@ This is the primary endpoint for part traceability. Use it to display a serial's
 
 ### Path Parameters
 
-| Parameter | Type     | Required | Description                                                                  |
-| --------- | -------- | -------- | ---------------------------------------------------------------------------- |
-| `id`      | `string` | Yes      | The unique identifier of the serial number (e.g. `"sn_xyz"` or `"SN-00042"`) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` | Yes | The unique identifier of the serial number (e.g. `"sn_xyz"` or `"SN-00042"`) |
 
 ## Response
 
@@ -33,28 +33,28 @@ This is the primary endpoint for part traceability. Use it to display a serial's
 
 Returns an array of `AuditEntry` objects for the specified serial, ordered chronologically. If no audit entries exist for the serial, returns an empty array `[]`.
 
-| Field           | Type                                   | Description                                                          |
-| --------------- | -------------------------------------- | -------------------------------------------------------------------- |
-| `id`            | `string`                               | Unique identifier for the audit entry (prefixed with `aud_`)         |
-| `action`        | `AuditAction`                          | The type of event (see [Action Types](/api-docs/audit#action-types)) |
-| `userId`        | `string`                               | The user who performed the action                                    |
-| `timestamp`     | `string`                               | ISO 8601 timestamp of when the event occurred                        |
-| `serialId`      | `string \| undefined`                  | The serial number ID (matches the path parameter for most entries)   |
-| `certId`        | `string \| undefined`                  | The certificate involved, if applicable                              |
-| `jobId`         | `string \| undefined`                  | The job this serial belongs to                                       |
-| `pathId`        | `string \| undefined`                  | The path this serial is routing through                              |
-| `stepId`        | `string \| undefined`                  | The process step involved, if applicable                             |
-| `fromStepId`    | `string \| undefined`                  | The step the serial moved from (for advancement events)              |
-| `toStepId`      | `string \| undefined`                  | The step the serial moved to (for advancement events)                |
-| `batchQuantity` | `number \| undefined`                  | Batch size (for `serial_created` events)                             |
-| `metadata`      | `Record<string, unknown> \| undefined` | Action-specific data                                                 |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique identifier for the audit entry (prefixed with `aud_`) |
+| `action` | `AuditAction` | The type of event (see [Action Types](/api-docs/audit#action-types)) |
+| `userId` | `string` | The user who performed the action |
+| `timestamp` | `string` | ISO 8601 timestamp of when the event occurred |
+| `serialId` | `string \| undefined` | The serial number ID (matches the path parameter for most entries) |
+| `certId` | `string \| undefined` | The certificate involved, if applicable |
+| `jobId` | `string \| undefined` | The job this serial belongs to |
+| `pathId` | `string \| undefined` | The path this serial is routing through |
+| `stepId` | `string \| undefined` | The process step involved, if applicable |
+| `fromStepId` | `string \| undefined` | The step the serial moved from (for advancement events) |
+| `toStepId` | `string \| undefined` | The step the serial moved to (for advancement events) |
+| `batchQuantity` | `number \| undefined` | Batch size (for `serial_created` events) |
+| `metadata` | `Record<string, unknown> \| undefined` | Action-specific data |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while querying the database.
 
-| Condition             | Message                   |
-| --------------------- | ------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Database read failure | `"Internal Server Error"` |
 
 ## Examples

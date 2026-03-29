@@ -1,7 +1,7 @@
 ---
-title: 'Library API'
-description: 'Reusable process name and location libraries for template building'
-icon: 'i-lucide-library'
+title: "Library API"
+description: "Reusable process name and location libraries for template building"
+icon: "i-lucide-library"
 navigation:
   order: 14
 ---
@@ -41,14 +41,14 @@ Library entry names are trimmed of leading and trailing whitespace before storag
 
 ## Endpoints
 
-| Method   | Path                                                              | Description                         |
-| -------- | ----------------------------------------------------------------- | ----------------------------------- |
-| `GET`    | [`/api/library/processes`](/api-docs/library/processes)           | List all process library entries    |
-| `POST`   | [`/api/library/processes`](/api-docs/library/processes)           | Create a new process library entry  |
-| `DELETE` | [`/api/library/processes/:id`](/api-docs/library/process-delete)  | Delete a process library entry      |
-| `GET`    | [`/api/library/locations`](/api-docs/library/locations)           | List all location library entries   |
-| `POST`   | [`/api/library/locations`](/api-docs/library/locations)           | Create a new location library entry |
-| `DELETE` | [`/api/library/locations/:id`](/api-docs/library/location-delete) | Delete a location library entry     |
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | [`/api/library/processes`](/api-docs/library/processes) | List all process library entries |
+| `POST` | [`/api/library/processes`](/api-docs/library/processes) | Create a new process library entry |
+| `DELETE` | [`/api/library/processes/:id`](/api-docs/library/process-delete) | Delete a process library entry |
+| `GET` | [`/api/library/locations`](/api-docs/library/locations) | List all location library entries |
+| `POST` | [`/api/library/locations`](/api-docs/library/locations) | Create a new location library entry |
+| `DELETE` | [`/api/library/locations/:id`](/api-docs/library/location-delete) | Delete a location library entry |
 
 ## Related
 

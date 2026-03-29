@@ -1,12 +1,12 @@
 ---
-title: 'Push to Jira'
-description: 'Push a production status description table to the linked Jira ticket'
-method: 'POST'
-endpoint: '/api/jira/push'
-service: 'jiraService'
-category: 'Jira'
-requestBody: '{ jobId }'
-responseType: 'JiraPushResult'
+title: "Push to Jira"
+description: "Push a production status description table to the linked Jira ticket"
+method: "POST"
+endpoint: "/api/jira/push"
+service: "jiraService"
+category: "Jira"
+requestBody: "{ jobId }"
+responseType: "JiraPushResult"
 errorCodes: [400, 404, 502]
 navigation:
   order: 4
@@ -32,9 +32,9 @@ The push operation:
 
 ### Request Body
 
-| Field   | Type     | Required | Description                                                                                    |
-| ------- | -------- | -------- | ---------------------------------------------------------------------------------------------- |
-| `jobId` | `string` | Yes      | The ID of the job whose data should be pushed to Jira. The job must have a linked Jira ticket. |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `jobId` | `string` | Yes | The ID of the job whose data should be pushed to Jira. The job must have a linked Jira ticket. |
 
 ## Response
 
@@ -42,29 +42,29 @@ The push operation:
 
 Returns a `JiraPushResult` indicating success or failure.
 
-| Field     | Type                  | Description                               |
-| --------- | --------------------- | ----------------------------------------- |
-| `success` | `boolean`             | `true` if the push completed successfully |
-| `error`   | `string \| undefined` | Error message if `success` is `false`     |
+| Field | Type | Description |
+|-------|------|-------------|
+| `success` | `boolean` | `true` if the push completed successfully |
+| `error` | `string \| undefined` | Error message if `success` is `false` |
 
 ### 400 Bad Request
 
-| Condition                    | Message                             |
-| ---------------------------- | ----------------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Jira integration is disabled | `"Jira integration is not enabled"` |
-| Jira push is disabled        | `"Jira push is not enabled"`        |
-| `jobId` is missing or empty  | `"jobId is required"`               |
+| Jira push is disabled | `"Jira push is not enabled"` |
+| `jobId` is missing or empty | `"jobId is required"` |
 
 ### 404 Not Found
 
-| Condition          | Message                    |
-| ------------------ | -------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Job does not exist | `"Job not found: {jobId}"` |
 
 ### 502 Bad Gateway
 
-| Condition                              | Message                                   |
-| -------------------------------------- | ----------------------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Jira API unreachable during GET or PUT | `"Jira API error: {status} {statusText}"` |
 
 ## Examples

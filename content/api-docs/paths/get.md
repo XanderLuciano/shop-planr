@@ -1,11 +1,11 @@
 ---
-title: 'Get Path'
-description: 'Retrieve a single path with its process steps and real-time step distribution'
-method: 'GET'
-endpoint: '/api/paths/:id'
-service: 'pathService'
-category: 'Paths'
-responseType: 'Path & { distribution: StepDistribution[]; completedCount: number }'
+title: "Get Path"
+description: "Retrieve a single path with its process steps and real-time step distribution"
+method: "GET"
+endpoint: "/api/paths/:id"
+service: "pathService"
+category: "Paths"
+responseType: "Path & { distribution: StepDistribution[]; completedCount: number }"
 errorCodes: [404, 500]
 navigation:
   order: 2
@@ -23,9 +23,9 @@ The response includes the full path object (name, goal quantity, advancement mod
 
 ### Path Parameters
 
-| Parameter | Type     | Required | Description                                                          |
-| --------- | -------- | -------- | -------------------------------------------------------------------- |
-| `id`      | `string` | Yes      | The unique identifier of the path to retrieve (e.g. `"path_xyz789"`) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` | Yes | The unique identifier of the path to retrieve (e.g. `"path_xyz789"`) |
 
 ## Response
 
@@ -35,64 +35,64 @@ Returned when the path is found. The response is a single object containing all 
 
 #### Path Fields
 
-| Field             | Type                                   | Description                                                     |
-| ----------------- | -------------------------------------- | --------------------------------------------------------------- |
-| `id`              | `string`                               | Unique identifier for the path                                  |
-| `jobId`           | `string`                               | The parent job's unique identifier                              |
-| `name`            | `string`                               | Human-readable path name (e.g. `"Main Route"`, `"Rework Path"`) |
-| `goalQuantity`    | `number`                               | Target number of units to produce on this path                  |
-| `advancementMode` | `"strict" \| "flexible" \| "per_step"` | How serial numbers advance through steps on this path           |
-| `steps`           | `ProcessStep[]`                        | Ordered array of process steps (see below)                      |
-| `createdAt`       | `string`                               | ISO 8601 timestamp of when the path was created                 |
-| `updatedAt`       | `string`                               | ISO 8601 timestamp of the last modification                     |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique identifier for the path |
+| `jobId` | `string` | The parent job's unique identifier |
+| `name` | `string` | Human-readable path name (e.g. `"Main Route"`, `"Rework Path"`) |
+| `goalQuantity` | `number` | Target number of units to produce on this path |
+| `advancementMode` | `"strict" \| "flexible" \| "per_step"` | How serial numbers advance through steps on this path |
+| `steps` | `ProcessStep[]` | Ordered array of process steps (see below) |
+| `createdAt` | `string` | ISO 8601 timestamp of when the path was created |
+| `updatedAt` | `string` | ISO 8601 timestamp of the last modification |
 
 #### `steps[]` — Process Step objects
 
-| Field            | Type                                             | Description                                                                    |
-| ---------------- | ------------------------------------------------ | ------------------------------------------------------------------------------ |
-| `id`             | `string`                                         | Unique identifier for the step                                                 |
-| `name`           | `string`                                         | Step name describing the operation (e.g. `"CNC Machining"`, `"QC Inspection"`) |
-| `order`          | `number`                                         | Zero-based position of this step in the path sequence                          |
-| `location`       | `string \| undefined`                            | Physical workstation or bay where this step is performed                       |
-| `assignedTo`     | `string \| undefined`                            | User ID of the operator assigned to this step                                  |
-| `optional`       | `boolean`                                        | Whether this step can be skipped without blocking advancement                  |
-| `dependencyType` | `"physical" \| "preferred" \| "completion_gate"` | How strictly this step's completion is enforced                                |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique identifier for the step |
+| `name` | `string` | Step name describing the operation (e.g. `"CNC Machining"`, `"QC Inspection"`) |
+| `order` | `number` | Zero-based position of this step in the path sequence |
+| `location` | `string \| undefined` | Physical workstation or bay where this step is performed |
+| `assignedTo` | `string \| undefined` | User ID of the operator assigned to this step |
+| `optional` | `boolean` | Whether this step can be skipped without blocking advancement |
+| `dependencyType` | `"physical" \| "preferred" \| "completion_gate"` | How strictly this step's completion is enforced |
 
 #### `distribution[]` — Step Distribution objects
 
 The distribution array contains one entry per step, computed in real time from the current state of all serial numbers on this path. It is not stored — it is recalculated on every request.
 
-| Field            | Type                  | Description                                                                                                                             |
-| ---------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `stepId`         | `string`              | The step's unique identifier (matches a `steps[].id` value)                                                                             |
-| `stepName`       | `string`              | Human-readable step name                                                                                                                |
-| `stepOrder`      | `number`              | Zero-based position in the step sequence                                                                                                |
-| `location`       | `string \| undefined` | Physical location of the step, if set                                                                                                   |
-| `partCount`      | `number`              | Number of parts currently at this step (work-in-progress)                                                                               |
-| `completedCount` | `number`              | Always `0` — per-step completion is not independently tracked. Path-level completion is returned as a top-level `completedCount` field. |
-| `isBottleneck`   | `boolean`             | `true` if this step has the highest `partCount` among all steps — indicates a production bottleneck                                     |
+| Field | Type | Description |
+|-------|------|-------------|
+| `stepId` | `string` | The step's unique identifier (matches a `steps[].id` value) |
+| `stepName` | `string` | Human-readable step name |
+| `stepOrder` | `number` | Zero-based position in the step sequence |
+| `location` | `string \| undefined` | Physical location of the step, if set |
+| `partCount` | `number` | Number of parts currently at this step (work-in-progress) |
+| `completedCount` | `number` | Always `0` — per-step completion is not independently tracked. Path-level completion is returned as a top-level `completedCount` field. |
+| `isBottleneck` | `boolean` | `true` if this step has the highest `partCount` among all steps — indicates a production bottleneck |
 
 #### Top-level `completedCount`
 
-| Field            | Type     | Description                                                                                                                                  |
-| ---------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Field | Type | Description |
+|-------|------|-------------|
 | `completedCount` | `number` | Count of parts that have completed all steps in this path (i.e., `currentStepIndex === -1`). This is the value displayed in the "Done" card. |
 
 ### 404 Not Found
 
 Returned when no path exists with the given ID. The path lookup happens before the distribution computation, so a missing path short-circuits immediately.
 
-| Condition           | Message                  |
-| ------------------- | ------------------------ |
+| Condition | Message |
+|-----------|---------|
 | Path does not exist | `"Path not found: {id}"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while fetching the path or computing the step distribution.
 
-| Condition                    | Message                   |
-| ---------------------------- | ------------------------- |
-| Database read failure        | `"Internal Server Error"` |
+| Condition | Message |
+|-----------|---------|
+| Database read failure | `"Internal Server Error"` |
 | Unexpected runtime exception | `"Internal Server Error"` |
 
 ## Examples

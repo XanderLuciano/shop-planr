@@ -1,12 +1,12 @@
 ---
-title: 'Update Path'
+title: "Update Path"
 description: "Update an existing path's name, goal quantity, advancement mode, or process steps"
-method: 'PUT'
-endpoint: '/api/paths/:id'
-service: 'pathService'
-category: 'Paths'
-requestBody: 'UpdatePathInput'
-responseType: 'Path'
+method: "PUT"
+endpoint: "/api/paths/:id"
+service: "pathService"
+category: "Paths"
+requestBody: "UpdatePathInput"
+responseType: "Path"
 errorCodes: [400, 404, 500]
 navigation:
   order: 4
@@ -28,29 +28,29 @@ This endpoint is useful for adjusting production routes mid-run — renaming a p
 
 ### Path Parameters
 
-| Parameter | Type     | Required | Description                                                        |
-| --------- | -------- | -------- | ------------------------------------------------------------------ |
-| `id`      | `string` | Yes      | The unique identifier of the path to update (e.g. `"path_xyz789"`) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` | Yes | The unique identifier of the path to update (e.g. `"path_xyz789"`) |
 
 ### Request Body
 
 All fields are optional. Include only the fields you want to change. An empty body `{}` is technically valid but results in only the `updatedAt` timestamp being refreshed.
 
-| Field             | Type                                   | Required | Description                                                                                                                                                                                                                                                                                         |
-| ----------------- | -------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`            | `string`                               | No       | The new name for the path. Must be a non-empty string if provided. Leading and trailing whitespace is trimmed.                                                                                                                                                                                      |
-| `goalQuantity`    | `number`                               | No       | The new target quantity for this path. Must be a positive integer greater than zero if provided.                                                                                                                                                                                                    |
-| `advancementMode` | `"strict" \| "flexible" \| "per_step"` | No       | The new advancement mode. Changes how serial numbers advance through steps on this path.                                                                                                                                                                                                            |
-| `steps`           | `object[]`                             | No       | A replacement for the path's step sequence. Must contain at least one step if provided. Steps are reconciled by position: existing step IDs are preserved for matched positions, new IDs are generated only for appended steps, and removed steps are deleted only if they have no associated data. |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | `string` | No | The new name for the path. Must be a non-empty string if provided. Leading and trailing whitespace is trimmed. |
+| `goalQuantity` | `number` | No | The new target quantity for this path. Must be a positive integer greater than zero if provided. |
+| `advancementMode` | `"strict" \| "flexible" \| "per_step"` | No | The new advancement mode. Changes how serial numbers advance through steps on this path. |
+| `steps` | `object[]` | No | A replacement for the path's step sequence. Must contain at least one step if provided. Steps are reconciled by position: existing step IDs are preserved for matched positions, new IDs are generated only for appended steps, and removed steps are deleted only if they have no associated data. |
 
 #### `steps[]` — Step Definition objects (when replacing steps)
 
-| Field            | Type                                             | Required | Default       | Description                                                              |
-| ---------------- | ------------------------------------------------ | -------- | ------------- | ------------------------------------------------------------------------ |
-| `name`           | `string`                                         | Yes      | —             | The name of the process step (e.g. `"CNC Machining"`, `"QC Inspection"`) |
-| `location`       | `string`                                         | No       | `undefined`   | Physical workstation or bay where this step is performed                 |
-| `optional`       | `boolean`                                        | No       | `false`       | Whether this step can be skipped without blocking advancement            |
-| `dependencyType` | `"physical" \| "preferred" \| "completion_gate"` | No       | `"preferred"` | How strictly this step's completion is enforced                          |
+| Field | Type | Required | Default | Description |
+|-------|------|----------|---------|-------------|
+| `name` | `string` | Yes | — | The name of the process step (e.g. `"CNC Machining"`, `"QC Inspection"`) |
+| `location` | `string` | No | `undefined` | Physical workstation or bay where this step is performed |
+| `optional` | `boolean` | No | `false` | Whether this step can be skipped without blocking advancement |
+| `dependencyType` | `"physical" \| "preferred" \| "completion_gate"` | No | `"preferred"` | How strictly this step's completion is enforced |
 
 ## Response
 
@@ -58,55 +58,55 @@ All fields are optional. Include only the fields you want to change. An empty bo
 
 Returned when the path is successfully updated. The response contains the complete `Path` object with all fields reflecting the current state after the update. The `updatedAt` timestamp is refreshed to the current time.
 
-| Field             | Type                                   | Description                                                             |
-| ----------------- | -------------------------------------- | ----------------------------------------------------------------------- |
-| `id`              | `string`                               | Unique identifier for the path (unchanged)                              |
-| `jobId`           | `string`                               | The parent job's ID (unchanged)                                         |
-| `name`            | `string`                               | The path name — updated if provided in the request, otherwise unchanged |
-| `goalQuantity`    | `number`                               | The goal quantity — updated if provided, otherwise unchanged            |
-| `advancementMode` | `"strict" \| "flexible" \| "per_step"` | The advancement mode — updated if provided, otherwise unchanged         |
-| `steps`           | `ProcessStep[]`                        | The process steps — fully replaced if provided, otherwise unchanged     |
-| `createdAt`       | `string`                               | ISO 8601 timestamp of original creation (unchanged)                     |
-| `updatedAt`       | `string`                               | ISO 8601 timestamp — refreshed to the current time on successful update |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique identifier for the path (unchanged) |
+| `jobId` | `string` | The parent job's ID (unchanged) |
+| `name` | `string` | The path name — updated if provided in the request, otherwise unchanged |
+| `goalQuantity` | `number` | The goal quantity — updated if provided, otherwise unchanged |
+| `advancementMode` | `"strict" \| "flexible" \| "per_step"` | The advancement mode — updated if provided, otherwise unchanged |
+| `steps` | `ProcessStep[]` | The process steps — fully replaced if provided, otherwise unchanged |
+| `createdAt` | `string` | ISO 8601 timestamp of original creation (unchanged) |
+| `updatedAt` | `string` | ISO 8601 timestamp — refreshed to the current time on successful update |
 
 #### `steps[]` — Process Step objects (in response)
 
-| Field            | Type                                             | Description                                                                                                |
-| ---------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| `id`             | `string`                                         | Unique identifier for the step — preserved for steps at matched positions, new IDs only for appended steps |
-| `name`           | `string`                                         | Step name                                                                                                  |
-| `order`          | `number`                                         | Zero-based position in the step sequence                                                                   |
-| `location`       | `string \| undefined`                            | Physical location, if set                                                                                  |
-| `assignedTo`     | `string \| undefined`                            | Assigned operator user ID, if set (cleared when steps are replaced)                                        |
-| `optional`       | `boolean`                                        | Whether the step is optional                                                                               |
-| `dependencyType` | `"physical" \| "preferred" \| "completion_gate"` | Dependency enforcement type                                                                                |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique identifier for the step — preserved for steps at matched positions, new IDs only for appended steps |
+| `name` | `string` | Step name |
+| `order` | `number` | Zero-based position in the step sequence |
+| `location` | `string \| undefined` | Physical location, if set |
+| `assignedTo` | `string \| undefined` | Assigned operator user ID, if set (cleared when steps are replaced) |
+| `optional` | `boolean` | Whether the step is optional |
+| `dependencyType` | `"physical" \| "preferred" \| "completion_gate"` | Dependency enforcement type |
 
 ### 400 Bad Request
 
 Returned when the request body contains invalid values. Validation is only applied to fields that are present in the request.
 
-| Condition                                                              | Message                                                                                                                                                       |
-| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name` is provided but empty                                           | `"name is required"`                                                                                                                                          |
-| `goalQuantity` is provided but zero or negative                        | `"goalQuantity must be greater than 0"`                                                                                                                       |
-| `steps` is provided but empty array                                    | `"steps is required"`                                                                                                                                         |
+| Condition | Message |
+|-----------|---------|
+| `name` is provided but empty | `"name is required"` |
+| `goalQuantity` is provided but zero or negative | `"goalQuantity must be greater than 0"` |
+| `steps` is provided but empty array | `"steps is required"` |
 | A removed step has associated data (certs, notes, statuses, overrides) | `"Cannot remove step because it has associated data (certificates, notes, part statuses, or overrides). Remove the associated data first, or keep the step."` |
 
 ### 404 Not Found
 
 Returned when no path exists with the given ID. The path is looked up before any validation or update logic runs.
 
-| Condition           | Message                  |
-| ------------------- | ------------------------ |
+| Condition | Message |
+|-----------|---------|
 | Path does not exist | `"Path not found: {id}"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while persisting the update to the database.
 
-| Condition                    | Message                   |
-| ---------------------------- | ------------------------- |
-| Database write failure       | `"Internal Server Error"` |
+| Condition | Message |
+|-----------|---------|
+| Database write failure | `"Internal Server Error"` |
 | Unexpected runtime exception | `"Internal Server Error"` |
 
 ## Examples

@@ -20,7 +20,6 @@ The `listByStepIndex` method in `SQLiteSerialRepository` returns all serials mat
 The bug manifests when a serial has been scrapped (status = 'scrapped') but its `currentStepIndex` still matches a step query. The `listByStepIndex` SQL query filters only on `path_id` and `current_step_index`, so scrapped serials pass through and appear in the operator queue.
 
 **Formal Specification:**
-
 ```
 FUNCTION isBugCondition(input)
   INPUT: input of type { pathId: string, stepIndex: number, serial: SerialNumber }
@@ -44,7 +43,6 @@ END FUNCTION
 ### Preservation Requirements
 
 **Unchanged Behaviors:**
-
 - `listByStepIndex` continues to return `in_progress` serials at the queried step
 - `listByPathId` returns all serials regardless of status (used for job-level views)
 - `listByJobId` returns all serials regardless of status (used for job-level views)
@@ -54,7 +52,6 @@ END FUNCTION
 
 **Scope:**
 All inputs where the serial's status is NOT `'scrapped'` should be completely unaffected by this fix. This includes:
-
 - Serials with `status = 'in_progress'` at any step
 - Serials with `status = 'completed'` (already excluded by `currentStepIndex = -1`)
 - All calls to `listByPathId`, `listByJobId`, `listAll`, `getById`, `countByJobId`, etc.
@@ -64,11 +61,9 @@ All inputs where the serial's status is NOT `'scrapped'` should be completely un
 Based on the bug description and code inspection, the root cause is confirmed (not hypothesized):
 
 1. **Missing status filter in SQL query**: The `listByStepIndex` method at line ~107 of `serialRepository.ts` uses:
-
    ```sql
    SELECT * FROM serials WHERE path_id = ? AND current_step_index = ? ORDER BY created_at ASC
    ```
-
    This query has no `status` filter. When `scrapSerial` sets `status = 'scrapped'` without changing `currentStepIndex`, the scrapped serial still matches the `path_id + current_step_index` predicate.
 
 2. **Design assumption mismatch**: The `scrapSerial` method intentionally preserves `currentStepIndex` (to record which step the serial was scrapped at via `scrapStepId`). The `listByStepIndex` query was written under the assumption that only active serials would match, but this assumption was never enforced in the WHERE clause.
@@ -96,7 +91,6 @@ _For any_ serial where `status != 'scrapped'` (i.e., `in_progress` or `completed
 **Function**: `listByStepIndex`
 
 **Specific Changes**:
-
 1. **Add status filter to SQL WHERE clause**: Change the query from:
    ```sql
    SELECT * FROM serials WHERE path_id = ? AND current_step_index = ? ORDER BY created_at ASC
@@ -121,13 +115,11 @@ The testing strategy follows a two-phase approach: first, surface counterexample
 **Test Plan**: Create serials, scrap some, then call `listByStepIndex` and assert that scrapped serials are present (demonstrating the bug). Run these tests on the UNFIXED code to observe the defect.
 
 **Test Cases**:
-
 1. **Single scrapped serial**: Create a serial at step 0, scrap it, call `listByStepIndex` — scrapped serial is returned (will fail assertion on unfixed code that it should NOT be returned)
 2. **Mixed status at same step**: Create 3 serials at step 1, scrap 1, call `listByStepIndex` — all 3 returned including the scrapped one (will fail on unfixed code)
 3. **All scrapped at step**: Create 2 serials at step 0, scrap both, call `listByStepIndex` — both returned, list is non-empty (will fail on unfixed code)
 
 **Expected Counterexamples**:
-
 - `listByStepIndex` returns serials with `status = 'scrapped'`
 - Cause: missing `AND status != 'scrapped'` in the SQL WHERE clause
 
@@ -136,7 +128,6 @@ The testing strategy follows a two-phase approach: first, surface counterexample
 **Goal**: Verify that for all inputs where the bug condition holds, the fixed function produces the expected behavior.
 
 **Pseudocode:**
-
 ```
 FOR ALL serial WHERE isBugCondition(serial) DO
   result := listByStepIndex_fixed(serial.pathId, serial.currentStepIndex)
@@ -149,7 +140,6 @@ END FOR
 **Goal**: Verify that for all inputs where the bug condition does NOT hold, the fixed function produces the same result as the original function.
 
 **Pseudocode:**
-
 ```
 FOR ALL serial WHERE NOT isBugCondition(serial) DO
   ASSERT listByStepIndex_original(serial.pathId, serial.currentStepIndex)
@@ -158,7 +148,6 @@ END FOR
 ```
 
 **Testing Approach**: Property-based testing is recommended for preservation checking because:
-
 - It generates many combinations of serial statuses, step indices, and path configurations
 - It catches edge cases like empty paths, single-serial paths, or all-scrapped paths
 - It provides strong guarantees that non-scrapped serial behavior is unchanged
@@ -166,7 +155,6 @@ END FOR
 **Test Plan**: Observe behavior on UNFIXED code first for non-scrapped serials, then write property-based tests capturing that behavior.
 
 **Test Cases**:
-
 1. **In-progress serial preservation**: Verify `in_progress` serials at a step continue to appear in `listByStepIndex` results after the fix
 2. **Empty result preservation**: Verify steps with no matching serials continue to return an empty list
 3. **Multiple paths preservation**: Verify `listByStepIndex` correctly scopes to the given `pathId` and does not leak serials from other paths

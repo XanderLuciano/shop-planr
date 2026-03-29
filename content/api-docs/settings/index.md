@@ -1,7 +1,7 @@
 ---
-title: 'Settings API'
-description: 'App configuration — Jira connection, field mappings, and page visibility toggles'
-icon: 'i-lucide-settings'
+title: "Settings API"
+description: "App configuration — Jira connection, field mappings, and page visibility toggles"
+icon: "i-lucide-settings"
 navigation:
   order: 9
 ---
@@ -32,13 +32,13 @@ Default values for `baseUrl`, `projectKey`, `username`, and `apiToken` are seede
 
 The `jiraFieldMappings` array defines how Jira custom fields map to Shop Planr fields. Five default mappings are provided for the PI project:
 
-| Shop ERP Field | Default Jira Field ID | Label             |
-| -------------- | --------------------- | ----------------- |
-| `partNumber`   | `customfield_10908`   | Part Number / Rev |
-| `goalQuantity` | `customfield_10900`   | Quantity          |
-| `epicLink`     | `customfield_10014`   | Epic Link         |
-| `priority`     | `priority`            | Priority          |
-| `labels`       | `labels`              | Labels            |
+| Shop ERP Field | Default Jira Field ID | Label |
+|---------------|----------------------|-------|
+| `partNumber` | `customfield_10908` | Part Number / Rev |
+| `goalQuantity` | `customfield_10900` | Quantity |
+| `epicLink` | `customfield_10014` | Epic Link |
+| `priority` | `priority` | Priority |
+| `labels` | `labels` | Labels |
 
 These mappings are used by the Jira service when normalizing ticket data. Custom mappings can be added or modified to support different Jira project configurations.
 
@@ -61,10 +61,10 @@ Certain routes (like `/parts/step/*`) are always accessible regardless of toggle
 
 ## Endpoints
 
-| Method | Path                                         | Description                                   |
-| ------ | -------------------------------------------- | --------------------------------------------- |
-| `GET`  | [`/api/settings`](/api-docs/settings/get)    | Retrieve the current application settings     |
-| `PUT`  | [`/api/settings`](/api-docs/settings/update) | Update application settings (partial payload) |
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | [`/api/settings`](/api-docs/settings/get) | Retrieve the current application settings |
+| `PUT` | [`/api/settings`](/api-docs/settings/update) | Update application settings (partial payload) |
 
 ## Related
 

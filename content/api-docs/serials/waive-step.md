@@ -1,12 +1,12 @@
 ---
-title: 'Waive Step'
-description: 'Formally waive a deferred process step for a serial number with approver authorization'
-method: 'POST'
-endpoint: '/api/serials/:id/waive-step/:stepId'
-service: 'lifecycleService'
-category: 'Serials'
-requestBody: 'WaiveStepInput'
-responseType: 'SnStepStatus'
+title: "Waive Step"
+description: "Formally waive a deferred process step for a serial number with approver authorization"
+method: "POST"
+endpoint: "/api/serials/:id/waive-step/:stepId"
+service: "lifecycleService"
+category: "Serials"
+requestBody: "WaiveStepInput"
+responseType: "SnStepStatus"
 errorCodes: [400, 404, 500]
 navigation:
   order: 13
@@ -26,17 +26,17 @@ Only steps in `deferred` status can be waived. Additionally, only **required** s
 
 ### Path Parameters
 
-| Parameter | Type     | Required | Description                                                             |
-| --------- | -------- | -------- | ----------------------------------------------------------------------- |
-| `id`      | `string` | Yes      | The unique identifier of the serial number (e.g. `"SN-00001"`)          |
-| `stepId`  | `string` | Yes      | The unique identifier of the deferred step to waive (e.g. `"step_003"`) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` | Yes | The unique identifier of the serial number (e.g. `"SN-00001"`) |
+| `stepId` | `string` | Yes | The unique identifier of the deferred step to waive (e.g. `"step_003"`) |
 
 ### Request Body
 
-| Field        | Type     | Required | Description                                                                                                                                    |
-| ------------ | -------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `reason`     | `string` | Yes      | Explanation of why the step is being waived. Must be a non-empty string. Recorded in the audit trail.                                          |
-| `approverId` | `string` | Yes      | ID of the user authorizing the waiver. This is typically a supervisor or quality lead — not necessarily the same person who deferred the step. |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `reason` | `string` | Yes | Explanation of why the step is being waived. Must be a non-empty string. Recorded in the audit trail. |
+| `approverId` | `string` | Yes | ID of the user authorizing the waiver. This is typically a supervisor or quality lead — not necessarily the same person who deferred the step. |
 
 ## Response
 
@@ -44,44 +44,44 @@ Only steps in `deferred` status can be waived. Additionally, only **required** s
 
 Returned when the step is successfully waived. The response contains the updated `SnStepStatus` object.
 
-| Field       | Type       | Description                                          |
-| ----------- | ---------- | ---------------------------------------------------- |
-| `id`        | `string`   | Unique identifier for the step status record         |
-| `serialId`  | `string`   | ID of the serial number                              |
-| `stepId`    | `string`   | ID of the waived step                                |
-| `stepIndex` | `number`   | Zero-based position of the step in the path sequence |
-| `status`    | `"waived"` | Always `"waived"` after this operation               |
-| `updatedAt` | `string`   | ISO 8601 timestamp of when the waiver was applied    |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique identifier for the step status record |
+| `serialId` | `string` | ID of the serial number |
+| `stepId` | `string` | ID of the waived step |
+| `stepIndex` | `number` | Zero-based position of the step in the path sequence |
+| `status` | `"waived"` | Always `"waived"` after this operation |
+| `updatedAt` | `string` | ISO 8601 timestamp of when the waiver was applied |
 
 ### 400 Bad Request
 
 Returned when the waiver cannot be applied due to validation failures.
 
-| Condition                                            | Message                                                   |
-| ---------------------------------------------------- | --------------------------------------------------------- |
-| `reason` is missing or empty                         | `"Waiver requires a reason and approver identity"`        |
-| `approverId` is missing or empty                     | `"Waiver requires a reason and approver identity"`        |
-| Step is not in `deferred` status                     | `"Can only waive deferred required steps"`                |
+| Condition | Message |
+|-----------|---------|
+| `reason` is missing or empty | `"Waiver requires a reason and approver identity"` |
+| `approverId` is missing or empty | `"Waiver requires a reason and approver identity"` |
+| Step is not in `deferred` status | `"Can only waive deferred required steps"` |
 | Step is optional (only required steps can be waived) | `"Can only waive required steps — this step is optional"` |
 
 ### 404 Not Found
 
 Returned when the serial, step, or step status record does not exist.
 
-| Condition                                | Message                                         |
-| ---------------------------------------- | ----------------------------------------------- |
-| Serial does not exist                    | `"Serial not found: {id}"`                      |
-| Step status record does not exist        | `"SnStepStatus not found: {serialId}/{stepId}"` |
-| Process step does not exist in the path  | `"ProcessStep not found: {stepId}"`             |
-| Path referenced by serial does not exist | `"Path not found: {pathId}"`                    |
+| Condition | Message |
+|-----------|---------|
+| Serial does not exist | `"Serial not found: {id}"` |
+| Step status record does not exist | `"SnStepStatus not found: {serialId}/{stepId}"` |
+| Process step does not exist in the path | `"ProcessStep not found: {stepId}"` |
+| Path referenced by serial does not exist | `"Path not found: {pathId}"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs during the waiver operation.
 
-| Condition                    | Message                   |
-| ---------------------------- | ------------------------- |
-| Database write failure       | `"Internal Server Error"` |
+| Condition | Message |
+|-----------|---------|
+| Database write failure | `"Internal Server Error"` |
 | Unexpected runtime exception | `"Internal Server Error"` |
 
 ## Examples

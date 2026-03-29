@@ -1,12 +1,12 @@
 ---
-title: 'Update Advancement Mode'
+title: "Update Advancement Mode"
 description: "Change a path's advancement mode without modifying any other properties"
-method: 'PATCH'
-endpoint: '/api/paths/:id/advancement-mode'
-service: 'pathService'
-category: 'Paths'
-requestBody: 'UpdateAdvancementModeInput'
-responseType: 'Path'
+method: "PATCH"
+endpoint: "/api/paths/:id/advancement-mode"
+service: "pathService"
+category: "Paths"
+requestBody: "UpdateAdvancementModeInput"
+responseType: "Path"
 errorCodes: [400, 404, 500]
 navigation:
   order: 6
@@ -22,25 +22,25 @@ Use this endpoint when production conditions change and you need to relax or tig
 
 ### Advancement Mode Reference
 
-| Mode       | Behavior                                                                                                                                                     |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `strict`   | Serial numbers must complete every step in exact sequential order. No steps can be skipped or deferred. This is the safest mode for regulated manufacturing. |
-| `flexible` | Serial numbers advance sequentially, but optional steps can be skipped and preferred-dependency steps can be deferred for later completion.                  |
-| `per_step` | Each step's advancement behavior is determined by its individual `dependencyType` and `optional` settings. Provides the most granular control.               |
+| Mode | Behavior |
+|------|----------|
+| `strict` | Serial numbers must complete every step in exact sequential order. No steps can be skipped or deferred. This is the safest mode for regulated manufacturing. |
+| `flexible` | Serial numbers advance sequentially, but optional steps can be skipped and preferred-dependency steps can be deferred for later completion. |
+| `per_step` | Each step's advancement behavior is determined by its individual `dependencyType` and `optional` settings. Provides the most granular control. |
 
 ## Request
 
 ### Path Parameters
 
-| Parameter | Type     | Required | Description                                                        |
-| --------- | -------- | -------- | ------------------------------------------------------------------ |
-| `id`      | `string` | Yes      | The unique identifier of the path to update (e.g. `"path_xyz789"`) |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` | Yes | The unique identifier of the path to update (e.g. `"path_xyz789"`) |
 
 ### Request Body
 
-| Field             | Type                                   | Required | Description                                                                         |
-| ----------------- | -------------------------------------- | -------- | ----------------------------------------------------------------------------------- |
-| `advancementMode` | `"strict" \| "flexible" \| "per_step"` | Yes      | The new advancement mode for the path. Must be one of the three valid mode strings. |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `advancementMode` | `"strict" \| "flexible" \| "per_step"` | Yes | The new advancement mode for the path. Must be one of the three valid mode strings. |
 
 ## Response
 
@@ -48,53 +48,53 @@ Use this endpoint when production conditions change and you need to relax or tig
 
 Returned when the advancement mode is successfully updated. The response contains the complete `Path` object with all fields reflecting the current state after the update. The `updatedAt` timestamp is refreshed to the current time.
 
-| Field             | Type                                   | Description                                                             |
-| ----------------- | -------------------------------------- | ----------------------------------------------------------------------- |
-| `id`              | `string`                               | Unique identifier for the path (unchanged)                              |
-| `jobId`           | `string`                               | The parent job's ID (unchanged)                                         |
-| `name`            | `string`                               | The path name (unchanged)                                               |
-| `goalQuantity`    | `number`                               | The goal quantity (unchanged)                                           |
-| `advancementMode` | `"strict" \| "flexible" \| "per_step"` | The newly applied advancement mode                                      |
-| `steps`           | `ProcessStep[]`                        | The process steps (unchanged)                                           |
-| `createdAt`       | `string`                               | ISO 8601 timestamp of original creation (unchanged)                     |
-| `updatedAt`       | `string`                               | ISO 8601 timestamp — refreshed to the current time on successful update |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique identifier for the path (unchanged) |
+| `jobId` | `string` | The parent job's ID (unchanged) |
+| `name` | `string` | The path name (unchanged) |
+| `goalQuantity` | `number` | The goal quantity (unchanged) |
+| `advancementMode` | `"strict" \| "flexible" \| "per_step"` | The newly applied advancement mode |
+| `steps` | `ProcessStep[]` | The process steps (unchanged) |
+| `createdAt` | `string` | ISO 8601 timestamp of original creation (unchanged) |
+| `updatedAt` | `string` | ISO 8601 timestamp — refreshed to the current time on successful update |
 
 #### `steps[]` — Process Step objects (unchanged)
 
-| Field            | Type                                             | Description                              |
-| ---------------- | ------------------------------------------------ | ---------------------------------------- |
-| `id`             | `string`                                         | Unique identifier for the step           |
-| `name`           | `string`                                         | Step name                                |
-| `order`          | `number`                                         | Zero-based position in the step sequence |
-| `location`       | `string \| undefined`                            | Physical location, if set                |
-| `assignedTo`     | `string \| undefined`                            | Assigned operator user ID, if set        |
-| `optional`       | `boolean`                                        | Whether the step is optional             |
-| `dependencyType` | `"physical" \| "preferred" \| "completion_gate"` | Dependency enforcement type              |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | Unique identifier for the step |
+| `name` | `string` | Step name |
+| `order` | `number` | Zero-based position in the step sequence |
+| `location` | `string \| undefined` | Physical location, if set |
+| `assignedTo` | `string \| undefined` | Assigned operator user ID, if set |
+| `optional` | `boolean` | Whether the step is optional |
+| `dependencyType` | `"physical" \| "preferred" \| "completion_gate"` | Dependency enforcement type |
 
 ### 400 Bad Request
 
 Returned when the request body contains an invalid advancement mode value.
 
-| Condition                                   | Message                                       |
-| ------------------------------------------- | --------------------------------------------- |
-| `advancementMode` is missing                | Validation error describing the missing field |
+| Condition | Message |
+|-----------|---------|
+| `advancementMode` is missing | Validation error describing the missing field |
 | `advancementMode` is not a valid enum value | Validation error describing the invalid value |
 
 ### 404 Not Found
 
 Returned when no path exists with the given ID.
 
-| Condition           | Message                  |
-| ------------------- | ------------------------ |
+| Condition | Message |
+|-----------|---------|
 | Path does not exist | `"Path not found: {id}"` |
 
 ### 500 Internal Server Error
 
 Returned if an unhandled error occurs while persisting the update to the database.
 
-| Condition                    | Message                   |
-| ---------------------------- | ------------------------- |
-| Database write failure       | `"Internal Server Error"` |
+| Condition | Message |
+|-----------|---------|
+| Database write failure | `"Internal Server Error"` |
 | Unexpected runtime exception | `"Internal Server Error"` |
 
 ## Examples

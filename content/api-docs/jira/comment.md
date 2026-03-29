@@ -1,12 +1,12 @@
 ---
-title: 'Push Comment to Jira'
-description: 'Push a comment summary or individual step note to the linked Jira ticket'
-method: 'POST'
-endpoint: '/api/jira/comment'
-service: 'jiraService'
-category: 'Jira'
-requestBody: '{ jobId, noteId? }'
-responseType: 'JiraPushResult'
+title: "Push Comment to Jira"
+description: "Push a comment summary or individual step note to the linked Jira ticket"
+method: "POST"
+endpoint: "/api/jira/comment"
+service: "jiraService"
+category: "Jira"
+requestBody: "{ jobId, noteId? }"
+responseType: "JiraPushResult"
 errorCodes: [400, 404, 502]
 navigation:
   order: 5
@@ -28,10 +28,10 @@ Both the `enabled` and `pushEnabled` toggles must be active in [App Settings](/a
 
 ### Request Body
 
-| Field    | Type     | Required | Description                                                                                                                                  |
-| -------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `jobId`  | `string` | Yes      | The ID of the job whose linked Jira ticket will receive the comment.                                                                         |
-| `noteId` | `string` | No       | The ID of a specific step note to push. When provided, only that note is pushed as a comment. When omitted, a full status summary is posted. |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `jobId` | `string` | Yes | The ID of the job whose linked Jira ticket will receive the comment. |
+| `noteId` | `string` | No | The ID of a specific step note to push. When provided, only that note is pushed as a comment. When omitted, a full status summary is posted. |
 
 ## Response
 
@@ -39,29 +39,29 @@ Both the `enabled` and `pushEnabled` toggles must be active in [App Settings](/a
 
 Returns a `JiraPushResult` indicating success or failure.
 
-| Field     | Type                  | Description                                   |
-| --------- | --------------------- | --------------------------------------------- |
-| `success` | `boolean`             | `true` if the comment was posted successfully |
-| `error`   | `string \| undefined` | Error message if `success` is `false`         |
+| Field | Type | Description |
+|-------|------|-------------|
+| `success` | `boolean` | `true` if the comment was posted successfully |
+| `error` | `string \| undefined` | Error message if `success` is `false` |
 
 ### 400 Bad Request
 
-| Condition                    | Message                             |
-| ---------------------------- | ----------------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Jira integration is disabled | `"Jira integration is not enabled"` |
-| Jira push is disabled        | `"Jira push is not enabled"`        |
-| `jobId` is missing or empty  | `"jobId is required"`               |
+| Jira push is disabled | `"Jira push is not enabled"` |
+| `jobId` is missing or empty | `"jobId is required"` |
 
 ### 404 Not Found
 
-| Condition          | Message                    |
-| ------------------ | -------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Job does not exist | `"Job not found: {jobId}"` |
 
 ### 502 Bad Gateway
 
-| Condition                                 | Message                                   |
-| ----------------------------------------- | ----------------------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Jira API unreachable when posting comment | `"Jira API error: {status} {statusText}"` |
 
 ## Examples
@@ -112,7 +112,6 @@ The resulting Jira comment would look like:
 > **Status Summary for JOB-2024-001**
 >
 > **Main Route:**
->
 > - CNC Machining: 12 parts
 > - Deburring: 8 parts
 > - Inspection: 3 parts

@@ -1,12 +1,12 @@
 ---
-title: 'Update User'
+title: "Update User"
 description: "Update an existing shop user's name, department, or active status"
-method: 'PUT'
-endpoint: '/api/users/:id'
-service: 'userService'
-category: 'Users'
-requestBody: '{ name?, department?, active? }'
-responseType: 'ShopUser'
+method: "PUT"
+endpoint: "/api/users/:id"
+service: "userService"
+category: "Users"
+requestBody: "{ name?, department?, active? }"
+responseType: "ShopUser"
 errorCodes: [400, 404, 500]
 navigation:
   order: 3
@@ -24,19 +24,19 @@ The user must exist. If the `name` field is provided, it must be a non-empty str
 
 ### Path Parameters
 
-| Parameter | Type     | Required | Description                                |
-| --------- | -------- | -------- | ------------------------------------------ |
-| `id`      | `string` | Yes      | The unique user ID (e.g. `"user_a1b2c3"`). |
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `id` | `string` | Yes | The unique user ID (e.g. `"user_a1b2c3"`). |
 
 ### Request Body
 
 All fields are optional. Only provided fields are updated.
 
-| Field        | Type      | Required | Description                                                                 |
-| ------------ | --------- | -------- | --------------------------------------------------------------------------- |
-| `name`       | `string`  | No       | Updated display name. Must be non-empty if provided. Trimmed of whitespace. |
-| `department` | `string`  | No       | Updated department. Can be set to any string or empty string.               |
-| `active`     | `boolean` | No       | Set to `false` to deactivate the user, `true` to reactivate.                |
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | `string` | No | Updated display name. Must be non-empty if provided. Trimmed of whitespace. |
+| `department` | `string` | No | Updated department. Can be set to any string or empty string. |
+| `active` | `boolean` | No | Set to `false` to deactivate the user, `true` to reactivate. |
 
 ## Response
 
@@ -44,31 +44,31 @@ All fields are optional. Only provided fields are updated.
 
 Returns the complete updated `ShopUser` object.
 
-| Field        | Type                  | Description                             |
-| ------------ | --------------------- | --------------------------------------- |
-| `id`         | `string`              | User ID (unchanged)                     |
-| `name`       | `string`              | Display name (updated if provided)      |
-| `department` | `string \| undefined` | Department (updated if provided)        |
-| `active`     | `boolean`             | Active status (updated if provided)     |
-| `createdAt`  | `string`              | Original creation timestamp (unchanged) |
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | User ID (unchanged) |
+| `name` | `string` | Display name (updated if provided) |
+| `department` | `string \| undefined` | Department (updated if provided) |
+| `active` | `boolean` | Active status (updated if provided) |
+| `createdAt` | `string` | Original creation timestamp (unchanged) |
 
 ### 400 Bad Request
 
-| Condition                    | Message              |
-| ---------------------------- | -------------------- |
+| Condition | Message |
+|-----------|---------|
 | `name` is provided but empty | `"name is required"` |
-| `name` is only whitespace    | `"name is required"` |
+| `name` is only whitespace | `"name is required"` |
 
 ### 404 Not Found
 
-| Condition                        | Message                  |
-| -------------------------------- | ------------------------ |
+| Condition | Message |
+|-----------|---------|
 | No user exists with the given ID | `"User not found: {id}"` |
 
 ### 500 Internal Server Error
 
-| Condition              | Message                   |
-| ---------------------- | ------------------------- |
+| Condition | Message |
+|-----------|---------|
 | Database write failure | `"Internal Server Error"` |
 
 ## Examples

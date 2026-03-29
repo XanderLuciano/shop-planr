@@ -1,7 +1,7 @@
 ---
-title: 'Operator API'
-description: 'Workstation views — step data, work queues, and operator assignments'
-icon: 'i-lucide-hard-hat'
+title: "Operator API"
+description: "Workstation views — step data, work queues, and operator assignments"
+icon: "i-lucide-hard-hat"
 navigation:
   order: 12
 ---
@@ -52,13 +52,13 @@ The `_all` queue endpoint includes first steps (order 0) even when they have zer
 
 ## Endpoints
 
-| Method | Path                                                           | Description                                     |
-| ------ | -------------------------------------------------------------- | ----------------------------------------------- |
-| `GET`  | [`/api/operator/step/:stepId`](/api-docs/operator/step-view)   | Get step view data for a specific step instance |
-| `GET`  | [`/api/operator/work-queue`](/api-docs/operator/work-queue)    | Get work queue grouped by operator              |
-| `GET`  | [`/api/operator/queue/_all`](/api-docs/operator/queue-all)     | Get all queue items (flat list)                 |
-| `GET`  | [`/api/operator/queue/:userId`](/api-docs/operator/queue-user) | Get queue items for a specific operator         |
-| `GET`  | [`/api/operator/:stepName`](/api-docs/operator/by-step-name)   | Get parts view data by step name                |
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | [`/api/operator/step/:stepId`](/api-docs/operator/step-view) | Get step view data for a specific step instance |
+| `GET` | [`/api/operator/work-queue`](/api-docs/operator/work-queue) | Get work queue grouped by operator |
+| `GET` | [`/api/operator/queue/_all`](/api-docs/operator/queue-all) | Get all queue items (flat list) |
+| `GET` | [`/api/operator/queue/:userId`](/api-docs/operator/queue-user) | Get queue items for a specific operator |
+| `GET` | [`/api/operator/:stepName`](/api-docs/operator/by-step-name) | Get parts view data by step name |
 
 ## Related
 
