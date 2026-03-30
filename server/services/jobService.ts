@@ -13,7 +13,7 @@ export function createJobService(repos: {
   jobs: JobRepository
   paths: PathRepository
   parts: PartRepository
-  bom: BomRepository
+  bom?: BomRepository
 }) {
   return {
     createJob(input: CreateJobInput): Job {
@@ -119,7 +119,9 @@ export function createJobService(repos: {
         throw new ValidationError(`Cannot delete job: it has ${partCount} part(s). Remove all parts first.`)
       }
 
-      const bomRefCount = repos.bom.countContributingJobRefs(id)
+      const bomRefCount = repos.bom
+        ? repos.bom.countContributingJobRefs(id)
+        : 0
       if (bomRefCount > 0) {
         throw new ValidationError(`Cannot delete job: it is referenced by ${bomRefCount} BOM entry/entries. Remove BOM references first.`)
       }
@@ -145,7 +147,9 @@ export function createJobService(repos: {
         reasons.push(`Job has ${partCount} part(s)`)
       }
 
-      const bomRefCount = repos.bom.countContributingJobRefs(id)
+      const bomRefCount = repos.bom
+        ? repos.bom.countContributingJobRefs(id)
+        : 0
       if (bomRefCount > 0) {
         reasons.push(`Job is referenced by ${bomRefCount} BOM entry/entries`)
       }
