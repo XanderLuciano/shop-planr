@@ -1,17 +1,19 @@
 import type { JobRepository } from '../repositories/interfaces/jobRepository'
 import type { PathRepository } from '../repositories/interfaces/pathRepository'
 import type { PartRepository } from '../repositories/interfaces/partRepository'
+import type { BomRepository } from '../repositories/interfaces/bomRepository'
 import type { Job } from '../types/domain'
 import type { CreateJobInput, UpdateJobInput } from '../types/api'
 import type { JobProgress } from '../types/computed'
 import { generateId } from '../utils/idGenerator'
 import { assertPositive, assertNonEmpty } from '../utils/validation'
-import { NotFoundError } from '../utils/errors'
+import { NotFoundError, ValidationError } from '../utils/errors'
 
 export function createJobService(repos: {
   jobs: JobRepository
   paths: PathRepository
   parts: PartRepository
+  bom?: BomRepository
 }) {
   return {
     createJob(input: CreateJobInput): Job {
@@ -99,6 +101,60 @@ export function createJobService(repos: {
 
     getJobPartCount(jobId: string): number {
       return repos.parts.countByJobId(jobId)
+    },
+
+    deleteJob(id: string): void {
+      const job = repos.jobs.getById(id)
+      if (!job) {
+        throw new NotFoundError('Job', id)
+      }
+
+      const paths = repos.paths.listByJobId(id)
+      if (paths.length > 0) {
+        throw new ValidationError(`Cannot delete job: it has ${paths.length} path(s). Remove all paths first.`)
+      }
+
+      const partCount = repos.parts.countByJobId(id)
+      if (partCount > 0) {
+        throw new ValidationError(`Cannot delete job: it has ${partCount} part(s). Remove all parts first.`)
+      }
+
+      const bomRefCount = repos.bom
+        ? repos.bom.countContributingJobRefs(id)
+        : 0
+      if (bomRefCount > 0) {
+        throw new ValidationError(`Cannot delete job: it is referenced by ${bomRefCount} BOM entry/entries. Remove BOM references first.`)
+      }
+
+      repos.jobs.delete(id)
+    },
+
+    canDeleteJob(id: string): { canDelete: boolean; reasons: string[] } {
+      const job = repos.jobs.getById(id)
+      if (!job) {
+        throw new NotFoundError('Job', id)
+      }
+
+      const reasons: string[] = []
+
+      const paths = repos.paths.listByJobId(id)
+      if (paths.length > 0) {
+        reasons.push(`Job has ${paths.length} path(s)`)
+      }
+
+      const partCount = repos.parts.countByJobId(id)
+      if (partCount > 0) {
+        reasons.push(`Job has ${partCount} part(s)`)
+      }
+
+      const bomRefCount = repos.bom
+        ? repos.bom.countContributingJobRefs(id)
+        : 0
+      if (bomRefCount > 0) {
+        reasons.push(`Job is referenced by ${bomRefCount} BOM entry/entries`)
+      }
+
+      return { canDelete: reasons.length === 0, reasons }
     }
   }
 }

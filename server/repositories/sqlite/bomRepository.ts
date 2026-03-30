@@ -143,4 +143,11 @@ export class SQLiteBomRepository implements BomRepository {
     const result = this.db.prepare('DELETE FROM boms WHERE id = ?').run(id)
     return result.changes > 0
   }
+
+  countContributingJobRefs(jobId: string): number {
+    const row = this.db.prepare(
+      'SELECT COUNT(*) AS cnt FROM bom_contributing_jobs WHERE job_id = ?'
+    ).get(jobId) as { cnt: number } | undefined
+    return row?.cnt ?? 0
+  }
 }

@@ -4,6 +4,7 @@ import { NotFoundError, ValidationError } from '../../../server/utils/errors'
 import type { JobRepository } from '../../../server/repositories/interfaces/jobRepository'
 import type { PathRepository } from '../../../server/repositories/interfaces/pathRepository'
 import type { PartRepository } from '../../../server/repositories/interfaces/partRepository'
+import type { BomRepository } from '../../../server/repositories/interfaces/bomRepository'
 import type { Job, Part } from '../../../server/types/domain'
 
 function createMockJobRepo(): JobRepository {
@@ -49,17 +50,30 @@ function createMockPartRepo(parts: Part[] = []): PartRepository {
   }
 }
 
+function createMockBomRepo(bomRefCount: number = 0): BomRepository {
+  return {
+    create: vi.fn(),
+    getById: vi.fn(),
+    list: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    countContributingJobRefs: vi.fn(() => bomRefCount),
+  }
+}
+
 describe('JobService', () => {
   let jobRepo: JobRepository
   let pathRepo: PathRepository
   let partRepo: PartRepository
+  let bomRepo: BomRepository
   let service: ReturnType<typeof createJobService>
 
   beforeEach(() => {
     jobRepo = createMockJobRepo()
     pathRepo = createMockPathRepo()
     partRepo = createMockPartRepo()
-    service = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepo })
+    bomRepo = createMockBomRepo()
+    service = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepo, bom: bomRepo })
   })
 
   describe('createJob', () => {
@@ -193,7 +207,7 @@ describe('JobService', () => {
         { id: 'p5', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' }
       ]
       const partRepoWithData = createMockPartRepo(parts)
-      const svc = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepoWithData })
+      const svc = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepoWithData, bom: bomRepo })
 
       const progress = svc.computeJobProgress(job.id)
       expect(progress.totalParts).toBe(5)
@@ -211,7 +225,7 @@ describe('JobService', () => {
         { id: 'p3', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' }
       ]
       const partRepoWithData = createMockPartRepo(parts)
-      const svc = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepoWithData })
+      const svc = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepoWithData, bom: bomRepo })
 
       const progress = svc.computeJobProgress(job.id)
       expect(progress.progressPercent).toBe(150) // 3/2 * 100
@@ -237,9 +251,92 @@ describe('JobService', () => {
         { id: 'p3', jobId: job.id, pathId: 'p1', currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' }
       ]
       const partRepoWithData = createMockPartRepo(parts)
-      const svc = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepoWithData })
+      const svc = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepoWithData, bom: bomRepo })
 
       expect(svc.getJobPartCount(job.id)).toBe(3)
+    })
+  })
+
+  describe('deleteJob', () => {
+    it('deletes a job with no dependents', () => {
+      const job = service.createJob({ name: 'Deletable', goalQuantity: 5 })
+      service.deleteJob(job.id)
+      expect(() => service.getJob(job.id)).toThrow(NotFoundError)
+      expect(jobRepo.delete).toHaveBeenCalledWith(job.id)
+    })
+
+    it('throws NotFoundError for non-existent ID', () => {
+      expect(() => service.deleteJob('nonexistent')).toThrow(NotFoundError)
+    })
+
+    it('throws ValidationError when job has paths', () => {
+      const job = service.createJob({ name: 'Has Paths', goalQuantity: 5 })
+      vi.mocked(pathRepo.listByJobId).mockReturnValue([{ id: 'path1' } as any])
+      expect(() => service.deleteJob(job.id)).toThrow(ValidationError)
+      expect(() => service.deleteJob(job.id)).toThrow(/1 path\(s\)/)
+      // Job should still exist
+      expect(service.getJob(job.id).id).toBe(job.id)
+    })
+
+    it('throws ValidationError when job has parts', () => {
+      const job = service.createJob({ name: 'Has Parts', goalQuantity: 5 })
+      vi.mocked(partRepo.countByJobId).mockReturnValue(3)
+      expect(() => service.deleteJob(job.id)).toThrow(ValidationError)
+      expect(() => service.deleteJob(job.id)).toThrow(/3 part\(s\)/)
+    })
+
+    it('throws ValidationError when job has BOM references', () => {
+      const job = service.createJob({ name: 'Has BOM', goalQuantity: 5 })
+      vi.mocked(bomRepo.countContributingJobRefs).mockReturnValue(2)
+      expect(() => service.deleteJob(job.id)).toThrow(ValidationError)
+      expect(() => service.deleteJob(job.id)).toThrow(/2 BOM entry\/entries/)
+    })
+  })
+
+  describe('canDeleteJob', () => {
+    it('returns canDelete true when no dependents', () => {
+      const job = service.createJob({ name: 'Clean', goalQuantity: 5 })
+      const result = service.canDeleteJob(job.id)
+      expect(result.canDelete).toBe(true)
+      expect(result.reasons).toEqual([])
+    })
+
+    it('throws NotFoundError for non-existent ID', () => {
+      expect(() => service.canDeleteJob('nonexistent')).toThrow(NotFoundError)
+    })
+
+    it('returns reasons for paths', () => {
+      const job = service.createJob({ name: 'Has Paths', goalQuantity: 5 })
+      vi.mocked(pathRepo.listByJobId).mockReturnValue([{ id: 'p1' } as any, { id: 'p2' } as any])
+      const result = service.canDeleteJob(job.id)
+      expect(result.canDelete).toBe(false)
+      expect(result.reasons).toContainEqual(expect.stringContaining('2 path(s)'))
+    })
+
+    it('returns reasons for parts', () => {
+      const job = service.createJob({ name: 'Has Parts', goalQuantity: 5 })
+      vi.mocked(partRepo.countByJobId).mockReturnValue(4)
+      const result = service.canDeleteJob(job.id)
+      expect(result.canDelete).toBe(false)
+      expect(result.reasons).toContainEqual(expect.stringContaining('4 part(s)'))
+    })
+
+    it('returns reasons for BOM references', () => {
+      const job = service.createJob({ name: 'Has BOM', goalQuantity: 5 })
+      vi.mocked(bomRepo.countContributingJobRefs).mockReturnValue(1)
+      const result = service.canDeleteJob(job.id)
+      expect(result.canDelete).toBe(false)
+      expect(result.reasons).toContainEqual(expect.stringContaining('1 BOM entry/entries'))
+    })
+
+    it('returns all reasons when multiple dependents exist', () => {
+      const job = service.createJob({ name: 'Blocked', goalQuantity: 5 })
+      vi.mocked(pathRepo.listByJobId).mockReturnValue([{ id: 'p1' } as any])
+      vi.mocked(partRepo.countByJobId).mockReturnValue(2)
+      vi.mocked(bomRepo.countContributingJobRefs).mockReturnValue(3)
+      const result = service.canDeleteJob(job.id)
+      expect(result.canDelete).toBe(false)
+      expect(result.reasons).toHaveLength(3)
     })
   })
 })

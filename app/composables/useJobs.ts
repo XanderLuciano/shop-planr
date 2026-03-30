@@ -48,6 +48,11 @@ export function useJobs() {
     return detail.progress
   }
 
+  async function deleteJob(id: string): Promise<void> {
+    await $fetch(`/api/jobs/${id}`, { method: 'DELETE' })
+    await fetchJobs()
+  }
+
   return {
     jobs: readonly(jobs),
     loading: readonly(loading),
@@ -56,6 +61,7 @@ export function useJobs() {
     createJob,
     updateJob,
     getJob,
-    fetchJobProgress
+    fetchJobProgress,
+    deleteJob
   }
 }
