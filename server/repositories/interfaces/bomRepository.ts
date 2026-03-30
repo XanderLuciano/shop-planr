@@ -6,4 +6,5 @@ export interface BomRepository {
   list(): BOM[]
   update(id: string, partial: Partial<BOM>): BOM
   delete(id: string): boolean
+  countContributingJobRefs(jobId: string): number
 }

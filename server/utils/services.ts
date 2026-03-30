@@ -54,7 +54,7 @@ export function getServices(): ServiceSet {
     // Services with no service dependencies
     const auditService = createAuditService({ audit: repos.audit })
     const userService = createUserService({ users: repos.users })
-    const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts })
+    const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts, bom: repos.bom })
     const pathService = createPathService({ paths: repos.paths, parts: repos.parts, users: repos.users })
     const templateService = createTemplateService({ templates: repos.templates, paths: repos.paths })
 

@@ -5,7 +5,8 @@ import type { JobProgress, StepDistribution } from '~/server/types/computed'
 const route = useRoute()
 const jobId = route.params.id as string
 
-const { getJob, updateJob } = useJobs()
+const { getJob, updateJob, deleteJob } = useJobs()
+const toast = useToast()
 const { getPath: fetchPathDetail } = usePaths()
 const { templates, fetchTemplates, applyTemplate } = useTemplates()
 const { fetchNotesForStep } = useNotes()
@@ -74,6 +75,15 @@ const jiraPushAvailable = computed(() =>
   && !!settings.value?.jiraConnection?.enabled
   && !!settings.value?.jiraConnection?.pushEnabled
 )
+
+// Delete state
+const showDeleteModal = ref(false)
+const deleting = ref(false)
+
+const canDelete = computed(() => {
+  if (!progress.value) return false
+  return paths.value.length === 0 && progress.value.totalParts === 0
+})
 
 function onStepClick(pathId: string, payload: { stepId: string, stepName: string, stepOrder: number }) {
   // Navigate to step view for this step (advancement), passing referrer context
@@ -272,6 +282,23 @@ async function onPushComment() {
   }
 }
 
+async function confirmDelete() {
+  deleting.value = true
+  try {
+    await deleteJob(jobId)
+    navigateTo('/jobs')
+  } catch (e: any) {
+    toast.add({
+      title: 'Cannot delete job',
+      description: e?.data?.message ?? e?.message ?? 'Failed to delete job',
+      color: 'error',
+    })
+  } finally {
+    deleting.value = false
+    showDeleteModal.value = false
+  }
+}
+
 onMounted(() => {
   loadJob()
   loadActiveUsers()
@@ -329,7 +356,18 @@ onMounted(() => {
               <span v-if="job.jiraPartNumber">Part #: {{ job.jiraPartNumber }}</span>
             </div>
           </div>
-          <UButton icon="i-lucide-pencil" size="xs" variant="ghost" label="Edit" @click="navigateTo(`/jobs/edit/${encodeURIComponent(jobId)}`)" />
+          <div class="flex items-center gap-1.5">
+            <UButton icon="i-lucide-pencil" size="xs" variant="ghost" label="Edit" @click="navigateTo(`/jobs/edit/${encodeURIComponent(jobId)}`)" />
+            <UButton
+              icon="i-lucide-trash-2"
+              size="xs"
+              variant="soft"
+              color="error"
+              label="Delete"
+              :disabled="!canDelete"
+              @click="showDeleteModal = true"
+            />
+          </div>
         </div>
 
         <!-- Progress -->
@@ -522,5 +560,29 @@ onMounted(() => {
         <JobPartsTab :job-id="jobId" :paths="paths" :goal-quantity="job.goalQuantity" />
       </div>
     </template>
+
+    <!-- Delete Confirmation Modal -->
+    <UModal v-model:open="showDeleteModal">
+      <template #content>
+        <div class="p-6 space-y-4">
+          <h3 class="text-lg font-semibold text-(--ui-text-highlighted)">
+            Delete Job
+          </h3>
+          <p class="text-sm text-(--ui-text-muted)">
+            Are you sure you want to delete <span class="font-semibold text-(--ui-text-highlighted)">{{ job?.name }}</span>? This action cannot be undone.
+          </p>
+          <div class="flex justify-end gap-2 pt-2">
+            <UButton variant="ghost" label="Cancel" @click="showDeleteModal = false" />
+            <UButton
+              color="error"
+              label="Delete"
+              icon="i-lucide-trash-2"
+              :loading="deleting"
+              @click="confirmDelete"
+            />
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
