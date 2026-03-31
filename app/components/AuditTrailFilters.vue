@@ -6,8 +6,8 @@ const emit = defineEmits<{
   'update:filters': [filters: AuditFilters]
 }>()
 
-const actionTypes: { label: string, value: AuditAction | '__all__' }[] = [
-  { label: 'All Actions', value: '__all__' },
+const actionTypes: { label: string, value: AuditAction | SelectAll }[] = [
+  { label: 'All Actions', value: SELECT_ALL },
   { label: 'Cert Attached', value: 'cert_attached' },
   { label: 'Part Created', value: 'part_created' },
   { label: 'Part Advanced', value: 'part_advanced' },
@@ -24,7 +24,7 @@ const actionTypes: { label: string, value: AuditAction | '__all__' }[] = [
   { label: 'BOM Edited', value: 'bom_edited' },
 ]
 
-const selectedAction = ref<AuditAction | '__all__'>('__all__')
+const selectedAction = ref<AuditAction | SelectAll>(SELECT_ALL)
 const userId = ref('')
 const partId = ref('')
 const jobId = ref('')
@@ -33,7 +33,7 @@ const endDate = ref('')
 
 function emitFilters() {
   const filters: AuditFilters = {}
-  if (selectedAction.value && selectedAction.value !== '__all__') filters.action = selectedAction.value as AuditAction
+  if (selectedAction.value && selectedAction.value !== SELECT_ALL) filters.action = selectedAction.value as AuditAction
   if (userId.value.trim()) filters.userId = userId.value.trim()
   if (partId.value.trim()) filters.partId = partId.value.trim()
   if (jobId.value.trim()) filters.jobId = jobId.value.trim()
@@ -43,7 +43,7 @@ function emitFilters() {
 }
 
 function clearFilters() {
-  selectedAction.value = '__all__'
+  selectedAction.value = SELECT_ALL
   userId.value = ''
   partId.value = ''
   jobId.value = ''

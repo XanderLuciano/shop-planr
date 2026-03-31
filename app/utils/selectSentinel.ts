@@ -38,3 +38,18 @@ export type SelectUnassigned = typeof SELECT_UNASSIGNED
 export function selectedOrNull<T extends string>(value: T | SelectUnassigned): T | null {
   return value === SELECT_UNASSIGNED ? null : value
 }
+
+/**
+ * Sentinel value for "All / no filter" in filter dropdowns.
+ *
+ * Used in filter selects where one option means "show everything"
+ * (e.g., "All Jobs", "All Statuses"). Unlike SELECT_NONE (disabled
+ * placeholder), this is a selectable option.
+ */
+export const SELECT_ALL = '__all__' as const
+export type SelectAll = typeof SELECT_ALL
+
+/** Returns the value if a real filter was selected, or `undefined` if it's the "all" sentinel. */
+export function selectedAllOrUndefined<T extends string>(value: T | SelectAll): T | undefined {
+  return value === SELECT_ALL ? undefined : value
+}

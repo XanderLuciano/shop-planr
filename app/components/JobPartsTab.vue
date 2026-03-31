@@ -12,8 +12,8 @@ const loading = ref(false)
 const parts = ref<EnrichedPart[]>([])
 
 // Filters
-const filterStatus = ref('__all__')
-const filterPath = ref('__all__')
+const filterStatus = ref<string>(SELECT_ALL)
+const filterPath = ref<string>(SELECT_ALL)
 const filterStep = ref('')
 
 // Sort
@@ -38,8 +38,8 @@ async function loadParts() {
 
 const filteredParts = computed(() => {
   let list = [...parts.value]
-  if (filterStatus.value && filterStatus.value !== '__all__') list = list.filter(s => s.status === filterStatus.value)
-  if (filterPath.value && filterPath.value !== '__all__') list = list.filter(s => s.pathName === filterPath.value)
+  if (filterStatus.value && filterStatus.value !== SELECT_ALL) list = list.filter(s => s.status === filterStatus.value)
+  if (filterPath.value && filterPath.value !== SELECT_ALL) list = list.filter(s => s.pathName === filterPath.value)
   if (filterStep.value) list = list.filter(s => s.currentStepName.toLowerCase().includes(filterStep.value.toLowerCase()))
 
   const col = sortColumn.value
@@ -120,7 +120,7 @@ onMounted(() => {
         <USelect
           v-model="filterStatus"
           :items="[
-            { label: 'All', value: '__all__' },
+            { label: 'All', value: SELECT_ALL },
             { label: 'In Progress', value: 'in-progress' },
             { label: 'Completed', value: 'completed' },
             { label: 'Scrapped', value: 'scrapped' },
@@ -135,7 +135,7 @@ onMounted(() => {
         <label class="text-xs font-medium text-(--ui-text-muted) block mb-0.5">Path</label>
         <USelect
           v-model="filterPath"
-          :items="[{ label: 'All Paths', value: '__all__' }, ...pathNames.map(n => ({ label: n, value: n }))]"
+          :items="[{ label: 'All Paths', value: SELECT_ALL }, ...pathNames.map(n => ({ label: n, value: n }))]"
           value-key="value"
           label-key="label"
           size="xs"
