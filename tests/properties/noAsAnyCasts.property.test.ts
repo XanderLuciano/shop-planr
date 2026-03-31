@@ -60,7 +60,7 @@ describe('No `as any` casts in app layer', () => {
     const violations: string[] = []
 
     for (const filePath of files) {
-      const relativePath = path.relative(process.cwd(), filePath)
+      const relativePath = path.relative(process.cwd(), filePath).split(path.sep).join('/')
       const content = fs.readFileSync(filePath, 'utf-8')
       const count = countAsAny(content)
 
