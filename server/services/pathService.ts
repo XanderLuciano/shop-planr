@@ -165,15 +165,23 @@ export function createPathService(repos: {
         throw new NotFoundError('Path', pathId)
       }
 
+      // Single query: fetch all parts, filter scrapped in-memory
+      const allParts = repos.parts.listByPathId(pathId)
+        .filter(p => p.status !== 'scrapped')
+
       const distribution: StepDistribution[] = path.steps.map((step) => {
-        const partsAtStep = repos.parts.listByStepIndex(pathId, step.order)
+        const partCount = allParts.filter(p => p.currentStepIndex === step.order).length
+        const completedCount = allParts.filter(p =>
+          p.currentStepIndex === -1 || p.currentStepIndex > step.order
+        ).length
+
         return {
           stepId: step.id,
           stepName: step.name,
           stepOrder: step.order,
           location: step.location,
-          partCount: partsAtStep.length,
-          completedCount: 0,
+          partCount,
+          completedCount,
           isBottleneck: false
         }
       })

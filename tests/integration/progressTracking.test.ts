@@ -18,7 +18,7 @@ describe('Progress Tracking — Done Count Correctness', () => {
 
   afterEach(() => ctx?.cleanup())
 
-  it('completedCount matches actual completed parts and distribution entries are all 0', () => {
+  it('completedCount matches actual completed parts', () => {
     ctx = createTestContext()
     const { jobService, pathService, partService } = ctx
 
@@ -55,6 +55,11 @@ describe('Progress Tracking — Done Count Correctness', () => {
 
     // Leave parts[4] at step 0
 
+    // Part positions after setup:
+    //   parts[0..2]: currentStepIndex = -1 (completed)
+    //   parts[3]:    currentStepIndex = 2  (at Paint)
+    //   parts[4]:    currentStepIndex = 0  (at Cut)
+
     // 3. Call getStepDistribution and getPathCompletedCount separately
     const distribution = pathService.getStepDistribution(path.id)
     const completedCount = pathService.getPathCompletedCount(path.id)
@@ -62,26 +67,44 @@ describe('Progress Tracking — Done Count Correctness', () => {
     // 4. Assert completedCount matches the 3 parts that finished all steps
     expect(completedCount).toBe(3)
 
-    // 5. Assert ALL distribution entries have completedCount === 0
-    for (const entry of distribution) {
-      expect(entry.completedCount).toBe(0)
-    }
+    // 5. Assert per-step completedCount reflects parts that have passed each step
+    //   Step 0 (Cut,     order=0): idx==-1 (3) + idx>0 → parts[3] at idx=2 (1) = 4
+    //   Step 1 (Weld,    order=1): idx==-1 (3) + idx>1 → parts[3] at idx=2 (1) = 4
+    //   Step 2 (Paint,   order=2): idx==-1 (3) + idx>2 → none                  = 3
+    //   Step 3 (Inspect, order=3): idx==-1 (3) + idx>3 → none                  = 3
+    expect(distribution).toHaveLength(4)
+    const step0 = distribution.find(d => d.stepOrder === 0)!
+    const step1 = distribution.find(d => d.stepOrder === 1)!
+    const step2 = distribution.find(d => d.stepOrder === 2)!
+    const step3 = distribution.find(d => d.stepOrder === 3)!
 
-    // 6. Assert the old bug (N × completedCount) no longer occurs
+    expect(step0.completedCount).toBe(4)
+    expect(step1.completedCount).toBe(4)
+    expect(step2.completedCount).toBe(3)
+    expect(step3.completedCount).toBe(3)
+
+    // 6. Verify monotonicity: earlier steps have >= completedCount than later steps
+    expect(step0.completedCount).toBeGreaterThanOrEqual(step1.completedCount)
+    expect(step1.completedCount).toBeGreaterThanOrEqual(step2.completedCount)
+    expect(step2.completedCount).toBeGreaterThanOrEqual(step3.completedCount)
+
+    // 7. Last step's completedCount equals path-level completedCount
+    expect(step3.completedCount).toBe(completedCount)
+
+    // 8. Verify the old Issue #24 multiplication bug is still prevented:
+    //    The sum of per-step completedCount is NOT N_steps × pathCompletedCount.
+    //    Each step's completedCount is independently computed.
     const sumOfDistributionCompleted = distribution.reduce(
       (sum, d) => sum + d.completedCount,
       0,
     )
-    // Old bug would produce: 4 steps × 3 completed = 12
-    // Fixed: sum is 0 (per-step completedCount is always 0)
-    expect(sumOfDistributionCompleted).toBe(0)
+    // Old bug would produce: 4 steps × 3 completed = 12 (every step got the same value)
+    // Fixed: sum is 4+4+3+3 = 14, which is NOT 4 × 3 = 12
+    expect(sumOfDistributionCompleted).toBe(14)
     expect(sumOfDistributionCompleted).not.toBe(numSteps * completedCount)
 
-    // 7. Verify distribution still tracks in-progress parts correctly
-    expect(distribution).toHaveLength(4)
+    // 9. Verify distribution still tracks in-progress parts correctly
     // parts[4] is at step 0, parts[3] is at step 2
-    const step0 = distribution.find(d => d.stepOrder === 0)!
-    const step2 = distribution.find(d => d.stepOrder === 2)!
     expect(step0.partCount).toBe(1) // parts[4]
     expect(step2.partCount).toBe(1) // parts[3]
   })
