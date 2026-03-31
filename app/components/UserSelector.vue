@@ -2,6 +2,7 @@
 import type { DropdownMenuItem } from '@nuxt/ui'
 
 const { users, selectedUser, selectUser, init } = useUsers()
+const { isMobile } = useMobileBreakpoint()
 
 onMounted(() => {
   init()
@@ -30,24 +31,14 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
     size="sm"
     :content="{ align: 'end' }"
   >
-    <!-- Mobile: icon-only, no label, no chevron -->
     <UButton
-      class="md:hidden"
       size="sm"
       :variant="selectedUser ? 'ghost' : 'soft'"
       :color="selectedUser ? 'neutral' : 'warning'"
       :icon="selectedUser ? 'i-lucide-user' : 'i-lucide-user-x'"
+      :label="isMobile ? undefined : (selectedUser?.name ?? 'Select User')"
+      :trailing-icon="isMobile ? undefined : 'i-lucide-chevron-down'"
       :aria-label="selectedUser?.name ?? 'Select User'"
-    />
-    <!-- Desktop: full label with trailing chevron -->
-    <UButton
-      class="hidden md:inline-flex"
-      size="sm"
-      :variant="selectedUser ? 'ghost' : 'soft'"
-      :color="selectedUser ? 'neutral' : 'warning'"
-      :icon="selectedUser ? 'i-lucide-user' : 'i-lucide-user-x'"
-      :label="selectedUser?.name ?? 'Select User'"
-      trailing-icon="i-lucide-chevron-down"
     />
   </UDropdownMenu>
 </template>
