@@ -172,7 +172,7 @@ Fix 283 TypeScript errors reported by `npm run typecheck` across 6 categories. T
     - Assert all tests pass without modification to test files (unless a test file itself had typecheck errors)
     - _Requirements: 3.3, 3.4, 3.5, 3.6_
 
-- [-] 11. Checkpoint — Ensure all tests pass
+- [x] 11. Checkpoint — Ensure all tests pass
   - Run `npx vitest run` to verify all tests pass
   - Run `npm run typecheck` to verify zero TypeScript errors
   - Confirm no `app/` file imports from `~/server/` (grep check)

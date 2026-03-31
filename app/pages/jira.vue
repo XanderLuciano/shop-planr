@@ -11,7 +11,7 @@ const { jobs, fetchJobs } = useJobs()
 // Link modal state
 const showLinkModal = ref(false)
 const selectedTicket = ref<JiraTicket | null>(null)
-const selectedTemplateId = ref<string | undefined>(undefined)
+const selectedTemplateId = ref<string>('__none__')
 const overrideQuantity = ref<number | undefined>(undefined)
 const linking = ref(false)
 const linkError = ref('')
@@ -48,7 +48,7 @@ const columns: TableColumn<JiraTicket>[] = [
 
 function openLinkModal(ticket: JiraTicket) {
   selectedTicket.value = ticket
-  selectedTemplateId.value = undefined
+  selectedTemplateId.value = '__none__'
   overrideQuantity.value = ticket.goalQuantity ?? undefined
   linkError.value = ''
   showLinkModal.value = true
