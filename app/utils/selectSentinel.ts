@@ -19,3 +19,8 @@
  */
 export const SELECT_NONE = '__none__' as const
 export type SelectNone = typeof SELECT_NONE
+
+/** Returns the value if a real selection was made, or `undefined` if it's the sentinel. */
+export function selectedOrUndefined<T extends string>(value: T | SelectNone): T | undefined {
+  return value === SELECT_NONE ? undefined : value
+}

@@ -61,7 +61,7 @@ async function confirmLink() {
   try {
     await linkTicket({
       ticketKey: selectedTicket.value.key,
-      templateId: selectedTemplateId.value && selectedTemplateId.value !== SELECT_NONE ? selectedTemplateId.value : undefined,
+      templateId: selectedOrUndefined(selectedTemplateId.value),
       goalQuantity: overrideQuantity.value || undefined
     })
     showLinkModal.value = false

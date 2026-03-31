@@ -58,7 +58,7 @@ async function onSubmit() {
       jobId: props.jobId,
       pathId: props.pathId,
       quantity: quantity.value,
-      certId: selectedCertId.value !== SELECT_NONE ? selectedCertId.value : undefined,
+      certId: selectedOrUndefined(selectedCertId.value),
       userId
     })
     quantity.value = 1
