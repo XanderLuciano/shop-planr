@@ -9,7 +9,7 @@ interface EntryDraft {
 
 const props = defineProps<{
   bom?: BOM
-  jobs: Job[]
+  jobs: readonly Job[]
 }>()
 
 const emit = defineEmits<{

@@ -2,7 +2,7 @@
 import type { JiraFieldMapping } from '~/types/domain'
 
 const props = defineProps<{
-  mappings: JiraFieldMapping[]
+  mappings: readonly JiraFieldMapping[]
 }>()
 
 const emit = defineEmits<{

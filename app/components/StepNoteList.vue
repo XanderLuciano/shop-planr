@@ -2,7 +2,7 @@
 import type { StepNote } from '~/types/domain'
 
 defineProps<{
-  notes: StepNote[]
+  notes: readonly StepNote[]
 }>()
 
 function formatTime(ts: string): string {

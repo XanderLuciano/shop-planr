@@ -16,7 +16,7 @@ export interface Job {
   jiraPartNumber?: string
   jiraPriority?: string
   jiraEpicLink?: string
-  jiraLabels?: string[]
+  jiraLabels?: readonly string[]
   createdAt: string
   updatedAt: string
 }
@@ -28,7 +28,7 @@ export interface Path {
   jobId: string
   name: string
   goalQuantity: number
-  steps: ProcessStep[]
+  steps: readonly ProcessStep[]
   advancementMode: 'strict' | 'flexible' | 'per_step'
   createdAt: string
   updatedAt: string
@@ -98,7 +98,7 @@ export interface CertAttachment {
 export interface TemplateRoute {
   id: string
   name: string
-  steps: TemplateStep[]
+  steps: readonly TemplateStep[]
   createdAt: string
   updatedAt: string
 }
@@ -116,7 +116,7 @@ export interface TemplateStep {
 export interface BOM {
   id: string
   name: string
-  entries: BomEntry[]
+  entries: readonly BomEntry[]
   createdAt: string
   updatedAt: string
 }
@@ -126,7 +126,7 @@ export interface BomEntry {
   bomId?: string
   partType: string
   requiredQuantityPerBuild: number
-  contributingJobIds: string[]
+  contributingJobIds: readonly string[]
 }
 
 // ---- Audit Trail ----
@@ -180,7 +180,7 @@ export interface StepNote {
   jobId: string
   pathId: string
   stepId: string
-  partIds: string[]
+  partIds: readonly string[]
   text: string
   createdBy: string
   createdAt: string
@@ -281,7 +281,7 @@ export interface BomVersion {
   id: string
   bomId: string
   versionNumber: number
-  entriesSnapshot: BomEntry[]
+  entriesSnapshot: readonly BomEntry[]
   changeDescription?: string
   changedBy: string
   createdAt: string

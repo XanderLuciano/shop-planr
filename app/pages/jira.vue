@@ -163,7 +163,7 @@ onMounted(async () => {
           {{ unlinkedTickets.length }} open ticket{{ unlinkedTickets.length !== 1 ? 's' : '' }} not yet linked to a job
         </p>
         <UTable
-          :data="unlinkedTickets as JiraTicket[]"
+          :data="unlinkedTickets"
           :columns="columns"
           class="text-xs"
         >

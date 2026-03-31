@@ -206,7 +206,7 @@ export function createLifecycleService(repos: {
       }
 
       const now = new Date().toISOString()
-      const bypassedResult: AdvancementResult['bypassed'] = []
+      const bypassedResult: { stepId: string; stepName: string; classification: 'skipped' | 'deferred' }[] = []
 
       // 5. Classify and update bypassed steps
       for (const { step } of bypassed) {

@@ -325,7 +325,7 @@ onMounted(async () => {
         <span class="text-sm font-medium text-(--ui-text-highlighted)">Jira Field Mappings</span>
         <div class="p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50">
           <JiraFieldMappingEditor
-            :mappings="(settings?.jiraFieldMappings ?? []) as JiraFieldMapping[]"
+            :mappings="settings?.jiraFieldMappings ?? []"
             @save="onSaveMappings"
           />
         </div>

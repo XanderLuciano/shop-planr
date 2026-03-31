@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { WorkQueueJob, EnrichedPart, PartStepStatusView } from '~/types/computed'
+import type { WorkQueueJob, PartStepStatusView } from '~/types/computed'
 import type { StepNote, CertAttachment, PartStepOverride } from '~/types/domain'
 
 const route = useRoute()
@@ -58,7 +58,7 @@ function toggleSiblingsSort(column: 'id' | 'currentStepName' | 'status' | 'creat
 }
 
 const sortedSiblings = computed(() => {
-  const list = [...siblingParts.value] as unknown as EnrichedPart[]
+  const list = [...siblingParts.value]
   const col = siblingsSortColumn.value
   const dir = siblingsSortDirection.value === 'asc' ? 1 : -1
   return list.sort((a, b) => {

@@ -3,7 +3,7 @@ import type { JiraTicket, FetchTicketsResult, JiraPushResult } from '~/types/jir
 import type { LinkJiraInput } from '~/types/api'
 import type { Job, Path } from '~/types/domain'
 
-const tickets = ref<JiraTicket[]>([])
+const tickets = ref<readonly JiraTicket[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const fromCache = ref(false)

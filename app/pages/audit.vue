@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { AuditEntry } from '~/types/domain'
 import type { AuditFilters } from '~/composables/useAudit'
 
 const PAGE_SIZE = 50
@@ -64,7 +63,7 @@ onMounted(async () => {
 
     <!-- Entries -->
     <div v-else class="border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50 overflow-x-auto">
-      <AuditLog :entries="entries as AuditEntry[]" />
+      <AuditLog :entries="entries" />
     </div>
 
     <!-- Load more -->

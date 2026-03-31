@@ -5,7 +5,7 @@ import type { StepNote } from '~/types/domain'
 const props = defineProps<{
   job: WorkQueueJob
   loading: boolean
-  notes?: StepNote[]
+  notes?: readonly StepNote[]
 }>()
 
 const emit = defineEmits<{

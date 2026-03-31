@@ -33,7 +33,7 @@ export interface StepReconciliation {
  * - All output steps get sequential order values 0..N-1
  */
 export function reconcileSteps(
-  existingSteps: ProcessStep[],
+  existingSteps: readonly ProcessStep[],
   inputSteps: StepInput[],
 ): StepReconciliation {
   const toUpdate: ProcessStep[] = []

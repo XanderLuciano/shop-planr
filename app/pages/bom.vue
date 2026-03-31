@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { BomSummary } from '~/types/computed'
-import type { BOM, Job } from '~/types/domain'
+import type { BOM } from '~/types/domain'
 
 const { boms, loading, fetchBoms, createBom, getBomWithSummary } = useBom()
 const { jobs, fetchJobs } = useJobs()
@@ -89,7 +89,7 @@ onMounted(async () => {
     </div>
 
     <!-- Create form -->
-    <BomEditor v-if="showForm" :jobs="jobs as Job[]" @save="onSave" @cancel="showForm = false" />
+    <BomEditor v-if="showForm" :jobs="jobs" @save="onSave" @cancel="showForm = false" />
 
     <!-- Loading -->
     <div v-if="loading" class="flex items-center gap-2 text-sm text-(--ui-text-muted)">
@@ -108,7 +108,7 @@ onMounted(async () => {
         <!-- Header row -->
         <button
           class="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-(--ui-bg-elevated) transition-colors cursor-pointer"
-          @click="toggleExpand(b as BOM)"
+          @click="toggleExpand(b)"
         >
           <div class="min-w-0 flex-1">
             <div class="text-sm font-medium text-(--ui-text-highlighted)">{{ b.name }}</div>
@@ -135,8 +135,8 @@ onMounted(async () => {
         <!-- Edit form -->
         <div v-if="editingBomId === b.id" class="px-3 pb-3 border-t border-(--ui-border-muted)">
           <BomEditor
-            :bom="b as BOM"
-            :jobs="jobs as Job[]"
+            :bom="b"
+            :jobs="jobs"
             @save="(payload: any) => onEditSave(b.id, payload)"
             @cancel="editingBomId = null"
           />

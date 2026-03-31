@@ -2,7 +2,7 @@
 import type { AuditEntry, AuditAction } from '~/types/domain'
 
 defineProps<{
-  entries: AuditEntry[]
+  entries: readonly AuditEntry[]
 }>()
 
 const actionConfig: Record<AuditAction, { label: string, color: string, icon: string }> = {

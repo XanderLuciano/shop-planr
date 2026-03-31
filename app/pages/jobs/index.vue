@@ -48,7 +48,7 @@ function onPathsExpandedChange(payload: { jobId: string, hasExpandedPaths: boole
 }
 
 const filteredJobs = computed(() =>
-  applyFilters(jobs.value as Job[], {
+  applyFilters(jobs.value, {
     jobName: j => j.name,
     jiraTicketKey: j => j.jiraTicketKey,
     priority: j => j.jiraPriority,
@@ -214,7 +214,7 @@ onMounted(() => {
     <UTable
       v-else
       v-model:expanded="expanded"
-      :data="(filteredJobs as Job[])"
+      :data="filteredJobs"
       :columns="columns"
       :ui="{
         th: 'text-xs py-1.5',
