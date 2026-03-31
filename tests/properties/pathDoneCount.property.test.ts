@@ -2,72 +2,103 @@
  * Property Tests: Path Done Count
  *
  * CP-DONE-1: Path completed count equals parts with currentStepIndex === -1
- * CP-DONE-2: Distribution completedCount entries are always 0
+ * CP-DONE-2: Distribution completedCount matches the formula (parts past step OR completed)
+ * CP-STEP-DONE-2: Monotonic non-increasing done counts across steps
+ * CP-STEP-DONE-3: Last step done count equals getPathCompletedCount
+ * CP-STEP-DONE-4: Count conservation (sum partCount + pathCompleted = non-scrapped parts)
  *
- * **Validates: Requirements 1.1, 1.2, 2.2**
+ * **Validates: Requirements 1.1, 1.2, 1.3, 1.4, 1.5**
  */
-import { describe, it, afterEach, expect } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
-import Database from 'better-sqlite3'
-import { resolve } from 'path'
-import { runMigrations } from '../../server/repositories/sqlite/index'
-import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
-import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
-import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
-import { SQLiteCertRepository } from '../../server/repositories/sqlite/certRepository'
-import { SQLiteAuditRepository } from '../../server/repositories/sqlite/auditRepository'
-import { createJobService } from '../../server/services/jobService'
-import { createPathService } from '../../server/services/pathService'
-import { createPartService } from '../../server/services/partService'
-import { createAuditService } from '../../server/services/auditService'
-import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
-
-function createTestDb() {
-  const db = new Database(':memory:')
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
-  const migrationsDir = resolve(__dirname, '../../server/repositories/sqlite/migrations')
-  runMigrations(db, migrationsDir)
-  return db
-}
-
-function setupServices(db: Database.default.Database) {
-  const repos = {
-    jobs: new SQLiteJobRepository(db),
-    paths: new SQLitePathRepository(db),
-    parts: new SQLitePartRepository(db),
-    certs: new SQLiteCertRepository(db),
-    audit: new SQLiteAuditRepository(db)
-  }
-
-  const partIdGenerator = createSequentialPartIdGenerator({
-    getCounter: () => {
-      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
-      return row?.value ?? 0
-    },
-    setCounter: (v: number) => {
-      db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-    }
-  })
-
-  const auditService = createAuditService({ audit: repos.audit })
-  const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts })
-  const pathService = createPathService({ paths: repos.paths, parts: repos.parts })
-  const partService = createPartService(
-    { parts: repos.parts, paths: repos.paths, certs: repos.certs },
-    auditService,
-    partIdGenerator
-  )
-
-  return { jobService, pathService, partService }
-}
+import { createTestContext } from '../integration/helpers'
 
 describe('Path Done Count Properties', () => {
-  let db: Database.default.Database
+  /**
+   * Arbitrary: generates a scenario with a path, parts, random advancements,
+   * and optional scrapping of some parts.
+   */
+  function arbPathScenario() {
+    return fc.record({
+      stepCount: fc.integer({ min: 1, max: 5 }),
+      partQuantity: fc.integer({ min: 1, max: 20 }),
+      advanceOps: fc.array(
+        fc.record({
+          partIndex: fc.nat(),
+          times: fc.integer({ min: 1, max: 6 })
+        }),
+        { minLength: 0, maxLength: 15 }
+      ),
+      scrapIndices: fc.array(fc.nat(), { minLength: 0, maxLength: 5 })
+    })
+  }
 
-  afterEach(() => {
-    if (db) db.close()
-  })
+  /**
+   * Helper: sets up a path scenario and returns the services + created entities.
+   * Creates and cleans up its own isolated DB context per iteration.
+   */
+  function withScenario<T>(
+    params: {
+      stepCount: number
+      partQuantity: number
+      advanceOps: { partIndex: number; times: number }[]
+      scrapIndices: number[]
+    },
+    fn: (ctx: ReturnType<typeof createTestContext>, pathId: string) => T
+  ): T {
+    const ctx = createTestContext()
+    try {
+      const { jobService, pathService, partService, lifecycleService } = ctx
+
+      const job = jobService.createJob({ name: 'Test Job', goalQuantity: 100 })
+      const steps = Array.from({ length: params.stepCount }, (_, i) => ({
+        name: `Step ${i}`
+      }))
+      const path = pathService.createPath({
+        jobId: job.id,
+        name: 'Route',
+        goalQuantity: params.partQuantity,
+        steps
+      })
+
+      const parts = partService.batchCreateParts(
+        { jobId: job.id, pathId: path.id, quantity: params.partQuantity },
+        'user_test'
+      )
+
+      // Advance some parts randomly
+      for (const op of params.advanceOps) {
+        const idx = op.partIndex % parts.length
+        for (let t = 0; t < op.times; t++) {
+          try {
+            partService.advancePart(parts[idx].id, 'user_test')
+          } catch {
+            break
+          }
+        }
+      }
+
+      // Scrap selected parts (deduplicate indices, skip already-completed/scrapped)
+      const scrappedSet = new Set<number>()
+      for (const raw of params.scrapIndices) {
+        const idx = raw % parts.length
+        if (scrappedSet.has(idx)) continue
+        try {
+          lifecycleService.scrapPart(parts[idx].id, {
+            reason: 'process_defect',
+            userId: 'user_test'
+          })
+          scrappedSet.add(idx)
+        } catch {
+          // Part may already be completed or scrapped — skip
+        }
+      }
+
+      return fn(ctx, path.id)
+    } finally {
+      ctx.cleanup()
+    }
+  }
 
   /**
    * CP-DONE-1: Path completed count equals parts with currentStepIndex === -1
@@ -80,57 +111,14 @@ describe('Path Done Count Properties', () => {
   it('CP-DONE-1: getPathCompletedCount equals count of parts with stepIndex -1', () => {
     fc.assert(
       fc.property(
-        fc.record({
-          stepCount: fc.integer({ min: 1, max: 5 }),
-          partQuantity: fc.integer({ min: 1, max: 20 }),
-          advanceOps: fc.array(
-            fc.record({
-              partIndex: fc.nat(),
-              times: fc.integer({ min: 1, max: 6 })
-            }),
-            { minLength: 0, maxLength: 15 }
-          )
-        }),
-        ({ stepCount, partQuantity, advanceOps }) => {
-          db = createTestDb()
-          const { jobService, pathService, partService } = setupServices(db)
-
-          const job = jobService.createJob({ name: 'Test Job', goalQuantity: 100 })
-          const steps = Array.from({ length: stepCount }, (_, i) => ({
-            name: `Step ${i}`
-          }))
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: 'Route',
-            goalQuantity: partQuantity,
-            steps
+        arbPathScenario(),
+        (params) => {
+          withScenario(params, (ctx, pathId) => {
+            const completedCount = ctx.pathService.getPathCompletedCount(pathId)
+            // listByStepIndex already excludes scrapped parts
+            const partsAtMinusOne = ctx.repos.parts.listByStepIndex(pathId, -1).length
+            expect(completedCount).toBe(partsAtMinusOne)
           })
-
-          const parts = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: partQuantity },
-            'user_test'
-          )
-
-          // Advance some parts randomly
-          for (const op of advanceOps) {
-            const idx = op.partIndex % parts.length
-            for (let t = 0; t < op.times; t++) {
-              try {
-                partService.advancePart(parts[idx].id, 'user_test')
-              } catch {
-                break
-              }
-            }
-          }
-
-          // ASSERT: getPathCompletedCount matches parts with stepIndex -1
-          const completedCount = pathService.getPathCompletedCount(path.id)
-          const partsAtMinusOne = partService.listPartsByStepIndex(path.id, -1).length
-
-          expect(completedCount).toBe(partsAtMinusOne)
-
-          db.close()
-          db = null as any
         }
       ),
       { numRuns: 100 }
@@ -138,64 +126,115 @@ describe('Path Done Count Properties', () => {
   })
 
   /**
-   * CP-DONE-2: Distribution completedCount entries are always 0
+   * CP-DONE-2: Distribution completedCount matches the formula
    *
-   * ∀ pathId: getStepDistribution(pathId).every(d => d.completedCount === 0)
+   * For each step at order N, completedCount should equal the count of
+   * non-scrapped parts where currentStepIndex > N OR currentStepIndex === -1.
    *
-   * **Validates: Requirements 2.2**
+   * **Validates: Requirements 1.1, 1.2, CP-STEP-DONE-1**
    */
-  it('CP-DONE-2: distribution completedCount entries are always 0', () => {
+  it('CP-DONE-2: distribution completedCount matches formula (parts past step OR completed)', () => {
     fc.assert(
       fc.property(
-        fc.record({
-          stepCount: fc.integer({ min: 1, max: 5 }),
-          partQuantity: fc.integer({ min: 1, max: 20 }),
-          advanceOps: fc.array(
-            fc.record({
-              partIndex: fc.nat(),
-              times: fc.integer({ min: 1, max: 6 })
-            }),
-            { minLength: 0, maxLength: 15 }
-          )
-        }),
-        ({ stepCount, partQuantity, advanceOps }) => {
-          db = createTestDb()
-          const { jobService, pathService, partService } = setupServices(db)
+        arbPathScenario(),
+        (params) => {
+          withScenario(params, (ctx, pathId) => {
+            const distribution = ctx.pathService.getStepDistribution(pathId)
 
-          const job = jobService.createJob({ name: 'Test Job', goalQuantity: 100 })
-          const steps = Array.from({ length: stepCount }, (_, i) => ({
-            name: `Step ${i}`
-          }))
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: 'Route',
-            goalQuantity: partQuantity,
-            steps
-          })
+            // Get all non-scrapped parts for manual verification
+            const allParts = ctx.repos.parts.listByPathId(pathId)
+              .filter(p => p.status !== 'scrapped')
 
-          const parts = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: partQuantity },
-            'user_test'
-          )
-
-          // Advance some parts randomly
-          for (const op of advanceOps) {
-            const idx = op.partIndex % parts.length
-            for (let t = 0; t < op.times; t++) {
-              try {
-                partService.advancePart(parts[idx].id, 'user_test')
-              } catch {
-                break
-              }
+            for (const entry of distribution) {
+              const expected = allParts.filter(p =>
+                p.currentStepIndex === -1 || p.currentStepIndex > entry.stepOrder
+              ).length
+              expect(entry.completedCount).toBe(expected)
             }
-          }
+          })
+        }
+      ),
+      { numRuns: 100 }
+    )
+  })
 
-          // ASSERT: every distribution entry has completedCount === 0
-          const distribution = pathService.getStepDistribution(path.id)
-          expect(distribution.every(d => d.completedCount === 0)).toBe(true)
+  /**
+   * CP-STEP-DONE-2: Monotonic non-increasing done counts across steps
+   *
+   * For any path with steps [s_0, s_1, ..., s_N]:
+   *   completedCount(s_0) >= completedCount(s_1) >= ... >= completedCount(s_N)
+   *
+   * **Validates: Requirements 1.3**
+   */
+  it('CP-STEP-DONE-2: done counts are monotonically non-increasing across steps', () => {
+    fc.assert(
+      fc.property(
+        arbPathScenario(),
+        (params) => {
+          withScenario(params, (ctx, pathId) => {
+            const distribution = ctx.pathService.getStepDistribution(pathId)
+            for (let i = 1; i < distribution.length; i++) {
+              expect(distribution[i - 1].completedCount).toBeGreaterThanOrEqual(
+                distribution[i].completedCount
+              )
+            }
+          })
+        }
+      ),
+      { numRuns: 100 }
+    )
+  })
 
-          db.close()
-          db = null as any
+  /**
+   * CP-STEP-DONE-3: Last step done count equals getPathCompletedCount
+   *
+   * For any path with steps [s_0, ..., s_N]:
+   *   getStepDistribution(path.id)[N].completedCount === getPathCompletedCount(path.id)
+   *
+   * **Validates: Requirements 1.4**
+   */
+  it('CP-STEP-DONE-3: last step completedCount equals getPathCompletedCount', () => {
+    fc.assert(
+      fc.property(
+        arbPathScenario(),
+        (params) => {
+          withScenario(params, (ctx, pathId) => {
+            const distribution = ctx.pathService.getStepDistribution(pathId)
+            const lastEntry = distribution[distribution.length - 1]
+            const pathCompleted = ctx.pathService.getPathCompletedCount(pathId)
+            expect(lastEntry.completedCount).toBe(pathCompleted)
+          })
+        }
+      ),
+      { numRuns: 100 }
+    )
+  })
+
+  /**
+   * CP-STEP-DONE-4: Count conservation
+   *
+   * For any path:
+   *   sum(distribution[i].partCount for all i) + getPathCompletedCount(path.id)
+   *     === count(non-scrapped parts on path)
+   *
+   * **Validates: Requirements 1.5**
+   */
+  it('CP-STEP-DONE-4: sum of partCounts + pathCompleted equals total non-scrapped parts', () => {
+    fc.assert(
+      fc.property(
+        arbPathScenario(),
+        (params) => {
+          withScenario(params, (ctx, pathId) => {
+            const distribution = ctx.pathService.getStepDistribution(pathId)
+            const pathCompleted = ctx.pathService.getPathCompletedCount(pathId)
+
+            const sumPartCounts = distribution.reduce((sum, d) => sum + d.partCount, 0)
+
+            const nonScrappedTotal = ctx.repos.parts.listByPathId(pathId)
+              .filter(p => p.status !== 'scrapped').length
+
+            expect(sumPartCounts + pathCompleted).toBe(nonScrappedTotal)
+          })
         }
       ),
       { numRuns: 100 }

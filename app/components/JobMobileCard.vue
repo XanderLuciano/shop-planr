@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Job } from '~/server/types/domain'
-import type { JobProgress } from '~/server/types/computed'
+import type { Job } from '~/types/domain'
+import type { JobProgress } from '~/types/computed'
 
 defineProps<{
   job: Job
