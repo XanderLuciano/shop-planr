@@ -24,3 +24,17 @@ export type SelectNone = typeof SELECT_NONE
 export function selectedOrUndefined<T extends string>(value: T | SelectNone): T | undefined {
   return value === SELECT_NONE ? undefined : value
 }
+
+/**
+ * Sentinel value for "Unassigned" in assignment dropdowns.
+ *
+ * Unlike SELECT_NONE (which is a disabled placeholder), this is a real
+ * selectable option meaning "remove the current assignment".
+ */
+export const SELECT_UNASSIGNED = '__unassigned__' as const
+export type SelectUnassigned = typeof SELECT_UNASSIGNED
+
+/** Returns `null` if the value is the unassigned sentinel, otherwise the value. */
+export function selectedOrNull<T extends string>(value: T | SelectUnassigned): T | null {
+  return value === SELECT_UNASSIGNED ? null : value
+}
