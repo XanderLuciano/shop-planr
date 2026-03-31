@@ -219,7 +219,11 @@ onMounted(() => {
         v-for="s in filteredParts"
         :key="s.id"
         class="p-3 rounded-lg border border-(--ui-border) hover:bg-(--ui-bg-elevated)/50 cursor-pointer space-y-1.5"
+        role="link"
+        tabindex="0"
         @click="navigateTo(`/parts-browser/${encodeURIComponent(s.id)}`)"
+        @keydown.enter.prevent="navigateTo(`/parts-browser/${encodeURIComponent(s.id)}`)"
+        @keydown.space.prevent="navigateTo(`/parts-browser/${encodeURIComponent(s.id)}`)"
       >
         <div class="flex items-center justify-between">
           <span class="font-mono text-sm font-medium text-(--ui-text-highlighted)">{{ s.id }}</span>

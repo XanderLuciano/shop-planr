@@ -220,7 +220,11 @@ onMounted(() => {
         :key="s.id"
         class="p-3 rounded-lg border border-(--ui-border) cursor-pointer space-y-1.5"
         :class="s.status === 'scrapped' ? 'opacity-60' : 'hover:bg-(--ui-bg-elevated)/50'"
+        role="link"
+        tabindex="0"
         @click="navigateTo(`/parts-browser/${encodeURIComponent(s.id)}`)"
+        @keydown.enter.prevent="navigateTo(`/parts-browser/${encodeURIComponent(s.id)}`)"
+        @keydown.space.prevent="navigateTo(`/parts-browser/${encodeURIComponent(s.id)}`)"
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1.5">

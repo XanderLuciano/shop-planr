@@ -58,7 +58,11 @@ function depIcon(depType?: string) {
       <div
         class="md:hidden rounded border px-3 py-2 cursor-pointer transition-colors hover:border-(--ui-primary) hover:bg-(--ui-primary)/5"
         :class="stepBorderClass(step)"
+        role="button"
+        tabindex="0"
         @click="handleStepClick(step)"
+        @keydown.enter.prevent="handleStepClick(step)"
+        @keydown.space.prevent="handleStepClick(step)"
       >
         <div class="flex items-start justify-between gap-2">
           <div class="flex-1 min-w-0">

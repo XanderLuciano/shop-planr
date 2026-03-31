@@ -15,7 +15,11 @@ defineEmits<{
 <template>
   <div
     class="p-3 rounded-lg border border-(--ui-border) hover:bg-(--ui-bg-elevated)/50 cursor-pointer space-y-2"
+    role="button"
+    tabindex="0"
     @click="$emit('click')"
+    @keydown.enter.prevent="$emit('click')"
+    @keydown.space.prevent="$emit('click')"
   >
     <div class="flex items-center justify-between">
       <span class="font-medium text-sm">{{ job.name }}</span>

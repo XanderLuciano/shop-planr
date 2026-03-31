@@ -37,6 +37,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
       :variant="selectedUser ? 'ghost' : 'soft'"
       :color="selectedUser ? 'neutral' : 'warning'"
       :icon="selectedUser ? 'i-lucide-user' : 'i-lucide-user-x'"
+      :aria-label="selectedUser?.name ?? 'Select User'"
     />
     <!-- Desktop: full label with trailing chevron -->
     <UButton

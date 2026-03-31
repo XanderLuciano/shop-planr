@@ -35,6 +35,11 @@ describe('useMobileBreakpoint', () => {
     const { useMobileBreakpoint } = await import('~/app/composables/useMobileBreakpoint')
     const { isMobile } = useMobileBreakpoint()
 
+    // Before mount: defaults to false (SSR-safe)
+    expect(isMobile.value).toBe(false)
+
+    // After mount: reads matchMedia
+    mountedCb!()
     expect(isMobile.value).toBe(false)
     expect(matchMedia).toHaveBeenCalledWith('(max-width: 767.9px)')
   })
@@ -46,6 +51,11 @@ describe('useMobileBreakpoint', () => {
     const { useMobileBreakpoint } = await import('~/app/composables/useMobileBreakpoint')
     const { isMobile } = useMobileBreakpoint()
 
+    // Before mount: defaults to false
+    expect(isMobile.value).toBe(false)
+
+    // After mount: picks up mobile viewport
+    mountedCb!()
     expect(isMobile.value).toBe(true)
   })
 

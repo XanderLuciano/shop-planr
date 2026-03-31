@@ -9,19 +9,22 @@ export function useMobileBreakpoint() {
   const isMobile = ref(false)
 
   if (import.meta.client) {
-    const mql = window.matchMedia('(max-width: 767.9px)')
-    isMobile.value = mql.matches
+    let mql: MediaQueryList | null = null
 
     function onChange(e: MediaQueryListEvent) {
       isMobile.value = e.matches
     }
 
     onMounted(() => {
+      mql = window.matchMedia('(max-width: 767.9px)')
+      isMobile.value = mql.matches
       mql.addEventListener('change', onChange)
     })
 
     onUnmounted(() => {
-      mql.removeEventListener('change', onChange)
+      if (mql) {
+        mql.removeEventListener('change', onChange)
+      }
     })
   }
 
