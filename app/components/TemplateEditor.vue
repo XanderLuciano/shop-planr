@@ -62,7 +62,7 @@ async function handleSave() {
   loading.value = true
   try {
     await $fetch(`/api/templates/${encodeURIComponent(props.template.id)}`, {
-      method: 'PUT' as const,
+      method: 'PUT',
       body: {
         name: props.template.name,
         steps: validSteps.map((s, i) => ({
