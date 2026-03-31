@@ -14,8 +14,7 @@ const { batchCreateParts } = useParts()
 const { requireUser } = useUsers()
 
 const quantity = ref(1)
-const CERT_NONE = '__none__' as const
-const selectedCertId = ref<string | typeof CERT_NONE>(CERT_NONE)
+const selectedCertId = ref<string | SelectNone>(SELECT_NONE)
 const saving = ref(false)
 const error = ref('')
 
@@ -34,7 +33,7 @@ async function loadCerts() {
 }
 
 const certOptions = computed(() => [
-  { label: 'None', value: CERT_NONE },
+  { label: 'None', value: SELECT_NONE },
   ...certs.value.map(c => ({ label: `${c.name} (${c.type})`, value: c.id })),
 ])
 
@@ -59,11 +58,11 @@ async function onSubmit() {
       jobId: props.jobId,
       pathId: props.pathId,
       quantity: quantity.value,
-      certId: selectedCertId.value !== CERT_NONE ? selectedCertId.value : undefined,
+      certId: selectedCertId.value !== SELECT_NONE ? selectedCertId.value : undefined,
       userId
     })
     quantity.value = 1
-    selectedCertId.value = CERT_NONE
+    selectedCertId.value = SELECT_NONE
     emit('created', parts)
   } catch (e: any) {
     error.value = e?.data?.message ?? e?.message ?? 'Failed to create parts'

@@ -11,7 +11,7 @@ const { jobs, fetchJobs } = useJobs()
 // Link modal state
 const showLinkModal = ref(false)
 const selectedTicket = ref<JiraTicket | null>(null)
-const selectedTemplateId = ref<string>('__none__')
+const selectedTemplateId = ref<string>(SELECT_NONE)
 const overrideQuantity = ref<number | undefined>(undefined)
 const linking = ref(false)
 const linkError = ref('')
@@ -48,7 +48,7 @@ const columns: TableColumn<JiraTicket>[] = [
 
 function openLinkModal(ticket: JiraTicket) {
   selectedTicket.value = ticket
-  selectedTemplateId.value = '__none__'
+  selectedTemplateId.value = SELECT_NONE
   overrideQuantity.value = ticket.goalQuantity ?? undefined
   linkError.value = ''
   showLinkModal.value = true
@@ -61,7 +61,7 @@ async function confirmLink() {
   try {
     await linkTicket({
       ticketKey: selectedTicket.value.key,
-      templateId: selectedTemplateId.value && selectedTemplateId.value !== '__none__' ? selectedTemplateId.value : undefined,
+      templateId: selectedTemplateId.value && selectedTemplateId.value !== SELECT_NONE ? selectedTemplateId.value : undefined,
       goalQuantity: overrideQuantity.value || undefined
     })
     showLinkModal.value = false
@@ -240,7 +240,7 @@ onMounted(async () => {
             <label class="text-xs font-medium text-(--ui-text-muted)">Apply Template (optional)</label>
             <USelect
               v-model="selectedTemplateId"
-              :items="[{ label: 'No template', value: '__none__' }, ...templates.map(t => ({ label: t.name, value: t.id }))]"
+              :items="[{ label: 'No template', value: SELECT_NONE }, ...templates.map(t => ({ label: t.name, value: t.id }))]"
               size="sm"
               placeholder="Select a template..."
             />

@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import type { ScrapReason } from '~/types/domain'
 
-const NONE = '__none__' as const
-
 const props = defineProps<{
   partId: string
   modelValue: boolean
@@ -16,8 +14,8 @@ const emit = defineEmits<{
 const { scrapPart, loading, error } = useLifecycle()
 const { operatorId } = useOperatorIdentity()
 
-const scrapReasons: { label: string, value: ScrapReason | typeof NONE, disabled?: boolean }[] = [
-  { label: 'Select a reason...', value: NONE, disabled: true },
+const scrapReasons: { label: string, value: ScrapReason | SelectNone, disabled?: boolean }[] = [
+  { label: 'Select a reason...', value: SELECT_NONE, disabled: true },
   { label: 'Out of tolerance', value: 'out_of_tolerance' },
   { label: 'Process defect', value: 'process_defect' },
   { label: 'Damaged', value: 'damaged' },
@@ -25,7 +23,7 @@ const scrapReasons: { label: string, value: ScrapReason | typeof NONE, disabled?
   { label: 'Other', value: 'other' },
 ]
 
-const selectedReason = ref<ScrapReason | typeof NONE>(NONE)
+const selectedReason = ref<ScrapReason | SelectNone>(SELECT_NONE)
 const explanation = ref('')
 const validationError = ref<string | null>(null)
 
@@ -35,13 +33,13 @@ const isOpen = computed({
 })
 
 function resetForm() {
-  selectedReason.value = NONE
+  selectedReason.value = SELECT_NONE
   explanation.value = ''
   validationError.value = null
 }
 
 function isValidReason(val: string): val is ScrapReason {
-  return val !== NONE
+  return val !== SELECT_NONE
 }
 
 async function handleConfirm() {
