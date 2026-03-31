@@ -2,8 +2,8 @@
 import { h, resolveComponent } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
 import type { Row, ExpandedState } from '@tanstack/vue-table'
-import type { Job, FilterState } from '~/server/types/domain'
-import type { JobProgress } from '~/server/types/computed'
+import type { Job, FilterState } from '~/types/domain'
+import type { JobProgress } from '~/types/computed'
 
 const { jobs, loading, fetchJobs } = useJobs()
 const { filters, updateFilter, clearFilters, applyFilters } = useViewFilters()

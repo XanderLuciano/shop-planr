@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ShopUser } from '~/server/types/domain'
+import type { ShopUser } from '~/types/domain'
 import type { SelectMenuItem } from '@nuxt/ui'
 
 const props = defineProps<{
@@ -27,7 +27,7 @@ const toast = useToast()
 function filterDropdownOptions(users: ShopUser[], search: string): SelectMenuItem[] {
   const unassignedOption: SelectMenuItem = {
     label: 'Unassigned',
-    value: null as any,
+    value: SELECT_UNASSIGNED,
     icon: 'i-lucide-user-x',
   }
 
@@ -45,14 +45,14 @@ function filterDropdownOptions(users: ShopUser[], search: string): SelectMenuIte
 }
 
 // Internal state
-const selectedValue = ref<string | null>(props.currentAssignee ?? null)
-const previousValue = ref<string | null>(props.currentAssignee ?? null)
+const selectedValue = ref<string>(props.currentAssignee ?? SELECT_UNASSIGNED)
+const previousValue = ref<string>(props.currentAssignee ?? SELECT_UNASSIGNED)
 const assigning = ref(false)
 
 // Sync with prop changes from parent
 watch(() => props.currentAssignee, (val) => {
-  selectedValue.value = val ?? null
-  previousValue.value = val ?? null
+  selectedValue.value = val ?? SELECT_UNASSIGNED
+  previousValue.value = val ?? SELECT_UNASSIGNED
 })
 
 // Build items for USelectMenu
@@ -62,18 +62,18 @@ const menuItems = computed<SelectMenuItem[]>(() => {
 
 // Display label for current selection
 const displayLabel = computed(() => {
-  if (!selectedValue.value) return 'Unassigned'
+  if (!selectedValue.value || selectedValue.value === SELECT_UNASSIGNED) return 'Unassigned'
   const user = props.users.find(u => u.id === selectedValue.value)
   return user?.name ?? 'Unassigned'
 })
 
 async function handleSelection(value: string | null) {
-  const userId = value
+  const userId = selectedOrNull(value ?? SELECT_UNASSIGNED)
   const oldValue = previousValue.value
 
   // Optimistic update
-  selectedValue.value = userId
-  previousValue.value = userId
+  selectedValue.value = value ?? SELECT_UNASSIGNED
+  previousValue.value = value ?? SELECT_UNASSIGNED
   assigning.value = true
 
   try {

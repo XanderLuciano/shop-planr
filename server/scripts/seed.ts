@@ -266,27 +266,27 @@ export function seedDatabase(dbPath: string): void {
       mike.id
     )
     // Advance 16 past CNC Machine (step 0 → 1)
-    for (let i = 0; i < 16; i++) svc.partService.advancePart(j1parts[i].id, mike.id)
+    for (let i = 0; i < 16; i++) svc.partService.advancePart(j1parts[i]!.id, mike.id)
     // Advance 12 past Deburr (step 1 → 2)
-    for (let i = 0; i < 12; i++) svc.partService.advancePart(j1parts[i].id, lisa.id)
+    for (let i = 0; i < 12; i++) svc.partService.advancePart(j1parts[i]!.id, lisa.id)
     // Advance 10 past Inspection (step 2 → 3)
-    for (let i = 0; i < 10; i++) svc.partService.advancePart(j1parts[i].id, sarah.id)
+    for (let i = 0; i < 10; i++) svc.partService.advancePart(j1parts[i]!.id, sarah.id)
     // Advance 8 past Chemfilm (step 3 → 4)
-    for (let i = 0; i < 8; i++) svc.partService.advancePart(j1parts[i].id, sarah.id)
+    for (let i = 0; i < 8; i++) svc.partService.advancePart(j1parts[i]!.id, sarah.id)
     // Complete 5 (past Final Inspection)
-    for (let i = 0; i < 5; i++) svc.partService.advancePart(j1parts[i].id, sarah.id)
+    for (let i = 0; i < 5; i++) svc.partService.advancePart(j1parts[i]!.id, sarah.id)
     // Attach chemfilm cert to the 8 that went through chemfilm
     for (let i = 0; i < 8; i++) {
       svc.certService.attachCertToSerial({
-        certId: certChemfilm.id, serialId: j1parts[i].id,
-        stepId: path1.steps[3].id, userId: sarah.id,
+        certId: certChemfilm.id, serialId: j1parts[i]!.id,
+        stepId: path1.steps[3]!.id, userId: sarah.id,
         jobId: job1.id, pathId: path1.id
       })
     }
     // Note on deburr step
     svc.noteService.createNote({
-      jobId: job1.id, pathId: path1.id, stepId: path1.steps[1].id,
-      partIds: [j1parts[13].id, j1parts[14].id],
+      jobId: job1.id, pathId: path1.id, stepId: path1.steps[1]!.id,
+      partIds: [j1parts[13]!.id, j1parts[14]!.id],
       text: 'Sharp edge on pocket corner — needs extra deburr pass',
       userId: lisa.id
     })
@@ -308,19 +308,19 @@ export function seedDatabase(dbPath: string): void {
     )
     // Steps: 0=CNC, 1=Stress Relief, 2=CNC, 3=Deburr, 4=Inspection, 5=Hard Anodize, 6=Final Insp
     // Advance 8 past first CNC (step 0 → 1)
-    for (let i = 0; i < 8; i++) svc.partService.advancePart(j2parts[i].id, tony.id)
+    for (let i = 0; i < 8; i++) svc.partService.advancePart(j2parts[i]!.id, tony.id)
     // Advance 6 past Stress Relief (step 1 → 2)
-    for (let i = 0; i < 6; i++) svc.partService.advancePart(j2parts[i].id, tony.id)
+    for (let i = 0; i < 6; i++) svc.partService.advancePart(j2parts[i]!.id, tony.id)
     // Advance 4 past second CNC (step 2 → 3)
-    for (let i = 0; i < 4; i++) svc.partService.advancePart(j2parts[i].id, tony.id)
+    for (let i = 0; i < 4; i++) svc.partService.advancePart(j2parts[i]!.id, tony.id)
     // Advance 3 past Deburr (step 3 → 4)
-    for (let i = 0; i < 3; i++) svc.partService.advancePart(j2parts[i].id, lisa.id)
+    for (let i = 0; i < 3; i++) svc.partService.advancePart(j2parts[i]!.id, lisa.id)
     // Advance 2 past Inspection (step 4 → 5)
-    for (let i = 0; i < 2; i++) svc.partService.advancePart(j2parts[i].id, sarah.id)
+    for (let i = 0; i < 2; i++) svc.partService.advancePart(j2parts[i]!.id, sarah.id)
     // Note about stress relief vendor delay
     svc.noteService.createNote({
-      jobId: job2.id, pathId: path2.id, stepId: path2.steps[1].id,
-      partIds: [j2parts[6].id, j2parts[7].id],
+      jobId: job2.id, pathId: path2.id, stepId: path2.steps[1]!.id,
+      partIds: [j2parts[6]!.id, j2parts[7]!.id],
       text: 'Vendor batch delayed — expected back Thursday',
       userId: tony.id
     })
@@ -344,35 +344,35 @@ export function seedDatabase(dbPath: string): void {
     )
     // Steps: 0=CNC, 1=Heat Treat, 2=CNC, 3=Deburr, 4=Inspection, 5=Passivate, 6=Final Insp
     // Advance 20 past CNC (step 0 → 1)
-    for (let i = 0; i < 20; i++) svc.partService.advancePart(j3aParts[i].id, mike.id)
+    for (let i = 0; i < 20; i++) svc.partService.advancePart(j3aParts[i]!.id, mike.id)
     // Advance 15 past Heat Treat (step 1 → 2)
-    for (let i = 0; i < 15; i++) svc.partService.advancePart(j3aParts[i].id, mike.id)
+    for (let i = 0; i < 15; i++) svc.partService.advancePart(j3aParts[i]!.id, mike.id)
     // Attach heat treat cert to the 15 that went through
     for (let i = 0; i < 15; i++) {
       svc.certService.attachCertToSerial({
-        certId: certHeatTreat.id, serialId: j3aParts[i].id,
-        stepId: path3a.steps[1].id, userId: mike.id,
+        certId: certHeatTreat.id, serialId: j3aParts[i]!.id,
+        stepId: path3a.steps[1]!.id, userId: mike.id,
         jobId: job3.id, pathId: path3a.id
       })
     }
     // Advance 10 past second CNC (step 2 → 3)
-    for (let i = 0; i < 10; i++) svc.partService.advancePart(j3aParts[i].id, mike.id)
+    for (let i = 0; i < 10; i++) svc.partService.advancePart(j3aParts[i]!.id, mike.id)
     // Advance 8 past Deburr (step 3 → 4)
-    for (let i = 0; i < 8; i++) svc.partService.advancePart(j3aParts[i].id, lisa.id)
+    for (let i = 0; i < 8; i++) svc.partService.advancePart(j3aParts[i]!.id, lisa.id)
     // Advance 6 past Inspection (step 4 → 5)
-    for (let i = 0; i < 6; i++) svc.partService.advancePart(j3aParts[i].id, sarah.id)
+    for (let i = 0; i < 6; i++) svc.partService.advancePart(j3aParts[i]!.id, sarah.id)
     // Advance 4 past Passivate (step 5 → 6)
-    for (let i = 0; i < 4; i++) svc.partService.advancePart(j3aParts[i].id, sarah.id)
+    for (let i = 0; i < 4; i++) svc.partService.advancePart(j3aParts[i]!.id, sarah.id)
     // Attach passivation cert
     for (let i = 0; i < 4; i++) {
       svc.certService.attachCertToSerial({
-        certId: certPassivate.id, serialId: j3aParts[i].id,
-        stepId: path3a.steps[5].id, userId: sarah.id,
+        certId: certPassivate.id, serialId: j3aParts[i]!.id,
+        stepId: path3a.steps[5]!.id, userId: sarah.id,
         jobId: job3.id, pathId: path3a.id
       })
     }
     // Complete 2
-    for (let i = 0; i < 2; i++) svc.partService.advancePart(j3aParts[i].id, sarah.id)
+    for (let i = 0; i < 2; i++) svc.partService.advancePart(j3aParts[i]!.id, sarah.id)
 
     // Path B: Basic CNC path for simpler variant (20 qty)
     const path3b = svc.templateService.applyTemplate(tmplBasic.id, {
@@ -385,13 +385,13 @@ export function seedDatabase(dbPath: string): void {
       tony.id
     )
     // Steps: 0=CNC, 1=Deburr, 2=Inspection
-    for (let i = 0; i < 12; i++) svc.partService.advancePart(j3bParts[i].id, tony.id)
-    for (let i = 0; i < 8; i++) svc.partService.advancePart(j3bParts[i].id, lisa.id)
-    for (let i = 0; i < 5; i++) svc.partService.advancePart(j3bParts[i].id, sarah.id)
+    for (let i = 0; i < 12; i++) svc.partService.advancePart(j3bParts[i]!.id, tony.id)
+    for (let i = 0; i < 8; i++) svc.partService.advancePart(j3bParts[i]!.id, lisa.id)
+    for (let i = 0; i < 5; i++) svc.partService.advancePart(j3bParts[i]!.id, sarah.id)
 
     svc.noteService.createNote({
-      jobId: job3.id, pathId: path3a.id, stepId: path3a.steps[4].id,
-      partIds: [j3aParts[7].id],
+      jobId: job3.id, pathId: path3a.id, stepId: path3a.steps[4]!.id,
+      partIds: [j3aParts[7]!.id],
       text: 'OD dimension at high end of tolerance — flagged for review',
       userId: sarah.id
     })
@@ -413,25 +413,25 @@ export function seedDatabase(dbPath: string): void {
     )
     // Steps: 0=CNC, 1=Deburr, 2=Bead Blast, 3=Inspection, 4=Anodize, 5=Final Insp
     // All 15 past CNC
-    for (let i = 0; i < 15; i++) svc.partService.advancePart(j4parts[i].id, mike.id)
+    for (let i = 0; i < 15; i++) svc.partService.advancePart(j4parts[i]!.id, mike.id)
     // 14 past Deburr
-    for (let i = 0; i < 14; i++) svc.partService.advancePart(j4parts[i].id, lisa.id)
+    for (let i = 0; i < 14; i++) svc.partService.advancePart(j4parts[i]!.id, lisa.id)
     // 13 past Bead Blast
-    for (let i = 0; i < 13; i++) svc.partService.advancePart(j4parts[i].id, lisa.id)
+    for (let i = 0; i < 13; i++) svc.partService.advancePart(j4parts[i]!.id, lisa.id)
     // 12 past Inspection
-    for (let i = 0; i < 12; i++) svc.partService.advancePart(j4parts[i].id, sarah.id)
+    for (let i = 0; i < 12; i++) svc.partService.advancePart(j4parts[i]!.id, sarah.id)
     // 10 past Anodize
-    for (let i = 0; i < 10; i++) svc.partService.advancePart(j4parts[i].id, sarah.id)
+    for (let i = 0; i < 10; i++) svc.partService.advancePart(j4parts[i]!.id, sarah.id)
     // Attach anodize cert
     for (let i = 0; i < 10; i++) {
       svc.certService.attachCertToSerial({
-        certId: certAnodize.id, serialId: j4parts[i].id,
-        stepId: path4.steps[4].id, userId: sarah.id,
+        certId: certAnodize.id, serialId: j4parts[i]!.id,
+        stepId: path4.steps[4]!.id, userId: sarah.id,
         jobId: job4.id, pathId: path4.id
       })
     }
     // Complete 8
-    for (let i = 0; i < 8; i++) svc.partService.advancePart(j4parts[i].id, sarah.id)
+    for (let i = 0; i < 8; i++) svc.partService.advancePart(j4parts[i]!.id, sarah.id)
     console.log(`  Job: ${job4.name} — 15 parts (8 done, 2 at Final Insp, 2 at Anodize, 1 at Insp, 1 at Bead Blast, 1 at Deburr)`)
 
     // ══════════════════════════════════════════════════════════════════
@@ -457,15 +457,15 @@ export function seedDatabase(dbPath: string): void {
     )
     // Steps: 0=CNC, 1=Deburr, 2=Inspection, 3=Passivate, 4=Final Insp
     // 20 past CNC
-    for (let i = 0; i < 20; i++) svc.partService.advancePart(j5parts[i].id, tony.id)
+    for (let i = 0; i < 20; i++) svc.partService.advancePart(j5parts[i]!.id, tony.id)
     // 12 past Deburr
-    for (let i = 0; i < 12; i++) svc.partService.advancePart(j5parts[i].id, lisa.id)
+    for (let i = 0; i < 12; i++) svc.partService.advancePart(j5parts[i]!.id, lisa.id)
     // 5 past Inspection
-    for (let i = 0; i < 5; i++) svc.partService.advancePart(j5parts[i].id, sarah.id)
+    for (let i = 0; i < 5; i++) svc.partService.advancePart(j5parts[i]!.id, sarah.id)
 
     svc.noteService.createNote({
-      jobId: job5.id, pathId: path5.id, stepId: path5.steps[0].id,
-      partIds: [j5parts[22].id, j5parts[23].id, j5parts[24].id],
+      jobId: job5.id, pathId: path5.id, stepId: path5.steps[0]!.id,
+      partIds: [j5parts[22]!.id, j5parts[23]!.id, j5parts[24]!.id],
       text: 'Tool wear detected on lathe — replaced insert, re-verify dimensions on these parts',
       userId: tony.id
     })

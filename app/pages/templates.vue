@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TemplateRoute } from '~/server/types/domain'
+import type { TemplateRoute } from '~/types/domain'
 
 const { templates, loading, fetchTemplates, createTemplate, deleteTemplate } = useTemplates()
 

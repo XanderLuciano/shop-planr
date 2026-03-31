@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { JiraTicket } from '~/server/services/jiraService'
-import type { TemplateRoute } from '~/server/types/domain'
+import type { JiraTicket } from '~/types/jira'
+import type { TemplateRoute } from '~/types/domain'
+import type { TableColumn } from '@nuxt/ui'
 
 const { tickets, loading, error, fromCache, fetchTickets, linkTicket, refreshTickets } = useJira()
 const { settings } = useSettings()
@@ -10,7 +11,7 @@ const { jobs, fetchJobs } = useJobs()
 // Link modal state
 const showLinkModal = ref(false)
 const selectedTicket = ref<JiraTicket | null>(null)
-const selectedTemplateId = ref<string | undefined>(undefined)
+const selectedTemplateId = ref<string>(SELECT_NONE)
 const overrideQuantity = ref<number | undefined>(undefined)
 const linking = ref(false)
 const linkError = ref('')
@@ -34,20 +35,20 @@ const unlinkedTickets = computed(() =>
 )
 
 // Table columns
-const columns = [
-  { key: 'key', label: 'Key' },
-  { key: 'summary', label: 'Summary' },
-  { key: 'status', label: 'Status' },
-  { key: 'priority', label: 'Priority' },
-  { key: 'assignee', label: 'Assignee' },
-  { key: 'partNumber', label: 'Part Number' },
-  { key: 'goalQuantity', label: 'Qty' },
-  { key: 'actions', label: '' }
+const columns: TableColumn<JiraTicket>[] = [
+  { accessorKey: 'key', header: 'Key' },
+  { accessorKey: 'summary', header: 'Summary' },
+  { accessorKey: 'status', header: 'Status' },
+  { accessorKey: 'priority', header: 'Priority' },
+  { accessorKey: 'assignee', header: 'Assignee' },
+  { accessorKey: 'partNumber', header: 'Part Number' },
+  { accessorKey: 'goalQuantity', header: 'Qty' },
+  { accessorKey: 'actions', header: '' },
 ]
 
 function openLinkModal(ticket: JiraTicket) {
   selectedTicket.value = ticket
-  selectedTemplateId.value = undefined
+  selectedTemplateId.value = SELECT_NONE
   overrideQuantity.value = ticket.goalQuantity ?? undefined
   linkError.value = ''
   showLinkModal.value = true
@@ -60,7 +61,7 @@ async function confirmLink() {
   try {
     await linkTicket({
       ticketKey: selectedTicket.value.key,
-      templateId: selectedTemplateId.value && selectedTemplateId.value !== '__none__' ? selectedTemplateId.value : undefined,
+      templateId: selectedOrUndefined(selectedTemplateId.value),
       goalQuantity: overrideQuantity.value || undefined
     })
     showLinkModal.value = false
@@ -239,7 +240,7 @@ onMounted(async () => {
             <label class="text-xs font-medium text-(--ui-text-muted)">Apply Template (optional)</label>
             <USelect
               v-model="selectedTemplateId"
-              :items="[{ label: 'No template', value: '__none__' }, ...templates.map(t => ({ label: t.name, value: t.id }))]"
+              :items="[{ label: 'No template', value: SELECT_NONE }, ...templates.map(t => ({ label: t.name, value: t.id }))]"
               size="sm"
               placeholder="Select a template..."
             />

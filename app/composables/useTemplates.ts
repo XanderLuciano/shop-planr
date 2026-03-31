@@ -1,6 +1,6 @@
 import { ref, readonly } from 'vue'
-import type { TemplateRoute, Path } from '~/server/types/domain'
-import type { CreateTemplateInput, ApplyTemplateInput } from '~/server/types/api'
+import type { TemplateRoute, Path } from '~/types/domain'
+import type { CreateTemplateInput, ApplyTemplateInput } from '~/types/api'
 
 const templates = ref<TemplateRoute[]>([])
 const loading = ref(false)

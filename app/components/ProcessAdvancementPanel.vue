@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { WorkQueueJob } from '~/server/types/computed'
-import type { StepNote } from '~/server/types/domain'
+import type { WorkQueueJob } from '~/types/computed'
+import type { StepNote } from '~/types/domain'
 
 const props = defineProps<{
   job: WorkQueueJob
   loading: boolean
-  notes?: StepNote[]
+  notes?: readonly StepNote[]
 }>()
 
 const emit = defineEmits<{

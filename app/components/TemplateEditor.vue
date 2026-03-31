@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TemplateRoute } from '~/server/types/domain'
+import type { TemplateRoute } from '~/types/domain'
 
 const props = defineProps<{
   template: TemplateRoute
@@ -62,7 +62,7 @@ async function handleSave() {
   loading.value = true
   try {
     await $fetch(`/api/templates/${encodeURIComponent(props.template.id)}`, {
-      method: 'PUT' as any,
+      method: 'PUT',
       body: {
         name: props.template.name,
         steps: validSteps.map((s, i) => ({

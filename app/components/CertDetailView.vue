@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Certificate, CertAttachment } from '~/server/types/domain'
+import type { Certificate, CertAttachment } from '~/types/domain'
 
 const props = defineProps<{
   certId: string

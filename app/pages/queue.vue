@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { WorkQueueJob, OperatorGroup } from '~/server/types/computed'
+import type { WorkQueueJob, OperatorGroup } from '~/types/computed'
 import type { DropdownMenuItem } from '@nuxt/ui'
 
 const route = useRoute()

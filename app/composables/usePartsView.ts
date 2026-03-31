@@ -1,5 +1,5 @@
 import { ref, computed, readonly } from 'vue'
-import type { WorkQueueJob, WorkQueueResponse } from '~/server/types/computed'
+import type { WorkQueueJob, WorkQueueResponse } from '~/types/computed'
 
 const response = ref<WorkQueueResponse | null>(null)
 const loading = ref(false)

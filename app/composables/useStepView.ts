@@ -1,6 +1,6 @@
 import { ref, readonly } from 'vue'
-import type { WorkQueueJob, StepViewResponse } from '~/server/types/computed'
-import type { StepNote } from '~/server/types/domain'
+import type { WorkQueueJob, StepViewResponse } from '~/types/computed'
+import type { StepNote } from '~/types/domain'
 
 export function useStepView(stepId: string) {
   const job = ref<WorkQueueJob | null>(null)

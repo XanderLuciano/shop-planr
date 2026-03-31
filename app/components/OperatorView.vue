@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { OperatorStepView } from '~/server/types/computed'
-import type { StepNote } from '~/server/types/domain'
+import type { OperatorStepView } from '~/types/computed'
+import type { StepNote } from '~/types/domain'
 
 const props = defineProps<{
   data: OperatorStepView

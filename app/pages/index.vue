@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { JobProgress } from '~/server/types/computed'
+import type { JobProgress } from '~/types/computed'
 
 const { jobs, loading, fetchJobs } = useJobs()
 

@@ -1,6 +1,6 @@
 import { ref, readonly } from 'vue'
-import type { BomVersion } from '~/server/types/domain'
-import type { EditBomInput } from '~/server/types/api'
+import type { BomVersion } from '~/types/domain'
+import type { EditBomInput } from '~/types/api'
 
 export function useBomVersions() {
   const versions = ref<BomVersion[]>([])

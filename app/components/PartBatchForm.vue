@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Certificate, Part } from '~/server/types/domain'
+import type { Certificate, Part } from '~/types/domain'
 
 const props = defineProps<{
   jobId: string
@@ -14,7 +14,7 @@ const { batchCreateParts } = useParts()
 const { requireUser } = useUsers()
 
 const quantity = ref(1)
-const selectedCertId = ref<string | undefined>(undefined)
+const selectedCertId = ref<string | SelectNone>(SELECT_NONE)
 const saving = ref(false)
 const error = ref('')
 
@@ -32,9 +32,10 @@ async function loadCerts() {
   }
 }
 
-const certOptions = computed(() =>
-  certs.value.map(c => ({ label: `${c.name} (${c.type})`, value: c.id }))
-)
+const certOptions = computed(() => [
+  { label: 'None', value: SELECT_NONE },
+  ...certs.value.map(c => ({ label: `${c.name} (${c.type})`, value: c.id })),
+])
 
 async function onSubmit() {
   error.value = ''
@@ -57,11 +58,11 @@ async function onSubmit() {
       jobId: props.jobId,
       pathId: props.pathId,
       quantity: quantity.value,
-      certId: selectedCertId.value || undefined,
+      certId: selectedOrUndefined(selectedCertId.value),
       userId
     })
     quantity.value = 1
-    selectedCertId.value = undefined
+    selectedCertId.value = SELECT_NONE
     emit('created', parts)
   } catch (e: any) {
     error.value = e?.data?.message ?? e?.message ?? 'Failed to create parts'

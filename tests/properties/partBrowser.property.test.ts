@@ -231,7 +231,7 @@ describe('Property 9: Part multi-filter AND logic', () => {
  * **Validates: Requirements 10.1, 10.2, 10.3, 11.5**
  */
 describe('Property 10: Part sort correctness', () => {
-  const validColumns = ['id', 'jobName', 'currentStepName', 'status', 'createdAt']
+  const validColumns: (keyof import('../../server/types/computed').EnrichedPart)[] = ['id', 'jobName', 'currentStepName', 'status', 'createdAt']
 
   it('ascending sort produces elements where each is ≤ next by column value', () => {
     fc.assert(

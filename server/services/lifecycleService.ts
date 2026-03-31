@@ -183,7 +183,7 @@ export function createLifecycleService(repos: {
       const bypassed: { step: ProcessStep; index: number }[] = []
       for (let i = currentStepIndex + 1; i < targetStepIndex; i++) {
         if (i < totalSteps) {
-          bypassed.push({ step: path.steps[i], index: i })
+          bypassed.push({ step: path.steps[i]!, index: i }) // safe: i < totalSteps
         }
       }
 
@@ -206,7 +206,7 @@ export function createLifecycleService(repos: {
       }
 
       const now = new Date().toISOString()
-      const bypassedResult: AdvancementResult['bypassed'] = []
+      const bypassedResult: { stepId: string; stepName: string; classification: 'skipped' | 'deferred' }[] = []
 
       // 5. Classify and update bypassed steps
       for (const { step } of bypassed) {
@@ -277,7 +277,8 @@ export function createLifecycleService(repos: {
       }
 
       // 8. Update destination step → in_progress
-      const destinationStep = path.steps[targetStepIndex]
+      // safe: targetStepIndex < totalSteps is validated above
+      const destinationStep = path.steps[targetStepIndex]!
       repos.partStepStatuses.updateByPartAndStep(partId, destinationStep.id, {
         status: 'in_progress',
         updatedAt: now,

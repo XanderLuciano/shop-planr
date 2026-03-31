@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BOM, Job } from '~/server/types/domain'
+import type { BOM, Job } from '~/types/domain'
 
 interface EntryDraft {
   partType: string
@@ -9,7 +9,7 @@ interface EntryDraft {
 
 const props = defineProps<{
   bom?: BOM
-  jobs: Job[]
+  jobs: readonly Job[]
 }>()
 
 const emit = defineEmits<{

@@ -33,7 +33,7 @@ export interface StepReconciliation {
  * - All output steps get sequential order values 0..N-1
  */
 export function reconcileSteps(
-  existingSteps: ProcessStep[],
+  existingSteps: readonly ProcessStep[],
   inputSteps: StepInput[],
 ): StepReconciliation {
   const toUpdate: ProcessStep[] = []
@@ -41,14 +41,15 @@ export function reconcileSteps(
   const toDelete: string[] = []
 
   for (let i = 0; i < inputSteps.length; i++) {
-    const input = inputSteps[i]
+    const input = inputSteps[i]! // safe: i < inputSteps.length
     if (i < existingSteps.length) {
+      const existing = existingSteps[i]! // safe: i < existingSteps.length
       toUpdate.push({
-        id: existingSteps[i].id,
+        id: existing.id,
         name: input.name,
         order: i,
         location: input.location,
-        assignedTo: existingSteps[i].assignedTo,
+        assignedTo: existing.assignedTo,
         optional: input.optional ?? false,
         dependencyType: input.dependencyType ?? 'preferred',
       })
@@ -65,7 +66,7 @@ export function reconcileSteps(
   }
 
   for (let i = inputSteps.length; i < existingSteps.length; i++) {
-    toDelete.push(existingSteps[i].id)
+    toDelete.push(existingSteps[i]!.id) // safe: i < existingSteps.length
   }
 
   return { toUpdate, toInsert, toDelete }

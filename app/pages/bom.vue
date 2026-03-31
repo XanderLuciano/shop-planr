@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { BomSummary } from '~/server/types/computed'
-import type { BOM } from '~/server/types/domain'
+import type { BomSummary } from '~/types/computed'
+import type { BOM } from '~/types/domain'
 
 const { boms, loading, fetchBoms, createBom, getBomWithSummary } = useBom()
 const { jobs, fetchJobs } = useJobs()

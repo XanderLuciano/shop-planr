@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Job, Path, TemplateRoute, ShopUser, StepNote, ProcessStep } from '~/server/types/domain'
-import type { JobProgress, StepDistribution } from '~/server/types/computed'
+import type { Job, Path, TemplateRoute, ShopUser, StepNote, ProcessStep } from '~/types/domain'
+import type { JobProgress, StepDistribution } from '~/types/computed'
 
 const route = useRoute()
 const jobId = route.params.id as string
@@ -114,7 +114,7 @@ async function onStepAssigned(_stepId: string, _userId: string | null) {
   await loadAllDistributions()
   try {
     const detail = await getJob(jobId)
-    paths.value = (detail as any).paths ?? []
+    paths.value = [...detail.paths]
   } catch {
     // Silently ignore
   }
@@ -126,7 +126,7 @@ async function loadJob() {
   try {
     const detail = await getJob(jobId)
     job.value = detail
-    paths.value = (detail as any).paths ?? []
+    paths.value = [...detail.paths]
     progress.value = detail.progress
     await loadAllDistributions()
   } catch (e: any) {
@@ -528,7 +528,7 @@ onMounted(() => {
               >
                 <UIcon name="i-lucide-message-square" class="size-3" />
                 Notes
-                <UBadge v-if="pathNotes[p.id]?.length" size="xs" variant="subtle" color="warning">{{ pathNotes[p.id].length }}</UBadge>
+                <UBadge v-if="pathNotes[p.id]?.length" size="xs" variant="subtle" color="warning">{{ pathNotes[p.id]!.length }}</UBadge>
                 <UIcon :name="showNotesForPath === p.id ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="size-3" />
               </button>
 

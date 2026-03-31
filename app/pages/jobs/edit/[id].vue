@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Job, Path } from '~/server/types/domain'
-import type { JobProgress } from '~/server/types/computed'
+import type { Job, Path } from '~/types/domain'
+import type { JobProgress } from '~/types/computed'
 
 const route = useRoute()
 const jobId = route.params.id as string

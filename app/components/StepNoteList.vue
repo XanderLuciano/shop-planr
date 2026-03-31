@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { StepNote } from '~/server/types/domain'
+import type { StepNote } from '~/types/domain'
 
 defineProps<{
-  notes: StepNote[]
+  notes: readonly StepNote[]
 }>()
 
 function formatTime(ts: string): string {

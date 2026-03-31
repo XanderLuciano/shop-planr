@@ -149,10 +149,14 @@ describe('Property 4: Dropdown option list with search filtering', () => {
         arbSearchString(),
         (users, search) => {
           const result = filterDropdownOptions(users, search)
-          const inactiveIds = new Set(users.filter(u => !u.active).map(u => u.id))
+          const activeIds = new Set(users.filter(u => u.active).map(u => u.id))
+          // Only consider an id "exclusively inactive" if no active user shares it
+          const exclusivelyInactiveIds = new Set(
+            users.filter(u => !u.active && !activeIds.has(u.id)).map(u => u.id),
+          )
 
           for (const option of result.slice(1)) {
-            expect(inactiveIds.has(option.value!)).toBe(false)
+            expect(exclusivelyInactiveIds.has(option.value!)).toBe(false)
           }
         },
       ),

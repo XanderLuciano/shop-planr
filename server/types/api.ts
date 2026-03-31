@@ -17,7 +17,7 @@ export interface CreateJobInput {
   jiraPartNumber?: string
   jiraPriority?: string
   jiraEpicLink?: string
-  jiraLabels?: string[]
+  jiraLabels?: readonly string[]
 }
 
 export interface UpdateJobInput {
@@ -76,7 +76,7 @@ export interface CreateCertInput {
 
 export interface BatchAttachCertInput {
   certId: string
-  partIds: string[]
+  partIds: readonly string[]
   userId: string
 }
 
@@ -103,7 +103,7 @@ export interface CreateBomInput {
   entries: {
     partType: string
     requiredQuantityPerBuild: number
-    contributingJobIds: string[]
+    contributingJobIds: readonly string[]
   }[]
 }
 
@@ -161,7 +161,7 @@ export interface WaiveStepInput {
 }
 
 export interface CreateStepOverrideInput {
-  partIds: string[]
+  partIds: readonly string[]
   stepId: string
   reason: string
   userId: string
@@ -170,7 +170,7 @@ export interface CreateStepOverrideInput {
 // ---- BOM Edit ----
 
 export interface EditBomInput {
-  entries: { partType: string; requiredQuantityPerBuild: number; contributingJobIds: string[] }[]
+  entries: { partType: string; requiredQuantityPerBuild: number; contributingJobIds: readonly string[] }[]
   changeDescription: string
   userId: string
 }

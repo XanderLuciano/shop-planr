@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { WorkQueueJob, EnrichedPart, PartStepStatusView } from '~/server/types/computed'
-import type { StepNote, CertAttachment, PartStepOverride } from '~/server/types/domain'
+import type { WorkQueueJob, PartStepStatusView } from '~/types/computed'
+import type { StepNote, CertAttachment, PartStepOverride } from '~/types/domain'
 
 const route = useRoute()
 const partId = route.params.id as string
@@ -58,7 +58,7 @@ function toggleSiblingsSort(column: 'id' | 'currentStepName' | 'status' | 'creat
 }
 
 const sortedSiblings = computed(() => {
-  const list = [...siblingParts.value] as EnrichedPart[]
+  const list = [...siblingParts.value]
   const col = siblingsSortColumn.value
   const dir = siblingsSortDirection.value === 'asc' ? 1 : -1
   return list.sort((a, b) => {
@@ -87,7 +87,7 @@ watch(activeTab, async (tab) => {
 const isScrapped = computed(() => part.value?.status === 'scrapped')
 const isCompleted = computed(() => part.value?.status === 'completed' || part.value?.currentStepIndex === -1)
 const isForceCompleted = computed(() => part.value?.forceCompleted === true)
-const isInProgress = computed(() => part.value?.status === 'in_progress' || part.value?.status === 'in-progress' || (!isScrapped.value && !isCompleted.value && part.value?.currentStepIndex !== undefined && part.value.currentStepIndex >= 0))
+const isInProgress = computed(() => part.value?.status === 'in_progress' || (!isScrapped.value && !isCompleted.value && part.value?.currentStepIndex !== undefined && part.value.currentStepIndex >= 0))
 
 const currentStep = computed(() => {
   if (!path.value || !part.value || part.value.currentStepIndex < 0) return null
@@ -141,10 +141,12 @@ function getStepStatusForStep(stepId: string): PartStepStatusView | undefined {
   return stepStatuses.value.find(s => s.stepId === stepId)
 }
 
-function stepStatusBadge(stepId: string) {
+type BadgeColor = 'success' | 'info' | 'neutral' | 'warning' | 'error' | 'primary' | 'secondary'
+
+function stepStatusBadge(stepId: string): { color: BadgeColor, label: string } | null {
   const ss = getStepStatusForStep(stepId)
   if (!ss) return null
-  const map: Record<string, { color: string, label: string }> = {
+  const map: Record<string, { color: BadgeColor, label: string }> = {
     completed: { color: 'success', label: 'Completed' },
     in_progress: { color: 'info', label: 'In Progress' },
     pending: { color: 'neutral', label: 'Pending' },
@@ -285,7 +287,7 @@ onMounted(async () => {
           </UBadge>
         </div>
         <div class="text-xs text-(--ui-text-muted)">
-          {{ (job as any).name }} · {{ path.name }}
+          {{ job?.name }} · {{ path.name }}
         </div>
       </div>
 
@@ -367,8 +369,8 @@ onMounted(async () => {
                 <div v-if="step.location" class="text-xs text-(--ui-text-muted)">📍 {{ step.location }}</div>
                 <!-- Step status badge -->
                 <div v-if="stepStatusBadge(step.id)" class="mt-0.5">
-                  <UBadge :color="(stepStatusBadge(step.id) as any).color" variant="subtle" size="xs">
-                    {{ (stepStatusBadge(step.id) as any).label }}
+                  <UBadge :color="stepStatusBadge(step.id)!.color" variant="subtle" size="xs">
+                    {{ stepStatusBadge(step.id)!.label }}
                   </UBadge>
                 </div>
               </div>

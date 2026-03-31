@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Certificate } from '~/server/types/domain'
+import type { Certificate } from '~/types/domain'
 
 const props = defineProps<{
   cert?: Certificate

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { PartBrowserFilters } from '~/composables/usePartBrowser'
+
 const {
   parts,
   loading,
@@ -28,15 +30,15 @@ watch(searchInput, (val) => {
 // Unique values for filter dropdowns (derived from fetched data)
 const jobOptions = computed(() => {
   const names = [...new Set(parts.value.map(s => s.jobName))].sort()
-  return [{ label: 'All Jobs', value: '__all__' }, ...names.map(n => ({ label: n, value: n }))]
+  return [{ label: 'All Jobs', value: SELECT_ALL }, ...names.map(n => ({ label: n, value: n }))]
 })
 const pathOptions = computed(() => {
   const names = [...new Set(parts.value.map(s => s.pathName))].sort()
-  return [{ label: 'All Paths', value: '__all__' }, ...names.map(n => ({ label: n, value: n }))]
+  return [{ label: 'All Paths', value: SELECT_ALL }, ...names.map(n => ({ label: n, value: n }))]
 })
 const stepOptions = computed(() => {
   const names = [...new Set(parts.value.map(s => s.currentStepName))].sort()
-  return [{ label: 'All Steps', value: '__all__' }, ...names.map(n => ({ label: n, value: n }))]
+  return [{ label: 'All Steps', value: SELECT_ALL }, ...names.map(n => ({ label: n, value: n }))]
 })
 const statusOptions = [
   { label: 'All Statuses', value: 'all' },
@@ -46,37 +48,37 @@ const statusOptions = [
 const assigneeOptions = computed(() => {
   const names = [...new Set(parts.value.map(s => s.assignedTo).filter((v): v is string => !!v))].sort()
   return [
-    { label: 'All Assignees', value: '__all__' },
+    { label: 'All Assignees', value: SELECT_ALL },
     { label: 'Unassigned', value: 'Unassigned' },
     ...names.map(n => ({ label: n, value: n })),
   ]
 })
 
 // Filter model refs
-const selectedJob = ref('__all__')
-const selectedPath = ref('__all__')
-const selectedStep = ref('__all__')
-const selectedStatus = ref('all')
-const selectedAssignee = ref('__all__')
+const selectedJob = ref(SELECT_ALL)
+const selectedPath = ref(SELECT_ALL)
+const selectedStep = ref(SELECT_ALL)
+const selectedStatus = ref<PartBrowserFilters['status'] | undefined>('all')
+const selectedAssignee = ref(SELECT_ALL)
 
 // Sync filter refs to composable filters
 watch([selectedJob, selectedPath, selectedStep, selectedStatus, selectedAssignee], () => {
   filters.value = {
-    jobName: selectedJob.value !== '__all__' ? selectedJob.value : undefined,
-    pathName: selectedPath.value !== '__all__' ? selectedPath.value : undefined,
-    stepName: selectedStep.value !== '__all__' ? selectedStep.value : undefined,
-    status: (selectedStatus.value as any) || undefined,
-    assignee: selectedAssignee.value !== '__all__' ? selectedAssignee.value : undefined,
+    jobName: selectedAllOrUndefined(selectedJob.value),
+    pathName: selectedAllOrUndefined(selectedPath.value),
+    stepName: selectedAllOrUndefined(selectedStep.value),
+    status: selectedStatus.value || undefined,
+    assignee: selectedAllOrUndefined(selectedAssignee.value),
   }
 })
 
 const filtersActive = computed(() =>
   searchQuery.value.trim().length > 0
-  || selectedJob.value !== ''
-  || selectedPath.value !== ''
-  || selectedStep.value !== ''
+  || selectedJob.value !== SELECT_ALL
+  || selectedPath.value !== SELECT_ALL
+  || selectedStep.value !== SELECT_ALL
   || selectedStatus.value !== 'all'
-  || selectedAssignee.value !== '',
+  || selectedAssignee.value !== SELECT_ALL,
 )
 
 // Sort indicator helper
@@ -85,7 +87,9 @@ function sortIcon(col: string) {
   return sortDirection.value === 'asc' ? '↑' : '↓'
 }
 
-const sortableColumns: { key: string, label: string }[] = [
+type SortableKey = 'id' | 'jobName' | 'currentStepName' | 'status' | 'assignedTo' | 'createdAt'
+
+const sortableColumns: { key: SortableKey, label: string }[] = [
   { key: 'id', label: 'Part' },
   { key: 'jobName', label: 'Job' },
   { key: 'currentStepName', label: 'Step' },

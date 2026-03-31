@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ShopUser, JiraConnectionSettings, JiraFieldMapping, PageToggles } from '~/server/types/domain'
+import type { ShopUser, JiraConnectionSettings, JiraFieldMapping, PageToggles } from '~/types/domain'
 
 const { settings, loading, fetchSettings, updateSettings } = useSettings()
 const { users, fetchUsers } = useUsers()

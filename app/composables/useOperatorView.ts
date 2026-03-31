@@ -1,5 +1,5 @@
 import { ref, readonly } from 'vue'
-import type { OperatorStepView } from '~/server/types/computed'
+import type { OperatorStepView } from '~/types/computed'
 
 const data = ref<OperatorStepView | null>(null)
 const loading = ref(false)

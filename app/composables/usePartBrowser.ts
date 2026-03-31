@@ -1,5 +1,5 @@
 import { ref, computed, readonly } from 'vue'
-import type { EnrichedPart } from '~/server/types/computed'
+import type { EnrichedPart } from '~/types/computed'
 
 // ---- Filter types ----
 
@@ -50,14 +50,14 @@ export function filterParts(parts: EnrichedPart[], filters: PartBrowserFilters):
  */
 export function sortParts(
   parts: EnrichedPart[],
-  column: string,
+  column: keyof EnrichedPart,
   direction: 'asc' | 'desc',
 ): EnrichedPart[] {
   const sorted = [...parts]
   const dir = direction === 'asc' ? 1 : -1
   sorted.sort((a, b) => {
-    const aVal = String((a as any)[column] ?? '')
-    const bVal = String((b as any)[column] ?? '')
+    const aVal = String(a[column] ?? '')
+    const bVal = String(b[column] ?? '')
     return aVal.localeCompare(bVal) * dir
   })
   return sorted
@@ -71,7 +71,7 @@ export function usePartBrowser() {
   const error = ref<string | null>(null)
   const searchQuery = ref('')
   const filters = ref<PartBrowserFilters>({})
-  const sortColumn = ref<string>('id')
+  const sortColumn = ref<keyof EnrichedPart>('id')
   const sortDirection = ref<'asc' | 'desc'>('asc')
 
   const filteredParts = computed<EnrichedPart[]>(() => {
@@ -98,7 +98,7 @@ export function usePartBrowser() {
     }
   }
 
-  function setSort(column: string): void {
+  function setSort(column: keyof EnrichedPart): void {
     if (sortColumn.value === column) {
       sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
     } else {

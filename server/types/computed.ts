@@ -40,7 +40,7 @@ export interface StepDistribution {
 export interface BomSummary {
   bomId: string
   bomName: string
-  entries: BomEntrySummary[]
+  entries: readonly BomEntrySummary[]
 }
 
 export interface BomEntrySummary {
@@ -56,12 +56,12 @@ export interface BomEntrySummary {
 export interface OperatorStepView {
   stepName: string
   location?: string
-  currentParts: OperatorPartInfo[]
-  comingSoon: OperatorPartInfo[]
-  backlog: OperatorPartInfo[]
+  currentParts: readonly OperatorPartInfo[]
+  comingSoon: readonly OperatorPartInfo[]
+  backlog: readonly OperatorPartInfo[]
   vendorPartsCount: number
   /** All matching step IDs for this step name across jobs/paths */
-  stepIds: string[]
+  stepIds: readonly string[]
 }
 
 export interface OperatorPartInfo {
@@ -108,7 +108,7 @@ export interface WorkQueueJob {
   stepOrder: number
   stepLocation?: string
   totalSteps: number
-  partIds: string[]
+  partIds: readonly string[]
   partCount: number
   previousStepId?: string
   previousStepName?: string
@@ -150,7 +150,7 @@ export interface StepViewResponse {
 
 export interface AdvancementResult {
   serial: Part
-  bypassed: { stepId: string; stepName: string; classification: 'skipped' | 'deferred' }[]
+  bypassed: readonly { stepId: string; stepName: string; classification: 'skipped' | 'deferred' }[]
 }
 
 // ---- Part Step Status View (formerly SN Step Status View) ----

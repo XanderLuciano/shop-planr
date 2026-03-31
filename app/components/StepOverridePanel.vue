@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ProcessStep, PartStepOverride } from '~/server/types/domain'
+import type { ProcessStep, PartStepOverride } from '~/types/domain'
 
 const props = defineProps<{
   partIds: string[]
@@ -15,16 +15,17 @@ const { createStepOverride, reverseStepOverride, loading, error } = useLifecycle
 const { operatorId } = useOperatorIdentity()
 
 const selectedParts = ref<string[]>([])
-const selectedStepId = ref('')
+const selectedStepId = ref<string | SelectNone>(SELECT_NONE)
 const reason = ref('')
 const validationError = ref<string | null>(null)
 
-const stepOptions = computed(() =>
-  props.steps.map(s => ({
+const stepOptions = computed(() => [
+  { label: 'Select step...', value: SELECT_NONE, disabled: true },
+  ...props.steps.map(s => ({
     label: `${s.order + 1}. ${s.name}`,
     value: s.id,
   })),
-)
+])
 
 const activeOverrides = computed(() =>
   props.overrides.filter(o => o.active),
@@ -45,7 +46,7 @@ async function handleCreate() {
     validationError.value = 'Select at least one part'
     return
   }
-  if (!selectedStepId.value) {
+  if (!selectedStepId.value || selectedStepId.value === SELECT_NONE) {
     validationError.value = 'Select a step to override'
     return
   }
@@ -66,7 +67,7 @@ async function handleCreate() {
       userId: operatorId.value,
     })
     selectedParts.value = []
-    selectedStepId.value = ''
+    selectedStepId.value = SELECT_NONE
     reason.value = ''
     emit('updated')
   } catch {

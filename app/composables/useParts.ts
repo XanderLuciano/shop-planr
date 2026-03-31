@@ -1,5 +1,5 @@
-import type { Part } from '~/server/types/domain'
-import type { BatchCreatePartsInput } from '~/server/types/api'
+import type { Part } from '~/types/domain'
+import type { BatchCreatePartsInput } from '~/types/api'
 
 export function useParts() {
   async function batchCreateParts(input: BatchCreatePartsInput & { userId: string }): Promise<Part[]> {

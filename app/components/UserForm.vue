@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ShopUser } from '~/server/types/domain'
+import type { ShopUser } from '~/types/domain'
 
 const props = defineProps<{
   user?: ShopUser

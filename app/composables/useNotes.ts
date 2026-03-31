@@ -1,5 +1,5 @@
 import { ref, readonly } from 'vue'
-import type { StepNote } from '~/server/types/domain'
+import type { StepNote } from '~/types/domain'
 
 const notes = ref<StepNote[]>([])
 const loading = ref(false)

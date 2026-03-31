@@ -1,13 +1,13 @@
 import { ref, readonly } from 'vue'
-import type { Part, Job, Path } from '~/server/types/domain'
-import type { StepDistribution } from '~/server/types/computed'
+import type { Part, Job, Path } from '~/types/domain'
+import type { StepDistribution, EnrichedPart } from '~/types/computed'
 
 export function usePartDetail(partId: string) {
   const part = ref<Part | null>(null)
   const job = ref<Job | null>(null)
   const path = ref<(Path & { distribution: StepDistribution[] }) | null>(null)
   const distribution = ref<StepDistribution[]>([])
-  const siblingParts = ref<Part[]>([])
+  const siblingParts = ref<EnrichedPart[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -39,9 +39,9 @@ export function usePartDetail(partId: string) {
     if (!part.value) return
     try {
       // Fetch all enriched parts and filter by pathId client-side
-      const all = await $fetch<any[]>('/api/parts')
+      const all = await $fetch<EnrichedPart[]>('/api/parts')
       siblingParts.value = all.filter(
-        (s: any) => s.jobId === part.value!.jobId && s.pathId === part.value!.pathId,
+        s => s.jobId === part.value!.jobId && s.pathId === part.value!.pathId,
       )
     } catch (e: any) {
       // Non-critical — don't overwrite main error

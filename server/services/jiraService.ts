@@ -28,7 +28,7 @@ export interface JiraTicket {
   priority: string
   assignee: string
   reporter: string
-  labels: string[]
+  labels: readonly string[]
   partNumber: string | null
   goalQuantity: number | null
   epicLink: string | null
@@ -38,7 +38,7 @@ export interface JiraTicket {
 }
 
 export interface FetchTicketsResult {
-  tickets: JiraTicket[]
+  tickets: readonly JiraTicket[]
   error: string | null
   fromCache: boolean
 }

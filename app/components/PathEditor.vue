@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Path } from '~/server/types/domain'
+import type { Path } from '~/types/domain'
 
 const props = defineProps<{
   jobId: string

@@ -1,5 +1,5 @@
 import { ref, watch } from 'vue'
-import type { FilterState } from '~/server/types/domain'
+import type { FilterState } from '~/types/domain'
 
 const STORAGE_KEY = 'shop_erp_view_filters'
 
@@ -42,7 +42,7 @@ export function useViewFilters() {
    * Accepts items and an accessor map that extracts filterable fields from each item.
    */
   function applyFilters<T>(
-    items: T[],
+    items: readonly T[],
     accessors: {
       jobName?: (item: T) => string | undefined
       jiraTicketKey?: (item: T) => string | undefined

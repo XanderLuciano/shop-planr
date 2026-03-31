@@ -1,5 +1,5 @@
 import { ref, computed, readonly } from 'vue'
-import type { OperatorGroup, WorkQueueGroupedResponse } from '~/server/types/computed'
+import type { OperatorGroup, WorkQueueGroupedResponse } from '~/types/computed'
 
 const response = ref<WorkQueueGroupedResponse | null>(null)
 const loading = ref(false)
