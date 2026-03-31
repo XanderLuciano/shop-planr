@@ -9,7 +9,7 @@ body {
 }
 
 /* Prevent horizontal overflow — force flex/grid children to shrink */
-* {
+*:not(table):not(thead):not(tbody):not(tr):not(th):not(td) {
   min-width: 0;
 }
 
