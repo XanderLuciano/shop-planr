@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { StepNote } from '~/server/types/domain'
+import type { StepNote } from '~/types/domain'
 
 const props = defineProps<{
   partId: string

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Path } from '~/server/types/domain'
-import type { EnrichedPart } from '~/server/types/computed'
+import type { Path } from '~/types/domain'
+import type { EnrichedPart } from '~/types/computed'
 
 const props = defineProps<{
   jobId: string

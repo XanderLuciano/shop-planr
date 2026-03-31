@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
+import type { WorkQueueJob } from '~/types/computed'
+import type { StepNote } from '~/types/domain'
 
 const route = useRoute()
 const stepId = route.params.stepId as string
@@ -234,7 +236,7 @@ onMounted(async () => {
       <!-- First step (always shows PartCreationPanel, even with 0 parts) -->
       <PartCreationPanel
         v-else-if="job.stepOrder === 0"
-        :job="job"
+        :job="job as WorkQueueJob"
         :loading="advanceLoading"
         @advance="handleAdvance"
         @cancel="handleCancel"
@@ -265,9 +267,9 @@ onMounted(async () => {
       <!-- Non-first step with active parts: advancement panel -->
       <ProcessAdvancementPanel
         v-else
-        :job="job"
+        :job="job as WorkQueueJob"
         :loading="advanceLoading"
-        :notes="notes"
+        :notes="notes as StepNote[]"
         @advance="handleAdvance"
         @cancel="handleCancel"
       />

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ShopUser, JiraConnectionSettings, JiraFieldMapping, PageToggles } from '~/server/types/domain'
+import type { ShopUser, JiraConnectionSettings, JiraFieldMapping, PageToggles } from '~/types/domain'
 
 const { settings, loading, fetchSettings, updateSettings } = useSettings()
 const { users, fetchUsers } = useUsers()
@@ -325,7 +325,7 @@ onMounted(async () => {
         <span class="text-sm font-medium text-(--ui-text-highlighted)">Jira Field Mappings</span>
         <div class="p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50">
           <JiraFieldMappingEditor
-            :mappings="settings?.jiraFieldMappings ?? []"
+            :mappings="(settings?.jiraFieldMappings ?? []) as JiraFieldMapping[]"
             @save="onSaveMappings"
           />
         </div>

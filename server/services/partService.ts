@@ -49,6 +49,8 @@ export function createPartService(
         jobId: input.jobId,
         pathId: input.pathId,
         currentStepIndex: 0,
+        status: 'in_progress' as const,
+        forceCompleted: false,
         createdAt: now,
         updatedAt: now
       }))

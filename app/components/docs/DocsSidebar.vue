@@ -8,8 +8,8 @@ const props = defineProps<{
 }>()
 
 /** Sort items by their `order` field (falls back to 999 for missing values). */
-function sortByOrder<T extends { order?: number }>(items: T[]): T[] {
-  return [...items].sort((a, b) => (a.order ?? 999) - (b.order ?? 999))
+function sortByOrder(items: ContentNavigationItem[]): ContentNavigationItem[] {
+  return [...items].sort((a, b) => ((a as any).order ?? 999) - ((b as any).order ?? 999))
 }
 
 /** Sorted top-level categories. */
@@ -113,7 +113,7 @@ const isEmpty = computed(() => !props.navigation || props.navigation.length === 
               <span
                 v-if="child.method"
                 class="inline-flex shrink-0 items-center rounded px-1 py-px text-[10px] font-bold uppercase leading-tight tracking-wide"
-                :class="[getMethodColor(child.method).bg, getMethodColor(child.method).text]"
+                :class="[getMethodColor(child.method as string).bg, getMethodColor(child.method as string).text]"
               >
                 {{ child.method }}
               </span>

@@ -1,7 +1,7 @@
 import { ref, readonly } from 'vue'
-import type { Job } from '~/server/types/domain'
-import type { JobProgress } from '~/server/types/computed'
-import type { CreateJobInput, UpdateJobInput } from '~/server/types/api'
+import type { Job } from '~/types/domain'
+import type { JobProgress } from '~/types/computed'
+import type { CreateJobInput, UpdateJobInput } from '~/types/api'
 
 const jobs = ref<Job[]>([])
 const loading = ref(false)

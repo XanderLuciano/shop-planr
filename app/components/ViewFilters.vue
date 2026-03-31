@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { FilterState } from '~/server/types/domain'
+import type { FilterState } from '~/types/domain'
 
 const props = defineProps<{
   filters: FilterState

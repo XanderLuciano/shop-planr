@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { JiraConnectionSettings } from '~/server/types/domain'
+import type { JiraConnectionSettings } from '~/types/domain'
 
 const props = defineProps<{
   connection: JiraConnectionSettings

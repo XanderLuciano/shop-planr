@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PartStepStatusView } from '~/server/types/computed'
+import type { PartStepStatusView } from '~/types/computed'
 
 const props = defineProps<{
   partId: string

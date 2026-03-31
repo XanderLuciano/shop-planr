@@ -1,5 +1,5 @@
 import { ref, readonly } from 'vue'
-import type { ShopUser } from '~/server/types/domain'
+import type { ShopUser } from '~/types/domain'
 
 const STORAGE_KEY = 'shop_erp_operator_id'
 

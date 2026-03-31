@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { WorkQueueJob } from '~/server/types/computed'
+import type { WorkQueueJob } from '~/types/computed'
 
 defineProps<{
   jobs: WorkQueueJob[]

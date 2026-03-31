@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { WorkQueueJob, EnrichedPart, PartStepStatusView } from '~/server/types/computed'
-import type { StepNote, CertAttachment, PartStepOverride } from '~/server/types/domain'
+import type { WorkQueueJob, EnrichedPart, PartStepStatusView } from '~/types/computed'
+import type { StepNote, CertAttachment, PartStepOverride } from '~/types/domain'
 
 const route = useRoute()
 const partId = route.params.id as string
@@ -58,7 +58,7 @@ function toggleSiblingsSort(column: 'id' | 'currentStepName' | 'status' | 'creat
 }
 
 const sortedSiblings = computed(() => {
-  const list = [...siblingParts.value] as EnrichedPart[]
+  const list = [...siblingParts.value] as unknown as EnrichedPart[]
   const col = siblingsSortColumn.value
   const dir = siblingsSortDirection.value === 'asc' ? 1 : -1
   return list.sort((a, b) => {
@@ -87,7 +87,7 @@ watch(activeTab, async (tab) => {
 const isScrapped = computed(() => part.value?.status === 'scrapped')
 const isCompleted = computed(() => part.value?.status === 'completed' || part.value?.currentStepIndex === -1)
 const isForceCompleted = computed(() => part.value?.forceCompleted === true)
-const isInProgress = computed(() => part.value?.status === 'in_progress' || part.value?.status === 'in-progress' || (!isScrapped.value && !isCompleted.value && part.value?.currentStepIndex !== undefined && part.value.currentStepIndex >= 0))
+const isInProgress = computed(() => part.value?.status === 'in_progress' || (!isScrapped.value && !isCompleted.value && part.value?.currentStepIndex !== undefined && part.value.currentStepIndex >= 0))
 
 const currentStep = computed(() => {
   if (!path.value || !part.value || part.value.currentStepIndex < 0) return null

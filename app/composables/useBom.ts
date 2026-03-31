@@ -1,7 +1,7 @@
 import { ref, readonly } from 'vue'
-import type { BOM } from '~/server/types/domain'
-import type { BomSummary } from '~/server/types/computed'
-import type { CreateBomInput } from '~/server/types/api'
+import type { BOM } from '~/types/domain'
+import type { BomSummary } from '~/types/computed'
+import type { CreateBomInput } from '~/types/api'
 
 const boms = ref<BOM[]>([])
 const loading = ref(false)

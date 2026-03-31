@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Job } from '~/server/types/domain'
+import type { Job } from '~/types/domain'
 
 const props = defineProps<{
   job?: Job

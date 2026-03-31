@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ProcessStep } from '~/server/types/domain'
+import type { ProcessStep } from '~/types/domain'
 
 const props = defineProps<{
   partId: string

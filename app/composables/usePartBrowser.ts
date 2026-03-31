@@ -1,5 +1,5 @@
 import { ref, computed, readonly } from 'vue'
-import type { EnrichedPart } from '~/server/types/computed'
+import type { EnrichedPart } from '~/types/computed'
 
 // ---- Filter types ----
 

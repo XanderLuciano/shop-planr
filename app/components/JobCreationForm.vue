@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick } from 'vue'
-import type { Job, Path, TemplateRoute } from '~/server/types/domain'
+import type { Job, Path, TemplateRoute } from '~/types/domain'
 
 const props = defineProps<{
   mode: 'create' | 'edit'
@@ -54,7 +54,7 @@ onMounted(() => {
 function onTemplateSelect(pathClientId: string) {
   const templateId = templateSelections.value[pathClientId]
   if (!templateId) return
-  const template = templates.value.find((t: TemplateRoute) => t.id === templateId)
+  const template = (templates.value as TemplateRoute[]).find(t => t.id === templateId)
   if (template) {
     applyTemplate(pathClientId, template)
   }
@@ -215,7 +215,7 @@ function handleCancel() {
         <div v-if="templates.length > 0" class="flex items-center gap-2">
           <USelect
             :model-value="templateSelections[path._clientId] || '_placeholder'"
-            :items="[{ label: 'Apply Template...', value: '_placeholder', disabled: true }, ...templates.map((t: TemplateRoute) => ({ label: `${t.name} (${t.steps.length} steps)`, value: t.id }))]"
+            :items="[{ label: 'Apply Template...', value: '_placeholder', disabled: true }, ...(templates as TemplateRoute[]).map(t => ({ label: `${t.name} (${t.steps.length} steps)`, value: t.id }))]"
             size="sm"
             class="w-64"
             @update:model-value="(v: string) => { if (v !== '_placeholder') { templateSelections[path._clientId] = v; onTemplateSelect(path._clientId) } }"

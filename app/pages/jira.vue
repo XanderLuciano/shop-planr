@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { JiraTicket } from '~/server/services/jiraService'
-import type { TemplateRoute } from '~/server/types/domain'
+import type { JiraTicket } from '~/types/jira'
+import type { TemplateRoute } from '~/types/domain'
+import type { TableColumn } from '@nuxt/ui'
 
 const { tickets, loading, error, fromCache, fetchTickets, linkTicket, refreshTickets } = useJira()
 const { settings } = useSettings()
@@ -34,15 +35,15 @@ const unlinkedTickets = computed(() =>
 )
 
 // Table columns
-const columns = [
-  { key: 'key', label: 'Key' },
-  { key: 'summary', label: 'Summary' },
-  { key: 'status', label: 'Status' },
-  { key: 'priority', label: 'Priority' },
-  { key: 'assignee', label: 'Assignee' },
-  { key: 'partNumber', label: 'Part Number' },
-  { key: 'goalQuantity', label: 'Qty' },
-  { key: 'actions', label: '' }
+const columns: TableColumn<JiraTicket>[] = [
+  { accessorKey: 'key', header: 'Key' },
+  { accessorKey: 'summary', header: 'Summary' },
+  { accessorKey: 'status', header: 'Status' },
+  { accessorKey: 'priority', header: 'Priority' },
+  { accessorKey: 'assignee', header: 'Assignee' },
+  { accessorKey: 'partNumber', header: 'Part Number' },
+  { accessorKey: 'goalQuantity', header: 'Qty' },
+  { accessorKey: 'actions', header: '' },
 ]
 
 function openLinkModal(ticket: JiraTicket) {
@@ -162,7 +163,7 @@ onMounted(async () => {
           {{ unlinkedTickets.length }} open ticket{{ unlinkedTickets.length !== 1 ? 's' : '' }} not yet linked to a job
         </p>
         <UTable
-          :data="unlinkedTickets"
+          :data="unlinkedTickets as JiraTicket[]"
           :columns="columns"
           class="text-xs"
         >

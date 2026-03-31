@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BOM, Job } from '~/server/types/domain'
+import type { BOM, Job } from '~/types/domain'
 
 interface EntryDraft {
   partType: string

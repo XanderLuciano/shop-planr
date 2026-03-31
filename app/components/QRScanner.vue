@@ -10,7 +10,7 @@ const errorMessage = ref<string | null>(null)
 const scanning = ref(false)
 let animationFrameId: number | null = null
 
-const hasBarcodeDetector = typeof globalThis.BarcodeDetector !== 'undefined'
+const hasBarcodeDetector = typeof (globalThis as any).BarcodeDetector !== 'undefined'
 
 async function startCamera() {
   errorMessage.value = null
@@ -44,7 +44,7 @@ async function startCamera() {
 function detectLoop() {
   if (!scanning.value || !videoRef.value) return
 
-  const detector = new globalThis.BarcodeDetector({ formats: ['qr_code', 'code_128', 'code_39', 'ean_13', 'ean_8'] })
+  const detector = new (globalThis as any).BarcodeDetector({ formats: ['qr_code', 'code_128', 'code_39', 'ean_13', 'ean_8'] })
 
   async function tick() {
     if (!scanning.value || !videoRef.value) return

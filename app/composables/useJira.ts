@@ -1,7 +1,7 @@
 import { ref, readonly } from 'vue'
-import type { JiraTicket, FetchTicketsResult, JiraPushResult } from '~/server/services/jiraService'
-import type { LinkJiraInput } from '~/server/types/api'
-import type { Job, Path } from '~/server/types/domain'
+import type { JiraTicket, FetchTicketsResult, JiraPushResult } from '~/types/jira'
+import type { LinkJiraInput } from '~/types/api'
+import type { Job, Path } from '~/types/domain'
 
 const tickets = ref<JiraTicket[]>([])
 const loading = ref(false)

@@ -1,6 +1,6 @@
-import type { Path } from '~/server/types/domain'
-import type { StepDistribution } from '~/server/types/computed'
-import type { CreatePathInput, UpdatePathInput } from '~/server/types/api'
+import type { Path } from '~/types/domain'
+import type { StepDistribution } from '~/types/computed'
+import type { CreatePathInput, UpdatePathInput } from '~/types/api'
 
 export function usePaths() {
   async function createPath(input: CreatePathInput): Promise<Path> {

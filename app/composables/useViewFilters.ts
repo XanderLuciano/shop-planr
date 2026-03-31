@@ -1,5 +1,5 @@
 import { ref, watch } from 'vue'
-import type { FilterState } from '~/server/types/domain'
+import type { FilterState } from '~/types/domain'
 
 const STORAGE_KEY = 'shop_erp_view_filters'
 

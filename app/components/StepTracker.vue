@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Path, ShopUser } from '~/server/types/domain'
-import type { StepDistribution } from '~/server/types/computed'
+import type { Path, ShopUser } from '~/types/domain'
+import type { StepDistribution } from '~/types/computed'
 
 const props = withDefaults(defineProps<{
   path: Path

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AuditEntry, AuditAction } from '~/server/types/domain'
+import type { AuditEntry, AuditAction } from '~/types/domain'
 
 defineProps<{
   entries: AuditEntry[]
@@ -10,7 +10,16 @@ const actionConfig: Record<AuditAction, { label: string, color: string, icon: st
   part_created: { label: 'Part Created', color: 'text-green-500', icon: 'i-lucide-plus-circle' },
   part_advanced: { label: 'Advanced', color: 'text-violet-500', icon: 'i-lucide-arrow-right' },
   part_completed: { label: 'Completed', color: 'text-emerald-500', icon: 'i-lucide-check-circle' },
-  note_created: { label: 'Note', color: 'text-amber-500', icon: 'i-lucide-message-square' }
+  note_created: { label: 'Note', color: 'text-amber-500', icon: 'i-lucide-message-square' },
+  part_scrapped: { label: 'Scrapped', color: 'text-red-500', icon: 'i-lucide-trash-2' },
+  part_force_completed: { label: 'Force Completed', color: 'text-amber-500', icon: 'i-lucide-shield-check' },
+  step_override_created: { label: 'Override Created', color: 'text-blue-400', icon: 'i-lucide-shuffle' },
+  step_override_reversed: { label: 'Override Reversed', color: 'text-slate-400', icon: 'i-lucide-undo-2' },
+  step_skipped: { label: 'Step Skipped', color: 'text-slate-400', icon: 'i-lucide-skip-forward' },
+  step_deferred: { label: 'Step Deferred', color: 'text-orange-400', icon: 'i-lucide-clock' },
+  deferred_step_completed: { label: 'Deferred Completed', color: 'text-green-400', icon: 'i-lucide-check-circle-2' },
+  step_waived: { label: 'Step Waived', color: 'text-purple-400', icon: 'i-lucide-circle-slash' },
+  bom_edited: { label: 'BOM Edited', color: 'text-cyan-500', icon: 'i-lucide-table' },
 }
 
 function formatTime(ts: string): string {

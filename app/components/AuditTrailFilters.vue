@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AuditAction } from '~/server/types/domain'
+import type { AuditAction } from '~/types/domain'
 import type { AuditFilters } from '~/composables/useAudit'
 
 const emit = defineEmits<{

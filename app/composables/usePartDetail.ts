@@ -1,6 +1,6 @@
 import { ref, readonly } from 'vue'
-import type { Part, Job, Path } from '~/server/types/domain'
-import type { StepDistribution } from '~/server/types/computed'
+import type { Part, Job, Path } from '~/types/domain'
+import type { StepDistribution } from '~/types/computed'
 
 export function usePartDetail(partId: string) {
   const part = ref<Part | null>(null)

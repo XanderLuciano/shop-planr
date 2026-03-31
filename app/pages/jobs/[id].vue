@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { Job, Path, TemplateRoute, ShopUser, StepNote, ProcessStep } from '~/server/types/domain'
-import type { JobProgress, StepDistribution } from '~/server/types/computed'
+import type { Job, Path, TemplateRoute, ShopUser, StepNote, ProcessStep } from '~/types/domain'
+import type { JobProgress, StepDistribution } from '~/types/computed'
 
 const route = useRoute()
 const jobId = route.params.id as string
@@ -528,7 +528,7 @@ onMounted(() => {
               >
                 <UIcon name="i-lucide-message-square" class="size-3" />
                 Notes
-                <UBadge v-if="pathNotes[p.id]?.length" size="xs" variant="subtle" color="warning">{{ pathNotes[p.id].length }}</UBadge>
+                <UBadge v-if="pathNotes[p.id]?.length" size="xs" variant="subtle" color="warning">{{ pathNotes[p.id]!.length }}</UBadge>
                 <UIcon :name="showNotesForPath === p.id ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="size-3" />
               </button>
 

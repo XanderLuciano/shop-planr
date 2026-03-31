@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PageToggles } from '~/server/types/domain'
+import type { PageToggles } from '~/types/domain'
 
 interface PageItem {
   key: keyof PageToggles | null

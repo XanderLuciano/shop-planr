@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { nanoid } from 'nanoid'
-import type { Job, Path, TemplateRoute } from '~/server/types/domain'
+import type { Job, Path, TemplateRoute } from '~/types/domain'
 
 // ---- Exported Interfaces ----
 
@@ -65,8 +65,8 @@ function hasPathChanges(draft: PathDraft, original: Path): boolean {
   if (draft.advancementMode !== original.advancementMode) return true
   if (draft.steps.length !== original.steps.length) return true
   for (let i = 0; i < draft.steps.length; i++) {
-    const s = draft.steps[i]
-    const o = original.steps[i]
+    const s = draft.steps[i]!
+    const o = original.steps[i]!
     if (s.name.trim() !== o.name) return true
     if ((s.location.trim() || '') !== (o.location || '')) return true
     if (s.optional !== o.optional) return true
@@ -162,8 +162,8 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
     if (idx === -1) return
     const targetIdx = idx + direction
     if (targetIdx < 0 || targetIdx >= path.steps.length) return
-    const temp = path.steps[idx]
-    path.steps[idx] = path.steps[targetIdx]
+    const temp = path.steps[idx]!
+    path.steps[idx] = path.steps[targetIdx]!
     path.steps[targetIdx] = temp
   }
 

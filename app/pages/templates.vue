@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TemplateRoute } from '~/server/types/domain'
+import type { TemplateRoute } from '~/types/domain'
 
 const { templates, loading, fetchTemplates, createTemplate, deleteTemplate } = useTemplates()
 
@@ -182,7 +182,7 @@ onMounted(() => {
           <div class="min-w-0 flex-1">
             <div class="text-sm font-medium text-(--ui-text-highlighted)">{{ t.name }}</div>
             <div class="text-xs text-(--ui-text-muted) mt-0.5 truncate">
-              {{ t.steps.length }} steps · {{ stepPreview(t) }}
+              {{ t.steps.length }} steps · {{ stepPreview(t as TemplateRoute) }}
             </div>
           </div>
           <div class="flex items-center gap-1 shrink-0">
@@ -192,14 +192,14 @@ onMounted(() => {
             />
             <UButton
               icon="i-lucide-trash-2" size="xs" variant="ghost" color="error"
-              :loading="deleting === t.id" @click="onDelete(t)"
+              :loading="deleting === t.id" @click="onDelete(t as TemplateRoute)"
             />
           </div>
         </div>
 
         <!-- Edit form -->
         <div v-if="editingTemplateId === t.id" class="px-3 pb-3 border-t border-(--ui-border)">
-          <TemplateEditor :template="t" @saved="onEditSaved" @cancel="editingTemplateId = null" />
+          <TemplateEditor :template="t as TemplateRoute" @saved="onEditSaved" @cancel="editingTemplateId = null" />
         </div>
       </div>
     </div>

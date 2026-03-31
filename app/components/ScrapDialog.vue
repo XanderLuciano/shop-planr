@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ScrapReason } from '~/server/types/domain'
+import type { ScrapReason } from '~/types/domain'
 
 const props = defineProps<{
   partId: string
@@ -22,7 +22,7 @@ const scrapReasons: { label: string, value: ScrapReason }[] = [
   { label: 'Other', value: 'other' },
 ]
 
-const selectedReason = ref<ScrapReason | ''>('')
+const selectedReason = ref<ScrapReason | undefined>(undefined)
 const explanation = ref('')
 const validationError = ref<string | null>(null)
 
@@ -32,7 +32,7 @@ const isOpen = computed({
 })
 
 function resetForm() {
-  selectedReason.value = ''
+  selectedReason.value = undefined
   explanation.value = ''
   validationError.value = null
 }

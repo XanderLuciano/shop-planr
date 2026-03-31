@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ProcessStep, PartStepOverride } from '~/server/types/domain'
+import type { ProcessStep, PartStepOverride } from '~/types/domain'
 
 const props = defineProps<{
   partIds: string[]

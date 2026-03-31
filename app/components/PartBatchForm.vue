@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Certificate, Part } from '~/server/types/domain'
+import type { Certificate, Part } from '~/types/domain'
 
 const props = defineProps<{
   jobId: string

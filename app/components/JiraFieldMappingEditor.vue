@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { JiraFieldMapping } from '~/server/types/domain'
+import type { JiraFieldMapping } from '~/types/domain'
 
 const props = defineProps<{
   mappings: JiraFieldMapping[]

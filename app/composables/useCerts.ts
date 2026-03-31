@@ -1,6 +1,6 @@
 import { ref, readonly } from 'vue'
-import type { Certificate } from '~/server/types/domain'
-import type { CreateCertInput, BatchAttachCertInput } from '~/server/types/api'
+import type { Certificate } from '~/types/domain'
+import type { CreateCertInput, BatchAttachCertInput } from '~/types/api'
 
 const certs = ref<Certificate[]>([])
 const loading = ref(false)

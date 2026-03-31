@@ -1,5 +1,5 @@
 import { ref, readonly } from 'vue'
-import type { AuditEntry, AuditAction } from '~/server/types/domain'
+import type { AuditEntry, AuditAction } from '~/types/domain'
 
 const entries = ref<AuditEntry[]>([])
 const loading = ref(false)

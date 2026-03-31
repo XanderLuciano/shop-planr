@@ -1,6 +1,6 @@
 import { ref, readonly } from 'vue'
-import type { Part, PartStepStatus, PartStepOverride } from '~/server/types/domain'
-import type { AdvancementResult, PartStepStatusView } from '~/server/types/computed'
+import type { Part, PartStepStatus, PartStepOverride } from '~/types/domain'
+import type { AdvancementResult, PartStepStatusView } from '~/types/computed'
 
 export function useLifecycle() {
   const loading = ref(false)

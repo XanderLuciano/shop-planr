@@ -1,5 +1,5 @@
 import { ref, readonly } from 'vue'
-import type { ProcessLibraryEntry, LocationLibraryEntry } from '~/server/types/domain'
+import type { ProcessLibraryEntry, LocationLibraryEntry } from '~/types/domain'
 
 const processes = ref<ProcessLibraryEntry[]>([])
 const locations = ref<LocationLibraryEntry[]>([])

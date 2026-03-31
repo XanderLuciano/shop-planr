@@ -17,7 +17,7 @@ export function useDocsNavigation() {
   const currentCategory = computed<string | null>(() => {
     // Extract category from route path: /api-docs/jobs/create → "jobs"
     const segments = route.path.replace(/^\/api-docs\/?/, '').split('/').filter(Boolean)
-    return segments.length > 0 ? segments[0] : null
+    return segments.length > 0 ? (segments[0] ?? null) : null
   })
 
   function isActive(path: string): boolean {

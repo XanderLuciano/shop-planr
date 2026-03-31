@@ -19,7 +19,9 @@ export function createTemplateService(repos: {
       const steps: TemplateStep[] = input.steps.map((s, index) => ({
         name: s.name,
         order: index,
-        location: s.location
+        location: s.location,
+        optional: false,
+        dependencyType: 'preferred' as const,
       }))
 
       return repos.templates.create({
@@ -71,6 +73,7 @@ export function createTemplateService(repos: {
         name: input.pathName ?? template.name,
         goalQuantity: input.goalQuantity,
         steps,
+        advancementMode: 'strict',
         createdAt: now,
         updatedAt: now
       }
