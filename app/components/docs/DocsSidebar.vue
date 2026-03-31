@@ -9,7 +9,7 @@ const props = defineProps<{
 
 /** Sort items by their `order` field (falls back to 999 for missing values). */
 function sortByOrder(items: ContentNavigationItem[]): ContentNavigationItem[] {
-  return [...items].sort((a, b) => ((a as any).order ?? 999) - ((b as any).order ?? 999))
+  return [...items].sort((a, b) => ((a as { order?: number }).order ?? 999) - ((b as { order?: number }).order ?? 999))
 }
 
 /** Sorted top-level categories. */

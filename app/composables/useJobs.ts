@@ -1,5 +1,5 @@
 import { ref, readonly } from 'vue'
-import type { Job } from '~/types/domain'
+import type { Job, Path } from '~/types/domain'
 import type { JobProgress } from '~/types/computed'
 import type { CreateJobInput, UpdateJobInput } from '~/types/api'
 
@@ -39,7 +39,7 @@ export function useJobs() {
     return job
   }
 
-  async function getJob(id: string): Promise<Job & { progress: JobProgress }> {
+  async function getJob(id: string): Promise<Job & { paths: readonly Path[], progress: JobProgress }> {
     return await $fetch(`/api/jobs/${id}`)
   }
 

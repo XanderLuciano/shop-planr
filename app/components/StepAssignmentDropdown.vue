@@ -27,7 +27,7 @@ const toast = useToast()
 function filterDropdownOptions(users: ShopUser[], search: string): SelectMenuItem[] {
   const unassignedOption: SelectMenuItem = {
     label: 'Unassigned',
-    value: null as any,
+    value: '__unassigned__',
     icon: 'i-lucide-user-x',
   }
 
@@ -45,14 +45,14 @@ function filterDropdownOptions(users: ShopUser[], search: string): SelectMenuIte
 }
 
 // Internal state
-const selectedValue = ref<string | null>(props.currentAssignee ?? null)
-const previousValue = ref<string | null>(props.currentAssignee ?? null)
+const selectedValue = ref<string>(props.currentAssignee ?? '__unassigned__')
+const previousValue = ref<string>(props.currentAssignee ?? '__unassigned__')
 const assigning = ref(false)
 
 // Sync with prop changes from parent
 watch(() => props.currentAssignee, (val) => {
-  selectedValue.value = val ?? null
-  previousValue.value = val ?? null
+  selectedValue.value = val ?? '__unassigned__'
+  previousValue.value = val ?? '__unassigned__'
 })
 
 // Build items for USelectMenu
@@ -62,18 +62,18 @@ const menuItems = computed<SelectMenuItem[]>(() => {
 
 // Display label for current selection
 const displayLabel = computed(() => {
-  if (!selectedValue.value) return 'Unassigned'
+  if (!selectedValue.value || selectedValue.value === '__unassigned__') return 'Unassigned'
   const user = props.users.find(u => u.id === selectedValue.value)
   return user?.name ?? 'Unassigned'
 })
 
 async function handleSelection(value: string | null) {
-  const userId = value
+  const userId = value === '__unassigned__' ? null : value
   const oldValue = previousValue.value
 
   // Optimistic update
-  selectedValue.value = userId
-  previousValue.value = userId
+  selectedValue.value = value ?? '__unassigned__'
+  previousValue.value = value ?? '__unassigned__'
   assigning.value = true
 
   try {

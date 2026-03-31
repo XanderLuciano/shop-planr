@@ -114,7 +114,7 @@ async function onStepAssigned(_stepId: string, _userId: string | null) {
   await loadAllDistributions()
   try {
     const detail = await getJob(jobId)
-    paths.value = (detail as any).paths ?? []
+    paths.value = [...detail.paths]
   } catch {
     // Silently ignore
   }
@@ -126,7 +126,7 @@ async function loadJob() {
   try {
     const detail = await getJob(jobId)
     job.value = detail
-    paths.value = (detail as any).paths ?? []
+    paths.value = [...detail.paths]
     progress.value = detail.progress
     await loadAllDistributions()
   } catch (e: any) {

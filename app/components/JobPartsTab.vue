@@ -45,8 +45,8 @@ const filteredParts = computed(() => {
   const col = sortColumn.value
   const dir = sortDirection.value === 'asc' ? 1 : -1
   list.sort((a, b) => {
-    const aVal = String((a as any)[col] ?? '')
-    const bVal = String((b as any)[col] ?? '')
+    const aVal = String(a[col] ?? '')
+    const bVal = String(b[col] ?? '')
     return aVal.localeCompare(bVal) * dir
   })
   return list

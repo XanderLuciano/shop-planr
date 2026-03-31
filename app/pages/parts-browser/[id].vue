@@ -141,10 +141,12 @@ function getStepStatusForStep(stepId: string): PartStepStatusView | undefined {
   return stepStatuses.value.find(s => s.stepId === stepId)
 }
 
-function stepStatusBadge(stepId: string) {
+type BadgeColor = 'success' | 'info' | 'neutral' | 'warning' | 'error' | 'primary' | 'secondary'
+
+function stepStatusBadge(stepId: string): { color: BadgeColor, label: string } | null {
   const ss = getStepStatusForStep(stepId)
   if (!ss) return null
-  const map: Record<string, { color: string, label: string }> = {
+  const map: Record<string, { color: BadgeColor, label: string }> = {
     completed: { color: 'success', label: 'Completed' },
     in_progress: { color: 'info', label: 'In Progress' },
     pending: { color: 'neutral', label: 'Pending' },
@@ -285,7 +287,7 @@ onMounted(async () => {
           </UBadge>
         </div>
         <div class="text-xs text-(--ui-text-muted)">
-          {{ (job as any).name }} · {{ path.name }}
+          {{ job?.name }} · {{ path.name }}
         </div>
       </div>
 
@@ -367,8 +369,8 @@ onMounted(async () => {
                 <div v-if="step.location" class="text-xs text-(--ui-text-muted)">📍 {{ step.location }}</div>
                 <!-- Step status badge -->
                 <div v-if="stepStatusBadge(step.id)" class="mt-0.5">
-                  <UBadge :color="(stepStatusBadge(step.id) as any).color" variant="subtle" size="xs">
-                    {{ (stepStatusBadge(step.id) as any).label }}
+                  <UBadge :color="stepStatusBadge(step.id)!.color" variant="subtle" size="xs">
+                    {{ stepStatusBadge(step.id)!.label }}
                   </UBadge>
                 </div>
               </div>

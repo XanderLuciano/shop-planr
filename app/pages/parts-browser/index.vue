@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import type { PartBrowserFilters } from '~/composables/usePartBrowser'
+import type { EnrichedPart } from '~/types/computed'
+
 const {
   parts,
   loading,
@@ -56,7 +59,7 @@ const assigneeOptions = computed(() => {
 const selectedJob = ref('__all__')
 const selectedPath = ref('__all__')
 const selectedStep = ref('__all__')
-const selectedStatus = ref('all')
+const selectedStatus = ref<PartBrowserFilters['status'] | undefined>('all')
 const selectedAssignee = ref('__all__')
 
 // Sync filter refs to composable filters
@@ -65,7 +68,7 @@ watch([selectedJob, selectedPath, selectedStep, selectedStatus, selectedAssignee
     jobName: selectedJob.value !== '__all__' ? selectedJob.value : undefined,
     pathName: selectedPath.value !== '__all__' ? selectedPath.value : undefined,
     stepName: selectedStep.value !== '__all__' ? selectedStep.value : undefined,
-    status: (selectedStatus.value as any) || undefined,
+    status: selectedStatus.value || undefined,
     assignee: selectedAssignee.value !== '__all__' ? selectedAssignee.value : undefined,
   }
 })
@@ -85,7 +88,9 @@ function sortIcon(col: string) {
   return sortDirection.value === 'asc' ? '↑' : '↓'
 }
 
-const sortableColumns: { key: string, label: string }[] = [
+type SortableKey = 'id' | 'jobName' | 'currentStepName' | 'status' | 'assignedTo' | 'createdAt'
+
+const sortableColumns: { key: SortableKey, label: string }[] = [
   { key: 'id', label: 'Part' },
   { key: 'jobName', label: 'Job' },
   { key: 'currentStepName', label: 'Step' },
