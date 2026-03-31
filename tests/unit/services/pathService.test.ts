@@ -307,13 +307,13 @@ describe('PathService', () => {
 
       // 2 parts at step 0, 1 part at step 1, 1 part at step 2, 3 completed
       const parts: Part[] = [
-        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' },
-        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' },
-        { id: 'p3', jobId: 'job_1', pathId: path.id, currentStepIndex: 1, createdAt: '', updatedAt: '' },
-        { id: 'p4', jobId: 'job_1', pathId: path.id, currentStepIndex: 2, createdAt: '', updatedAt: '' },
-        { id: 'p5', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, createdAt: '', updatedAt: '' },
-        { id: 'p6', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, createdAt: '', updatedAt: '' },
-        { id: 'p7', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, createdAt: '', updatedAt: '' }
+        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p3', jobId: 'job_1', pathId: path.id, currentStepIndex: 1, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p4', jobId: 'job_1', pathId: path.id, currentStepIndex: 2, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p5', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p6', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p7', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' }
       ]
       const partRepoWithData = createMockPartRepo(parts)
       const svc = createPathService({ paths: pathRepo, parts: partRepoWithData })

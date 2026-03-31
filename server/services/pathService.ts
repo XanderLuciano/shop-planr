@@ -169,22 +169,36 @@ export function createPathService(repos: {
       const allParts = repos.parts.listByPathId(pathId)
         .filter(p => p.status !== 'scrapped')
 
-      const distribution: StepDistribution[] = path.steps.map((step) => {
-        const partCount = allParts.filter(p => p.currentStepIndex === step.order).length
-        const completedCount = allParts.filter(p =>
-          p.currentStepIndex === -1 || p.currentStepIndex > step.order
-        ).length
-
-        return {
-          stepId: step.id,
-          stepName: step.name,
-          stepOrder: step.order,
-          location: step.location,
-          partCount,
-          completedCount,
-          isBottleneck: false
+      // Build histogram of parts per step index in a single pass
+      const stepCounts = new Map<number, number>()
+      let completedTotal = 0
+      for (const p of allParts) {
+        if (p.currentStepIndex === -1) {
+          completedTotal++
+        } else {
+          stepCounts.set(p.currentStepIndex, (stepCounts.get(p.currentStepIndex) ?? 0) + 1)
         }
-      })
+      }
+
+      // Compute suffix sum: for step N, completedCount = parts at steps > N + completed parts
+      // Walk steps in reverse to accumulate
+      const totalSteps = path.steps.length
+      const completedCounts = new Array<number>(totalSteps)
+      let suffixSum = completedTotal
+      for (let i = totalSteps - 1; i >= 0; i--) {
+        completedCounts[i] = suffixSum
+        suffixSum += stepCounts.get(path.steps[i]!.order) ?? 0
+      }
+
+      const distribution: StepDistribution[] = path.steps.map((step, i) => ({
+        stepId: step.id,
+        stepName: step.name,
+        stepOrder: step.order,
+        location: step.location,
+        partCount: stepCounts.get(step.order) ?? 0,
+        completedCount: completedCounts[i]!,
+        isBottleneck: false
+      }))
 
       // Determine bottleneck: step with highest partCount
       let maxCount = 0

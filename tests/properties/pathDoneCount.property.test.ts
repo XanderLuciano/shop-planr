@@ -49,6 +49,8 @@ describe('Path Done Count Properties', () => {
     advanceOps: { partIndex: number; times: number }[]
     scrapIndices: number[]
   }) {
+    // Clean up previous iteration's context to avoid leaking SQLite connections
+    ctx?.cleanup()
     ctx = createTestContext()
     const { jobService, pathService, partService, lifecycleService, repos } = ctx
 
@@ -87,7 +89,7 @@ describe('Path Done Count Properties', () => {
       if (scrappedSet.has(idx)) continue
       try {
         lifecycleService.scrapPart(parts[idx].id, {
-          reason: 'defective',
+          reason: 'process_defect',
           userId: 'user_test'
         })
         scrappedSet.add(idx)
@@ -144,10 +146,10 @@ describe('Path Done Count Properties', () => {
 
           // Get all non-scrapped parts for manual verification
           const allParts = repos.parts.listByPathId(path.id)
-            .filter((p: any) => p.status !== 'scrapped')
+            .filter(p => p.status !== 'scrapped')
 
           for (const entry of distribution) {
-            const expected = allParts.filter((p: any) =>
+            const expected = allParts.filter(p =>
               p.currentStepIndex === -1 || p.currentStepIndex > entry.stepOrder
             ).length
 
@@ -235,7 +237,7 @@ describe('Path Done Count Properties', () => {
           const sumPartCounts = distribution.reduce((sum, d) => sum + d.partCount, 0)
 
           const nonScrappedTotal = repos.parts.listByPathId(path.id)
-            .filter((p: any) => p.status !== 'scrapped').length
+            .filter(p => p.status !== 'scrapped').length
 
           expect(sumPartCounts + pathCompleted).toBe(nonScrappedTotal)
         }
