@@ -22,7 +22,8 @@ const scrapReasons: { label: string, value: ScrapReason }[] = [
   { label: 'Other', value: 'other' },
 ]
 
-const selectedReason = ref<ScrapReason | undefined>(undefined)
+const UNSELECTED = '_none' as const
+const selectedReason = ref<ScrapReason | typeof UNSELECTED>(UNSELECTED)
 const explanation = ref('')
 const validationError = ref<string | null>(null)
 
@@ -32,7 +33,7 @@ const isOpen = computed({
 })
 
 function resetForm() {
-  selectedReason.value = undefined
+  selectedReason.value = UNSELECTED
   explanation.value = ''
   validationError.value = null
 }
@@ -40,7 +41,7 @@ function resetForm() {
 async function handleConfirm() {
   validationError.value = null
 
-  if (!selectedReason.value) {
+  if (!selectedReason.value || selectedReason.value === UNSELECTED) {
     validationError.value = 'Please select a scrap reason'
     return
   }
