@@ -30,7 +30,18 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
     size="sm"
     :content="{ align: 'end' }"
   >
+    <!-- Mobile: icon-only, no label, no chevron -->
     <UButton
+      class="md:hidden"
+      size="sm"
+      :variant="selectedUser ? 'ghost' : 'soft'"
+      :color="selectedUser ? 'neutral' : 'warning'"
+      :icon="selectedUser ? 'i-lucide-user' : 'i-lucide-user-x'"
+      :aria-label="selectedUser?.name ?? 'Select User'"
+    />
+    <!-- Desktop: full label with trailing chevron -->
+    <UButton
+      class="hidden md:inline-flex"
       size="sm"
       :variant="selectedUser ? 'ghost' : 'soft'"
       :color="selectedUser ? 'neutral' : 'warning'"

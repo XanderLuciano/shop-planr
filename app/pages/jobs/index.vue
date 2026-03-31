@@ -183,6 +183,7 @@ onMounted(() => {
     >
       <JobViewToolbar
         v-if="!loading && filteredJobs.length"
+        class="hidden md:flex"
         :has-expanded-jobs="hasExpandedJobs"
         :has-expanded-paths="jobsWithExpandedPaths.size > 0"
         :job-count="filteredJobs.length"
@@ -212,7 +213,8 @@ onMounted(() => {
     </div>
 
     <UTable
-      v-else
+      v-if="!loading && filteredJobs.length"
+      class="hidden md:block"
       v-model:expanded="expanded"
       :data="filteredJobs"
       :columns="columns"
@@ -232,5 +234,15 @@ onMounted(() => {
         />
       </template>
     </UTable>
+
+    <div v-if="!loading && filteredJobs.length" class="md:hidden space-y-2">
+      <JobMobileCard
+        v-for="job in filteredJobs"
+        :key="job.id"
+        :job="job"
+        :progress="progressFor(job.id)"
+        @click="navigateTo(`/jobs/${encodeURIComponent(job.id)}`)"
+      />
+    </div>
   </div>
 </template>
