@@ -5,6 +5,7 @@ import type { Row, ExpandedState } from '@tanstack/vue-table'
 import type { Job, FilterState } from '~/server/types/domain'
 import type { JobProgress } from '~/server/types/computed'
 
+const { isMobile } = useMobileBreakpoint()
 const { jobs, loading, fetchJobs } = useJobs()
 const { filters, updateFilter, clearFilters, applyFilters } = useViewFilters()
 
@@ -182,7 +183,7 @@ onMounted(() => {
       @change="onFiltersChange"
     >
       <JobViewToolbar
-        v-if="!loading && filteredJobs.length"
+        v-if="!loading && filteredJobs.length && !isMobile"
         :has-expanded-jobs="hasExpandedJobs"
         :has-expanded-paths="jobsWithExpandedPaths.size > 0"
         :job-count="filteredJobs.length"
@@ -212,7 +213,7 @@ onMounted(() => {
     </div>
 
     <UTable
-      v-else
+      v-if="!loading && filteredJobs.length && !isMobile"
       v-model:expanded="expanded"
       :data="filteredJobs"
       :columns="columns"
@@ -232,5 +233,15 @@ onMounted(() => {
         />
       </template>
     </UTable>
+
+    <div v-if="!loading && filteredJobs.length && isMobile" class="space-y-2">
+      <JobMobileCard
+        v-for="job in filteredJobs"
+        :key="job.id"
+        :job="job"
+        :progress="progressFor(job.id)"
+        @click="navigateTo(`/jobs/${encodeURIComponent(job.id)}`)"
+      />
+    </div>
   </div>
 </template>

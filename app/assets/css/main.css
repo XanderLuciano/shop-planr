@@ -1,9 +1,16 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
-/* Data-dense defaults */
+/* Data-dense defaults + prevent long text overflow */
 body {
   @apply text-sm;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Prevent horizontal overflow — force flex/grid children to shrink */
+* {
+  min-width: 0;
 }
 
 :root {

@@ -112,7 +112,7 @@ onMounted(() => {
         size="sm"
         placeholder="Search by part ID..."
         icon="i-lucide-search"
-        class="w-56"
+        class="w-full md:w-56"
       />
       <select
         v-model="selectedJob"
@@ -163,8 +163,8 @@ onMounted(() => {
       <UButton size="xs" variant="ghost" icon="i-lucide-refresh-cw" label="Retry" @click="fetchParts" />
     </div>
 
-    <!-- Table -->
-    <div v-else class="border border-(--ui-border) rounded-md overflow-hidden">
+    <!-- Table — desktop -->
+    <div v-if="!loading && !error" class="hidden md:block border border-(--ui-border) rounded-md overflow-hidden">
       <table class="w-full text-sm">
         <thead>
           <tr class="bg-(--ui-bg-elevated)/50 text-xs text-(--ui-text-muted)">
@@ -208,6 +208,35 @@ onMounted(() => {
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- Cards — mobile -->
+    <div v-if="!loading && !error" class="md:hidden space-y-2">
+      <div v-if="filteredParts.length === 0" class="text-sm text-(--ui-text-muted) py-8 text-center">
+        No parts found.
+      </div>
+      <div
+        v-for="s in filteredParts"
+        :key="s.id"
+        class="p-3 rounded-lg border border-(--ui-border) hover:bg-(--ui-bg-elevated)/50 cursor-pointer space-y-1.5"
+        @click="navigateTo(`/parts-browser/${encodeURIComponent(s.id)}`)"
+      >
+        <div class="flex items-center justify-between">
+          <span class="font-mono text-sm font-medium text-(--ui-text-highlighted)">{{ s.id }}</span>
+          <UBadge
+            :color="s.status === 'completed' ? 'success' : 'warning'"
+            variant="subtle"
+            size="xs"
+          >
+            {{ s.status === 'completed' ? 'Completed' : 'In Progress' }}
+          </UBadge>
+        </div>
+        <div class="text-xs text-(--ui-text-muted)">{{ s.jobName }}</div>
+        <div class="flex items-center justify-between text-xs">
+          <span>{{ s.currentStepName }}</span>
+          <span class="text-(--ui-text-muted)">{{ s.assignedTo ?? 'Unassigned' }}</span>
+        </div>
+      </div>
     </div>
   </div>
 </template>

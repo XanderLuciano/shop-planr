@@ -84,7 +84,7 @@ function setInputRef(el: any) {
       :placeholder="props.placeholder"
       icon="i-lucide-scan-barcode"
       size="sm"
-      class="w-56"
+      class="w-full md:w-56"
       @input="handleInput"
       @keydown="handleKeydown"
     />

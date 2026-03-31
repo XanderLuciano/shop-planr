@@ -76,10 +76,18 @@ function onScanned(result: ScanResult) {
 
     <UDashboardPanel>
       <template #header>
-        <div class="flex items-center justify-end w-full gap-3 px-4 py-1.5">
-          <BarcodeInput @scanned="onScanned" />
-          <UserSelector />
-        </div>
+        <UDashboardNavbar>
+          <template #left>
+            <div class="flex-1 min-w-0">
+              <BarcodeInput @scanned="onScanned" />
+            </div>
+          </template>
+
+          <template #right>
+            <UColorModeButton size="xs" />
+            <UserSelector />
+          </template>
+        </UDashboardNavbar>
       </template>
 
       <template #body>

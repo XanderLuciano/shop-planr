@@ -133,7 +133,7 @@ onMounted(() => {
           <UButton icon="i-lucide-plus" size="xs" variant="ghost" label="Add Step" @click="addStep" />
         </div>
         <div class="space-y-2">
-          <div v-for="(step, i) in steps" :key="i" class="flex items-center gap-2 border border-(--ui-border) rounded-md p-2">
+          <div v-for="(step, i) in steps" :key="i" class="flex flex-wrap items-center gap-2 border border-(--ui-border) rounded-md p-2">
             <span class="text-xs text-(--ui-text-muted) w-5 shrink-0 text-right">{{ i + 1 }}.</span>
             <ProcessLocationDropdown v-model="step.name" type="process" class="flex-1" />
             <ProcessLocationDropdown v-model="step.location" type="location" class="flex-1" />

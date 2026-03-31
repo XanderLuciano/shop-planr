@@ -128,7 +128,7 @@ onMounted(() => {
           value-key="value"
           label-key="label"
           size="xs"
-          class="w-32"
+          class="w-full md:w-32"
         />
       </div>
       <div>
@@ -139,12 +139,12 @@ onMounted(() => {
           value-key="value"
           label-key="label"
           size="xs"
-          class="w-36"
+          class="w-full md:w-36"
         />
       </div>
       <div>
         <label class="text-xs font-medium text-(--ui-text-muted) block mb-0.5">Step</label>
-        <UInput v-model="filterStep" placeholder="Filter step..." size="xs" class="w-32" />
+        <UInput v-model="filterStep" placeholder="Filter step..." size="xs" class="w-full md:w-32" />
       </div>
       <span class="text-xs text-(--ui-text-muted)">{{ filteredParts.length }} of {{ parts.length }} parts</span>
     </div>
@@ -160,8 +160,8 @@ onMounted(() => {
       No parts created yet.
     </div>
 
-    <!-- Table -->
-    <div v-else class="border border-(--ui-border) rounded-md overflow-x-auto">
+    <!-- Table — desktop -->
+    <div v-if="!loading && parts.length" class="hidden md:block border border-(--ui-border) rounded-md overflow-x-auto">
       <table class="w-full text-sm">
         <thead>
           <tr class="bg-(--ui-bg-elevated)/50 text-xs text-(--ui-text-muted)">
@@ -211,6 +211,38 @@ onMounted(() => {
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- Cards — mobile -->
+    <div v-if="!loading && parts.length" class="md:hidden space-y-2">
+      <div
+        v-for="(s, idx) in filteredParts"
+        :key="s.id"
+        class="p-3 rounded-lg border border-(--ui-border) cursor-pointer space-y-1.5"
+        :class="s.status === 'scrapped' ? 'opacity-60' : 'hover:bg-(--ui-bg-elevated)/50'"
+        @click="navigateTo(`/parts-browser/${encodeURIComponent(s.id)}`)"
+      >
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <span class="font-mono text-sm font-medium text-(--ui-text-highlighted)" :class="s.status === 'scrapped' ? 'line-through' : ''">{{ s.id }}</span>
+            <BonusBadge :show="isBonus(idx)" />
+          </div>
+          <UBadge :color="statusColor(s.status)" variant="subtle" size="xs">
+            {{ statusLabel(s) }}
+          </UBadge>
+        </div>
+        <div class="flex items-center justify-between text-xs">
+          <span class="text-(--ui-text-muted)">{{ s.pathName }}</span>
+          <span>{{ s.currentStepName }}</span>
+        </div>
+        <div v-if="s.status === 'in-progress'" class="flex items-center gap-1 pt-0.5" @click.stop>
+          <UButton size="xs" variant="ghost" icon="i-lucide-arrow-right" label="Advance" @click="handleQuickAdvance(s.id)" />
+          <UButton size="xs" variant="ghost" color="error" icon="i-lucide-trash-2" label="Scrap" @click="openScrap(s.id)" />
+        </div>
+      </div>
+      <div v-if="filteredParts.length === 0" class="text-sm text-(--ui-text-muted) py-6 text-center">
+        No parts match filters.
+      </div>
     </div>
 
     <!-- Scrap dialog -->
