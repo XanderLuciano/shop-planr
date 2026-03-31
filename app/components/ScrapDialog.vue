@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { ScrapReason } from '~/types/domain'
 
+const NONE = '__none__' as const
+
 const props = defineProps<{
   partId: string
   modelValue: boolean
@@ -14,7 +16,8 @@ const emit = defineEmits<{
 const { scrapPart, loading, error } = useLifecycle()
 const { operatorId } = useOperatorIdentity()
 
-const scrapReasons: { label: string, value: ScrapReason }[] = [
+const scrapReasons: { label: string, value: ScrapReason | typeof NONE, disabled?: boolean }[] = [
+  { label: 'Select a reason...', value: NONE, disabled: true },
   { label: 'Out of tolerance', value: 'out_of_tolerance' },
   { label: 'Process defect', value: 'process_defect' },
   { label: 'Damaged', value: 'damaged' },
@@ -22,8 +25,7 @@ const scrapReasons: { label: string, value: ScrapReason }[] = [
   { label: 'Other', value: 'other' },
 ]
 
-const UNSELECTED = '_none' as const
-const selectedReason = ref<ScrapReason | typeof UNSELECTED>(UNSELECTED)
+const selectedReason = ref<ScrapReason | typeof NONE>(NONE)
 const explanation = ref('')
 const validationError = ref<string | null>(null)
 
@@ -33,15 +35,19 @@ const isOpen = computed({
 })
 
 function resetForm() {
-  selectedReason.value = UNSELECTED
+  selectedReason.value = NONE
   explanation.value = ''
   validationError.value = null
+}
+
+function isValidReason(val: string): val is ScrapReason {
+  return val !== NONE
 }
 
 async function handleConfirm() {
   validationError.value = null
 
-  if (!selectedReason.value || selectedReason.value === UNSELECTED) {
+  if (!isValidReason(selectedReason.value)) {
     validationError.value = 'Please select a scrap reason'
     return
   }

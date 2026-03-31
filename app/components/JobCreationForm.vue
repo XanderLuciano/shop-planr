@@ -58,7 +58,7 @@ function onTemplateSelect(pathClientId: string) {
   if (template) {
     applyTemplate(pathClientId, template)
   }
-  templateSelections.value[pathClientId] = '_placeholder'
+  templateSelections.value[pathClientId] = '__none__'
 }
 
 async function handleSubmit() {
@@ -214,11 +214,11 @@ function handleCancel() {
         <!-- Apply Template -->
         <div v-if="templates.length > 0" class="flex items-center gap-2">
           <USelect
-            :model-value="templateSelections[path._clientId] || '_placeholder'"
-            :items="[{ label: 'Apply Template...', value: '_placeholder', disabled: true }, ...(templates as TemplateRoute[]).map(t => ({ label: `${t.name} (${t.steps.length} steps)`, value: t.id }))]"
+            :model-value="templateSelections[path._clientId] || '__none__'"
+            :items="[{ label: 'Apply Template...', value: '__none__', disabled: true }, ...(templates as TemplateRoute[]).map(t => ({ label: `${t.name} (${t.steps.length} steps)`, value: t.id }))]"
             size="sm"
             class="w-64"
-            @update:model-value="(v: string) => { if (v !== '_placeholder') { templateSelections[path._clientId] = v; onTemplateSelect(path._clientId) } }"
+            @update:model-value="(v: string) => { if (v !== '__none__') { templateSelections[path._clientId] = v; onTemplateSelect(path._clientId) } }"
           />
         </div>
 

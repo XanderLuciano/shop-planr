@@ -14,7 +14,7 @@ const { batchCreateParts } = useParts()
 const { requireUser } = useUsers()
 
 const quantity = ref(1)
-const CERT_NONE = '_none' as const
+const CERT_NONE = '__none__' as const
 const selectedCertId = ref<string | typeof CERT_NONE>(CERT_NONE)
 const saving = ref(false)
 const error = ref('')

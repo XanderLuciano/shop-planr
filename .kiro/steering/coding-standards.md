@@ -10,7 +10,7 @@ description: "Coding standards for Shop Planr: import resolution, architecture l
 1. Fix root causes, not symptoms. Understand WHY before changing code.
 2. Never use `any`, strip types, or weaken type safety as a shortcut. Make types available properly.
 3. Verify fixes end-to-end: tests pass AND dev server runs clean.
-4. USelect (Reka UI SelectRoot) must NEVER be bound to a ref typed with `undefined` or `null`. Use a sentinel string like `'_none'` or `'_placeholder'` for the unselected state. Setting `v-model` to `undefined` causes runtime errors in Reka UI.
+4. USelect (Reka UI SelectRoot) must NEVER be bound to a ref typed with `undefined` or `null`. Use the sentinel string `'__none__'` for the unselected state, and include it as a disabled item in the items array so the value types align. Setting `v-model` to `undefined` causes runtime errors in Reka UI.
 
 ## Import Resolution (Nuxt 4)
 
