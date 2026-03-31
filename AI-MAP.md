@@ -101,7 +101,7 @@ tests/
 | Dev server | `npm run dev` | Nuxt dev with HMR |
 | Build | `npm run build` | Production build to `.output/` |
 | Preview | `npm run preview` | Preview production build locally |
-| Test | `npm run test` | `vitest run` — 857 tests, 148 files |
+| Test | `npm run test` | `vitest run` — 878 tests, 151 files |
 | Test watch | `npm run test:watch` | `vitest` in watch mode |
 | Lint | `npm run lint` | ESLint with Nuxt config |
 | Typecheck | `npm run typecheck` | `nuxt typecheck` |
@@ -215,7 +215,8 @@ Core entities and relationships:
 
 ## Known Quirks
 
-- In Nuxt 4, `~` resolves to `app/` not project root. Server code must use relative imports. See `.kiro/steering/coding-standards.md` for full rules.
+- In Nuxt 4, `~` resolves to `app/` not project root. Server code must use relative imports. App code imports shared types from `~/types/` (which maps to `app/types/`). See `.kiro/steering/coding-standards.md` for full rules.
+- `app/types/` is the shared types layer: `domain.ts`, `computed.ts`, `api.ts`, `jira.ts` re-export server types for app-layer consumption. App code MUST import from `~/types/` not `~/server/`.
 - `server/utils/` exports are auto-imported by Nitro — no explicit imports needed in API routes for `ValidationError`, `NotFoundError`, `getServices()`, `getRepositories()`, etc.
 - `app/composables/` and `app/utils/` exports are auto-imported by Nuxt — no explicit imports needed in Vue components.
 - Test files use vitest's `~` alias which points to project root (different from Nuxt runtime).
