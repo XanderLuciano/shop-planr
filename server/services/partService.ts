@@ -132,11 +132,27 @@ export function createPartService(
 
       // Update routing history: mark origin step as completed
       if (repos.partStepStatuses) {
-        repos.partStepStatuses.updateLatestByPartAndStep(partId, currentStep.id, {
-          status: 'completed',
-          completedAt: now,
-          updatedAt: now,
-        })
+        const existing = repos.partStepStatuses.getLatestByPartAndStep(partId, currentStep.id)
+        if (existing) {
+          repos.partStepStatuses.updateLatestByPartAndStep(partId, currentStep.id, {
+            status: 'completed',
+            completedAt: now,
+            updatedAt: now,
+          })
+        } else {
+          // Legacy data: no routing entry exists for this step — create one as completed
+          const nextSeq = repos.partStepStatuses.getNextSequenceNumber(partId)
+          repos.partStepStatuses.create({
+            id: generateId('pss'),
+            partId,
+            stepId: currentStep.id,
+            sequenceNumber: nextSeq,
+            status: 'completed',
+            enteredAt: now,
+            completedAt: now,
+            updatedAt: now,
+          })
+        }
       }
 
       if (!nextStep) {

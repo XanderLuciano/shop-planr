@@ -263,11 +263,26 @@ export function createLifecycleService(repos: {
       }
 
       // 8. Update origin step (current) → completed
-      repos.partStepStatuses.updateLatestByPartAndStep(partId, currentStep.id, {
-        status: 'completed',
-        completedAt: now,
-        updatedAt: now,
-      })
+      const originEntry = repos.partStepStatuses.getLatestByPartAndStep(partId, currentStep.id)
+      if (originEntry) {
+        repos.partStepStatuses.updateLatestByPartAndStep(partId, currentStep.id, {
+          status: 'completed',
+          completedAt: now,
+          updatedAt: now,
+        })
+      } else {
+        // Legacy data: no routing entry exists — create one as completed
+        repos.partStepStatuses.create({
+          id: generateId('pss'),
+          partId,
+          stepId: currentStep.id,
+          sequenceNumber: nextSeq++,
+          status: 'completed',
+          enteredAt: now,
+          completedAt: now,
+          updatedAt: now,
+        })
+      }
 
       // Increment origin step's completedCount
       repos.paths.updateStep(currentStep.id, {
