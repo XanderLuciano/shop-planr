@@ -95,12 +95,15 @@ describe('Property 10: Edit diff correctly classifies path changes', () => {
         fc.array(originalPathArb, { minLength: 0, maxLength: 5 }),
         fc.array(newDraftArb, { minLength: 0, maxLength: 3 }),
         fc.boolean(),
-        (originals, newDrafts, keepSome) => {
+        fc.array(fc.boolean(), { minLength: 5, maxLength: 5 }),
+        (originals, newDrafts, keepSome, keepFlags) => {
           // Build drafts: some referencing originals (kept/modified), some new
           const keptDrafts: PathDraft[] = []
-          for (const orig of originals) {
-            // Randomly keep or drop each original
-            if (keepSome && Math.random() > 0.4) {
+          for (let idx = 0; idx < originals.length; idx++) {
+            const orig = originals[idx]!
+            // Use fast-check-generated boolean to decide whether to keep each original
+            const shouldKeep = keepSome && (keepFlags[idx % keepFlags.length] ?? false)
+            if (shouldKeep) {
               // Create a draft referencing this original with potentially different data
               keptDrafts.push({
                 _clientId: `client-${orig.id}`,

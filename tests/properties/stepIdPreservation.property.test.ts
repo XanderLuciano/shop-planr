@@ -42,16 +42,20 @@ describe('Property 1: Step ID Preservation (ID-based reconciliation)', () => {
   it('inputs with existing IDs are matched by ID and placed in toUpdate', () => {
     fc.assert(
       fc.property(
-        arbExistingSteps(8),
-        (existingSteps) => {
-          // Build inputs that reference all existing step IDs but in shuffled order
+        arbExistingSteps(8).chain(existingSteps => {
+          if (existingSteps.length === 0) return fc.constant({ existingSteps, shuffledIds: [] as string[] })
+          return fc.shuffledSubarray(
+            existingSteps.map(s => s.id),
+            { minLength: existingSteps.length, maxLength: existingSteps.length },
+          ).map(shuffledIds => ({ existingSteps, shuffledIds }))
+        }),
+        ({ existingSteps, shuffledIds }) => {
           if (existingSteps.length === 0) return
 
-          const shuffled = [...existingSteps].sort(() => Math.random() - 0.5)
-          const inputSteps: StepInput[] = shuffled.map(s => ({
-            id: s.id,
-            name: `Updated ${s.name}`,
-          }))
+          const inputSteps: StepInput[] = shuffledIds.map(id => {
+            const orig = existingSteps.find(s => s.id === id)!
+            return { id, name: `Updated ${orig.name}` }
+          })
 
           const result = reconcileSteps(existingSteps, inputSteps)
 
