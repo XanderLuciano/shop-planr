@@ -6,6 +6,7 @@ import type { Job, Path, TemplateRoute } from '~/types/domain'
 
 export interface StepDraft {
   _clientId: string
+  _existingStepId?: string
   name: string
   location: string
   optional: boolean
@@ -41,6 +42,7 @@ export interface ValidationResult {
 function createStepDraft(overrides?: Partial<Omit<StepDraft, '_clientId'>>): StepDraft {
   return {
     _clientId: nanoid(),
+    _existingStepId: overrides?._existingStepId,
     name: overrides?.name ?? '',
     location: overrides?.location ?? '',
     optional: overrides?.optional ?? false,
@@ -115,6 +117,7 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
             .slice()
             .sort((a, b) => a.order - b.order)
             .map(s => createStepDraft({
+              _existingStepId: s.id,
               name: s.name,
               location: s.location ?? '',
               optional: s.optional,
@@ -290,6 +293,7 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
         goalQuantity: draft.goalQuantity,
         advancementMode: draft.advancementMode,
         steps: draft.steps.map(s => ({
+          id: s._existingStepId,
           name: s.name.trim(),
           location: s.location.trim() || undefined,
           optional: s.optional,

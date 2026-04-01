@@ -163,8 +163,8 @@ export function createPathService(repos: {
           repos.paths.softDeleteStep(stepId, now)
         }
 
-        // The active steps are the updated + inserted ones
-        partial.steps = [...toUpdate, ...toInsert]
+        // The active steps are the updated + inserted ones, sorted by order
+        partial.steps = [...toUpdate, ...toInsert].sort((a, b) => a.order - b.order)
       }
 
       return repos.paths.update(id, partial)
