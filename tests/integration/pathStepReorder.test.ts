@@ -4,19 +4,21 @@
  * Verifies that reordering, adding, and removing steps on a path
  * with in-progress parts works correctly when step IDs are preserved.
  */
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { createTestContext, type TestContext } from './helpers'
 
 describe('Path step reorder with active parts', () => {
   let ctx: TestContext
 
+  beforeEach(() => {
+    ctx = createTestContext()
+  })
+
   afterEach(() => {
-    if (ctx) ctx.cleanup()
+    ctx.cleanup()
   })
 
   it('reordering steps succeeds when parts are in-progress', () => {
-    ctx = createTestContext()
-
     const job = ctx.jobService.createJob({ name: 'Job', goalQuantity: 10 })
     const path = ctx.pathService.createPath({
       jobId: job.id,
@@ -59,8 +61,6 @@ describe('Path step reorder with active parts', () => {
   })
 
   it('adding a new step succeeds when parts are in-progress', () => {
-    ctx = createTestContext()
-
     const job = ctx.jobService.createJob({ name: 'Job', goalQuantity: 10 })
     const path = ctx.pathService.createPath({
       jobId: job.id,
@@ -75,7 +75,7 @@ describe('Path step reorder with active parts', () => {
       'user1',
     )
 
-    // Add a new step between A and B
+    // Add a new step between A and B (existing steps keep their IDs)
     const stepsWithNew = [
       { id: path.steps[0]!.id, name: 'Step A' },
       { name: 'Step A.5' }, // new step, no id
@@ -90,9 +90,7 @@ describe('Path step reorder with active parts', () => {
     expect(updated.steps[2]!.name).toBe('Step B')
   })
 
-  it('removing a step with no active parts succeeds', () => {
-    ctx = createTestContext()
-
+  it('removing a step that has no parts at it succeeds even when other steps have active parts', () => {
     const job = ctx.jobService.createJob({ name: 'Job', goalQuantity: 10 })
     const path = ctx.pathService.createPath({
       jobId: job.id,
@@ -101,13 +99,13 @@ describe('Path step reorder with active parts', () => {
       steps: [{ name: 'Step A' }, { name: 'Step B' }, { name: 'Step C' }],
     })
 
-    // Create a part at step A (not at step C)
+    // Create a part at step A — step C has no parts
     ctx.partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
       'user1',
     )
 
-    // Remove step C (no parts there)
+    // Remove step C (no parts at that step, even though parts exist on the path)
     const stepsWithoutC = [
       { id: path.steps[0]!.id, name: 'Step A' },
       { id: path.steps[1]!.id, name: 'Step B' },
@@ -117,9 +115,7 @@ describe('Path step reorder with active parts', () => {
     expect(updated.steps).toHaveLength(2)
   })
 
-  it('removing a step with active parts throws ValidationError', () => {
-    ctx = createTestContext()
-
+  it('removing a step that has active parts at it throws ValidationError', () => {
     const job = ctx.jobService.createJob({ name: 'Job', goalQuantity: 10 })
     const path = ctx.pathService.createPath({
       jobId: job.id,
@@ -134,7 +130,7 @@ describe('Path step reorder with active parts', () => {
       'user1',
     )
 
-    // Try to remove step A (has active parts)
+    // Try to remove step A (has active parts at it)
     const stepsWithoutA = [
       { id: path.steps[1]!.id, name: 'Step B' },
     ]
@@ -144,9 +140,7 @@ describe('Path step reorder with active parts', () => {
     }).toThrow('Cannot remove step')
   })
 
-  it('update without step IDs fails with unknown ID error (regression guard)', () => {
-    ctx = createTestContext()
-
+  it('omitting step IDs on a path with no parts soft-deletes old steps and creates new ones', () => {
     const job = ctx.jobService.createJob({ name: 'Job', goalQuantity: 10 })
     const path = ctx.pathService.createPath({
       jobId: job.id,
@@ -155,18 +149,16 @@ describe('Path step reorder with active parts', () => {
       steps: [{ name: 'Step A' }, { name: 'Step B' }],
     })
 
-    // Sending steps without IDs when the path already has steps should work
-    // (they're treated as new inserts, existing steps get soft-deleted)
-    // But only if no active parts reference the existing steps
+    // No parts created — safe to replace all steps
     const stepsNoIds = [
       { name: 'Step A' },
       { name: 'Step B' },
     ]
 
-    // No parts — this should succeed (existing steps soft-deleted, new ones created)
     const updated = ctx.pathService.updatePath(path.id, { steps: stepsNoIds })
     expect(updated.steps).toHaveLength(2)
-    // New IDs should be different from original
+    // New IDs should be different from original (old steps were soft-deleted, new ones created)
     expect(updated.steps[0]!.id).not.toBe(path.steps[0]!.id)
+    expect(updated.steps[1]!.id).not.toBe(path.steps[1]!.id)
   })
 })
