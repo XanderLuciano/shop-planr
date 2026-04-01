@@ -196,11 +196,8 @@ export function createPathService(repos: {
 
       // Build histogram of parts per currentStepId in a single pass
       const stepCounts = new Map<string, number>()
-      let completedTotal = 0
       for (const p of allParts) {
-        if (p.currentStepId === null) {
-          completedTotal++
-        } else {
+        if (p.currentStepId !== null) {
           stepCounts.set(p.currentStepId, (stepCounts.get(p.currentStepId) ?? 0) + 1)
         }
       }
