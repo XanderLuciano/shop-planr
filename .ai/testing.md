@@ -14,10 +14,17 @@
 | Command | What it does |
 |---------|-------------|
 | `npm run test` | `vitest run` — single pass, all tests (857 tests, 148 files) |
+| `npm run typecheck` | `nuxt typecheck` — full TypeScript type checking (run after tests pass) |
 | `npm run test:watch` | `vitest` — watch mode |
 | `npx vitest run tests/properties` | Property tests only |
 | `npx vitest run tests/unit` | Unit tests only |
 | `npx vitest run tests/integration` | Integration tests only |
+
+## Verification Order
+
+After making changes, always verify in this order:
+1. `npm run test` — all tests must pass first
+2. `npm run typecheck` — zero type errors required before committing
 
 ## Test File Organization
 
