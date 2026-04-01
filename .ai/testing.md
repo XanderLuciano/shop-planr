@@ -106,6 +106,18 @@ describe('Property N: Title', () => {
 })
 ```
 
+## Determinism in Property Tests
+
+Never use `Math.random()` inside a property test body. It breaks fast-check's seed-based replay — if a test fails, you can't reproduce it from the reported seed because `Math.random()` isn't controlled by fast-check.
+
+Instead, use fast-check's own generators for any randomness:
+- Shuffling: `fc.shuffledSubarray(arr, { minLength: arr.length, maxLength: arr.length })`
+- Random booleans: `fc.boolean()` or `fc.array(fc.boolean())`
+- Random selection: `fc.constantFrom(...options)`
+- Random subsets: `fc.subarray(arr)`
+
+All randomness must flow through `fc.property(...)` arguments so failures replay deterministically.
+
 ## Integration Test Isolation
 
 Each test creates a fresh temp SQLite database:
