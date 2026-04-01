@@ -5,8 +5,16 @@ export default defineEventHandler(async (event) => {
   const { lifecycleService } = getServices()
   const { paths } = getRepositories()
 
-  // Get step statuses
-  const statuses = lifecycleService.getStepStatuses(partId)
+  // Get step statuses — deduplicate by stepId, keeping the latest (highest sequenceNumber)
+  const allStatuses = lifecycleService.getStepStatuses(partId)
+  const latestByStep = new Map<string, typeof allStatuses[number]>()
+  for (const s of allStatuses) {
+    const existing = latestByStep.get(s.stepId)
+    if (!existing || s.sequenceNumber > existing.sequenceNumber) {
+      latestByStep.set(s.stepId, s)
+    }
+  }
+  const statuses = [...latestByStep.values()]
 
   // Get part to find path
   const { parts } = getRepositories()
