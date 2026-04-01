@@ -17,7 +17,7 @@ interface StepRow {
   id: string
   path_id: string
   name: string
-  step_order: number
+  step_order: number | null
   location: string | null
   assigned_to: string | null
   optional: number
@@ -30,7 +30,7 @@ function stepRowToDomain(row: StepRow): ProcessStep {
   return {
     id: row.id,
     name: row.name,
-    order: row.step_order,
+    order: row.step_order ?? -1, // -1 for soft-deleted steps (should never be used in active routing)
     location: row.location ?? undefined,
     assignedTo: row.assigned_to ?? undefined,
     optional: row.optional === 1,
@@ -241,5 +241,11 @@ export class SQLitePathRepository implements PathRepository {
       if (row) return true
     }
     return false
+  }
+
+  softDeleteStep(stepId: string, removedAt: string): void {
+    this.db.prepare(
+      'UPDATE process_steps SET removed_at = ?, step_order = NULL WHERE id = ?'
+    ).run(removedAt, stepId)
   }
 }

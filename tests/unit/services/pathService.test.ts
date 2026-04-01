@@ -22,6 +22,7 @@ function createMockPathRepo(): PathRepository {
     getStepByIdIncludeRemoved: vi.fn(() => null),
     updateStepAssignment: vi.fn(),
     updateStep: vi.fn((stepId: string, partial: any) => partial),
+    softDeleteStep: vi.fn(),
     hasStepDependents: vi.fn(() => false),
   }
 }

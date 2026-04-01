@@ -154,11 +154,13 @@ export function createPathService(repos: {
           }
         }
 
-        // Soft-delete removed steps (set removed_at and move step_order to negative to free UNIQUE constraint)
+        // Soft-delete removed steps (set removed_at, null out step_order)
         const now = new Date().toISOString()
         for (let i = 0; i < toSoftDelete.length; i++) {
           const stepId = toSoftDelete[i]!
-          repos.paths.updateStep(stepId, { removedAt: now, order: -(i + 1000) })
+          // Set removed_at and null out step_order so the UNIQUE(path_id, step_order)
+          // constraint is satisfied (SQLite treats NULLs as distinct in UNIQUE)
+          repos.paths.softDeleteStep(stepId, now)
         }
 
         // The active steps are the updated + inserted ones

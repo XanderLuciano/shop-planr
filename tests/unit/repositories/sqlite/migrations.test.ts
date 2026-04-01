@@ -296,7 +296,7 @@ describe('SQLite migration system', () => {
       const db = initDatabase(dbPath)
 
       const applied = db.prepare('SELECT version, name FROM _migrations ORDER BY version').all() as any[]
-      expect(applied).toHaveLength(7)
+      expect(applied).toHaveLength(8)
       expect(applied[0].version).toBe(1)
       expect(applied[0].name).toBe('initial_schema')
       expect(applied[1].version).toBe(2)

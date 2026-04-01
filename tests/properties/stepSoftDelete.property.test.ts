@@ -172,10 +172,10 @@ describe('Feature: step-id-part-tracking, Property 20: Soft-deleted step preserv
           // move its order out of the way.
           //
           // Simplest: directly soft-delete step 0 via the repo (set removed_at and
-          // move order to -1 to avoid conflicts). This tests the property that
+          // null out step_order). This tests the property that
           // routing history is preserved after soft-delete.
           const now = new Date().toISOString()
-          ctx.repos.paths.updateStep(step0Id, { removedAt: now, order: -1 })
+          ctx.repos.paths.softDeleteStep(step0Id, now)
 
           // Routing history entries for step 0 should still exist
           const historyAfter = ctx.lifecycleService.getStepStatuses(part!.id)
@@ -239,10 +239,10 @@ describe('Feature: step-id-part-tracking, Property 21: Soft-deleted step exclude
 
           const step0Id = path.steps[0]!.id
 
-          // Soft-delete step 0 directly via repo (set removed_at, move order out of the way)
+          // Soft-delete step 0 directly via repo (set removed_at, null out step_order)
           // Also renumber remaining steps to be 0-based so advancement works correctly
           const now = new Date().toISOString()
-          ctx.repos.paths.updateStep(step0Id, { removedAt: now, order: -1 })
+          ctx.repos.paths.softDeleteStep(step0Id, now)
 
           // Renumber remaining active steps to be 0-based (as updatePath would do)
           const activeSteps = ctx.pathService.getPath(path.id).steps
