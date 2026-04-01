@@ -29,7 +29,7 @@ const futureSteps = computed(() =>
     })),
 )
 
-const selectedStepId = ref(futureSteps.value.length > 0 ? futureSteps.value[0].value : '')
+const selectedStepId = ref(futureSteps.value[0]?.value ?? '')
 
 const bypassedSteps = computed(() => {
   if (!selectedStepId.value || !currentStep.value) return []

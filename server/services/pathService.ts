@@ -152,7 +152,7 @@ export function createPathService(repos: {
         // Soft-delete removed steps (set removed_at and move step_order to negative to free UNIQUE constraint)
         const now = new Date().toISOString()
         for (let i = 0; i < toSoftDelete.length; i++) {
-          const stepId = toSoftDelete[i]
+          const stepId = toSoftDelete[i]!
           repos.paths.updateStep(stepId, { removedAt: now, order: -(i + 1000) })
         }
 

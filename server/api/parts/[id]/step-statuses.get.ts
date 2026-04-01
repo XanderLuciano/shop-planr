@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
     return {
       stepId: s.stepId,
       stepName: step?.name ?? '',
-      stepOrder: step?.order ?? s.stepIndex,
+      stepOrder: step?.order ?? 0,
       status: s.status,
       optional: step?.optional ?? false,
       dependencyType: step?.dependencyType ?? 'preferred',
