@@ -38,22 +38,27 @@ export function reconcileSteps(
 
   for (let i = 0; i < inputSteps.length; i++) {
     const input = inputSteps[i]!
-    if (input.id && existingById.has(input.id)) {
-      // Match by ID → toUpdate (preserve existing fields like assignedTo, completedCount)
-      const existing = existingById.get(input.id)!
-      toUpdate.push({
-        id: existing.id,
-        name: input.name,
-        order: i,
-        location: input.location,
-        assignedTo: existing.assignedTo,
-        optional: input.optional ?? false,
-        dependencyType: input.dependencyType ?? 'preferred',
-        completedCount: existing.completedCount,
-      })
-      existingById.delete(input.id)
+    if (input.id) {
+      if (existingById.has(input.id)) {
+        // Match by ID → toUpdate (preserve existing fields like assignedTo, completedCount)
+        const existing = existingById.get(input.id)!
+        toUpdate.push({
+          id: existing.id,
+          name: input.name,
+          order: i,
+          location: input.location,
+          assignedTo: existing.assignedTo,
+          optional: input.optional ?? false,
+          dependencyType: input.dependencyType ?? 'preferred',
+          completedCount: existing.completedCount,
+        })
+        existingById.delete(input.id)
+      } else {
+        // Input has an ID but it doesn't match any existing step — reject
+        throw new ValidationError(`Step ID "${input.id}" does not match any existing step in this path`)
+      }
     } else {
-      // New step → toInsert
+      // New step (no ID) → toInsert
       toInsert.push({
         id: generateId('step'),
         name: input.name,

@@ -188,4 +188,37 @@ describe('reconcileSteps', () => {
       expect(result.toUpdate[0].dependencyType).toBe('completion_gate')
     })
   })
+
+  describe('unknown step ID rejection', () => {
+    it('throws ValidationError when input has an ID that does not match any existing step', () => {
+      const existing = [makeStep('s0', 0), makeStep('s1', 1)]
+      const input: StepInput[] = [
+        { id: 's0', name: 'A' },
+        { id: 'nonexistent_id', name: 'B' },
+      ]
+
+      expect(() => reconcileSteps(existing, input)).toThrow('does not match any existing step')
+    })
+
+    it('throws ValidationError for a stale step ID', () => {
+      const existing = [makeStep('step_abc123', 0)]
+      const input: StepInput[] = [
+        { id: 'step_abc124', name: 'Typo' }, // off by one character
+      ]
+
+      expect(() => reconcileSteps(existing, input)).toThrow('does not match any existing step')
+    })
+
+    it('does not throw when input has no id field (new step)', () => {
+      const existing = [makeStep('s0', 0)]
+      const input: StepInput[] = [
+        { id: 's0', name: 'A' },
+        { name: 'New Step' }, // no id — this is fine
+      ]
+
+      const result = reconcileSteps(existing, input)
+      expect(result.toUpdate).toHaveLength(1)
+      expect(result.toInsert).toHaveLength(1)
+    })
+  })
 })
