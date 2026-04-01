@@ -14,6 +14,7 @@ const emit = defineEmits<{
 const { createPath, updatePath } = usePaths()
 
 interface StepDraft {
+  id?: string
   name: string
   location: string
   optional: boolean
@@ -24,6 +25,7 @@ const pathName = ref(props.path?.name ?? '')
 const goalQuantity = ref(props.path?.goalQuantity ?? 1)
 const steps = ref<StepDraft[]>(
   props.path?.steps.map(s => ({
+    id: s.id,
     name: s.name,
     location: s.location ?? '',
     optional: s.optional ?? false,
@@ -75,6 +77,7 @@ async function onSave() {
   saving.value = true
   try {
     const stepData = validSteps.map(s => ({
+      id: s.id,
       name: s.name.trim(),
       location: s.location.trim() || undefined,
       optional: s.optional,
