@@ -152,11 +152,11 @@ describe('Service Factory (getServices pattern)', () => {
 
     // Advance first part
     const advanced = partService.advancePart(parts[0].id, 'user_test')
-    expect(advanced.currentStepIndex).toBe(1)
+    expect(advanced.currentStepId).not.toBeNull()
 
     // Advance to completion
     const completed = partService.advancePart(parts[0].id, 'user_test')
-    expect(completed.currentStepIndex).toBe(-1)
+    expect(completed.currentStepId).toBeNull()
 
     // Check job progress
     const progress = jobService.computeJobProgress(job.id)

@@ -4,33 +4,33 @@ import type { ProcessStep } from '~/server/types/domain'
 import type { StepInput } from '~/server/services/pathService'
 
 function makeStep(id: string, order: number, name = `Step ${order}`): ProcessStep {
-  return { id, name, order, location: undefined, optional: false, dependencyType: 'preferred' }
+  return { id, name, order, location: undefined, optional: false, dependencyType: 'preferred', completedCount: 0 }
 }
 
 describe('reconcileSteps', () => {
-  describe('same-count steps (all updates, no inserts/deletes)', () => {
-    it('produces only toUpdate when input count equals existing count', () => {
+  describe('same-count steps with IDs (all updates, no inserts/deletes)', () => {
+    it('produces only toUpdate when all inputs have matching IDs', () => {
       const existing = [makeStep('s0', 0), makeStep('s1', 1), makeStep('s2', 2)]
       const input: StepInput[] = [
-        { name: 'A' },
-        { name: 'B' },
-        { name: 'C' },
+        { id: 's0', name: 'A' },
+        { id: 's1', name: 'B' },
+        { id: 's2', name: 'C' },
       ]
 
       const result = reconcileSteps(existing, input)
 
       expect(result.toUpdate).toHaveLength(3)
       expect(result.toInsert).toHaveLength(0)
-      expect(result.toDelete).toHaveLength(0)
+      expect(result.toSoftDelete).toHaveLength(0)
     })
   })
 
   describe('more input steps than existing (updates + inserts)', () => {
-    it('updates matched positions and inserts extras', () => {
+    it('updates matched IDs and inserts new steps without IDs', () => {
       const existing = [makeStep('s0', 0), makeStep('s1', 1)]
       const input: StepInput[] = [
-        { name: 'A' },
-        { name: 'B' },
+        { id: 's0', name: 'A' },
+        { id: 's1', name: 'B' },
         { name: 'C' },
         { name: 'D' },
       ]
@@ -39,20 +39,20 @@ describe('reconcileSteps', () => {
 
       expect(result.toUpdate).toHaveLength(2)
       expect(result.toInsert).toHaveLength(2)
-      expect(result.toDelete).toHaveLength(0)
+      expect(result.toSoftDelete).toHaveLength(0)
     })
   })
 
-  describe('fewer input steps than existing (updates + deletes)', () => {
-    it('updates matched positions and deletes extras', () => {
+  describe('fewer input steps than existing (updates + soft-deletes)', () => {
+    it('updates matched IDs and soft-deletes unmatched existing steps', () => {
       const existing = [makeStep('s0', 0), makeStep('s1', 1), makeStep('s2', 2)]
-      const input: StepInput[] = [{ name: 'A' }]
+      const input: StepInput[] = [{ id: 's0', name: 'A' }]
 
       const result = reconcileSteps(existing, input)
 
       expect(result.toUpdate).toHaveLength(1)
       expect(result.toInsert).toHaveLength(0)
-      expect(result.toDelete).toEqual(['s1', 's2'])
+      expect(result.toSoftDelete).toEqual(['s1', 's2'])
     })
   })
 
@@ -65,14 +65,14 @@ describe('reconcileSteps', () => {
 
       expect(result.toUpdate).toHaveLength(0)
       expect(result.toInsert).toHaveLength(2)
-      expect(result.toDelete).toHaveLength(0)
+      expect(result.toSoftDelete).toHaveLength(0)
     })
   })
 
   describe('single step path updates', () => {
-    it('handles single existing step updated with single input', () => {
+    it('handles single existing step updated with single input by ID', () => {
       const existing = [makeStep('s0', 0, 'Old')]
-      const input: StepInput[] = [{ name: 'New', location: 'Bay 3' }]
+      const input: StepInput[] = [{ id: 's0', name: 'New', location: 'Bay 3' }]
 
       const result = reconcileSteps(existing, input)
 
@@ -81,17 +81,17 @@ describe('reconcileSteps', () => {
       expect(result.toUpdate[0].name).toBe('New')
       expect(result.toUpdate[0].location).toBe('Bay 3')
       expect(result.toInsert).toHaveLength(0)
-      expect(result.toDelete).toHaveLength(0)
+      expect(result.toSoftDelete).toHaveLength(0)
     })
   })
 
-  describe('step ID preservation for matched positions', () => {
-    it('preserves existing IDs at each matched position', () => {
+  describe('step ID preservation for matched IDs', () => {
+    it('preserves existing IDs when matched by ID', () => {
       const existing = [makeStep('keep-0', 0), makeStep('keep-1', 1), makeStep('keep-2', 2)]
       const input: StepInput[] = [
-        { name: 'X' },
-        { name: 'Y' },
-        { name: 'Z' },
+        { id: 'keep-0', name: 'X' },
+        { id: 'keep-1', name: 'Y' },
+        { id: 'keep-2', name: 'Z' },
       ]
 
       const result = reconcileSteps(existing, input)
@@ -102,16 +102,16 @@ describe('reconcileSteps', () => {
     })
   })
 
-  describe('new IDs generated only for appended steps', () => {
-    it('generates fresh IDs for steps beyond existing count', () => {
+  describe('new IDs generated only for steps without id', () => {
+    it('generates fresh IDs for steps without id field', () => {
       const existing = [makeStep('s0', 0)]
-      const input: StepInput[] = [{ name: 'A' }, { name: 'B' }, { name: 'C' }]
+      const input: StepInput[] = [{ id: 's0', name: 'A' }, { name: 'B' }, { name: 'C' }]
 
       const result = reconcileSteps(existing, input)
 
       // First step reuses existing ID
       expect(result.toUpdate[0].id).toBe('s0')
-      // Appended steps get new IDs starting with step_
+      // New steps get new IDs starting with step_
       expect(result.toInsert).toHaveLength(2)
       expect(result.toInsert[0].id).toMatch(/^step_/)
       expect(result.toInsert[1].id).toMatch(/^step_/)
@@ -119,9 +119,9 @@ describe('reconcileSteps', () => {
       expect(result.toInsert[0].id).not.toBe(result.toInsert[1].id)
     })
 
-    it('does not generate new IDs for matched positions', () => {
+    it('does not generate new IDs for ID-matched steps', () => {
       const existing = [makeStep('s0', 0), makeStep('s1', 1)]
-      const input: StepInput[] = [{ name: 'A' }, { name: 'B' }]
+      const input: StepInput[] = [{ id: 's0', name: 'A' }, { id: 's1', name: 'B' }]
 
       const result = reconcileSteps(existing, input)
 
@@ -134,8 +134,8 @@ describe('reconcileSteps', () => {
     it('assigns sequential orders across toUpdate and toInsert', () => {
       const existing = [makeStep('s0', 0), makeStep('s1', 1)]
       const input: StepInput[] = [
-        { name: 'A' },
-        { name: 'B' },
+        { id: 's0', name: 'A' },
+        { id: 's1', name: 'B' },
         { name: 'C' },
         { name: 'D' },
       ]
@@ -158,7 +158,7 @@ describe('reconcileSteps', () => {
 
     it('preserves sequential order when reducing steps', () => {
       const existing = [makeStep('s0', 0), makeStep('s1', 1), makeStep('s2', 2)]
-      const input: StepInput[] = [{ name: 'A' }, { name: 'B' }]
+      const input: StepInput[] = [{ id: 's0', name: 'A' }, { id: 's1', name: 'B' }]
 
       const result = reconcileSteps(existing, input)
 
@@ -170,7 +170,7 @@ describe('reconcileSteps', () => {
   describe('field mapping', () => {
     it('defaults optional to false and dependencyType to preferred', () => {
       const existing = [makeStep('s0', 0)]
-      const input: StepInput[] = [{ name: 'Step' }]
+      const input: StepInput[] = [{ id: 's0', name: 'Step' }]
 
       const result = reconcileSteps(existing, input)
 
@@ -180,7 +180,7 @@ describe('reconcileSteps', () => {
 
     it('passes through optional and dependencyType when provided', () => {
       const existing = [makeStep('s0', 0)]
-      const input: StepInput[] = [{ name: 'Gate', optional: true, dependencyType: 'completion_gate' }]
+      const input: StepInput[] = [{ id: 's0', name: 'Gate', optional: true, dependencyType: 'completion_gate' }]
 
       const result = reconcileSteps(existing, input)
 

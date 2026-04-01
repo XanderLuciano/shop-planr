@@ -44,6 +44,18 @@ export interface ProcessStep {
   assignedTo?: string
   optional: boolean
   dependencyType: 'physical' | 'preferred' | 'completion_gate'
+  removedAt?: string // soft-delete timestamp; null/undefined = active
+  completedCount: number // write-time counter: parts that have completed this step
+}
+
+// ---- Step Input (for path update reconciliation) ----
+
+export interface StepInput {
+  id?: string // optional existing step ID for reconciliation
+  name: string
+  location?: string
+  optional?: boolean
+  dependencyType?: 'physical' | 'preferred' | 'completion_gate'
 }
 
 // ---- Part (formerly Serial Number) ----
@@ -54,7 +66,7 @@ export interface Part {
   id: string
   jobId: string
   pathId: string
-  currentStepIndex: number
+  currentStepId: string | null // null = completed; replaces currentStepIndex
   status: 'in_progress' | 'completed' | 'scrapped'
   scrapReason?: ScrapReason
   scrapExplanation?: string
@@ -252,8 +264,10 @@ export interface PartStepStatus {
   id: string
   partId: string
   stepId: string
-  stepIndex: number
+  sequenceNumber: number // replaces stepIndex; 1-based, monotonically increasing per part
   status: PartStepStatusValue
+  enteredAt: string // when the part entered this step visit
+  completedAt?: string // when this visit was completed (if applicable)
   updatedAt: string
 }
 

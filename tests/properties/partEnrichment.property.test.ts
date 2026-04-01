@@ -73,7 +73,7 @@ const scenarioArb = fc.record({
 /**
  * Property 5: Part status derivation
  *
- * For any Part, `currentStepIndex === -1` → status `'completed'`,
+ * For any Part, `currentStepId === null` → status `'completed'`,
  * else `'in-progress'`.
  *
  * **Validates: Requirements 4.7, 5.4**
@@ -88,7 +88,7 @@ describe('Property 5: Part status derivation', () => {
     }
   })
 
-  it('currentStepIndex === -1 yields completed, otherwise in-progress', () => {
+  it('currentStepId === null yields completed, otherwise in-progress', () => {
     fc.assert(
       fc.property(scenarioArb, (config) => {
         db = createTestDb()
@@ -132,7 +132,7 @@ describe('Property 5: Part status derivation', () => {
         const enriched = partService.listAllPartsEnriched()
 
         for (const e of enriched) {
-          if (e.currentStepIndex === -1) {
+          if (e.currentStepId === null) {
             expect(e.status).toBe('completed')
           } else {
             expect(e.status).toBe('in-progress')
@@ -231,8 +231,8 @@ describe('Property 7: Part enrichment completeness', () => {
           // Non-empty createdAt
           expect(e.createdAt.length).toBeGreaterThan(0)
 
-          // currentStepName is "Completed" when index is -1
-          if (e.currentStepIndex === -1) {
+          // currentStepName is "Completed" when currentStepId is null
+          if (e.currentStepId === null) {
             expect(e.currentStepName).toBe('Completed')
           }
         }
@@ -251,8 +251,8 @@ describe('Property 7: Part enrichment completeness', () => {
  *
  * For any list of parts:
  * - `totalCount === list.length`
- * - `completedCount === count where currentStepIndex === -1`
- * - `inProgressCount === count where currentStepIndex >= 0`
+ * - `completedCount === count where currentStepId === null`
+ * - `inProgressCount === count where currentStepId !== null`
  * - `completedCount + inProgressCount === totalCount`
  *
  * **Validates: Requirements 11.6**
@@ -260,35 +260,35 @@ describe('Property 7: Part enrichment completeness', () => {
 import type { EnrichedPart } from '../../server/types/computed'
 
 /** Pure summary count logic matching the Parts tab implementation */
-function computeSummaryCounts(parts: Array<{ currentStepIndex: number }>) {
+function computeSummaryCounts(parts: Array<{ currentStepId: string | null }>) {
   const totalCount = parts.length
-  const completedCount = parts.filter(s => s.currentStepIndex === -1).length
-  const inProgressCount = parts.filter(s => s.currentStepIndex >= 0).length
+  const completedCount = parts.filter(s => s.currentStepId === null).length
+  const inProgressCount = parts.filter(s => s.currentStepId !== null).length
   return { totalCount, completedCount, inProgressCount }
 }
 
-/** Arbitrary for a minimal part-like object with currentStepIndex */
-const partWithStepIndexArb = fc.record({
-  currentStepIndex: fc.oneof(fc.constant(-1), fc.integer({ min: 0, max: 20 })),
+/** Arbitrary for a minimal part-like object with currentStepId */
+const partWithStepIdArb = fc.record({
+  currentStepId: fc.oneof(fc.constant(null as string | null), fc.string({ minLength: 1, maxLength: 20 })),
 })
 
 describe('Property 12: Part summary counts', () => {
   it('totalCount === list.length, completedCount + inProgressCount === totalCount', () => {
     fc.assert(
       fc.property(
-        fc.array(partWithStepIndexArb, { minLength: 0, maxLength: 50 }),
+        fc.array(partWithStepIdArb, { minLength: 0, maxLength: 50 }),
         (parts) => {
           const { totalCount, completedCount, inProgressCount } = computeSummaryCounts(parts)
 
           // totalCount equals list length
           expect(totalCount).toBe(parts.length)
 
-          // completedCount equals count where index === -1
-          const expectedCompleted = parts.filter(s => s.currentStepIndex === -1).length
+          // completedCount equals count where currentStepId === null
+          const expectedCompleted = parts.filter(s => s.currentStepId === null).length
           expect(completedCount).toBe(expectedCompleted)
 
-          // inProgressCount equals count where index >= 0
-          const expectedInProgress = parts.filter(s => s.currentStepIndex >= 0).length
+          // inProgressCount equals count where currentStepId !== null
+          const expectedInProgress = parts.filter(s => s.currentStepId !== null).length
           expect(inProgressCount).toBe(expectedInProgress)
 
           // completedCount + inProgressCount === totalCount

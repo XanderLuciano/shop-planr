@@ -35,26 +35,26 @@ function initializeStepStatuses(steps: StepConfig[]): StepStatusRecord[] {
 }
 
 /**
- * Pure advancement logic: advances from currentStepIndex to targetStepIndex.
+ * Pure advancement logic: advances from currentStepOrder to targetStepOrder.
  * Updates statuses for origin (completed), bypassed (skipped/deferred), and destination (in_progress).
  */
 function applyAdvancement(
   statuses: StepStatusRecord[],
   steps: StepConfig[],
-  currentStepIndex: number,
-  targetStepIndex: number,
+  currentStepOrder: number,
+  targetStepOrder: number,
 ): StepStatusRecord[] {
   const result = statuses.map(s => ({ ...s }))
 
   // Origin step → completed
-  const originStep = steps[currentStepIndex]
+  const originStep = steps[currentStepOrder]
   if (originStep) {
     const rec = result.find(s => s.stepId === originStep.id)
     if (rec) rec.status = 'completed'
   }
 
   // Bypassed steps
-  for (let i = currentStepIndex + 1; i < targetStepIndex && i < steps.length; i++) {
+  for (let i = currentStepOrder + 1; i < targetStepOrder && i < steps.length; i++) {
     const step = steps[i]
     const rec = result.find(s => s.stepId === step.id)
     if (rec) {
@@ -63,8 +63,8 @@ function applyAdvancement(
   }
 
   // Destination step → in_progress (if not past end)
-  if (targetStepIndex < steps.length) {
-    const destStep = steps[targetStepIndex]
+  if (targetStepOrder < steps.length) {
+    const destStep = steps[targetStepOrder]
     const rec = result.find(s => s.stepId === destStep.id)
     if (rec) rec.status = 'in_progress'
   }
@@ -107,10 +107,10 @@ describe('Property 2: Step Status Conservation', () => {
         fc.integer({ min: 1, max: 14 }),
         fc.array(fc.boolean(), { minLength: 15, maxLength: 15 }),
         (totalSteps, rawCurrent, jumpSize, optionalFlags) => {
-          const currentStepIndex = rawCurrent % (totalSteps - 1)
-          const targetStepIndex = Math.min(currentStepIndex + jumpSize, totalSteps)
+          const currentStepOrder = rawCurrent % (totalSteps - 1)
+          const targetStepOrder = Math.min(currentStepOrder + jumpSize, totalSteps)
 
-          if (targetStepIndex <= currentStepIndex) return
+          if (targetStepOrder <= currentStepOrder) return
 
           const steps: StepConfig[] = Array.from({ length: totalSteps }, (_, i) => ({
             id: `step-${i}`,
@@ -121,7 +121,7 @@ describe('Property 2: Step Status Conservation', () => {
           }))
 
           const initial = initializeStepStatuses(steps)
-          const afterAdvance = applyAdvancement(initial, steps, currentStepIndex, targetStepIndex)
+          const afterAdvance = applyAdvancement(initial, steps, currentStepOrder, targetStepOrder)
 
           // Conservation: count must equal total steps
           expect(afterAdvance.length).toBe(totalSteps)

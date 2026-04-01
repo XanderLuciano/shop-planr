@@ -97,24 +97,24 @@ describe('Property 3: Sequential Step Advancement', () => {
           )
           const partId = parts[0].id
 
-          let previousIndex = 0
           for (let i = 0; i < advanceTimes; i++) {
             const before = partService.getPart(partId)
-            if (before.currentStepIndex === -1) {
+            if (before.currentStepId === null) {
               // Already completed — advancing should throw
               expect(() => partService.advancePart(partId, 'user_test')).toThrow()
               break
             }
 
-            previousIndex = before.currentStepIndex
+            const currentStep = path.steps.find(s => s.id === before.currentStepId)!
             const after = partService.advancePart(partId, 'user_test')
 
-            if (previousIndex === stepCount - 1) {
+            if (currentStep.order === stepCount - 1) {
               // Was at final step — should be completed
-              expect(after.currentStepIndex).toBe(-1)
+              expect(after.currentStepId).toBeNull()
             } else {
               // Should advance to next step
-              expect(after.currentStepIndex).toBe(previousIndex + 1)
+              const nextStep = path.steps.find(s => s.order === currentStep.order + 1)!
+              expect(after.currentStepId).toBe(nextStep.id)
             }
           }
 

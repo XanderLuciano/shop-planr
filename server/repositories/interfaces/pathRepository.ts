@@ -7,6 +7,7 @@ export interface PathRepository {
   update(id: string, partial: Partial<Path>): Path
   delete(id: string): boolean
   getStepById(stepId: string): ProcessStep | null
+  getStepByIdIncludeRemoved(stepId: string): ProcessStep | null
   updateStepAssignment(stepId: string, userId: string | null): ProcessStep
   updateStep(stepId: string, partial: Partial<ProcessStep>): ProcessStep
   hasStepDependents(stepId: string): boolean

@@ -20,7 +20,7 @@ type PartStatus = 'in_progress' | 'completed' | 'scrapped'
 interface PartState {
   status: PartStatus
   forceCompleted: boolean
-  currentStepIndex: number // -1 for completed, 0+ for in-progress
+  currentStepId: string | null // null for completed, string for in-progress
 }
 
 // Rendering element types emitted by the model function
@@ -48,9 +48,9 @@ function computeRoutingTabElements(state: PartState): RenderElement[] {
 
   // Derived booleans matching the page's computed properties
   const isScrapped = state.status === 'scrapped'
-  const isCompleted = state.status === 'completed' || state.currentStepIndex === -1
+  const isCompleted = state.status === 'completed' || state.currentStepId === null
   const isForceCompleted = state.forceCompleted === true
-  const isInProgress = !isScrapped && !isCompleted && state.currentStepIndex >= 0
+  const isInProgress = !isScrapped && !isCompleted && state.currentStepId !== null
 
   // Banners rendered ABOVE section cards (outside any SectionCard)
   if (isScrapped) {
@@ -84,9 +84,9 @@ const partStatusArb: fc.Arbitrary<PartStatus> = fc.constantFrom(
 const partStateArb: fc.Arbitrary<PartState> = fc.record({
   status: partStatusArb,
   forceCompleted: fc.boolean(),
-  currentStepIndex: fc.oneof(
-    fc.constant(-1), // completed
-    fc.integer({ min: 0, max: 20 }), // in-progress at various steps
+  currentStepId: fc.oneof(
+    fc.constant(null as string | null), // completed
+    fc.string({ minLength: 3, maxLength: 15 }), // in-progress at various steps
   ),
 })
 

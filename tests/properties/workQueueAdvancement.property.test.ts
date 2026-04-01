@@ -185,17 +185,17 @@ describe('Property 4: Batch advancement by quantity in creation order', () => {
             partService.advancePart(id, 'user_test')
           }
 
-          // Verify advanced serials moved to step 1 (or -1 if single-step path)
-          const expectedIndex = stepCount === 1 ? -1 : 1
+          // Verify advanced serials moved to step 1 (or completed if single-step path)
+          const expectedStepId = stepCount === 1 ? null : path.steps[1].id
           for (const id of toAdvance) {
             const s = partService.getPart(id)
-            expect(s.currentStepIndex).toBe(expectedIndex)
+            expect(s.currentStepId).toBe(expectedStepId)
           }
 
           // Verify remaining serials are unchanged at step 0
           for (const id of toRemain) {
             const s = partService.getPart(id)
-            expect(s.currentStepIndex).toBe(0)
+            expect(s.currentStepId).toBe(path.steps[0].id)
           }
 
           db.close()
@@ -241,7 +241,7 @@ describe('Property 4: Batch advancement by quantity in creation order', () => {
           // All should be completed
           for (const part of serials) {
             const s = partService.getPart(part.id)
-            expect(s.currentStepIndex).toBe(-1)
+            expect(s.currentStepId).toBeNull()
           }
 
           db.close()

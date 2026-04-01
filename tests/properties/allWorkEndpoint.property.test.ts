@@ -30,7 +30,7 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
       const totalSteps = path.steps.length
 
       for (const step of path.steps) {
-        const parts = partService.listPartsByStepIndex(path.id, step.order)
+        const parts = partService.listPartsByCurrentStepId(step.id)
         if (parts.length === 0) continue
 
         const key = `${job.id}|${path.id}|${step.order}`
@@ -108,7 +108,7 @@ describe('Property 1: All-Work Endpoint Completeness', () => {
           jobName: string
           pathId: string
           pathName: string
-          currentStepIndex: number
+          currentStepOrder: number
         }> = []
 
         // Track step metadata for verification
@@ -165,7 +165,7 @@ describe('Property 1: All-Work Endpoint Completeness', () => {
               jobName: job.name,
               pathId: path.id,
               pathName: path.name,
-              currentStepIndex: 0,
+              currentStepOrder: 0,
             })
           }
 
@@ -176,13 +176,13 @@ describe('Property 1: All-Work Endpoint Completeness', () => {
             const tracked = expectedParts.find(t => t.id === part.id)!
 
             for (let i = 0; i < spec.advanceTimes; i++) {
-              if (tracked.currentStepIndex === -1) break
+              if (tracked.currentStepOrder === -1) break
               try {
                 partService.advancePart(part.id, 'user_test')
-                if (tracked.currentStepIndex === config.stepCount - 1) {
-                  tracked.currentStepIndex = -1 // completed
+                if (tracked.currentStepOrder === config.stepCount - 1) {
+                  tracked.currentStepOrder = -1 // completed
                 } else {
-                  tracked.currentStepIndex += 1
+                  tracked.currentStepOrder += 1
                 }
               } catch {
                 break
@@ -197,8 +197,8 @@ describe('Property 1: All-Work Endpoint Completeness', () => {
         // Build expected groups: step key → set of active part IDs
         const expectedGroups = new Map<string, Set<string>>()
         for (const s of expectedParts) {
-          if (s.currentStepIndex < 0) continue // completed/scrapped
-          const key = `${s.jobId}|${s.pathId}|${s.currentStepIndex}`
+          if (s.currentStepOrder < 0) continue // completed/scrapped
+          const key = `${s.jobId}|${s.pathId}|${s.currentStepOrder}`
           if (!expectedGroups.has(key)) expectedGroups.set(key, new Set())
           expectedGroups.get(key)!.add(s.id)
         }

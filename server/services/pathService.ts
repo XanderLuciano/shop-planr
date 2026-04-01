@@ -2,35 +2,30 @@ import type { PathRepository } from '../repositories/interfaces/pathRepository'
 import type { PartRepository } from '../repositories/interfaces/partRepository'
 import type { UserRepository } from '../repositories/interfaces/userRepository'
 import type { Path, ProcessStep } from '../types/domain'
+import type { StepInput } from '../types/domain'
 import type { CreatePathInput, UpdatePathInput } from '../types/api'
 import type { StepDistribution } from '../types/computed'
+
+// Re-export StepInput for backward compatibility with existing tests
+export type { StepInput } from '../types/domain'
 import { generateId } from '../utils/idGenerator'
 import { assertNonEmpty, assertNonEmptyArray, assertPositive } from '../utils/validation'
 import { NotFoundError, ValidationError } from '../utils/errors'
-
-/** Input shape for steps provided by the client (no server-side ID). */
-export interface StepInput {
-  name: string
-  location?: string
-  optional?: boolean
-  dependencyType?: 'physical' | 'preferred' | 'completion_gate'
-}
 
 /** Result of reconciling existing steps with incoming step inputs. */
 export interface StepReconciliation {
   toUpdate: ProcessStep[]
   toInsert: ProcessStep[]
-  toDelete: string[]
+  toSoftDelete: string[]
 }
 
 /**
- * Pure function (except for ID generation) that reconciles existing steps
- * with incoming input steps by position index.
+ * ID-based reconciliation: matches incoming steps to existing steps by ID.
  *
- * - Positions 0..min(N,M)-1: reuse existing step ID → toUpdate
- * - Positions beyond existing count: generate new ID → toInsert
- * - Existing positions beyond input count: collect IDs → toDelete
- * - All output steps get sequential order values 0..N-1
+ * - Inputs with `id` → match existing step by ID → toUpdate (preserve completedCount, assignedTo)
+ * - Inputs without `id` → generate new ID → toInsert
+ * - Existing steps not in input → toSoftDelete
+ * - All output steps get order = their position in the input array
  */
 export function reconcileSteps(
   existingSteps: readonly ProcessStep[],
@@ -38,12 +33,14 @@ export function reconcileSteps(
 ): StepReconciliation {
   const toUpdate: ProcessStep[] = []
   const toInsert: ProcessStep[] = []
-  const toDelete: string[] = []
+
+  const existingById = new Map(existingSteps.map(s => [s.id, s]))
 
   for (let i = 0; i < inputSteps.length; i++) {
-    const input = inputSteps[i]! // safe: i < inputSteps.length
-    if (i < existingSteps.length) {
-      const existing = existingSteps[i]! // safe: i < existingSteps.length
+    const input = inputSteps[i]!
+    if (input.id && existingById.has(input.id)) {
+      // Match by ID → toUpdate (preserve existing fields like assignedTo, completedCount)
+      const existing = existingById.get(input.id)!
       toUpdate.push({
         id: existing.id,
         name: input.name,
@@ -52,8 +49,11 @@ export function reconcileSteps(
         assignedTo: existing.assignedTo,
         optional: input.optional ?? false,
         dependencyType: input.dependencyType ?? 'preferred',
+        completedCount: existing.completedCount,
       })
+      existingById.delete(input.id)
     } else {
+      // New step → toInsert
       toInsert.push({
         id: generateId('step'),
         name: input.name,
@@ -61,15 +61,15 @@ export function reconcileSteps(
         location: input.location,
         optional: input.optional ?? false,
         dependencyType: input.dependencyType ?? 'preferred',
+        completedCount: 0,
       })
     }
   }
 
-  for (let i = inputSteps.length; i < existingSteps.length; i++) {
-    toDelete.push(existingSteps[i]!.id) // safe: i < existingSteps.length
-  }
+  // Remaining in existingById → toSoftDelete
+  const toSoftDelete = [...existingById.keys()]
 
-  return { toUpdate, toInsert, toDelete }
+  return { toUpdate, toInsert, toSoftDelete }
 }
 
 export function createPathService(repos: {
@@ -91,6 +91,7 @@ export function createPathService(repos: {
         location: s.location,
         optional: s.optional ?? false,
         dependencyType: s.dependencyType ?? 'preferred',
+        completedCount: 0,
       }))
 
       return repos.paths.create({
@@ -138,7 +139,24 @@ export function createPathService(repos: {
       if (input.goalQuantity !== undefined) partial.goalQuantity = input.goalQuantity
       if (input.advancementMode !== undefined) partial.advancementMode = input.advancementMode
       if (input.steps !== undefined) {
-        const { toUpdate, toInsert } = reconcileSteps(existing.steps, input.steps)
+        const { toUpdate, toInsert, toSoftDelete } = reconcileSteps(existing.steps, input.steps)
+
+        // Guard: check if any active part has currentStepId pointing to a step being removed
+        for (const stepId of toSoftDelete) {
+          const partsAtStep = repos.parts.listByCurrentStepId(stepId)
+          if (partsAtStep.length > 0) {
+            throw new ValidationError('Cannot remove step — advance all parts through this step first')
+          }
+        }
+
+        // Soft-delete removed steps (set removed_at and move step_order to negative to free UNIQUE constraint)
+        const now = new Date().toISOString()
+        for (let i = 0; i < toSoftDelete.length; i++) {
+          const stepId = toSoftDelete[i]
+          repos.paths.updateStep(stepId, { removedAt: now, order: -(i + 1000) })
+        }
+
+        // The active steps are the updated + inserted ones
         partial.steps = [...toUpdate, ...toInsert]
       }
 
@@ -169,34 +187,24 @@ export function createPathService(repos: {
       const allParts = repos.parts.listByPathId(pathId)
         .filter(p => p.status !== 'scrapped')
 
-      // Build histogram of parts per step index in a single pass
-      const stepCounts = new Map<number, number>()
+      // Build histogram of parts per currentStepId in a single pass
+      const stepCounts = new Map<string, number>()
       let completedTotal = 0
       for (const p of allParts) {
-        if (p.currentStepIndex === -1) {
+        if (p.currentStepId === null) {
           completedTotal++
         } else {
-          stepCounts.set(p.currentStepIndex, (stepCounts.get(p.currentStepIndex) ?? 0) + 1)
+          stepCounts.set(p.currentStepId, (stepCounts.get(p.currentStepId) ?? 0) + 1)
         }
       }
 
-      // Compute suffix sum: for step N, completedCount = parts at steps > N + completed parts
-      // Walk steps in reverse to accumulate
-      const totalSteps = path.steps.length
-      const completedCounts = new Array<number>(totalSteps)
-      let suffixSum = completedTotal
-      for (let i = totalSteps - 1; i >= 0; i--) {
-        completedCounts[i] = suffixSum
-        suffixSum += stepCounts.get(path.steps[i]!.order) ?? 0
-      }
-
-      const distribution: StepDistribution[] = path.steps.map((step, i) => ({
+      const distribution: StepDistribution[] = path.steps.map((step) => ({
         stepId: step.id,
         stepName: step.name,
         stepOrder: step.order,
         location: step.location,
-        partCount: stepCounts.get(step.order) ?? 0,
-        completedCount: completedCounts[i]!,
+        partCount: stepCounts.get(step.id) ?? 0,
+        completedCount: step.completedCount,
         isBottleneck: false
       }))
 
@@ -223,7 +231,9 @@ export function createPathService(repos: {
       if (!path) {
         throw new NotFoundError('Path', pathId)
       }
-      return repos.parts.listByStepIndex(pathId, -1).length
+      // Count parts where currentStepId IS NULL and status is 'completed'
+      const allParts = repos.parts.listByPathId(pathId)
+      return allParts.filter(p => p.currentStepId === null && p.status === 'completed').length
     },
 
     assignStep(stepId: string, userId: string | null): ProcessStep {

@@ -56,9 +56,9 @@ describe('Progress Tracking — Done Count Correctness', () => {
     // Leave parts[4] at step 0
 
     // Part positions after setup:
-    //   parts[0..2]: currentStepIndex = -1 (completed)
-    //   parts[3]:    currentStepIndex = 2  (at Paint)
-    //   parts[4]:    currentStepIndex = 0  (at Cut)
+    //   parts[0..2]: currentStepId = null (completed)
+    //   parts[3]:    currentStepId = Paint step (at Paint)
+    //   parts[4]:    currentStepId = Cut step (at Cut)
 
     // 3. Call getStepDistribution and getPathCompletedCount separately
     const distribution = pathService.getStepDistribution(path.id)

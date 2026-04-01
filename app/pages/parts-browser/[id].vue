@@ -70,10 +70,10 @@ const sortedSiblings = computed(() => {
 
 const siblingTotalCount = computed(() => siblingParts.value.length)
 const siblingCompletedCount = computed(() =>
-  siblingParts.value.filter((s: any) => s.status === 'completed' || s.currentStepIndex === -1).length,
+  siblingParts.value.filter((s: any) => s.status === 'completed' || s.currentStepId === null).length,
 )
 const siblingInProgressCount = computed(() =>
-  siblingParts.value.filter((s: any) => s.status === 'in-progress' || (s.currentStepIndex >= 0 && s.status !== 'scrapped')).length,
+  siblingParts.value.filter((s: any) => s.status === 'in-progress' || (s.currentStepId !== null && s.status !== 'scrapped')).length,
 )
 
 watch(activeTab, async (tab) => {
@@ -85,13 +85,13 @@ watch(activeTab, async (tab) => {
 
 // Computed states
 const isScrapped = computed(() => part.value?.status === 'scrapped')
-const isCompleted = computed(() => part.value?.status === 'completed' || part.value?.currentStepIndex === -1)
+const isCompleted = computed(() => part.value?.status === 'completed' || part.value?.currentStepId === null)
 const isForceCompleted = computed(() => part.value?.forceCompleted === true)
-const isInProgress = computed(() => part.value?.status === 'in_progress' || (!isScrapped.value && !isCompleted.value && part.value?.currentStepIndex !== undefined && part.value.currentStepIndex >= 0))
+const isInProgress = computed(() => part.value?.status === 'in_progress' || (!isScrapped.value && !isCompleted.value && part.value?.currentStepId !== null))
 
 const currentStep = computed(() => {
-  if (!path.value || !part.value || part.value.currentStepIndex < 0) return null
-  return path.value.steps[part.value.currentStepIndex] ?? null
+  if (!path.value || !part.value || part.value.currentStepId === null) return null
+  return path.value.steps.find(s => s.id === part.value!.currentStepId) ?? null
 })
 
 const deferredSteps = computed(() =>
@@ -106,9 +106,9 @@ const overriddenSteps = computed(() =>
 const workQueueJob = computed<WorkQueueJob | null>(() => {
   if (!part.value || !job.value || !path.value || !currentStep.value) return null
   const steps = path.value.steps
-  const stepIndex = part.value.currentStepIndex
-  const isFinal = stepIndex === steps.length - 1
-  const nextStep = isFinal ? null : steps[stepIndex + 1]
+  const currentOrder = currentStep.value.order
+  const isFinal = currentOrder === Math.max(...steps.map(s => s.order))
+  const nextStep = isFinal ? null : steps.find(s => s.order === currentOrder + 1) ?? null
 
   return {
     jobId: job.value.id,
@@ -338,24 +338,24 @@ onMounted(async () => {
           <!-- Step list -->
           <div class="border border-(--ui-border) rounded-md overflow-hidden divide-y divide-(--ui-border)">
             <div
-              v-for="(step, index) in path.steps"
+              v-for="step in path.steps"
               :key="step.id"
               class="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer transition-colors hover:bg-(--ui-primary)/5"
               :class="{
-                'bg-(--ui-primary)/10 border-l-2 border-l-(--ui-primary)': part.currentStepIndex === index,
-                'bg-(--ui-bg-elevated)/30': part.currentStepIndex !== index,
+                'bg-(--ui-primary)/10 border-l-2 border-l-(--ui-primary)': part.currentStepId === step.id,
+                'bg-(--ui-bg-elevated)/30': part.currentStepId !== step.id,
               }"
               @click="navigateTo(`/parts/step/${encodeURIComponent(step.id)}`)"
             >
               <!-- Step order -->
               <div class="flex items-center justify-center size-6 rounded-full text-xs font-bold shrink-0"
-                :class="index < part.currentStepIndex || isCompleted
+                :class="getStepStatusForStep(step.id)?.status === 'completed' || isCompleted
                   ? 'bg-green-500/20 text-green-600'
-                  : part.currentStepIndex === index
+                  : part.currentStepId === step.id
                     ? 'bg-(--ui-primary)/20 text-(--ui-primary)'
                     : 'bg-(--ui-bg-elevated) text-(--ui-text-muted)'"
               >
-                <UIcon v-if="index < part.currentStepIndex || isCompleted" name="i-lucide-check" class="size-3.5" />
+                <UIcon v-if="getStepStatusForStep(step.id)?.status === 'completed' || isCompleted" name="i-lucide-check" class="size-3.5" />
                 <span v-else>{{ step.order }}</span>
               </div>
 

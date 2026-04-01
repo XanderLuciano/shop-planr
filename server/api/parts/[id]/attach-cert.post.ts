@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
 
     const part = partService.getPart(id)
     const path = pathService.getPath(part.pathId)
-    const step = part.currentStepIndex >= 0 ? path.steps[part.currentStepIndex] : undefined
+    const step = part.currentStepId !== null ? path.steps.find(s => s.id === part.currentStepId) : undefined
     if (!step) {
       throw createError({ statusCode: 400, message: 'Part is already completed, cannot attach cert' })
     }

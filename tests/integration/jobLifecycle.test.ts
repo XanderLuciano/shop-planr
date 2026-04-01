@@ -67,7 +67,7 @@ describe('Job Lifecycle Integration', () => {
     // 5. Complete 2 parts on path A (advance from last step → completed)
     for (let i = 0; i < 2; i++) {
       const completed = partService.advancePart(partsA[i].id, 'operator1')
-      expect(completed.currentStepIndex).toBe(-1)
+      expect(completed.currentStepId).toBeNull()
     }
 
     // Complete all 5 parts on path B (2-step path: advance once → last step, advance again → complete)

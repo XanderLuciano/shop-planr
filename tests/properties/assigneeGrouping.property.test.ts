@@ -37,7 +37,7 @@ function aggregateGroupedWork(
       const totalSteps = path.steps.length
 
       for (const step of path.steps) {
-        const serials = partService.listPartsByStepIndex(path.id, step.order)
+        const serials = partService.listPartsByCurrentStepId(step.id)
         if (serials.length === 0) continue
 
         const isFinalStep = step.order === totalSteps - 1

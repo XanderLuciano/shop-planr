@@ -31,7 +31,7 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
       for (const step of path.steps) {
         if (step.id !== stepId) continue
 
-        const parts = partService.listPartsByStepIndex(path.id, step.order)
+        const parts = partService.listPartsByCurrentStepId(step.id)
 
         const isFinalStep = step.order === totalSteps - 1
         const prevStep = step.order > 0 ? path.steps[step.order - 1] : undefined
@@ -39,7 +39,7 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
 
         let previousStepWipCount: number | undefined
         if (step.order > 0 && parts.length === 0) {
-          const prevParts = partService.listPartsByStepIndex(path.id, step.order - 1)
+          const prevParts = partService.listPartsByCurrentStepId(prevStep!.id)
           previousStepWipCount = prevParts.length
         }
 
@@ -132,7 +132,7 @@ describe('Property 4: Step Endpoint Correctness', () => {
         interface TrackedPart {
           id: string
           pathId: string
-          currentStepIndex: number // -1 = completed
+          currentStepOrder: number // -1 = completed
         }
 
         const allStepRecords: StepRecord[] = []
@@ -181,7 +181,7 @@ describe('Property 4: Step Endpoint Correctness', () => {
             allTrackedParts.push({
               id: s.id,
               pathId: path.id,
-              currentStepIndex: 0,
+              currentStepOrder: 0,
             })
           }
 
@@ -192,13 +192,13 @@ describe('Property 4: Step Endpoint Correctness', () => {
             const tracked = allTrackedParts.find(t => t.id === part.id)!
 
             for (let i = 0; i < spec.advanceTimes; i++) {
-              if (tracked.currentStepIndex === -1) break
+              if (tracked.currentStepOrder === -1) break
               try {
                 partService.advancePart(part.id, 'user_test')
-                if (tracked.currentStepIndex === config.stepCount - 1) {
-                  tracked.currentStepIndex = -1 // completed
+                if (tracked.currentStepOrder === config.stepCount - 1) {
+                  tracked.currentStepOrder = -1 // completed
                 } else {
-                  tracked.currentStepIndex += 1
+                  tracked.currentStepOrder += 1
                 }
               } catch {
                 break
@@ -210,7 +210,7 @@ describe('Property 4: Step Endpoint Correctness', () => {
         // Find steps that have active parts
         const stepsWithActiveParts = allStepRecords.filter((rec) => {
           return allTrackedParts.some(
-            s => s.pathId === rec.pathId && s.currentStepIndex === rec.stepOrder,
+            s => s.pathId === rec.pathId && s.currentStepOrder === rec.stepOrder,
           )
         })
 
@@ -243,7 +243,7 @@ describe('Property 4: Step Endpoint Correctness', () => {
 
         // Verify partIds contains exactly the active parts at this step
         const expectedPartIds = allTrackedParts
-          .filter(s => s.pathId === targetStep.pathId && s.currentStepIndex === targetStep.stepOrder)
+          .filter(s => s.pathId === targetStep.pathId && s.currentStepOrder === targetStep.stepOrder)
           .map(s => s.id)
 
         expect(job.partIds.length).toBe(expectedPartIds.length)

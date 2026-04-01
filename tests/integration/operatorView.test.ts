@@ -25,8 +25,10 @@ function getOperatorView(ctx: TestContext, stepName: string) {
       const stepIndex = path.steps.findIndex(s => s.name === stepName)
       if (stepIndex === -1) continue
 
+      const step = path.steps[stepIndex]
+
       // Current parts at this step
-      const atStep = partService.listPartsByStepIndex(path.id, stepIndex)
+      const atStep = partService.listPartsByCurrentStepId(step.id)
       for (const part of atStep) {
         const nextStep = path.steps[stepIndex + 1]
         currentParts.push({
@@ -40,7 +42,8 @@ function getOperatorView(ctx: TestContext, stepName: string) {
 
       // Coming soon (one step upstream)
       if (stepIndex > 0) {
-        const upstream = partService.listPartsByStepIndex(path.id, stepIndex - 1)
+        const prevStep = path.steps[stepIndex - 1]
+        const upstream = partService.listPartsByCurrentStepId(prevStep.id)
         for (const part of upstream) {
           comingSoon.push({ partId: part.id, jobName: job.name, pathName: path.name })
         }
@@ -48,7 +51,8 @@ function getOperatorView(ctx: TestContext, stepName: string) {
 
       // Backlog (two+ steps upstream)
       for (let i = 0; i < stepIndex - 1; i++) {
-        const far = partService.listPartsByStepIndex(path.id, i)
+        const farStep = path.steps[i]
+        const far = partService.listPartsByCurrentStepId(farStep.id)
         for (const part of far) {
           backlog.push({ partId: part.id, jobName: job.name, pathName: path.name })
         }
@@ -137,11 +141,6 @@ describe('Operator View Integration', () => {
       { jobId: job.id, pathId: path.id, quantity: 10 },
       'op1'
     )
-
-    // 3 at step 0 (Raw) — backlog for "Inspect"
-    // 3 at step 1 (Cut) — backlog for "Inspect", coming soon for "Weld"
-    // 2 at step 2 (Weld) — coming soon for "Inspect"
-    // 2 at step 3 (Inspect) — current for "Inspect"
 
     // Advance parts[0..6] to step 1 (Cut)
     for (let i = 0; i < 7; i++) {

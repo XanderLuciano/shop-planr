@@ -22,6 +22,8 @@ interface StepRow {
   assigned_to: string | null
   optional: number
   dependency_type: string
+  removed_at: string | null
+  completed_count: number
 }
 
 function stepRowToDomain(row: StepRow): ProcessStep {
@@ -33,6 +35,8 @@ function stepRowToDomain(row: StepRow): ProcessStep {
     assignedTo: row.assigned_to ?? undefined,
     optional: row.optional === 1,
     dependencyType: (row.dependency_type as ProcessStep['dependencyType']) ?? 'preferred',
+    removedAt: row.removed_at ?? undefined,
+    completedCount: row.completed_count ?? 0,
   }
 }
 
@@ -68,7 +72,7 @@ export class SQLitePathRepository implements PathRepository {
     if (!row) return null
 
     const stepRows = this.db.prepare(
-      'SELECT * FROM process_steps WHERE path_id = ? ORDER BY step_order ASC'
+      'SELECT * FROM process_steps WHERE path_id = ? AND removed_at IS NULL ORDER BY step_order ASC'
     ).all(id) as StepRow[]
 
     return {
@@ -90,7 +94,7 @@ export class SQLitePathRepository implements PathRepository {
 
     return rows.map((row) => {
       const stepRows = this.db.prepare(
-        'SELECT * FROM process_steps WHERE path_id = ? ORDER BY step_order ASC'
+        'SELECT * FROM process_steps WHERE path_id = ? AND removed_at IS NULL ORDER BY step_order ASC'
       ).all(row.id) as StepRow[]
 
       return {
@@ -186,7 +190,16 @@ export class SQLitePathRepository implements PathRepository {
   }
 
   getStepById(stepId: string): ProcessStep | null {
-    const row = this.db.prepare('SELECT * FROM process_steps WHERE id = ?').get(stepId) as StepRow | undefined
+    const row = this.db.prepare(
+      'SELECT * FROM process_steps WHERE id = ? AND removed_at IS NULL'
+    ).get(stepId) as StepRow | undefined
+    return row ? stepRowToDomain(row) : null
+  }
+
+  getStepByIdIncludeRemoved(stepId: string): ProcessStep | null {
+    const row = this.db.prepare(
+      'SELECT * FROM process_steps WHERE id = ?'
+    ).get(stepId) as StepRow | undefined
     return row ? stepRowToDomain(row) : null
   }
 
@@ -205,10 +218,11 @@ export class SQLitePathRepository implements PathRepository {
     const updated: ProcessStep = { ...existing, ...partial, id: stepId }
 
     this.db.prepare(`
-      UPDATE process_steps SET name = ?, step_order = ?, location = ?, assigned_to = ?, optional = ?, dependency_type = ? WHERE id = ?
+      UPDATE process_steps SET name = ?, step_order = ?, location = ?, assigned_to = ?, optional = ?, dependency_type = ?, removed_at = ?, completed_count = ? WHERE id = ?
     `).run(
       updated.name, updated.order, updated.location ?? null, updated.assignedTo ?? null,
-      updated.optional ? 1 : 0, updated.dependencyType ?? 'preferred', stepId,
+      updated.optional ? 1 : 0, updated.dependencyType ?? 'preferred',
+      updated.removedAt ?? null, updated.completedCount ?? 0, stepId,
     )
     return updated
   }

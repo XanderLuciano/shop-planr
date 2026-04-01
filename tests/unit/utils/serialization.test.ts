@@ -50,7 +50,7 @@ describe('serialize / deserialize round-trip', () => {
       id: 'part_00001',
       jobId: 'job_1',
       pathId: 'path_1',
-      currentStepIndex: 2,
+      currentStepId: 'step_2',
       certIds: [],
       createdAt: '2025-01-15T00:00:00.000Z',
       updatedAt: '2025-01-15T00:00:00.000Z'

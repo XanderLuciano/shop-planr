@@ -65,6 +65,7 @@ export function createTemplateService(repos: {
         location: ts.location,
         optional: ts.optional ?? false,
         dependencyType: ts.dependencyType ?? 'preferred',
+        completedCount: 0,
       }))
 
       const path: Path = {

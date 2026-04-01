@@ -3,7 +3,7 @@ import type { ProcessStep } from '~/types/domain'
 
 const props = defineProps<{
   partId: string
-  currentStepIndex: number
+  currentStepId: string | null
   steps: ProcessStep[]
 }>()
 
@@ -14,23 +14,31 @@ const emit = defineEmits<{
 const { advanceToStep, loading, error } = useLifecycle()
 const { operatorId } = useOperatorIdentity()
 
-const selectedIndex = ref(props.currentStepIndex + 1)
-const validationError = ref<string | null>(null)
+// Find the current step to determine its order
+const currentStep = computed(() =>
+  props.steps.find(s => s.id === props.currentStepId) ?? null,
+)
 
 const futureSteps = computed(() =>
   props.steps
-    .filter((_s, i) => i > props.currentStepIndex)
-    .map((s, _i) => ({
+    .filter(s => currentStep.value !== null && s.order > currentStep.value.order)
+    .map(s => ({
       label: `${s.order + 1}. ${s.name}${s.location ? ` (${s.location})` : ''}`,
-      value: s.order,
+      value: s.id,
       step: s,
     })),
 )
 
+const selectedStepId = ref(futureSteps.value.length > 0 ? futureSteps.value[0].value : '')
+
 const bypassedSteps = computed(() => {
-  if (selectedIndex.value <= props.currentStepIndex + 1) return []
+  if (!selectedStepId.value || !currentStep.value) return []
+  const targetStep = props.steps.find(s => s.id === selectedStepId.value)
+  if (!targetStep) return []
+  // Steps between current and target (exclusive of both)
+  if (targetStep.order <= currentStep.value.order + 1) return []
   return props.steps
-    .filter((_s, i) => i > props.currentStepIndex && i < selectedIndex.value)
+    .filter(s => s.order > currentStep.value!.order && s.order < targetStep.order)
     .map(s => ({
       stepId: s.id,
       stepName: s.name,
@@ -39,16 +47,22 @@ const bypassedSteps = computed(() => {
     }))
 })
 
+const validationError = ref<string | null>(null)
+
 async function handleAdvance() {
   validationError.value = null
   if (!operatorId.value) {
     validationError.value = 'No operator selected'
     return
   }
+  if (!selectedStepId.value) {
+    validationError.value = 'No target step selected'
+    return
+  }
 
   try {
     await advanceToStep(props.partId, {
-      targetStepIndex: selectedIndex.value,
+      targetStepId: selectedStepId.value,
       userId: operatorId.value,
     })
     emit('advanced')
@@ -63,7 +77,7 @@ async function handleAdvance() {
     <div>
       <label class="text-xs font-semibold text-(--ui-text-highlighted) block mb-1">Advance to Step</label>
       <USelect
-        v-model="selectedIndex"
+        v-model="selectedStepId"
         :items="futureSteps"
         value-key="value"
         label-key="label"

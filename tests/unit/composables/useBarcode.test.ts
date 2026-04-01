@@ -54,7 +54,7 @@ describe('useBarcode – handleScan routing', () => {
       id: 'part_00001',
       jobId: 'job_1',
       pathId: 'path_1',
-      currentStepIndex: 2,
+      currentStepId: "step_2",
       certs: [{ id: 'cert_1' }]
     })
 
@@ -124,7 +124,7 @@ describe('useBarcode – handleScan routing', () => {
       id: 'UNKNOWN-1',
       jobId: 'job_1',
       pathId: 'path_1',
-      currentStepIndex: 0,
+      currentStepId: "step_0",
       certs: []
     })
 
@@ -180,7 +180,7 @@ describe('useBarcode – handleScan routing', () => {
       id: 'part_00005',
       jobId: 'job_2',
       pathId: 'path_2',
-      currentStepIndex: -1,
+      currentStepId: null,
       certs: []
     })
 

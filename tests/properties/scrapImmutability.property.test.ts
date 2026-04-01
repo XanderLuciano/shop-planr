@@ -74,7 +74,7 @@ function scrappedPartArb(): fc.Arbitrary<Part> {
     id: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
     jobId: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
     pathId: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
-    currentStepIndex: fc.integer({ min: 0, max: 10 }),
+    currentStepId: fc.integer({ min: 0, max: 10 }).map(i => `step_${i}`),
     status: fc.constant('scrapped' as const),
     scrapReason: fc.constantFrom(...scrapReasons),
     scrapExplanation: fc.option(fc.string({ minLength: 1, maxLength: 50 }), { nil: undefined }),

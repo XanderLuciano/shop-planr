@@ -7,6 +7,29 @@
 
 import type { Part, PartStepStatusValue, StepNote } from './domain'
 
+// ---- Full Route ----
+
+export interface FullRouteResponse {
+  partId: string
+  isCompleted: boolean
+  entries: FullRouteEntry[]
+}
+
+export interface FullRouteEntry {
+  stepId: string
+  stepName: string
+  stepOrder: number
+  location?: string
+  assignedTo?: string
+  sequenceNumber?: number // present for historical/current entries, absent for planned
+  status: PartStepStatusValue | 'pending' | 'na'
+  enteredAt?: string
+  completedAt?: string
+  isCurrent: boolean
+  isPlanned: boolean
+  isRemoved: boolean
+}
+
 // ---- Job Progress ----
 
 export interface JobProgress {
@@ -83,7 +106,7 @@ export interface EnrichedPart {
   jobName: string
   pathId: string
   pathName: string
-  currentStepIndex: number
+  currentStepId: string | null
   currentStepName: string
   assignedTo?: string
   status: 'in-progress' | 'completed' | 'scrapped'

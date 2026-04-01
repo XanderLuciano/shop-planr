@@ -15,10 +15,11 @@ function makePath(overrides: Partial<Path> & { steps?: ProcessStep[] } = {}): Pa
     name: 'Main Route',
     goalQuantity: 10,
     steps: [
-      { id: 'step_0', name: 'OP1', order: 0 },
-      { id: 'step_1', name: 'OP2', order: 1 },
-      { id: 'step_2', name: 'Final', order: 2 }
+      { id: 'step_0', name: 'OP1', order: 0, optional: false, dependencyType: 'preferred', completedCount: 0 },
+      { id: 'step_1', name: 'OP2', order: 1, optional: false, dependencyType: 'preferred', completedCount: 0 },
+      { id: 'step_2', name: 'Final', order: 2, optional: false, dependencyType: 'preferred', completedCount: 0 }
     ],
+    advancementMode: 'strict',
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
     ...overrides
@@ -30,7 +31,9 @@ function makePart(overrides: Partial<Part> = {}): Part {
     id: 'part_00001',
     jobId: 'job_1',
     pathId: 'path_1',
-    currentStepIndex: 0,
+    currentStepId: 'step_0',
+    status: 'in_progress',
+    forceCompleted: false,
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
     ...overrides
@@ -49,8 +52,8 @@ function createMockPartRepo(): PartRepository {
     getByIdentifier: vi.fn((id: string) => store.get(id) ?? null),
     listByPathId: vi.fn((pathId: string) => [...store.values()].filter(s => s.pathId === pathId)),
     listByJobId: vi.fn((jobId: string) => [...store.values()].filter(s => s.jobId === jobId)),
-    listByStepIndex: vi.fn((pathId: string, stepIndex: number) =>
-      [...store.values()].filter(s => s.pathId === pathId && s.currentStepIndex === stepIndex)
+    listByCurrentStepId: vi.fn((stepId: string) =>
+      [...store.values()].filter(s => s.currentStepId === stepId && s.status !== 'scrapped')
     ),
     update: vi.fn((id: string, partial: Partial<Part>) => {
       const existing = store.get(id)!
@@ -60,7 +63,7 @@ function createMockPartRepo(): PartRepository {
     }),
     countByJobId: vi.fn((jobId: string) => [...store.values()].filter(s => s.jobId === jobId).length),
     countCompletedByJobId: vi.fn((jobId: string) =>
-      [...store.values()].filter(s => s.jobId === jobId && s.currentStepIndex === -1).length
+      [...store.values()].filter(s => s.jobId === jobId && s.currentStepId === null && s.status === 'completed').length
     ),
     countScrappedByJobId: vi.fn(() => 0),
     listAll: vi.fn(() => [...store.values()])
@@ -73,8 +76,12 @@ function createMockPathRepo(path: Path | null = makePath()): PathRepository {
     getById: vi.fn(() => path),
     listByJobId: vi.fn(() => path ? [path] : []),
     update: vi.fn(),
-    delete: vi.fn()
-  }
+    delete: vi.fn(),
+    updateStep: vi.fn((_id: string, _partial: any) => ({})),
+    getStepById: vi.fn(),
+    updateStepAssignment: vi.fn(),
+    getStepByIdIncludeRemoved: vi.fn(),
+  } as unknown as PathRepository
 }
 
 function createMockCertRepo(): CertRepository {
@@ -100,10 +107,6 @@ function createMockAuditService(): AuditService {
     getPartAuditTrail: vi.fn(() => []),
     getJobAuditTrail: vi.fn(() => []),
     listAuditEntries: vi.fn(() => []),
-    recordPartCreation: vi.fn(() => ({} as any)),
-    recordPartAdvancement: vi.fn(() => ({} as any)),
-    recordPartCompletion: vi.fn(() => ({} as any)),
-    getPartAuditTrail: vi.fn(() => []),
     recordStepSkipped: vi.fn(() => ({} as any)),
     recordStepDeferred: vi.fn(() => ({} as any)),
     recordScrap: vi.fn(() => ({} as any)),
@@ -156,7 +159,7 @@ describe('PartService', () => {
   })
 
   describe('batchCreateParts', () => {
-    it('creates parts with sequential IDs at step 0', () => {
+    it('creates parts with sequential IDs at first step', () => {
       const result = service.batchCreateParts(
         { jobId: 'job_1', pathId: 'path_1', quantity: 3 },
         'user_1'
@@ -165,7 +168,7 @@ describe('PartService', () => {
       expect(result[0].id).toBe('part_00001')
       expect(result[1].id).toBe('part_00002')
       expect(result[2].id).toBe('part_00003')
-      expect(result[0].currentStepIndex).toBe(0)
+      expect(result[0].currentStepId).toBe('step_0')
       expect(result[0].jobId).toBe('job_1')
       expect(result[0].pathId).toBe('path_1')
     })
@@ -270,14 +273,14 @@ describe('PartService', () => {
   describe('advancePart', () => {
     it('advances part from step 0 to step 1', () => {
       // Seed a part at step 0
-      partRepo.create(makePart({ id: 'part_00001', currentStepIndex: 0 }))
+      partRepo.create(makePart({ id: 'part_00001', currentStepId: 'step_0' }))
 
       const result = service.advancePart('part_00001', 'user_1')
-      expect(result.currentStepIndex).toBe(1)
+      expect(result.currentStepId).toBe('step_1')
     })
 
     it('records audit entry for advancement', () => {
-      partRepo.create(makePart({ id: 'part_00001', currentStepIndex: 0 }))
+      partRepo.create(makePart({ id: 'part_00001', currentStepId: 'step_0' }))
 
       service.advancePart('part_00001', 'user_1')
       expect(auditService.recordPartAdvancement).toHaveBeenCalledWith({
@@ -292,14 +295,14 @@ describe('PartService', () => {
 
     it('marks part as completed at final step', () => {
       // Path has 3 steps (0, 1, 2), so step 2 is the last
-      partRepo.create(makePart({ id: 'part_00001', currentStepIndex: 2 }))
+      partRepo.create(makePart({ id: 'part_00001', currentStepId: 'step_2' }))
 
       const result = service.advancePart('part_00001', 'user_1')
-      expect(result.currentStepIndex).toBe(-1)
+      expect(result.currentStepId).toBeNull()
     })
 
     it('records audit entry for completion', () => {
-      partRepo.create(makePart({ id: 'part_00001', currentStepIndex: 2 }))
+      partRepo.create(makePart({ id: 'part_00001', currentStepId: 'step_2' }))
 
       service.advancePart('part_00001', 'user_1')
       expect(auditService.recordPartCompletion).toHaveBeenCalledWith({
@@ -312,7 +315,7 @@ describe('PartService', () => {
     })
 
     it('throws ValidationError when part is already completed', () => {
-      partRepo.create(makePart({ id: 'part_00001', currentStepIndex: -1, status: 'completed' }))
+      partRepo.create(makePart({ id: 'part_00001', currentStepId: null, status: 'completed' }))
 
       expect(() => service.advancePart('part_00001', 'user_1')).toThrow(ValidationError)
     })
@@ -382,13 +385,13 @@ describe('PartService', () => {
     })
   })
 
-  describe('listPartsByStepIndex', () => {
+  describe('listPartsByCurrentStepId', () => {
     it('returns parts at a specific step', () => {
-      partRepo.create(makePart({ id: 'part_00001', pathId: 'path_1', currentStepIndex: 0 }))
-      partRepo.create(makePart({ id: 'part_00002', pathId: 'path_1', currentStepIndex: 1 }))
-      partRepo.create(makePart({ id: 'part_00003', pathId: 'path_1', currentStepIndex: 0 }))
+      partRepo.create(makePart({ id: 'part_00001', pathId: 'path_1', currentStepId: 'step_0' }))
+      partRepo.create(makePart({ id: 'part_00002', pathId: 'path_1', currentStepId: 'step_1' }))
+      partRepo.create(makePart({ id: 'part_00003', pathId: 'path_1', currentStepId: 'step_0' }))
 
-      const result = service.listPartsByStepIndex('path_1', 0)
+      const result = service.listPartsByCurrentStepId('step_0')
       expect(result).toHaveLength(2)
     })
   })

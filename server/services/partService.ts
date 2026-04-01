@@ -7,11 +7,13 @@ import type { PartRepository } from '../repositories/interfaces/partRepository'
 import type { PathRepository } from '../repositories/interfaces/pathRepository'
 import type { CertRepository } from '../repositories/interfaces/certRepository'
 import type { JobRepository } from '../repositories/interfaces/jobRepository'
-import type { Part } from '../types/domain'
+import type { PartStepStatusRepository } from '../repositories/interfaces/partStepStatusRepository'
+import type { Part, PartStepStatus } from '../types/domain'
 import type { BatchCreatePartsInput } from '../types/api'
 import type { EnrichedPart } from '../types/computed'
 import type { AuditService } from '../services/auditService'
 import type { LifecycleService } from '../services/lifecycleService'
+import { generateId } from '../utils/idGenerator'
 import { assertPositive, assertNonEmptyArray } from '../utils/validation'
 import { NotFoundError, ValidationError } from '../utils/errors'
 
@@ -26,6 +28,7 @@ export function createPartService(
     paths: PathRepository
     certs: CertRepository
     jobs?: JobRepository
+    partStepStatuses?: PartStepStatusRepository
   },
   auditService: AuditService,
   partIdGenerator: PartIdGenerator,
@@ -48,7 +51,7 @@ export function createPartService(
         id,
         jobId: input.jobId,
         pathId: input.pathId,
-        currentStepIndex: 0,
+        currentStepId: path.steps[0]!.id,
         status: 'in_progress' as const,
         forceCompleted: false,
         createdAt: now,
@@ -108,18 +111,38 @@ export function createPartService(
         throw new ValidationError('Cannot advance a scrapped part')
       }
 
-      if (part.currentStepIndex === -1 || part.status === 'completed') {
+      if (part.currentStepId === null || part.status === 'completed') {
         throw new ValidationError('Part is already completed')
       }
 
-      const lastStepIndex = path.steps.length - 1
-      const fromStep = path.steps[part.currentStepIndex]!
+      // Find current step by ID
+      const currentStep = path.steps.find(s => s.id === part.currentStepId)
+      if (!currentStep) {
+        throw new ValidationError('Current step no longer exists in path')
+      }
+
+      // Find next step by order + 1
+      const nextStep = path.steps.find(s => s.order === currentStep.order + 1)
       const now = new Date().toISOString()
 
-      if (part.currentStepIndex === lastStepIndex) {
-        // Mark as completed
+      // Increment origin step's completedCount
+      repos.paths.updateStep(currentStep.id, {
+        completedCount: currentStep.completedCount + 1,
+      })
+
+      // Update routing history: mark origin step as completed
+      if (repos.partStepStatuses) {
+        repos.partStepStatuses.updateLatestByPartAndStep(partId, currentStep.id, {
+          status: 'completed',
+          completedAt: now,
+          updatedAt: now,
+        })
+      }
+
+      if (!nextStep) {
+        // Mark as completed — past final step
         const updated = repos.parts.update(partId, {
-          currentStepIndex: -1,
+          currentStepId: null,
           status: 'completed',
           updatedAt: now
         })
@@ -129,16 +152,29 @@ export function createPartService(
           partId,
           jobId: part.jobId,
           pathId: part.pathId,
-          fromStepId: fromStep.id
+          fromStepId: currentStep.id
         })
 
         return updated
       }
 
+      // Create routing history entry for destination step
+      if (repos.partStepStatuses) {
+        const nextSeq = repos.partStepStatuses.getNextSequenceNumber(partId)
+        repos.partStepStatuses.create({
+          id: generateId('pss'),
+          partId,
+          stepId: nextStep.id,
+          sequenceNumber: nextSeq,
+          status: 'in_progress',
+          enteredAt: now,
+          updatedAt: now,
+        })
+      }
+
       // Advance to next step
-      const toStep = path.steps[part.currentStepIndex + 1]!
       const updated = repos.parts.update(partId, {
-        currentStepIndex: part.currentStepIndex + 1,
+        currentStepId: nextStep.id,
         updatedAt: now
       })
 
@@ -147,8 +183,8 @@ export function createPartService(
         partId,
         jobId: part.jobId,
         pathId: part.pathId,
-        fromStepId: fromStep.id,
-        toStepId: toStep.id
+        fromStepId: currentStep.id,
+        toStepId: nextStep.id
       })
 
       return updated
@@ -174,8 +210,8 @@ export function createPartService(
       return repos.parts.listByJobId(jobId)
     },
 
-    listPartsByStepIndex(pathId: string, stepIndex: number): Part[] {
-      return repos.parts.listByStepIndex(pathId, stepIndex)
+    listPartsByCurrentStepId(stepId: string): Part[] {
+      return repos.parts.listByCurrentStepId(stepId)
     },
 
     listAllPartsEnriched(): EnrichedPart[] {
@@ -183,7 +219,7 @@ export function createPartService(
 
       // Build lookup maps for jobs and paths
       const jobMap = new Map<string, string>()
-      const pathMap = new Map<string, { name: string; steps: { name: string; order: number; assignedTo?: string }[] }>()
+      const pathMap = new Map<string, { name: string; steps: { id: string; name: string; order: number; assignedTo?: string }[] }>()
 
       for (const part of parts) {
         if (!jobMap.has(part.jobId) && repos.jobs) {
@@ -195,7 +231,7 @@ export function createPartService(
           if (path) {
             pathMap.set(part.pathId, {
               name: path.name,
-              steps: path.steps.map(s => ({ name: s.name, order: s.order, assignedTo: s.assignedTo })),
+              steps: path.steps.map(s => ({ id: s.id, name: s.name, order: s.order, assignedTo: s.assignedTo })),
             })
           }
         }
@@ -210,7 +246,7 @@ export function createPartService(
         let status: 'in-progress' | 'completed' | 'scrapped'
         if (part.status === 'scrapped') {
           status = 'scrapped'
-        } else if (part.currentStepIndex === -1 || part.status === 'completed') {
+        } else if (part.currentStepId === null || part.status === 'completed') {
           status = 'completed'
         } else {
           status = 'in-progress'
@@ -218,8 +254,8 @@ export function createPartService(
 
         let currentStepName = 'Completed'
         let assignedTo: string | undefined
-        if (part.currentStepIndex >= 0) {
-          const currentStep = steps.find(s => s.order === part.currentStepIndex)
+        if (part.currentStepId !== null) {
+          const currentStep = steps.find(s => s.id === part.currentStepId)
           currentStepName = currentStep?.name ?? ''
           assignedTo = currentStep?.assignedTo
         }
@@ -233,7 +269,7 @@ export function createPartService(
           jobName,
           pathId: part.pathId,
           pathName,
-          currentStepIndex: part.currentStepIndex,
+          currentStepId: part.currentStepId,
           currentStepName,
           assignedTo,
           status,

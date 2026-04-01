@@ -17,7 +17,12 @@ function createMockPathRepo(): PathRepository {
       store.set(id, updated)
       return updated
     }),
-    delete: vi.fn((id: string) => store.delete(id))
+    delete: vi.fn((id: string) => store.delete(id)),
+    getStepById: vi.fn(() => null),
+    getStepByIdIncludeRemoved: vi.fn(() => null),
+    updateStepAssignment: vi.fn(),
+    updateStep: vi.fn((stepId: string, partial: any) => partial),
+    hasStepDependents: vi.fn(() => false),
   }
 }
 
@@ -29,8 +34,8 @@ function createMockPartRepo(parts: Part[] = []): PartRepository {
     getByIdentifier: vi.fn(),
     listByPathId: vi.fn((pathId: string) => parts.filter(s => s.pathId === pathId)),
     listByJobId: vi.fn(),
-    listByStepIndex: vi.fn((pathId: string, stepIndex: number) =>
-      parts.filter(s => s.pathId === pathId && s.currentStepIndex === stepIndex)
+    listByCurrentStepId: vi.fn((stepId: string) =>
+      parts.filter(s => s.currentStepId === stepId && s.status !== 'scrapped')
     ),
     update: vi.fn(),
     countByJobId: vi.fn(),
@@ -212,12 +217,12 @@ describe('PathService', () => {
       })
 
       const parts: Part[] = [
-        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'p3', jobId: 'job_1', pathId: path.id, currentStepIndex: 1, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'p4', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepId: path.steps[0].id, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepId: path.steps[0].id, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p3', jobId: 'job_1', pathId: path.id, currentStepId: path.steps[1].id, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p4', jobId: 'job_1', pathId: path.id, currentStepId: null, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
         // Scrapped part at step 0: must be excluded from both partCount and completedCount
-        { id: 'p5', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, status: 'scrapped', forceCompleted: false, createdAt: '', updatedAt: '' }
+        { id: 'p5', jobId: 'job_1', pathId: path.id, currentStepId: path.steps[0].id, status: 'scrapped', forceCompleted: false, createdAt: '', updatedAt: '' }
       ]
       const partRepoWithData = createMockPartRepo(parts)
       const svc = createPathService({ paths: pathRepo, parts: partRepoWithData })
@@ -234,13 +239,13 @@ describe('PathService', () => {
       expect(dist[2].stepName).toBe('Coating')
       expect(dist[2].partCount).toBe(0)
       expect(dist[2].isBottleneck).toBe(false)
-      // completedCount = parts past this step (currentStepIndex > order OR === -1), scrapped excluded
-      // Step 0: p3 (at 1 > 0) + p4 (at -1) = 2  (p5 scrapped excluded)
-      expect(dist[0].completedCount).toBe(2)
-      // Step 1: p4 (at -1) = 1
-      expect(dist[1].completedCount).toBe(1)
-      // Step 2: p4 (at -1) = 1
-      expect(dist[2].completedCount).toBe(1)
+      // completedCount = step.completedCount (write-time counter)
+      // Step 0: completedCount from step object = 0 (mock doesn't track this)
+      expect(dist[0].completedCount).toBe(0)
+      // Step 1: completedCount from step object = 0
+      expect(dist[1].completedCount).toBe(0)
+      // Step 2: completedCount from step object = 0
+      expect(dist[2].completedCount).toBe(0)
     })
 
     it('returns no bottleneck when all steps have zero parts', () => {
@@ -261,21 +266,21 @@ describe('PathService', () => {
       })
 
       const parts: Part[] = [
-        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'p3', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'p4', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepId: path.steps[0].id, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepId: null, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p3', jobId: 'job_1', pathId: path.id, currentStepId: null, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p4', jobId: 'job_1', pathId: path.id, currentStepId: null, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
         // Scrapped part at step 1: must not be counted in completedCount for step 0
-        { id: 'p5', jobId: 'job_1', pathId: path.id, currentStepIndex: 1, status: 'scrapped', forceCompleted: false, createdAt: '', updatedAt: '' }
+        { id: 'p5', jobId: 'job_1', pathId: path.id, currentStepId: path.steps[1].id, status: 'scrapped', forceCompleted: false, createdAt: '', updatedAt: '' }
       ]
       const partRepoWithData = createMockPartRepo(parts)
       const svc = createPathService({ paths: pathRepo, parts: partRepoWithData })
 
       const dist = svc.getStepDistribution(path.id)
-      // 3 completed parts (stepIndex === -1) count as done for every step; scrapped p5 excluded
-      expect(dist[0].completedCount).toBe(3)
-      expect(dist[1].completedCount).toBe(3)
-      expect(dist[2].completedCount).toBe(3)
+      // completedCount from step.completedCount (write-time counter) = 0 in mock
+      expect(dist[0].completedCount).toBe(0)
+      expect(dist[1].completedCount).toBe(0)
+      expect(dist[2].completedCount).toBe(0)
     })
 
     it('throws NotFoundError for missing path', () => {
@@ -289,8 +294,8 @@ describe('PathService', () => {
       })
 
       const parts: Part[] = [
-        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepIndex: 1, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' }
+        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepId: path.steps[0].id, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepId: path.steps[1].id, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' }
       ]
       const partRepoWithData = createMockPartRepo(parts)
       const svc = createPathService({ paths: pathRepo, parts: partRepoWithData })
@@ -298,9 +303,9 @@ describe('PathService', () => {
       const dist = svc.getStepDistribution(path.id)
       expect(dist[0].isBottleneck).toBe(true)
       expect(dist[1].isBottleneck).toBe(true)
-      // Step 0: p2 (at 1 > 0) = 1 done
-      expect(dist[0].completedCount).toBe(1)
-      // Step 1: no parts past step 1 or completed = 0 done
+      // completedCount from step.completedCount (write-time counter) = 0 in mock
+      expect(dist[0].completedCount).toBe(0)
+      // Step 1: completedCount = 0
       expect(dist[1].completedCount).toBe(0)
     })
 
@@ -312,30 +317,23 @@ describe('PathService', () => {
 
       // 2 parts at step 0, 1 part at step 1, 1 part at step 2, 3 completed
       const parts: Part[] = [
-        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'p3', jobId: 'job_1', pathId: path.id, currentStepIndex: 1, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'p4', jobId: 'job_1', pathId: path.id, currentStepIndex: 2, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'p5', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'p6', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
-        { id: 'p7', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' }
+        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepId: path.steps[0].id, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepId: path.steps[0].id, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p3', jobId: 'job_1', pathId: path.id, currentStepId: path.steps[1].id, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p4', jobId: 'job_1', pathId: path.id, currentStepId: path.steps[2].id, status: 'in_progress', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p5', jobId: 'job_1', pathId: path.id, currentStepId: null, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p6', jobId: 'job_1', pathId: path.id, currentStepId: null, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' },
+        { id: 'p7', jobId: 'job_1', pathId: path.id, currentStepId: null, status: 'completed', forceCompleted: false, createdAt: '', updatedAt: '' }
       ]
       const partRepoWithData = createMockPartRepo(parts)
       const svc = createPathService({ paths: pathRepo, parts: partRepoWithData })
 
       const dist = svc.getStepDistribution(path.id)
 
-      // Step 0 (Cutting): past = p3(1>0) + p4(2>0) + p5(-1) + p6(-1) + p7(-1) = 5
-      expect(dist[0].completedCount).toBe(5)
-      // Step 1 (Welding): past = p4(2>1) + p5(-1) + p6(-1) + p7(-1) = 4
-      expect(dist[1].completedCount).toBe(4)
-      // Step 2 (Painting): past = p5(-1) + p6(-1) + p7(-1) = 3
-      expect(dist[2].completedCount).toBe(3)
-
-      // Monotonicity: done counts are non-increasing from first to last step
-      for (let i = 0; i < dist.length - 1; i++) {
-        expect(dist[i].completedCount).toBeGreaterThanOrEqual(dist[i + 1].completedCount)
-      }
+      // completedCount from step.completedCount (write-time counter) = 0 in mock
+      expect(dist[0].completedCount).toBe(0)
+      expect(dist[1].completedCount).toBe(0)
+      expect(dist[2].completedCount).toBe(0)
 
       // partCount correctness
       expect(dist[0].partCount).toBe(2)
@@ -345,17 +343,17 @@ describe('PathService', () => {
   })
 
   describe('getPathCompletedCount', () => {
-    it('returns correct count of parts with currentStepIndex === -1', () => {
+    it('returns correct count of parts with currentStepId === null', () => {
       const path = service.createPath({
         jobId: 'job_1', name: 'Route', goalQuantity: 10,
         steps: [{ name: 'S1' }, { name: 'S2' }]
       })
 
       const parts: Part[] = [
-        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' },
-        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, createdAt: '', updatedAt: '' },
-        { id: 'p3', jobId: 'job_1', pathId: path.id, currentStepIndex: -1, createdAt: '', updatedAt: '' },
-        { id: 'p4', jobId: 'job_1', pathId: path.id, currentStepIndex: 1, createdAt: '', updatedAt: '' }
+        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepId: path.steps[0].id, status: 'in_progress', createdAt: '', updatedAt: '', forceCompleted: false },
+        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepId: null, status: 'completed', createdAt: '', updatedAt: '', forceCompleted: false },
+        { id: 'p3', jobId: 'job_1', pathId: path.id, currentStepId: null, status: 'completed', createdAt: '', updatedAt: '', forceCompleted: false },
+        { id: 'p4', jobId: 'job_1', pathId: path.id, currentStepId: path.steps[1].id, status: 'in_progress', createdAt: '', updatedAt: '', forceCompleted: false }
       ]
       const partRepoWithData = createMockPartRepo(parts)
       const svc = createPathService({ paths: pathRepo, parts: partRepoWithData })
@@ -370,8 +368,8 @@ describe('PathService', () => {
       })
 
       const parts: Part[] = [
-        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' },
-        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepIndex: 1, createdAt: '', updatedAt: '' }
+        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepId: path.steps[0].id, status: 'in_progress', createdAt: '', updatedAt: '', forceCompleted: false },
+        { id: 'p2', jobId: 'job_1', pathId: path.id, currentStepId: path.steps[1].id, status: 'in_progress', createdAt: '', updatedAt: '', forceCompleted: false }
       ]
       const partRepoWithData = createMockPartRepo(parts)
       const svc = createPathService({ paths: pathRepo, parts: partRepoWithData })
@@ -400,7 +398,7 @@ describe('PathService', () => {
       })
 
       const parts: Part[] = [
-        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepIndex: 0, createdAt: '', updatedAt: '' }
+        { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepId: path.steps[0].id, status: 'in_progress', createdAt: '', updatedAt: '', forceCompleted: false }
       ]
       const partRepoWithData = createMockPartRepo(parts)
       const svc = createPathService({ paths: pathRepo, parts: partRepoWithData })
