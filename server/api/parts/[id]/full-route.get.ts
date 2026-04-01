@@ -3,7 +3,7 @@ import type { PartStepStatus, ProcessStep } from '../../../types/domain'
 
 export default defineEventHandler(async (event) => {
   try {
-    const partId = getRouterParam(event, 'partId')
+    const partId = getRouterParam(event, 'id')
     if (!partId) {
       throw new ValidationError('partId is required')
     }
@@ -84,7 +84,6 @@ export default defineEventHandler(async (event) => {
       if (hasRouting) continue
 
       if (isCompleted) {
-        // Completed part: steps with no routing entry are N/A
         entries.push({
           stepId: step.id,
           stepName: step.name,
@@ -97,7 +96,6 @@ export default defineEventHandler(async (event) => {
           isRemoved: false,
         })
       } else if (currentOrder !== undefined && step.order < currentOrder) {
-        // Step behind current position with no routing → N/A
         entries.push({
           stepId: step.id,
           stepName: step.name,
@@ -110,7 +108,6 @@ export default defineEventHandler(async (event) => {
           isRemoved: false,
         })
       } else if (currentOrder !== undefined && step.order > currentOrder) {
-        // Step ahead of current position with no routing → planned
         entries.push({
           stepId: step.id,
           stepName: step.name,
@@ -127,18 +124,13 @@ export default defineEventHandler(async (event) => {
 
     // 9. Sort: historical (by sequenceNumber), then N/A (by stepOrder), then planned (by stepOrder)
     entries.sort((a, b) => {
-      // Entries with sequenceNumber come first, sorted by sequenceNumber
       if (a.sequenceNumber !== undefined && b.sequenceNumber !== undefined) {
         return a.sequenceNumber - b.sequenceNumber
       }
       if (a.sequenceNumber !== undefined) return -1
       if (b.sequenceNumber !== undefined) return 1
-
-      // N/A before planned
       if (a.status === 'na' && b.isPlanned) return -1
       if (a.isPlanned && b.status === 'na') return 1
-
-      // Within same category, sort by stepOrder
       return a.stepOrder - b.stepOrder
     })
 
