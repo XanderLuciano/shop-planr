@@ -1,7 +1,7 @@
 /**
  * Property Tests: Path Done Count
  *
- * CP-DONE-1: Path completed count equals parts with currentStepIndex === -1
+ * CP-DONE-1: Path completed count equals parts with currentStepId === null
  * CP-DONE-2: Distribution completedCount matches the formula (parts past step OR completed)
  * CP-STEP-DONE-2: Monotonic non-increasing done counts across steps
  * CP-STEP-DONE-3: Last step done count equals getPathCompletedCount
@@ -101,23 +101,24 @@ describe('Path Done Count Properties', () => {
   }
 
   /**
-   * CP-DONE-1: Path completed count equals parts with currentStepIndex === -1
+   * CP-DONE-1: Path completed count equals parts with currentStepId === null
    *
    * ∀ pathId: getPathCompletedCount(pathId) ===
-   *   partService.listPartsByStepIndex(pathId, -1).length
+   *   parts.filter(p => p.currentStepId === null && p.status === 'completed').length
    *
    * **Validates: Requirements 1.1, 1.2**
    */
-  it('CP-DONE-1: getPathCompletedCount equals count of parts with stepIndex -1', () => {
+  it('CP-DONE-1: getPathCompletedCount equals count of parts with currentStepId === null', () => {
     fc.assert(
       fc.property(
         arbPathScenario(),
         (params) => {
           withScenario(params, (ctx, pathId) => {
             const completedCount = ctx.pathService.getPathCompletedCount(pathId)
-            // listByStepIndex already excludes scrapped parts
-            const partsAtMinusOne = ctx.repos.parts.listByStepIndex(pathId, -1).length
-            expect(completedCount).toBe(partsAtMinusOne)
+            // Count completed parts (currentStepId === null, status === 'completed')
+            const allParts = ctx.repos.parts.listByPathId(pathId)
+            const partsCompleted = allParts.filter(p => p.currentStepId === null && p.status === 'completed').length
+            expect(completedCount).toBe(partsCompleted)
           })
         }
       ),
@@ -126,30 +127,26 @@ describe('Path Done Count Properties', () => {
   })
 
   /**
-   * CP-DONE-2: Distribution completedCount matches the formula
+   * CP-DONE-2: Distribution completedCount matches the step's write-time counter
    *
-   * For each step at order N, completedCount should equal the count of
-   * non-scrapped parts where currentStepIndex > N OR currentStepIndex === -1.
+   * For each step, completedCount should equal the step's completedCount field
+   * (write-time counter incremented when parts advance past this step).
    *
    * **Validates: Requirements 1.1, 1.2, CP-STEP-DONE-1**
    */
-  it('CP-DONE-2: distribution completedCount matches formula (parts past step OR completed)', () => {
+  it('CP-DONE-2: distribution completedCount matches step write-time counter', () => {
     fc.assert(
       fc.property(
         arbPathScenario(),
         (params) => {
           withScenario(params, (ctx, pathId) => {
             const distribution = ctx.pathService.getStepDistribution(pathId)
-
-            // Get all non-scrapped parts for manual verification
-            const allParts = ctx.repos.parts.listByPathId(pathId)
-              .filter(p => p.status !== 'scrapped')
+            const path = ctx.pathService.getPath(pathId)
 
             for (const entry of distribution) {
-              const expected = allParts.filter(p =>
-                p.currentStepIndex === -1 || p.currentStepIndex > entry.stepOrder
-              ).length
-              expect(entry.completedCount).toBe(expected)
+              // completedCount should match the step's write-time counter
+              const step = path.steps.find(s => s.id === entry.stepId)!
+              expect(entry.completedCount).toBe(step.completedCount)
             }
           })
         }

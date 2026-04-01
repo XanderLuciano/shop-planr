@@ -11,19 +11,19 @@ import fc from 'fast-check'
 
 /**
  * Pure validation logic matching lifecycleService.advanceToStep forward-only check:
- * Rejects if targetStepIndex <= currentStepIndex.
+ * Rejects if targetStepOrder <= currentStepOrder.
  * Also rejects if target is out of range (> totalSteps).
  */
 function validateAdvancementDirection(
-  currentStepIndex: number,
-  targetStepIndex: number,
+  currentStepOrder: number,
+  targetStepOrder: number,
   totalSteps: number,
 ): { valid: boolean; error?: string } {
-  if (targetStepIndex <= currentStepIndex) {
+  if (targetStepOrder <= currentStepOrder) {
     return { valid: false, error: 'Cannot advance to a step at or before the current position' }
   }
-  if (targetStepIndex > totalSteps) {
-    return { valid: false, error: 'Target step index is out of range' }
+  if (targetStepOrder > totalSteps) {
+    return { valid: false, error: 'Target step order is out of range' }
   }
   return { valid: true }
 }
@@ -34,18 +34,18 @@ describe('Property 15: Backward and Duplicate Advancement Rejection', () => {
       fc.property(
         // totalSteps: 1..20
         fc.integer({ min: 1, max: 20 }),
-        // currentStepIndex: 0..totalSteps-1
+        // currentStepOrder: 0..totalSteps-1
         fc.integer({ min: 0, max: 19 }),
-        // targetStepIndex: any value <= currentStepIndex
+        // targetStepOrder: any value <= currentStepOrder
         fc.integer({ min: -5, max: 19 }),
         (totalSteps, rawCurrentStep, rawTarget) => {
-          const currentStepIndex = rawCurrentStep % totalSteps
+          const currentStepOrder = rawCurrentStep % totalSteps
           // Ensure target <= current
-          const targetStepIndex = Math.min(rawTarget, currentStepIndex)
+          const targetStepOrder = Math.min(rawTarget, currentStepOrder)
 
           const result = validateAdvancementDirection(
-            currentStepIndex,
-            targetStepIndex,
+            currentStepOrder,
+            targetStepOrder,
             totalSteps,
           )
 
@@ -63,11 +63,11 @@ describe('Property 15: Backward and Duplicate Advancement Rejection', () => {
         fc.integer({ min: 1, max: 20 }),
         fc.integer({ min: 0, max: 19 }),
         (totalSteps, rawCurrentStep) => {
-          const currentStepIndex = rawCurrentStep % totalSteps
+          const currentStepOrder = rawCurrentStep % totalSteps
 
           const result = validateAdvancementDirection(
-            currentStepIndex,
-            currentStepIndex, // same step = duplicate
+            currentStepOrder,
+            currentStepOrder, // same step = duplicate
             totalSteps,
           )
 
@@ -86,15 +86,15 @@ describe('Property 15: Backward and Duplicate Advancement Rejection', () => {
         fc.integer({ min: 0, max: 18 }),
         fc.integer({ min: 1, max: 20 }),
         (totalSteps, rawCurrentStep, forwardOffset) => {
-          const currentStepIndex = rawCurrentStep % (totalSteps - 1)
-          const targetStepIndex = currentStepIndex + forwardOffset
+          const currentStepOrder = rawCurrentStep % (totalSteps - 1)
+          const targetStepOrder = currentStepOrder + forwardOffset
 
           // Only test valid forward targets within range
-          if (targetStepIndex > totalSteps) return
+          if (targetStepOrder > totalSteps) return
 
           const result = validateAdvancementDirection(
-            currentStepIndex,
-            targetStepIndex,
+            currentStepOrder,
+            targetStepOrder,
             totalSteps,
           )
 
@@ -112,12 +112,12 @@ describe('Property 15: Backward and Duplicate Advancement Rejection', () => {
         fc.integer({ min: 0, max: 19 }),
         fc.integer({ min: 1, max: 10 }),
         (totalSteps, rawCurrentStep, extraOffset) => {
-          const currentStepIndex = rawCurrentStep % totalSteps
-          const targetStepIndex = totalSteps + extraOffset // always out of range
+          const currentStepOrder = rawCurrentStep % totalSteps
+          const targetStepOrder = totalSteps + extraOffset // always out of range
 
           const result = validateAdvancementDirection(
-            currentStepIndex,
-            targetStepIndex,
+            currentStepOrder,
+            targetStepOrder,
             totalSteps,
           )
 

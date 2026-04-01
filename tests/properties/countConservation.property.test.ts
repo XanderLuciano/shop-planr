@@ -118,13 +118,14 @@ describe('Property 4: Process Step Count Conservation', () => {
             }
           }
 
-          // Count parts at each step index + completed (-1)
+          // Count parts at each step by currentStepId + completed (null)
           let countSum = 0
-          for (let stepIdx = 0; stepIdx < stepCount; stepIdx++) {
-            countSum += partService.listPartsByStepIndex(path.id, stepIdx).length
+          for (const step of path.steps) {
+            countSum += partService.listPartsByCurrentStepId(step.id).length
           }
-          // Add completed parts (stepIndex === -1)
-          countSum += partService.listPartsByStepIndex(path.id, -1).length
+          // Add completed parts (currentStepId === null)
+          const allParts = partService.listPartsByPath(path.id)
+          countSum += allParts.filter(p => p.currentStepId === null && p.status !== 'scrapped').length
 
           // ASSERT: conservation — no parts lost or duplicated
           expect(countSum).toBe(totalCreated)

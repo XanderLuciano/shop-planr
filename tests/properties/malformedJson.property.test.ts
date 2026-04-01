@@ -46,7 +46,9 @@ const arbPart = () =>
     id: fc.string({ minLength: 1, maxLength: 20 }).map(s => `part_${s.replace(/[^a-zA-Z0-9]/g, 'x')}`),
     jobId: fc.constant('job_1'),
     pathId: fc.constant('path_1'),
-    currentStepIndex: fc.integer({ min: -1, max: 10 }),
+    currentStepId: fc.oneof(fc.constant(null as string | null), fc.constant('step_1')),
+    status: fc.constantFrom('in_progress' as const, 'completed' as const),
+    forceCompleted: fc.constant(false),
     createdAt: fc.constant(new Date().toISOString()),
     updatedAt: fc.constant(new Date().toISOString())
   })
@@ -171,7 +173,7 @@ describe('Property 12: Malformed JSON Error Reporting', () => {
     fc.assert(
       fc.property(
         arbPart(),
-        fc.constantFrom('id', 'jobId', 'pathId', 'currentStepIndex', 'createdAt', 'updatedAt'),
+        fc.constantFrom('id', 'jobId', 'pathId', 'createdAt', 'updatedAt'),
         (part, fieldToRemove) => {
           const json = serialize(part)
           const parsed = JSON.parse(json)

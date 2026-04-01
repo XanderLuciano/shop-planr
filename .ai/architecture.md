@@ -91,3 +91,26 @@ export default defineEventHandler(async (event) => {
 | `server/utils/idGenerator.ts` | `generateId(prefix)` + sequential SN counter |
 | `server/repositories/factory.ts` | Returns `RepositorySet` based on config |
 | `server/repositories/sqlite/index.ts` | DB init, WAL mode, migration runner |
+
+
+## Architectural Decisions
+
+### Part Position Tracking: Step-ID Based
+
+Parts track their current position via `current_step_id` (FK to `process_steps`), not a positional integer index. This means reordering steps in a path never virtually relocates parts — the part stays anchored to the same physical step regardless of ordering changes. Completed parts have `current_step_id = NULL`.
+
+### Routing History: Append-Only with Sequence Numbers
+
+Each part's journey through process steps is recorded in `part_step_statuses` as an append-only log. Each visit to a step gets a new row with an incrementing `sequence_number`. Multiple visits to the same step (recycling) produce distinct entries. The "current" status for a step is always the row with the highest sequence number. Never update or delete historical routing entries.
+
+### Write-Time Counters
+
+Frequently-read derived counts (e.g., `process_steps.completed_count`) are maintained as write-time counters, atomically incremented during the operation that changes the count. This avoids expensive aggregation queries on every read. A reconciliation operation exists to re-sync counters from source data if drift occurs.
+
+### Soft-Delete Preference
+
+Entities referenced by historical records use soft-delete (`removed_at` timestamp) rather than physical deletion. This preserves FK integrity and audit trail completeness. Currently applies to `process_steps`; other entities will migrate to this pattern over time.
+
+### Reconcile Steps by ID
+
+The `reconcileSteps` function matches incoming step edits to existing steps by step ID (not by array position). This preserves step identity, assignments, routing history references, and all FK relationships during path edits. New steps (no ID) get generated IDs; removed steps (ID not in input) are soft-deleted.

@@ -46,7 +46,7 @@ export function useLifecycle() {
   }
 
   async function advanceToStep(partId: string, input: {
-    targetStepIndex: number
+    targetStepId: string
     userId: string
   }): Promise<AdvancementResult> {
     loading.value = true

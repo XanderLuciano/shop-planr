@@ -160,7 +160,7 @@ const validators: Record<DomainType, (obj: Record<string, unknown>) => void> = {
     requireString(obj, 'id', 'Part')
     requireString(obj, 'jobId', 'Part')
     requireString(obj, 'pathId', 'Part')
-    requireNumber(obj, 'currentStepIndex', 'Part')
+    optionalString(obj, 'currentStepId', 'Part')
     requireString(obj, 'createdAt', 'Part')
     requireString(obj, 'updatedAt', 'Part')
     optionalArray(obj, 'certIds', 'Part')

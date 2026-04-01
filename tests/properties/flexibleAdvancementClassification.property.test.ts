@@ -31,14 +31,14 @@ interface BypassClassification {
  * - If step is required (not optional, no override) → 'deferred'
  */
 function classifyBypassedSteps(
-  currentStepIndex: number,
-  targetStepIndex: number,
+  currentStepOrder: number,
+  targetStepOrder: number,
   steps: StepConfig[],
   overriddenStepIds: Set<string>,
 ): BypassClassification[] {
   const result: BypassClassification[] = []
 
-  for (let i = currentStepIndex + 1; i < targetStepIndex; i++) {
+  for (let i = currentStepOrder + 1; i < targetStepOrder; i++) {
     if (i >= steps.length) continue
     const step = steps[i]
     const isEffectivelyOptional = step.optional || overriddenStepIds.has(step.id)
@@ -75,16 +75,16 @@ describe('Property 13: Flexible Advancement Step Classification', () => {
       fc.property(
         // totalSteps: 3..15
         fc.integer({ min: 3, max: 15 }),
-        // currentStepIndex
+        // currentStepOrder
         fc.integer({ min: 0, max: 12 }),
         // how far to jump
         fc.integer({ min: 2, max: 14 }),
         (totalSteps, rawCurrent, jumpSize) => {
-          const currentStepIndex = rawCurrent % (totalSteps - 1)
-          const targetStepIndex = Math.min(currentStepIndex + jumpSize, totalSteps)
+          const currentStepOrder = rawCurrent % (totalSteps - 1)
+          const targetStepOrder = Math.min(currentStepOrder + jumpSize, totalSteps)
 
           // Need at least one bypassed step
-          if (targetStepIndex - currentStepIndex <= 1) return
+          if (targetStepOrder - currentStepOrder <= 1) return
 
           // Generate steps with random optional flags
           const steps: StepConfig[] = Array.from({ length: totalSteps }, (_, i) => ({
@@ -96,8 +96,8 @@ describe('Property 13: Flexible Advancement Step Classification', () => {
           }))
 
           const classifications = classifyBypassedSteps(
-            currentStepIndex,
-            targetStepIndex,
+            currentStepOrder,
+            targetStepOrder,
             steps,
             new Set(),
           )
@@ -124,10 +124,10 @@ describe('Property 13: Flexible Advancement Step Classification', () => {
         fc.integer({ min: 2, max: 11 }),
         fc.array(fc.boolean(), { minLength: 12, maxLength: 12 }),
         (totalSteps, rawCurrent, jumpSize, optionalFlags) => {
-          const currentStepIndex = rawCurrent % (totalSteps - 1)
-          const targetStepIndex = Math.min(currentStepIndex + jumpSize, totalSteps)
+          const currentStepOrder = rawCurrent % (totalSteps - 1)
+          const targetStepOrder = Math.min(currentStepOrder + jumpSize, totalSteps)
 
-          if (targetStepIndex - currentStepIndex <= 1) return
+          if (targetStepOrder - currentStepOrder <= 1) return
 
           const steps: StepConfig[] = Array.from({ length: totalSteps }, (_, i) => ({
             id: `step-${i}`,
@@ -137,15 +137,15 @@ describe('Property 13: Flexible Advancement Step Classification', () => {
           }))
 
           const classifications = classifyBypassedSteps(
-            currentStepIndex,
-            targetStepIndex,
+            currentStepOrder,
+            targetStepOrder,
             steps,
             new Set(),
           )
 
           // Expected bypassed step indices
           const expectedBypassedIds = new Set<string>()
-          for (let i = currentStepIndex + 1; i < targetStepIndex && i < totalSteps; i++) {
+          for (let i = currentStepOrder + 1; i < targetStepOrder && i < totalSteps; i++) {
             expectedBypassedIds.add(`step-${i}`)
           }
 
@@ -171,8 +171,8 @@ describe('Property 13: Flexible Advancement Step Classification', () => {
       fc.property(
         fc.integer({ min: 4, max: 10 }),
         (totalSteps) => {
-          const currentStepIndex = 0
-          const targetStepIndex = totalSteps // advance to completion
+          const currentStepOrder = 0
+          const targetStepOrder = totalSteps // advance to completion
 
           // All steps are required (not optional)
           const steps: StepConfig[] = Array.from({ length: totalSteps }, (_, i) => ({
@@ -184,15 +184,15 @@ describe('Property 13: Flexible Advancement Step Classification', () => {
 
           // Override some steps (every other bypassed step)
           const overriddenStepIds = new Set<string>()
-          for (let i = currentStepIndex + 1; i < targetStepIndex && i < totalSteps; i++) {
+          for (let i = currentStepOrder + 1; i < targetStepOrder && i < totalSteps; i++) {
             if (i % 2 === 0) {
               overriddenStepIds.add(`step-${i}`)
             }
           }
 
           const classifications = classifyBypassedSteps(
-            currentStepIndex,
-            targetStepIndex,
+            currentStepOrder,
+            targetStepOrder,
             steps,
             overriddenStepIds,
           )

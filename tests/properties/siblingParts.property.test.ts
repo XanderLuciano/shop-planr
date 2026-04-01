@@ -21,7 +21,7 @@ function enrichedPartArb(
     jobName: fc.constant('Job'),
     pathId: fc.constantFrom(...pathIds),
     pathName: fc.constant('Path'),
-    currentStepIndex: fc.oneof(fc.constant(-1), fc.integer({ min: 0, max: 10 })),
+    currentStepId: fc.oneof(fc.constant(null as string | null), fc.string({ minLength: 3, maxLength: 15 })),
     currentStepName: fc.string({ minLength: 1, maxLength: 20 }),
     status: fc.constantFrom('in-progress' as const, 'completed' as const),
     createdAt: fc.constant(new Date().toISOString()),

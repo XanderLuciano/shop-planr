@@ -59,8 +59,8 @@ function seedJobAndPath(ctx: TestContext): { jobId: string; pathId: string } {
   ]
   for (const step of steps) {
     ctx.db.prepare(`
-      INSERT OR IGNORE INTO process_steps (id, path_id, name, step_order, location, optional, dependency_type)
-      VALUES (?, ?, ?, ?, NULL, ?, ?)
+      INSERT OR IGNORE INTO process_steps (id, path_id, name, step_order, location, optional, dependency_type, completed_count)
+      VALUES (?, ?, ?, ?, NULL, ?, ?, 0)
     `).run(step.id, pathId, step.name, step.order, step.optional ? 1 : 0, step.dependencyType)
   }
 
@@ -70,8 +70,8 @@ function seedJobAndPath(ctx: TestContext): { jobId: string; pathId: string } {
 function insertPartDirectly(ctx: TestContext, id: string, jobId: string, pathId: string) {
   const now = new Date().toISOString()
   ctx.db.prepare(`
-    INSERT INTO parts (id, job_id, path_id, current_step_index, status, force_completed, created_at, updated_at)
-    VALUES (?, ?, ?, 0, 'in_progress', 0, ?, ?)
+    INSERT INTO parts (id, job_id, path_id, current_step_id, status, force_completed, created_at, updated_at)
+    VALUES (?, ?, ?, 'step_dc_1', 'in_progress', 0, ?, ?)
   `).run(id, jobId, pathId, now, now)
 
   // Initialize step statuses so lifecycle operations work
@@ -124,8 +124,8 @@ describe('Property 5: Dual ID Prefix Compatibility', () => {
         const advancedSn = ctx.partService.advancePart(snId, 'user_test')
         const advancedPart = ctx.partService.advancePart(partId, 'user_test')
 
-        expect(advancedSn.currentStepIndex).toBe(1)
-        expect(advancedPart.currentStepIndex).toBe(1)
+        expect(advancedSn.currentStepId).toBe('step_dc_2')
+        expect(advancedPart.currentStepId).toBe('step_dc_2')
 
         ctx.cleanup()
         ctx = null as any
@@ -170,7 +170,7 @@ describe('Property 5: Dual ID Prefix Compatibility', () => {
 
   it('repository update works for both SN- and part_ prefixed IDs', () => {
     fc.assert(
-      fc.property(arbSnId(), arbPartId(), fc.integer({ min: 1, max: 2 }), (snId, partId, newIndex) => {
+      fc.property(arbSnId(), arbPartId(), fc.constantFrom('step_dc_1', 'step_dc_2', 'step_dc_3'), (snId, partId, newStepId) => {
         ctx = createTestContext()
         const { jobId, pathId } = seedJobAndPath(ctx)
 
@@ -178,17 +178,17 @@ describe('Property 5: Dual ID Prefix Compatibility', () => {
         insertPartDirectly(ctx, partId, jobId, pathId)
 
         const now = new Date().toISOString()
-        const updatedSn = ctx.repos.parts.update(snId, { currentStepIndex: newIndex, updatedAt: now })
-        const updatedPart = ctx.repos.parts.update(partId, { currentStepIndex: newIndex, updatedAt: now })
+        const updatedSn = ctx.repos.parts.update(snId, { currentStepId: newStepId, updatedAt: now })
+        const updatedPart = ctx.repos.parts.update(partId, { currentStepId: newStepId, updatedAt: now })
 
-        expect(updatedSn.currentStepIndex).toBe(newIndex)
-        expect(updatedPart.currentStepIndex).toBe(newIndex)
+        expect(updatedSn.currentStepId).toBe(newStepId)
+        expect(updatedPart.currentStepId).toBe(newStepId)
 
         // Verify round-trip
         const fetchedSn = ctx.repos.parts.getById(snId)
         const fetchedPart = ctx.repos.parts.getById(partId)
-        expect(fetchedSn!.currentStepIndex).toBe(newIndex)
-        expect(fetchedPart!.currentStepIndex).toBe(newIndex)
+        expect(fetchedSn!.currentStepId).toBe(newStepId)
+        expect(fetchedPart!.currentStepId).toBe(newStepId)
 
         ctx.cleanup()
         ctx = null as any

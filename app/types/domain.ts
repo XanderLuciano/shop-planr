@@ -26,4 +26,5 @@ export type {
   BomVersion,
   ProcessLibraryEntry,
   LocationLibraryEntry,
+  StepInput,
 } from '../../server/types/domain'

@@ -15,7 +15,7 @@ export default defineEventHandler(async () => {
         const totalSteps = path.steps.length
 
         for (const step of path.steps) {
-          const parts = partService.listPartsByStepIndex(path.id, step.order)
+          const parts = partService.listPartsByCurrentStepId(step.id)
           if (parts.length === 0) continue
 
           const isFinalStep = step.order === totalSteps - 1

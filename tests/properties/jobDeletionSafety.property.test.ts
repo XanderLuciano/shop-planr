@@ -60,7 +60,7 @@ function createMockPartRepo(partCount: number): PartRepository {
     getByIdentifier: vi.fn(),
     listByPathId: vi.fn(),
     listByJobId: vi.fn(),
-    listByStepIndex: vi.fn(),
+    listByCurrentStepId: vi.fn(),
     update: vi.fn(),
     countByJobId: vi.fn(() => partCount),
     countCompletedByJobId: vi.fn(() => 0),

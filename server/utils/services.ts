@@ -90,7 +90,7 @@ export function getServices(): ServiceSet {
 
     // Services that depend on auditService (and optionally lifecycleService)
     const partService = createPartService(
-      { parts: repos.parts, paths: repos.paths, certs: repos.certs, jobs: repos.jobs },
+      { parts: repos.parts, paths: repos.paths, certs: repos.certs, jobs: repos.jobs, partStepStatuses: repos.partStepStatuses },
       auditService,
       partIdGenerator,
       lifecycleService

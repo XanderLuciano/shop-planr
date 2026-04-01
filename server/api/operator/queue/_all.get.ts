@@ -14,7 +14,7 @@ export default defineEventHandler(async () => {
         const totalSteps = path.steps.length
 
         for (const step of path.steps) {
-          const parts = partService.listPartsByStepIndex(path.id, step.order)
+          const parts = partService.listPartsByCurrentStepId(step.id)
           if (parts.length === 0 && step.order !== 0) continue
 
           const key = `${job.id}|${path.id}|${step.order}`

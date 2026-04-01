@@ -3,8 +3,8 @@
  *
  * For any pair of existing step lists and input step lists:
  * - |toUpdate| + |toInsert| === inputSteps.length
- * - |toUpdate| + |toDelete| === existingSteps.length
- * - No step ID appears in both toUpdate and toDelete
+ * - |toUpdate| + |toSoftDelete| === existingSteps.length
+ * - No step ID appears in both toUpdate and toSoftDelete
  *
  * **Validates: Requirements 2.1, 2.2, 2.3**
  */
@@ -30,60 +30,77 @@ const arbExistingSteps = (maxLen: number) =>
         order: i,
         optional: false,
         dependencyType: 'preferred' as const,
+        completedCount: 0,
       }))
     )
   )
 
-// Arbitrary for generating input steps
-const arbInputSteps = (minLen: number, maxLen: number) =>
-  fc.array(
-    fc.record({
-      name: fc.string({ minLength: 1, maxLength: 30 }),
-    }),
-    { minLength: minLen, maxLength: maxLen }
-  )
+// Arbitrary for generating input steps — some with IDs matching existing, some new
+const arbInputStepsForExisting = (existing: ProcessStep[]) => {
+  // Pick a random subset of existing IDs to keep, then add some new ones
+  return fc.record({
+    keepCount: fc.integer({ min: 0, max: existing.length }),
+    newCount: fc.integer({ min: 0, max: 5 }),
+  }).chain(({ keepCount, newCount }) => {
+    const totalCount = keepCount + newCount
+    if (totalCount === 0) {
+      return fc.constant([{ name: 'Fallback' }] as StepInput[])
+    }
+    const kept: StepInput[] = existing.slice(0, keepCount).map(s => ({
+      id: s.id,
+      name: s.name,
+    }))
+    const newSteps: StepInput[] = Array.from({ length: newCount }, (_, i) => ({
+      name: `New Step ${i}`,
+    }))
+    return fc.constant([...kept, ...newSteps] as StepInput[])
+  })
+}
 
 describe('Property 2: Reconciliation Completeness (Count Conservation)', () => {
   it('toUpdate + toInsert count equals input step count', () => {
     fc.assert(
       fc.property(
-        arbExistingSteps(10),
-        arbInputSteps(1, 10),
-        (existingSteps, inputSteps) => {
-          const result = reconcileSteps(existingSteps, inputSteps)
+        arbExistingSteps(10).chain(existing =>
+          arbInputStepsForExisting(existing).map(input => ({ existing, input }))
+        ),
+        ({ existing, input }) => {
+          const result = reconcileSteps(existing, input)
 
-          expect(result.toUpdate.length + result.toInsert.length).toBe(inputSteps.length)
+          expect(result.toUpdate.length + result.toInsert.length).toBe(input.length)
         }
       ),
       { numRuns: 100 }
     )
   })
 
-  it('toUpdate + toDelete count equals existing step count', () => {
+  it('toUpdate + toSoftDelete count equals existing step count', () => {
     fc.assert(
       fc.property(
-        arbExistingSteps(10),
-        arbInputSteps(1, 10),
-        (existingSteps, inputSteps) => {
-          const result = reconcileSteps(existingSteps, inputSteps)
+        arbExistingSteps(10).chain(existing =>
+          arbInputStepsForExisting(existing).map(input => ({ existing, input }))
+        ),
+        ({ existing, input }) => {
+          const result = reconcileSteps(existing, input)
 
-          expect(result.toUpdate.length + result.toDelete.length).toBe(existingSteps.length)
+          expect(result.toUpdate.length + result.toSoftDelete.length).toBe(existing.length)
         }
       ),
       { numRuns: 100 }
     )
   })
 
-  it('no step ID appears in both toUpdate and toDelete', () => {
+  it('no step ID appears in both toUpdate and toSoftDelete', () => {
     fc.assert(
       fc.property(
-        arbExistingSteps(10),
-        arbInputSteps(1, 10),
-        (existingSteps, inputSteps) => {
-          const result = reconcileSteps(existingSteps, inputSteps)
+        arbExistingSteps(10).chain(existing =>
+          arbInputStepsForExisting(existing).map(input => ({ existing, input }))
+        ),
+        ({ existing, input }) => {
+          const result = reconcileSteps(existing, input)
 
           const updateIds = new Set(result.toUpdate.map(s => s.id))
-          const deleteIds = new Set(result.toDelete)
+          const deleteIds = new Set(result.toSoftDelete)
 
           for (const id of deleteIds) {
             expect(updateIds.has(id)).toBe(false)

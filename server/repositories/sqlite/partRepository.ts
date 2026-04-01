@@ -12,7 +12,7 @@ interface PartRow {
   id: string
   job_id: string
   path_id: string
-  current_step_index: number
+  current_step_id: string | null
   status: string
   scrap_reason: string | null
   scrap_explanation: string | null
@@ -32,7 +32,7 @@ function rowToDomain(row: PartRow): Part {
     id: row.id,
     jobId: row.job_id,
     pathId: row.path_id,
-    currentStepIndex: row.current_step_index,
+    currentStepId: row.current_step_id,
     status: row.status as Part['status'],
     scrapReason: (row.scrap_reason as Part['scrapReason']) ?? undefined,
     scrapExplanation: row.scrap_explanation ?? undefined,
@@ -57,10 +57,10 @@ export class SQLitePartRepository implements PartRepository {
 
   create(part: Part): Part {
     this.db.prepare(`
-      INSERT INTO parts (id, job_id, path_id, current_step_index, status, scrap_reason, scrap_explanation, scrap_step_id, scrapped_at, scrapped_by, force_completed, force_completed_by, force_completed_at, force_completed_reason, created_at, updated_at)
+      INSERT INTO parts (id, job_id, path_id, current_step_id, status, scrap_reason, scrap_explanation, scrap_step_id, scrapped_at, scrapped_by, force_completed, force_completed_by, force_completed_at, force_completed_reason, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
-      part.id, part.jobId, part.pathId, part.currentStepIndex,
+      part.id, part.jobId, part.pathId, part.currentStepId,
       part.status ?? 'in_progress',
       part.scrapReason ?? null, part.scrapExplanation ?? null, part.scrapStepId ?? null,
       part.scrappedAt ?? null, part.scrappedBy ?? null,
@@ -73,13 +73,13 @@ export class SQLitePartRepository implements PartRepository {
 
   createBatch(parts: Part[]): Part[] {
     const insert = this.db.prepare(`
-      INSERT INTO parts (id, job_id, path_id, current_step_index, status, scrap_reason, scrap_explanation, scrap_step_id, scrapped_at, scrapped_by, force_completed, force_completed_by, force_completed_at, force_completed_reason, created_at, updated_at)
+      INSERT INTO parts (id, job_id, path_id, current_step_id, status, scrap_reason, scrap_explanation, scrap_step_id, scrapped_at, scrapped_by, force_completed, force_completed_by, force_completed_at, force_completed_reason, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `)
     this.db.transaction(() => {
       for (const part of parts) {
         insert.run(
-          part.id, part.jobId, part.pathId, part.currentStepIndex,
+          part.id, part.jobId, part.pathId, part.currentStepId,
           part.status ?? 'in_progress',
           part.scrapReason ?? null, part.scrapExplanation ?? null, part.scrapStepId ?? null,
           part.scrappedAt ?? null, part.scrappedBy ?? null,
@@ -111,8 +111,10 @@ export class SQLitePartRepository implements PartRepository {
     return rows.map(rowToDomain)
   }
 
-  listByStepIndex(pathId: string, stepIndex: number): Part[] {
-    const rows = this.db.prepare('SELECT * FROM parts WHERE path_id = ? AND current_step_index = ? AND status != \'scrapped\' ORDER BY created_at ASC').all(pathId, stepIndex) as PartRow[]
+  listByCurrentStepId(stepId: string): Part[] {
+    const rows = this.db.prepare(
+      "SELECT * FROM parts WHERE current_step_id = ? AND status != 'scrapped' ORDER BY created_at ASC"
+    ).all(stepId) as PartRow[]
     return rows.map(rowToDomain)
   }
 
@@ -123,13 +125,13 @@ export class SQLitePartRepository implements PartRepository {
     const updated: Part = { ...existing, ...partial, id, updatedAt: partial.updatedAt ?? new Date().toISOString() }
 
     this.db.prepare(`
-      UPDATE parts SET job_id = ?, path_id = ?, current_step_index = ?, status = ?,
+      UPDATE parts SET job_id = ?, path_id = ?, current_step_id = ?, status = ?,
         scrap_reason = ?, scrap_explanation = ?, scrap_step_id = ?, scrapped_at = ?, scrapped_by = ?,
         force_completed = ?, force_completed_by = ?, force_completed_at = ?, force_completed_reason = ?,
         updated_at = ?
       WHERE id = ?
     `).run(
-      updated.jobId, updated.pathId, updated.currentStepIndex, updated.status,
+      updated.jobId, updated.pathId, updated.currentStepId, updated.status,
       updated.scrapReason ?? null, updated.scrapExplanation ?? null, updated.scrapStepId ?? null,
       updated.scrappedAt ?? null, updated.scrappedBy ?? null,
       updated.forceCompleted ? 1 : 0,
@@ -145,7 +147,9 @@ export class SQLitePartRepository implements PartRepository {
   }
 
   countCompletedByJobId(jobId: string): number {
-    const row = this.db.prepare('SELECT COUNT(*) as count FROM parts WHERE job_id = ? AND current_step_index = -1').get(jobId) as { count: number }
+    const row = this.db.prepare(
+      "SELECT COUNT(*) as count FROM parts WHERE job_id = ? AND current_step_id IS NULL AND status = 'completed'"
+    ).get(jobId) as { count: number }
     return row.count
   }
 

@@ -27,8 +27,8 @@ describe('hasStepDependents', () => {
     // Create prerequisite rows: job, path, step, part, cert
     db.prepare('INSERT INTO jobs (id, name, goal_quantity, created_at, updated_at) VALUES (?, ?, ?, ?, ?)').run(jobId, 'Test Job', 10, now, now)
     db.prepare('INSERT INTO paths (id, job_id, name, goal_quantity, advancement_mode, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(pathId, jobId, 'Test Path', 10, 'strict', now, now)
-    db.prepare('INSERT INTO process_steps (id, path_id, name, step_order, optional, dependency_type) VALUES (?, ?, ?, ?, ?, ?)').run(stepId, pathId, 'Step 1', 0, 0, 'preferred')
-    db.prepare('INSERT INTO parts (id, job_id, path_id, current_step_index, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(partId, jobId, pathId, 0, 'in_progress', now, now)
+    db.prepare('INSERT INTO process_steps (id, path_id, name, step_order, optional, dependency_type, completed_count) VALUES (?, ?, ?, ?, ?, ?, 0)').run(stepId, pathId, 'Step 1', 0, 0, 'preferred')
+    db.prepare('INSERT INTO parts (id, job_id, path_id, current_step_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(partId, jobId, pathId, stepId, 'in_progress', now, now)
     db.prepare("INSERT INTO certs (id, type, name, created_at) VALUES (?, ?, ?, ?)").run(certId, 'material', 'Test Cert', now)
   })
 
@@ -54,7 +54,7 @@ describe('hasStepDependents', () => {
   it('returns true when step has part_step_statuses', () => {
     const statusId = generateId('pss')
     const now = new Date().toISOString()
-    db.prepare('INSERT INTO part_step_statuses (id, part_id, step_id, step_index, status, updated_at) VALUES (?, ?, ?, ?, ?, ?)').run(statusId, partId, stepId, 0, 'pending', now)
+    db.prepare('INSERT INTO part_step_statuses (id, part_id, step_id, sequence_number, status, entered_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(statusId, partId, stepId, 1, 'pending', now, now)
 
     expect(repo.hasStepDependents(stepId)).toBe(true)
   })

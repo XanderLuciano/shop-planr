@@ -14,10 +14,17 @@
 | Command | What it does |
 |---------|-------------|
 | `npm run test` | `vitest run` — single pass, all tests (857 tests, 148 files) |
+| `npm run typecheck` | `nuxt typecheck` — full TypeScript type checking (run after tests pass) |
 | `npm run test:watch` | `vitest` — watch mode |
 | `npx vitest run tests/properties` | Property tests only |
 | `npx vitest run tests/unit` | Unit tests only |
 | `npx vitest run tests/integration` | Integration tests only |
+
+## Verification Order
+
+After making changes, always verify in this order:
+1. `npm run test` — all tests must pass first
+2. `npm run typecheck` — zero type errors required before committing
 
 ## Test File Organization
 
@@ -98,6 +105,18 @@ describe('Property N: Title', () => {
   })
 })
 ```
+
+## Determinism in Property Tests
+
+Never use `Math.random()` inside a property test body. It breaks fast-check's seed-based replay — if a test fails, you can't reproduce it from the reported seed because `Math.random()` isn't controlled by fast-check.
+
+Instead, use fast-check's own generators for any randomness:
+- Shuffling: `fc.shuffledSubarray(arr, { minLength: arr.length, maxLength: arr.length })`
+- Random booleans: `fc.boolean()` or `fc.array(fc.boolean())`
+- Random selection: `fc.constantFrom(...options)`
+- Random subsets: `fc.subarray(arr)`
+
+All randomness must flow through `fc.property(...)` arguments so failures replay deterministically.
 
 ## Integration Test Isolation
 

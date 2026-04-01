@@ -111,10 +111,10 @@ describe('Property 6: Audit Trail Immutability and Completeness', () => {
           for (let i = 0; i < advanceable; i++) {
             try {
               const part = partService.getPart(parts[i].id)
-              if (part.currentStepIndex === -1) continue
+              if (part.currentStepId === null) continue
               partService.advancePart(parts[i].id, 'user_test')
               const updated = partService.getPart(parts[i].id)
-              if (updated.currentStepIndex === -1) {
+              if (updated.currentStepId === -1) {
                 expectedCompletionAudits++
               } else {
                 expectedAdvancementAudits++
@@ -130,8 +130,7 @@ describe('Property 6: Audit Trail Immutability and Completeness', () => {
             const cert = certService.createCert({ type: 'material', name: 'Test Cert' })
             for (let i = 0; i < attachCount; i++) {
               const part = partService.getPart(parts[i].id)
-              const stepIdx = part.currentStepIndex === -1 ? stepCount - 1 : part.currentStepIndex
-              const stepId = path.steps[stepIdx].id
+              const stepId = part.currentStepId ?? path.steps[stepCount - 1].id
               certService.attachCertToPart({
                 certId: cert.id,
                 partId: parts[i].id,

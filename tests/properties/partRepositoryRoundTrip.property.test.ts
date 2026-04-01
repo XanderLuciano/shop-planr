@@ -28,9 +28,9 @@ function createTestDb() {
 
 /**
  * Insert a minimal Job + Path so that foreign key constraints are satisfied
- * when creating Part records.
+ * when creating Part records. Also inserts process_steps for the FK on current_step_id.
  */
-function seedPrerequisites(db: Database.Database, jobId: string, pathId: string) {
+function seedPrerequisites(db: Database.Database, jobId: string, pathId: string, stepIds: string[]) {
   const now = new Date().toISOString()
   db.prepare(`
     INSERT INTO jobs (id, name, goal_quantity, created_at, updated_at)
@@ -41,6 +41,14 @@ function seedPrerequisites(db: Database.Database, jobId: string, pathId: string)
     INSERT INTO paths (id, job_id, name, goal_quantity, advancement_mode, created_at, updated_at)
     VALUES (?, ?, 'Test Path', 10, 'strict', ?, ?)
   `).run(pathId, jobId, now, now)
+
+  // Seed process_steps for FK constraint on current_step_id
+  for (let i = 0; i < stepIds.length; i++) {
+    db.prepare(`
+      INSERT OR IGNORE INTO process_steps (id, path_id, name, step_order, optional, dependency_type, completed_count)
+      VALUES (?, ?, ?, ?, 0, 'preferred', 0)
+    `).run(stepIds[i], pathId, `Step ${i}`, i)
+  }
 }
 
 // ---- Arbitraries ----
@@ -53,12 +61,14 @@ const arbIsoDate = () =>
 const arbScrapReason = (): fc.Arbitrary<ScrapReason> =>
   fc.constantFrom('out_of_tolerance', 'process_defect', 'damaged', 'operator_error', 'other')
 
+const STEP_IDS = ['step_a', 'step_b', 'step_c']
+
 const arbPartInProgress = (jobId: string, pathId: string): fc.Arbitrary<Part> =>
   fc.record({
     id: arbId(),
     jobId: fc.constant(jobId),
     pathId: fc.constant(pathId),
-    currentStepIndex: fc.integer({ min: 0, max: 20 }),
+    currentStepId: fc.constantFrom(...STEP_IDS),
     status: fc.constant('in_progress' as const),
     forceCompleted: fc.constant(false),
     createdAt: arbIsoDate(),
@@ -70,7 +80,7 @@ const arbPartScrapped = (jobId: string, pathId: string): fc.Arbitrary<Part> =>
     id: arbId(),
     jobId: fc.constant(jobId),
     pathId: fc.constant(pathId),
-    currentStepIndex: fc.integer({ min: 0, max: 20 }),
+    currentStepId: fc.constantFrom(...STEP_IDS),
     status: fc.constant('scrapped' as const),
     scrapReason: arbScrapReason(),
     scrapExplanation: fc.option(fc.string({ minLength: 1, maxLength: 50 }), { nil: undefined }),
@@ -87,7 +97,7 @@ const arbPartCompleted = (jobId: string, pathId: string): fc.Arbitrary<Part> =>
     id: arbId(),
     jobId: fc.constant(jobId),
     pathId: fc.constant(pathId),
-    currentStepIndex: fc.constant(-1),
+    currentStepId: fc.constant(null as string | null),
     status: fc.constant('completed' as const),
     forceCompleted: fc.boolean(),
     forceCompletedBy: fc.option(arbId(), { nil: undefined }),
@@ -115,7 +125,7 @@ function normalizePart(part: Part): Part {
     id: part.id,
     jobId: part.jobId,
     pathId: part.pathId,
-    currentStepIndex: part.currentStepIndex,
+    currentStepId: part.currentStepId,
     status: part.status,
     scrapReason: part.scrapReason ?? undefined,
     scrapExplanation: part.scrapExplanation ?? undefined,
@@ -147,7 +157,7 @@ describe('Property 3: Repository CRUD Round-Trip on Renamed Tables', () => {
     fc.assert(
       fc.property(arbPart(JOB_ID, PATH_ID), (part) => {
         db = createTestDb()
-        seedPrerequisites(db, JOB_ID, PATH_ID)
+        seedPrerequisites(db, JOB_ID, PATH_ID, STEP_IDS)
         const repo = new SQLitePartRepository(db)
 
         repo.create(part)
@@ -170,7 +180,7 @@ describe('Property 3: Repository CRUD Round-Trip on Renamed Tables', () => {
     fc.assert(
       fc.property(arbPart(JOB_ID, PATH_ID), (part) => {
         db = createTestDb()
-        seedPrerequisites(db, JOB_ID, PATH_ID)
+        seedPrerequisites(db, JOB_ID, PATH_ID, STEP_IDS)
         const repo = new SQLitePartRepository(db)
 
         repo.create(part)
@@ -193,25 +203,25 @@ describe('Property 3: Repository CRUD Round-Trip on Renamed Tables', () => {
     fc.assert(
       fc.property(
         arbPartInProgress(JOB_ID, PATH_ID),
-        fc.integer({ min: 1, max: 20 }),
+        fc.constantFrom(...STEP_IDS),
         arbIsoDate(),
-        (part, newStepIndex, newUpdatedAt) => {
+        (part, newStepId, newUpdatedAt) => {
           db = createTestDb()
-          seedPrerequisites(db, JOB_ID, PATH_ID)
+          seedPrerequisites(db, JOB_ID, PATH_ID, STEP_IDS)
           const repo = new SQLitePartRepository(db)
 
           repo.create(part)
           const updated = repo.update(part.id, {
-            currentStepIndex: newStepIndex,
+            currentStepId: newStepId,
             updatedAt: newUpdatedAt,
           })
 
-          expect(updated.currentStepIndex).toBe(newStepIndex)
+          expect(updated.currentStepId).toBe(newStepId)
           expect(updated.updatedAt).toBe(newUpdatedAt)
 
           const retrieved = repo.getById(part.id)
           expect(retrieved).not.toBeNull()
-          expect(retrieved!.currentStepIndex).toBe(newStepIndex)
+          expect(retrieved!.currentStepId).toBe(newStepId)
 
           db.close()
           db = null as any

@@ -49,7 +49,7 @@ describe('Flexible Advancement Integration', () => {
 
     // 4. Advance from step 0 to step 3, skipping steps 1 and 2
     const result = lifecycleService.advanceToStep(part.id, {
-      targetStepIndex: 3,
+      targetStepId: path.steps[3].id,
       userId: 'operator1',
     })
 
@@ -66,7 +66,7 @@ describe('Flexible Advancement Integration', () => {
     expect(step2Bypass!.classification).toBe('deferred')  // required → deferred
 
     // 6. Verify part is now at step 3
-    expect(result.serial.currentStepIndex).toBe(3)
+    expect(result.serial.currentStepId).toBe(path.steps[3].id)
 
     // 7. Verify deferred step blocks normal completion via canComplete
     const completionCheck = lifecycleService.canComplete(part.id)
@@ -83,11 +83,11 @@ describe('Flexible Advancement Integration', () => {
 
     // 9. Advance from step 3 (Inspect) to completion
     const finalResult = lifecycleService.advanceToStep(part.id, {
-      targetStepIndex: 4, // past last step = completion
+      targetStepId: '__complete__', // past last step = completion
       userId: 'operator1',
     })
     expect(finalResult.serial.status).toBe('completed')
-    expect(finalResult.serial.currentStepIndex).toBe(-1)
+    expect(finalResult.serial.currentStepId).toBeNull()
   })
 
   it('strict mode rejects non-sequential advancement', () => {
@@ -111,17 +111,17 @@ describe('Flexible Advancement Integration', () => {
     // Trying to skip from step 0 to step 2 in strict mode → should fail
     expect(() =>
       lifecycleService.advanceToStep(part.id, {
-        targetStepIndex: 2,
+        targetStepId: path.steps[2].id,
         userId: 'user1',
       })
     ).toThrow(/strict/)
 
     // Sequential advance (0 → 1) should work
     const result = lifecycleService.advanceToStep(part.id, {
-      targetStepIndex: 1,
+      targetStepId: path.steps[1].id,
       userId: 'user1',
     })
-    expect(result.serial.currentStepIndex).toBe(1)
+    expect(result.serial.currentStepId).toBe(path.steps[1].id)
   })
 
   it('physical dependency blocks advancement even in flexible mode', () => {
@@ -150,7 +150,7 @@ describe('Flexible Advancement Integration', () => {
     // Trying to skip past physical dependency → should fail
     expect(() =>
       lifecycleService.advanceToStep(part.id, {
-        targetStepIndex: 2,
+        targetStepId: path.steps[2].id,
         userId: 'user1',
       })
     ).toThrow(/physical/)
@@ -175,11 +175,11 @@ describe('Flexible Advancement Integration', () => {
     )
 
     // Advance to step 2
-    lifecycleService.advanceToStep(part.id, { targetStepIndex: 2, userId: 'user1' })
+    lifecycleService.advanceToStep(part.id, { targetStepId: path.steps[2].id, userId: 'user1' })
 
     // Try to go back to step 1 → should fail
     expect(() =>
-      lifecycleService.advanceToStep(part.id, { targetStepIndex: 1, userId: 'user1' })
+      lifecycleService.advanceToStep(part.id, { targetStepId: path.steps[1].id, userId: 'user1' })
     ).toThrow(/before/)
   })
 })

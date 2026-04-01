@@ -19,7 +19,7 @@ export function createLifecycleService(repos: {
 }, auditService: AuditService) {
   /**
    * Creates part_step_statuses rows for all steps in the path.
-   * First step gets 'in_progress', rest get 'pending'.
+   * First step gets 'in_progress' with sequenceNumber 1, rest get 'pending' with sequenceNumber 1.
    */
   function initializeStepStatuses(partId: string, pathId: string): void {
     const path = repos.paths.getById(pathId)
@@ -30,8 +30,9 @@ export function createLifecycleService(repos: {
       id: generateId('pss'),
       partId,
       stepId: step.id,
-      stepIndex: index,
+      sequenceNumber: 1,
       status: index === 0 ? 'in_progress' : 'pending',
+      enteredAt: now,
       updatedAt: now,
     }))
 
@@ -39,7 +40,7 @@ export function createLifecycleService(repos: {
   }
 
   /**
-   * Returns all step statuses for a part, ordered by step index.
+   * Returns all step statuses for a part, ordered by sequenceNumber.
    */
   function getStepStatuses(partId: string): PartStepStatus[] {
     return repos.partStepStatuses.listByPartId(partId)
@@ -47,8 +48,7 @@ export function createLifecycleService(repos: {
 
   /**
    * Checks if all required steps are completed or waived.
-   * A step blocks completion if it's required (not optional and no active override)
-   * and its status is not 'completed' or 'waived'.
+   * Uses getLatestByPartAndStep to get the most recent routing entry per step.
    */
   function canComplete(partId: string): { canComplete: boolean; blockers: string[] } {
     const part = repos.parts.getById(partId)
@@ -57,7 +57,6 @@ export function createLifecycleService(repos: {
     const path = repos.paths.getById(part.pathId)
     if (!path) throw new NotFoundError('Path', part.pathId)
 
-    const stepStatuses = repos.partStepStatuses.listByPartId(partId)
     const activeOverrides = repos.partStepOverrides.listActiveByPartId(partId)
     const overriddenStepIds = new Set(activeOverrides.map(o => o.stepId))
 
@@ -70,8 +69,8 @@ export function createLifecycleService(repos: {
       // Skip steps with an active override — treated as optional for this part
       if (overriddenStepIds.has(step.id)) continue
 
-      // Find the status for this step
-      const status = stepStatuses.find(s => s.stepId === step.id)
+      // Find the latest status for this step
+      const status = repos.partStepStatuses.getLatestByPartAndStep(partId, step.id)
 
       // If no status record or status is not completed/waived, it's a blocker
       if (!status || (status.status !== 'completed' && status.status !== 'waived')) {
@@ -108,11 +107,11 @@ export function createLifecycleService(repos: {
         throw new ValidationError('Explanation is required when scrap reason is "other"')
       }
 
-      // Determine the current step ID from the path
+      // Determine the current step ID from the part
       const path = repos.paths.getById(part.pathId)
       if (!path) throw new NotFoundError('Path', part.pathId)
 
-      const currentStep = path.steps[part.currentStepIndex]
+      const currentStep = path.steps.find(s => s.id === part.currentStepId)
       const scrapStepId = currentStep ? currentStep.id : undefined
 
       const now = new Date().toISOString()
@@ -155,35 +154,48 @@ export function createLifecycleService(repos: {
       const path = repos.paths.getById(part.pathId)
       if (!path) throw new NotFoundError('Path', part.pathId)
 
-      const { targetStepIndex, userId } = input
-      const currentStepIndex = part.currentStepIndex
-      const totalSteps = path.steps.length
+      const { targetStepId, userId } = input
 
-      // 2. Validate forward-only
-      if (targetStepIndex <= currentStepIndex) {
+      // 2. Look up current step by part.currentStepId
+      const currentStep = path.steps.find(s => s.id === part.currentStepId)
+      if (!currentStep) {
+        throw new ValidationError('Current step no longer exists in path')
+      }
+
+      // 3. Look up target step by ID
+      const targetStep = path.steps.find(s => s.id === targetStepId)
+
+      // Allow targetStepId to be a special "completion" signal if target not found
+      // but only if it's explicitly past the last step
+      const isCompletionTarget = !targetStep && targetStepId === '__complete__'
+
+      if (!targetStep && !isCompletionTarget) {
+        throw new NotFoundError('ProcessStep', targetStepId)
+      }
+
+      const targetOrder = targetStep ? targetStep.order : path.steps.length
+      const currentOrder = currentStep.order
+
+      // 4. Validate forward-only
+      if (targetOrder <= currentOrder) {
         throw new ValidationError('Cannot advance to a step at or before the current position')
       }
 
-      // Allow targetStepIndex === totalSteps to mean "completion past last step"
-      if (targetStepIndex > totalSteps) {
-        throw new ValidationError('Target step index is out of range')
-      }
-
-      // 3. Check advancement mode
+      // 5. Check advancement mode
       const mode = path.advancementMode
 
       if (mode === 'strict') {
-        // Strict: only N+1 allowed (or completion at totalSteps)
-        if (targetStepIndex !== currentStepIndex + 1) {
+        // Strict: only next step allowed (or completion past last)
+        if (targetOrder !== currentOrder + 1) {
           throw new ValidationError('Path is in strict mode — can only advance to the next sequential step')
         }
       }
 
-      // Identify bypassed steps (between current+1 and target-1 inclusive)
-      const bypassed: { step: ProcessStep; index: number }[] = []
-      for (let i = currentStepIndex + 1; i < targetStepIndex; i++) {
-        if (i < totalSteps) {
-          bypassed.push({ step: path.steps[i]!, index: i }) // safe: i < totalSteps
+      // Identify bypassed steps (between current+1 and target-1 inclusive by order)
+      const bypassed: { step: ProcessStep }[] = []
+      for (const step of path.steps) {
+        if (step.order > currentOrder && step.order < targetOrder) {
+          bypassed.push({ step })
         }
       }
 
@@ -191,14 +203,12 @@ export function createLifecycleService(repos: {
       const activeOverrides = repos.partStepOverrides.listActiveByPartId(partId)
       const overriddenStepIds = new Set(activeOverrides.map(o => o.stepId))
 
-      // 4. For per_step mode, check dependency types of intermediate steps
-      // For all modes (flexible and per_step), check physical dependencies
+      // 6. For per_step mode, check dependency types of intermediate steps
       for (const { step } of bypassed) {
         const isEffectivelyOptional = step.optional || overriddenStepIds.has(step.id)
 
         if (step.dependencyType === 'physical' && !isEffectivelyOptional) {
-          // Check if the step has already been completed
-          const stepStatus = repos.partStepStatuses.getByPartAndStep(partId, step.id)
+          const stepStatus = repos.partStepStatuses.getLatestByPartAndStep(partId, step.id)
           if (!stepStatus || stepStatus.status !== 'completed') {
             throw new ValidationError(`Cannot skip step with physical dependency`)
           }
@@ -206,16 +216,23 @@ export function createLifecycleService(repos: {
       }
 
       const now = new Date().toISOString()
+      let nextSeq = repos.partStepStatuses.getNextSequenceNumber(partId)
       const bypassedResult: { stepId: string; stepName: string; classification: 'skipped' | 'deferred' }[] = []
 
-      // 5. Classify and update bypassed steps
+      // 7. Classify and create routing entries for bypassed steps
       for (const { step } of bypassed) {
         const isEffectivelyOptional = step.optional || overriddenStepIds.has(step.id)
         const classification: 'skipped' | 'deferred' = isEffectivelyOptional ? 'skipped' : 'deferred'
 
-        // Update part_step_statuses for bypassed step
-        repos.partStepStatuses.updateByPartAndStep(partId, step.id, {
+        // Create a new routing entry for the bypassed step
+        repos.partStepStatuses.create({
+          id: generateId('pss'),
+          partId,
+          stepId: step.id,
+          sequenceNumber: nextSeq++,
           status: classification,
+          enteredAt: now,
+          completedAt: now,
           updatedAt: now,
         })
 
@@ -245,48 +262,68 @@ export function createLifecycleService(repos: {
         }
       }
 
-      // 6. Update origin step (current) → completed
-      const originStep = path.steps[currentStepIndex]
-      if (originStep) {
-        repos.partStepStatuses.updateByPartAndStep(partId, originStep.id, {
+      // 8. Update origin step (current) → completed
+      const originEntry = repos.partStepStatuses.getLatestByPartAndStep(partId, currentStep.id)
+      if (originEntry) {
+        repos.partStepStatuses.updateLatestByPartAndStep(partId, currentStep.id, {
           status: 'completed',
+          completedAt: now,
+          updatedAt: now,
+        })
+      } else {
+        // Legacy data: no routing entry exists — create one as completed
+        repos.partStepStatuses.create({
+          id: generateId('pss'),
+          partId,
+          stepId: currentStep.id,
+          sequenceNumber: nextSeq++,
+          status: 'completed',
+          enteredAt: now,
+          completedAt: now,
           updatedAt: now,
         })
       }
 
-      // 7. Check if this is completion (target past last step)
-      if (targetStepIndex === totalSteps) {
-        // Completion — set part status to 'completed', currentStepIndex to -1
+      // Increment origin step's completedCount
+      repos.paths.updateStep(currentStep.id, {
+        completedCount: currentStep.completedCount + 1,
+      })
+
+      // 9. Check if this is completion (target past last step or no target step)
+      if (!targetStep) {
+        // Completion — set part status to 'completed', currentStepId to null
         const updatedPart = repos.parts.update(partId, {
           status: 'completed',
-          currentStepIndex: -1,
+          currentStepId: null,
           updatedAt: now,
         })
 
-        // Record advancement audit
         auditService.recordPartAdvancement({
           userId,
           partId,
           jobId: part.jobId,
           pathId: part.pathId,
-          fromStepId: originStep?.id || '',
+          fromStepId: currentStep.id,
           toStepId: '',
         })
 
         return { serial: updatedPart, bypassed: bypassedResult }
       }
 
-      // 8. Update destination step → in_progress
-      // safe: targetStepIndex < totalSteps is validated above
-      const destinationStep = path.steps[targetStepIndex]!
-      repos.partStepStatuses.updateByPartAndStep(partId, destinationStep.id, {
+      // 10. Create routing entry for destination step
+      repos.partStepStatuses.create({
+        id: generateId('pss'),
+        partId,
+        stepId: targetStep.id,
+        sequenceNumber: nextSeq++,
         status: 'in_progress',
+        enteredAt: now,
         updatedAt: now,
       })
 
-      // Update part currentStepIndex
+      // Update part currentStepId
       const updatedPart = repos.parts.update(partId, {
-        currentStepIndex: targetStepIndex,
+        currentStepId: targetStep.id,
         updatedAt: now,
       })
 
@@ -296,8 +333,8 @@ export function createLifecycleService(repos: {
         partId,
         jobId: part.jobId,
         pathId: part.pathId,
-        fromStepId: originStep?.id || '',
-        toStepId: destinationStep.id,
+        fromStepId: currentStep.id,
+        toStepId: targetStep.id,
       })
 
       return { serial: updatedPart, bypassed: bypassedResult }
@@ -318,7 +355,6 @@ export function createLifecycleService(repos: {
       if (!path) throw new NotFoundError('Path', part.pathId)
 
       // Collect incomplete required step IDs
-      const stepStatuses = repos.partStepStatuses.listByPartId(partId)
       const activeOverrides = repos.partStepOverrides.listActiveByPartId(partId)
       const overriddenStepIds = new Set(activeOverrides.map(o => o.stepId))
 
@@ -327,7 +363,7 @@ export function createLifecycleService(repos: {
         if (step.optional) continue
         if (overriddenStepIds.has(step.id)) continue
 
-        const status = stepStatuses.find(s => s.stepId === step.id)
+        const status = repos.partStepStatuses.getLatestByPartAndStep(partId, step.id)
         if (!status || (status.status !== 'completed' && status.status !== 'waived')) {
           incompleteStepIds.push(step.id)
         }
@@ -341,7 +377,7 @@ export function createLifecycleService(repos: {
       const now = new Date().toISOString()
       const updated = repos.parts.update(partId, {
         status: 'completed',
-        currentStepIndex: -1,
+        currentStepId: null,
         forceCompleted: true,
         forceCompletedBy: input.userId,
         forceCompletedAt: now,
@@ -367,7 +403,7 @@ export function createLifecycleService(repos: {
       const part = repos.parts.getById(partId)
       if (!part) throw new NotFoundError('Part', partId)
 
-      const stepStatus = repos.partStepStatuses.getByPartAndStep(partId, stepId)
+      const stepStatus = repos.partStepStatuses.getLatestByPartAndStep(partId, stepId)
       if (!stepStatus) throw new NotFoundError('PartStepStatus', `${partId}/${stepId}`)
 
       if (stepStatus.status !== 'deferred') {
@@ -375,8 +411,9 @@ export function createLifecycleService(repos: {
       }
 
       const now = new Date().toISOString()
-      const updated = repos.partStepStatuses.updateByPartAndStep(partId, stepId, {
+      const updated = repos.partStepStatuses.updateLatestByPartAndStep(partId, stepId, {
         status: 'completed',
+        completedAt: now,
         updatedAt: now,
       })
 
@@ -399,7 +436,7 @@ export function createLifecycleService(repos: {
         throw new ValidationError('Waiver requires a reason and approver identity')
       }
 
-      const stepStatus = repos.partStepStatuses.getByPartAndStep(partId, stepId)
+      const stepStatus = repos.partStepStatuses.getLatestByPartAndStep(partId, stepId)
       if (!stepStatus) throw new NotFoundError('PartStepStatus', `${partId}/${stepId}`)
 
       if (stepStatus.status !== 'deferred') {
@@ -416,7 +453,7 @@ export function createLifecycleService(repos: {
       }
 
       const now = new Date().toISOString()
-      const updated = repos.partStepStatuses.updateByPartAndStep(partId, stepId, {
+      const updated = repos.partStepStatuses.updateLatestByPartAndStep(partId, stepId, {
         status: 'waived',
         updatedAt: now,
       })
@@ -445,7 +482,7 @@ export function createLifecycleService(repos: {
         if (!part) throw new NotFoundError('Part', partId)
 
         // Check if step is already completed for this part
-        const stepStatus = repos.partStepStatuses.getByPartAndStep(partId, stepId)
+        const stepStatus = repos.partStepStatuses.getLatestByPartAndStep(partId, stepId)
         if (stepStatus && stepStatus.status === 'completed') {
           throw new ValidationError('Cannot override a step that has already been completed')
         }
@@ -492,7 +529,7 @@ export function createLifecycleService(repos: {
       }
 
       // Check if step has already been skipped
-      const stepStatus = repos.partStepStatuses.getByPartAndStep(partId, stepId)
+      const stepStatus = repos.partStepStatuses.getLatestByPartAndStep(partId, stepId)
       if (stepStatus && stepStatus.status === 'skipped') {
         throw new ValidationError('Cannot reverse override — step has already been skipped')
       }

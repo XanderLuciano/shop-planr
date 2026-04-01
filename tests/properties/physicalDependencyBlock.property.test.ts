@@ -30,14 +30,14 @@ interface StepStatus {
  * advancement is blocked.
  */
 function validatePhysicalDependencies(
-  currentStepIndex: number,
-  targetStepIndex: number,
+  currentStepOrder: number,
+  targetStepOrder: number,
   steps: StepConfig[],
   stepStatuses: StepStatus[],
   overriddenStepIds: Set<string>,
 ): { valid: boolean; error?: string } {
   // Identify bypassed steps
-  for (let i = currentStepIndex + 1; i < targetStepIndex; i++) {
+  for (let i = currentStepOrder + 1; i < targetStepOrder; i++) {
     if (i >= steps.length) continue
     const step = steps[i]
     const isEffectivelyOptional = step.optional || overriddenStepIds.has(step.id)
@@ -89,13 +89,13 @@ describe('Property 7: Physical Dependency Hard Block', () => {
         // advancementMode
         fc.constantFrom('strict' as const, 'flexible' as const, 'per_step' as const),
         (totalSteps, physicalOffset, _advancementMode) => {
-          const currentStepIndex = 0
+          const currentStepOrder = 0
           // Place the physical step somewhere between current+1 and totalSteps-1
           const physicalStepIndex = Math.min(physicalOffset, totalSteps - 2)
           // Target must be past the physical step
-          const targetStepIndex = Math.min(physicalStepIndex + 1, totalSteps)
+          const targetStepOrder = Math.min(physicalStepIndex + 1, totalSteps)
 
-          if (physicalStepIndex <= currentStepIndex || physicalStepIndex >= targetStepIndex) return
+          if (physicalStepIndex <= currentStepOrder || physicalStepIndex >= targetStepOrder) return
 
           // Build steps — the physical step is required (not optional) with physical dependency
           const steps: StepConfig[] = Array.from({ length: totalSteps }, (_, i) => ({
@@ -113,8 +113,8 @@ describe('Property 7: Physical Dependency Hard Block', () => {
           }))
 
           const result = validatePhysicalDependencies(
-            currentStepIndex,
-            targetStepIndex,
+            currentStepOrder,
+            targetStepOrder,
             steps,
             stepStatuses,
             new Set(),
@@ -134,11 +134,11 @@ describe('Property 7: Physical Dependency Hard Block', () => {
         fc.integer({ min: 3, max: 10 }),
         fc.integer({ min: 1, max: 8 }),
         (totalSteps, physicalOffset) => {
-          const currentStepIndex = 0
+          const currentStepOrder = 0
           const physicalStepIndex = Math.min(physicalOffset, totalSteps - 2)
-          const targetStepIndex = Math.min(physicalStepIndex + 1, totalSteps)
+          const targetStepOrder = Math.min(physicalStepIndex + 1, totalSteps)
 
-          if (physicalStepIndex <= currentStepIndex || physicalStepIndex >= targetStepIndex) return
+          if (physicalStepIndex <= currentStepOrder || physicalStepIndex >= targetStepOrder) return
 
           const steps: StepConfig[] = Array.from({ length: totalSteps }, (_, i) => ({
             id: `step-${i}`,
@@ -155,8 +155,8 @@ describe('Property 7: Physical Dependency Hard Block', () => {
           }))
 
           const result = validatePhysicalDependencies(
-            currentStepIndex,
-            targetStepIndex,
+            currentStepOrder,
+            targetStepOrder,
             steps,
             stepStatuses,
             new Set(),
@@ -175,11 +175,11 @@ describe('Property 7: Physical Dependency Hard Block', () => {
         fc.integer({ min: 3, max: 10 }),
         fc.integer({ min: 1, max: 8 }),
         (totalSteps, physicalOffset) => {
-          const currentStepIndex = 0
+          const currentStepOrder = 0
           const physicalStepIndex = Math.min(physicalOffset, totalSteps - 2)
-          const targetStepIndex = Math.min(physicalStepIndex + 1, totalSteps)
+          const targetStepOrder = Math.min(physicalStepIndex + 1, totalSteps)
 
-          if (physicalStepIndex <= currentStepIndex || physicalStepIndex >= targetStepIndex) return
+          if (physicalStepIndex <= currentStepOrder || physicalStepIndex >= targetStepOrder) return
 
           const steps: StepConfig[] = Array.from({ length: totalSteps }, (_, i) => ({
             id: `step-${i}`,
@@ -199,8 +199,8 @@ describe('Property 7: Physical Dependency Hard Block', () => {
           const overriddenStepIds = new Set([`step-${physicalStepIndex}`])
 
           const result = validatePhysicalDependencies(
-            currentStepIndex,
-            targetStepIndex,
+            currentStepOrder,
+            targetStepOrder,
             steps,
             stepStatuses,
             overriddenStepIds,

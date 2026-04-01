@@ -236,7 +236,7 @@ describe('SQLite migration system', () => {
       expect(indexNames).toContain('idx_paths_job_id')
       expect(indexNames).toContain('idx_parts_job_id')
       expect(indexNames).toContain('idx_parts_path_id')
-      expect(indexNames).toContain('idx_parts_step_index')
+      expect(indexNames).toContain('idx_parts_current_step_id')
       expect(indexNames).toContain('idx_cert_attachments_part')
       expect(indexNames).toContain('idx_cert_attachments_cert')
       expect(indexNames).toContain('idx_audit_part')
@@ -296,7 +296,7 @@ describe('SQLite migration system', () => {
       const db = initDatabase(dbPath)
 
       const applied = db.prepare('SELECT version, name FROM _migrations ORDER BY version').all() as any[]
-      expect(applied).toHaveLength(6)
+      expect(applied).toHaveLength(8)
       expect(applied[0].version).toBe(1)
       expect(applied[0].name).toBe('initial_schema')
       expect(applied[1].version).toBe(2)
@@ -309,6 +309,8 @@ describe('SQLite migration system', () => {
       expect(applied[4].name).toBe('add_page_toggles')
       expect(applied[5].version).toBe(6)
       expect(applied[5].name).toBe('rename_serial_to_part')
+      expect(applied[6].version).toBe(7)
+      expect(applied[6].name).toBe('step_id_tracking')
 
       db.close()
     })

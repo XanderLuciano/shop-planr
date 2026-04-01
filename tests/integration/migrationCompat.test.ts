@@ -2,7 +2,7 @@
  * Integration: Migration Backwards Compatibility
  *
  * Verify existing data with old schema gets correct defaults after migration:
- * - serials with currentStepIndex = -1 → status = 'completed'
+ * - serials with currentStepId = null → status = 'completed'
  * - steps → optional = false, dependencyType = 'preferred'
  * - paths → advancementMode = 'strict'
  * Validates: Requirements 14.1, 14.2, 14.3, 14.4, 14.5

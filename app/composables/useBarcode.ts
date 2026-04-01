@@ -86,13 +86,13 @@ export function useBarcode() {
         id: string
         jobId: string
         pathId: string
-        currentStepIndex: number
+        currentStepId: string | null
         certs: unknown[]
       }>(`/api/parts/${id}`)
 
       toast.add({
         title: `Part: ${part.id}`,
-        description: `Job: ${part.jobId} · Step: ${part.currentStepIndex === -1 ? 'Completed' : part.currentStepIndex} · Certs: ${part.certs.length}`,
+        description: `Job: ${part.jobId} · Step: ${part.currentStepId === null ? 'Completed' : part.currentStepId} · Certs: ${part.certs.length}`,
         color: 'success'
       })
       return true

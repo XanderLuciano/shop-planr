@@ -7,9 +7,10 @@ export interface PartRepository {
   getByIdentifier(identifier: string): Part | null
   listByPathId(pathId: string): Part[]
   listByJobId(jobId: string): Part[]
-  listByStepIndex(pathId: string, stepIndex: number): Part[]
+  listByCurrentStepId(stepId: string): Part[]
   update(id: string, partial: Partial<Part>): Part
   countByJobId(jobId: string): number
+  /** Counts completed parts for a job. Uses `current_step_id IS NULL AND status = 'completed'`. */
   countCompletedByJobId(jobId: string): number
   countScrappedByJobId(jobId: string): number
   listAll(): Part[]

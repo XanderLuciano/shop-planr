@@ -20,7 +20,7 @@ const arbEnrichedPart = (): fc.Arbitrary<EnrichedPart> =>
     jobName: fc.string({ minLength: 1, maxLength: 30 }).filter(s => s.trim().length > 0),
     pathId: fc.string({ minLength: 3, maxLength: 20 }),
     pathName: fc.string({ minLength: 1, maxLength: 30 }).filter(s => s.trim().length > 0),
-    currentStepIndex: fc.oneof(fc.constant(-1), fc.integer({ min: 0, max: 10 })),
+    currentStepId: fc.oneof(fc.constant(null as string | null), fc.string({ minLength: 3, maxLength: 15 })),
     currentStepName: fc.string({ minLength: 1, maxLength: 30 }).filter(s => s.trim().length > 0),
     assignedTo: fc.option(
       fc.string({ minLength: 1, maxLength: 30 }).filter(s => s.trim().length > 0),

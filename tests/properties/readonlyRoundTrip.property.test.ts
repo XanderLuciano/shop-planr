@@ -198,7 +198,7 @@ const arbPart = (): fc.Arbitrary<Part> =>
     id: arbId(),
     jobId: arbId(),
     pathId: arbId(),
-    currentStepIndex: fc.integer({ min: -1, max: 20 }),
+    currentStepId: fc.oneof(fc.constant(null as string | null), arbId()),
     status: fc.constantFrom('in_progress' as const, 'completed' as const, 'scrapped' as const),
     scrapReason: fc.option(
       fc.constantFrom('out_of_tolerance' as const, 'process_defect' as const, 'damaged' as const, 'operator_error' as const, 'other' as const),

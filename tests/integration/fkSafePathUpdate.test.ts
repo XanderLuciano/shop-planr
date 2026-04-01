@@ -69,12 +69,12 @@ describe('FK-Safe Path Update Integration', () => {
       userId: 'qe1',
     })
 
-    // Now update the path: change goalQuantity and step 0 location
+    // Now update the path: change goalQuantity and step 0 location (include IDs for matching)
     const updated = ctx.pathService.updatePath(path.id, {
       goalQuantity: 20,
       steps: [
-        { name: 'Step 0', location: 'New Loc' },
-        { name: 'Step 1', location: 'Loc 1' },
+        { id: originalStepIds[0], name: 'Step 0', location: 'New Loc' },
+        { id: originalStepIds[1], name: 'Step 1', location: 'Loc 1' },
       ],
     })
 
@@ -98,11 +98,11 @@ describe('FK-Safe Path Update Integration', () => {
     const { path } = createJobWithPath(2)
     const originalStepIds = path.steps.map(s => s.id)
 
-    // Update with 3 steps (append one)
+    // Update with 3 steps (keep existing 2 by ID, append one new)
     const updated = ctx.pathService.updatePath(path.id, {
       steps: [
-        { name: 'Step 0', location: 'Loc 0' },
-        { name: 'Step 1', location: 'Loc 1' },
+        { id: originalStepIds[0], name: 'Step 0', location: 'Loc 0' },
+        { id: originalStepIds[1], name: 'Step 1', location: 'Loc 1' },
         { name: 'Step 2', location: 'Loc 2' },
       ],
     })
@@ -118,30 +118,21 @@ describe('FK-Safe Path Update Integration', () => {
     expect(updated.steps.map(s => s.order)).toEqual([0, 1, 2])
   })
 
-  it('7.3 remove step blocked by FK dependents — throws ValidationError', () => {
+  it('7.3 remove step blocked by active parts — throws ValidationError', () => {
     const { job, path } = createJobWithPath(3)
 
-    // Create a part and attach a cert to step 2 (the one we'll try to remove)
+    // Create a part — it starts at step 0 (currentStepId = step 0's ID)
     const [part] = ctx.partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
       'operator1',
     )
-    const cert = ctx.certService.createCert({ type: 'process', name: 'Heat Treat' })
-    ctx.certService.attachCertToPart({
-      certId: cert.id,
-      partId: part.id,
-      stepId: path.steps[2].id,
-      userId: 'qe1',
-      jobId: job.id,
-      pathId: path.id,
-    })
 
-    // Try to update with only 2 steps (removing step at index 2 which has a cert)
+    // Try to remove step 0 (which has an active part) — should throw
     expect(() =>
       ctx.pathService.updatePath(path.id, {
         steps: [
-          { name: 'Step 0', location: 'Loc 0' },
-          { name: 'Step 1', location: 'Loc 1' },
+          { id: path.steps[1].id, name: 'Step 1', location: 'Loc 1' },
+          { id: path.steps[2].id, name: 'Step 2', location: 'Loc 2' },
         ],
       }),
     ).toThrow(ValidationError)
@@ -150,15 +141,13 @@ describe('FK-Safe Path Update Integration', () => {
     try {
       ctx.pathService.updatePath(path.id, {
         steps: [
-          { name: 'Step 0', location: 'Loc 0' },
-          { name: 'Step 1', location: 'Loc 1' },
+          { id: path.steps[1].id, name: 'Step 1', location: 'Loc 1' },
+          { id: path.steps[2].id, name: 'Step 2', location: 'Loc 2' },
         ],
       })
     } catch (err) {
       expect(err).toBeInstanceOf(ValidationError)
-      expect((err as ValidationError).message).toBe(
-        'Cannot remove step because it has associated data (certificates, notes, part statuses, or overrides). Remove the associated data first, or keep the step.',
-      )
+      expect((err as ValidationError).message).toContain('Cannot remove step')
     }
   })
 
@@ -166,11 +155,11 @@ describe('FK-Safe Path Update Integration', () => {
     const { path } = createJobWithPath(3)
     const originalStepIds = path.steps.map(s => s.id)
 
-    // No certs/notes/statuses attached to any step — remove the last step
+    // No certs/notes/statuses attached to any step — remove the last step (keep first two by ID)
     const updated = ctx.pathService.updatePath(path.id, {
       steps: [
-        { name: 'Step 0', location: 'Loc 0' },
-        { name: 'Step 1', location: 'Loc 1' },
+        { id: originalStepIds[0], name: 'Step 0', location: 'Loc 0' },
+        { id: originalStepIds[1], name: 'Step 1', location: 'Loc 1' },
       ],
     })
 
@@ -178,7 +167,7 @@ describe('FK-Safe Path Update Integration', () => {
     expect(updated.steps[0].id).toBe(originalStepIds[0])
     expect(updated.steps[1].id).toBe(originalStepIds[1])
 
-    // Verify the removed step is actually gone from the DB
+    // Verify the removed step is soft-deleted (active steps only show 2)
     const refetched = ctx.pathService.getPath(path.id)
     expect(refetched.steps).toHaveLength(2)
   })
@@ -187,11 +176,12 @@ describe('FK-Safe Path Update Integration', () => {
     const { path } = createJobWithPath(2)
     const originalStepIds = path.steps.map(s => s.id)
 
-    // Update with identical data
+    // Update with identical data (include IDs for matching)
     const updated = ctx.pathService.updatePath(path.id, {
       name: path.name,
       goalQuantity: path.goalQuantity,
       steps: path.steps.map(s => ({
+        id: s.id,
         name: s.name,
         location: s.location,
         optional: s.optional,

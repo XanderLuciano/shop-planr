@@ -48,7 +48,7 @@ describe('Step Override Workflow Integration', () => {
 
     // 4. Overridden parts can skip QC Check (step 1) — it becomes effectively optional
     const result1 = lifecycleService.advanceToStep(parts[0].id, {
-      targetStepIndex: 2,
+      targetStepId: path.steps[2].id,
       userId: 'operator1',
     })
     // QC Check should be classified as 'skipped' because override makes it effectively optional
@@ -58,7 +58,7 @@ describe('Step Override Workflow Integration', () => {
 
     // 5. Non-overridden part skipping QC Check → step is deferred (required)
     const result3 = lifecycleService.advanceToStep(parts[2].id, {
-      targetStepIndex: 2,
+      targetStepId: path.steps[2].id,
       userId: 'operator1',
     })
     const qcBypass3 = result3.bypassed.find(b => b.stepName === 'QC Check')
@@ -75,7 +75,7 @@ describe('Step Override Workflow Integration', () => {
 
     // 8. After reversal, parts[1] skipping QC Check → deferred (required again)
     const result2 = lifecycleService.advanceToStep(parts[1].id, {
-      targetStepIndex: 2,
+      targetStepId: path.steps[2].id,
       userId: 'operator1',
     })
     const qcBypass2 = result2.bypassed.find(b => b.stepName === 'QC Check')
@@ -101,7 +101,7 @@ describe('Step Override Workflow Integration', () => {
     )
 
     // Advance past step 0 using lifecycleService (updates part_step_statuses)
-    lifecycleService.advanceToStep(part.id, { targetStepIndex: 1, userId: 'user1' })
+    lifecycleService.advanceToStep(part.id, { targetStepId: path.steps[1].id, userId: 'user1' })
 
     // Try to override step 0 (already completed) → should fail
     expect(() =>

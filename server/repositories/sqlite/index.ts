@@ -129,12 +129,24 @@ export function runMigrations(db: Database.Database, migrationsDir?: string): vo
   const pending = migrations.filter(m => !appliedMap.has(m.version))
 
   for (const migration of pending) {
+    // Disable FK checks so table-rebuild migrations (drop + rename) don't fail.
+    // PRAGMA foreign_keys cannot be changed inside a transaction.
+    db.pragma('foreign_keys = OFF')
     db.transaction(() => {
       db.exec(migration.sql)
       db.prepare(
         'INSERT INTO _migrations (version, name, applied_at, checksum) VALUES (?, ?, ?, ?)'
       ).run(migration.version, migration.name, new Date().toISOString(), migration.checksum)
     })()
+    db.pragma('foreign_keys = ON')
+
+    // Verify no FK violations were introduced
+    const fkErrors = db.pragma('foreign_key_check') as unknown[]
+    if (fkErrors.length > 0) {
+      console.error(`FK violations after migration ${migration.version}:`, fkErrors)
+      throw new Error(`Migration ${migration.version} (${migration.name}) introduced FK violations`)
+    }
+
     console.log(`Migration ${migration.version}: ${migration.name} — applied`)
   }
 }

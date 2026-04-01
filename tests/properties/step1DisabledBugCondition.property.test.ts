@@ -31,14 +31,14 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
       for (const step of path.steps) {
         if (step.id !== stepId) continue
 
-        const parts = partService.listPartsByStepIndex(path.id, step.order)
+        const parts = partService.listPartsByCurrentStepId(step.id)
         const isFinalStep = step.order === totalSteps - 1
         const prevStep = step.order > 0 ? path.steps[step.order - 1] : undefined
         const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
 
         let previousStepWipCount: number | undefined
         if (step.order > 0 && parts.length === 0) {
-          const prevParts = partService.listPartsByStepIndex(path.id, step.order - 1)
+          const prevParts = partService.listPartsByCurrentStepId(prevStep!.id)
           previousStepWipCount = prevParts.length
         }
 
@@ -90,7 +90,7 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
       const totalSteps = path.steps.length
 
       for (const step of path.steps) {
-        const parts = partService.listPartsByStepIndex(path.id, step.order)
+        const parts = partService.listPartsByCurrentStepId(step.id)
         if (parts.length === 0 && step.order !== 0) continue // FIXED: only skip non-first steps with zero parts
 
         const key = `${job.id}|${path.id}|${step.order}`

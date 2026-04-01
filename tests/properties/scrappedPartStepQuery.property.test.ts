@@ -2,7 +2,7 @@
  * Property 1: Bug Condition — Scrapped Parts Excluded from Step Query
  *
  * For any set of parts at a given step, after scrapping one or more,
- * `listByStepIndex` SHALL NOT include any part with `status = 'scrapped'`.
+ * `listByCurrentStepId` SHALL NOT include any part with `status = 'scrapped'`.
  *
  * This test is expected to FAIL on unfixed code — failure confirms the bug exists.
  *
@@ -19,7 +19,7 @@ describe('Property 1: Bug Condition — Scrapped Parts Excluded from Step Query'
     ctx?.cleanup()
   })
 
-  it('listByStepIndex should not return any part with status = scrapped', () => {
+  it('listByCurrentStepId should not return any part with status = scrapped', () => {
     fc.assert(
       fc.property(
         // Generate total part count (1–5) and a non-empty subset of indices to scrap
@@ -44,10 +44,10 @@ describe('Property 1: Bug Condition — Scrapped Parts Excluded from Step Query'
             jobId: job.id,
             name: 'Path',
             goalQuantity: totalCount,
-            steps: [{ name: 'Step 1', order: 0 }],
+            steps: [{ name: 'Step 1' }],
           })
 
-          // Create parts (all start at step 0, status in_progress)
+          // Create parts (all start at first step, status in_progress)
           const parts = partService.batchCreateParts(
             { jobId: job.id, pathId: path.id, quantity: totalCount },
             'test-user'
@@ -61,8 +61,9 @@ describe('Property 1: Bug Condition — Scrapped Parts Excluded from Step Query'
             })
           }
 
-          // Query parts at step 0
-          const result = repos.parts.listByStepIndex(path.id, 0)
+          // Query parts at first step by step ID
+          const firstStepId = path.steps[0].id
+          const result = repos.parts.listByCurrentStepId(firstStepId)
 
           // Assert: no returned part should have status = 'scrapped'
           for (const part of result) {
@@ -92,7 +93,7 @@ describe('Property 2: Preservation — Non-Scrapped Parts at Step Included', () 
     ctx?.cleanup()
   })
 
-  it('listByStepIndex includes all in_progress parts at the queried step', () => {
+  it('listByCurrentStepId includes all in_progress parts at the queried step', () => {
     fc.assert(
       fc.property(
         fc.integer({ min: 1, max: 5 }),
@@ -105,7 +106,7 @@ describe('Property 2: Preservation — Non-Scrapped Parts at Step Included', () 
             jobId: job.id,
             name: 'Path',
             goalQuantity: totalCount,
-            steps: [{ name: 'Step 1', order: 0 }],
+            steps: [{ name: 'Step 1' }],
           })
 
           const parts = partService.batchCreateParts(
@@ -113,8 +114,9 @@ describe('Property 2: Preservation — Non-Scrapped Parts at Step Included', () 
             'test-user',
           )
 
-          // No scrapping — all parts are in_progress at step 0
-          const result = repos.parts.listByStepIndex(path.id, 0)
+          // No scrapping — all parts are in_progress at first step
+          const firstStepId = path.steps[0].id
+          const result = repos.parts.listByCurrentStepId(firstStepId)
 
           // Every created part must appear in the result
           const resultIds = new Set(result.map(s => s.id))
@@ -157,7 +159,7 @@ describe('Property 2: Preservation — listByPathId Includes Scrapped Parts', ()
             jobId: job.id,
             name: 'Path',
             goalQuantity: totalCount,
-            steps: [{ name: 'Step 1', order: 0 }],
+            steps: [{ name: 'Step 1' }],
           })
 
           const parts = partService.batchCreateParts(
@@ -192,14 +194,14 @@ describe('Property 2: Preservation — listByPathId Includes Scrapped Parts', ()
   })
 })
 
-describe('Property 2: Preservation — listByStepIndex Scopes to pathId (No Cross-Path Leakage)', () => {
+describe('Property 2: Preservation — listByCurrentStepId Scopes to stepId (No Cross-Path Leakage)', () => {
   let ctx: TestContext
 
   afterEach(() => {
     ctx?.cleanup()
   })
 
-  it('listByStepIndex returns only parts belonging to the queried pathId', () => {
+  it('listByCurrentStepId returns only parts at the queried step', () => {
     fc.assert(
       fc.property(
         fc.integer({ min: 1, max: 3 }),
@@ -214,13 +216,13 @@ describe('Property 2: Preservation — listByStepIndex Scopes to pathId (No Cros
             jobId: job.id,
             name: 'Path A',
             goalQuantity: countA,
-            steps: [{ name: 'Step 1', order: 0 }],
+            steps: [{ name: 'Step 1' }],
           })
           const pathB = pathService.createPath({
             jobId: job.id,
             name: 'Path B',
             goalQuantity: countB,
-            steps: [{ name: 'Step 1', order: 0 }],
+            steps: [{ name: 'Step 1' }],
           })
 
           const partsA = partService.batchCreateParts(
@@ -232,8 +234,9 @@ describe('Property 2: Preservation — listByStepIndex Scopes to pathId (No Cros
             'test-user',
           )
 
-          // Query step 0 for path A — should only contain path A parts
-          const resultA = repos.parts.listByStepIndex(pathA.id, 0)
+          // Query first step of path A — should only contain path A parts
+          const stepAId = pathA.steps[0].id
+          const resultA = repos.parts.listByCurrentStepId(stepAId)
           const resultAIds = new Set(resultA.map(s => s.id))
           const partAIds = new Set(partsA.map(s => s.id))
           const partBIds = new Set(partsB.map(s => s.id))
@@ -248,8 +251,9 @@ describe('Property 2: Preservation — listByStepIndex Scopes to pathId (No Cros
           }
           expect(resultA.length).toBe(countA)
 
-          // Query step 0 for path B — should only contain path B parts
-          const resultB = repos.parts.listByStepIndex(pathB.id, 0)
+          // Query first step of path B — should only contain path B parts
+          const stepBId = pathB.steps[0].id
+          const resultB = repos.parts.listByCurrentStepId(stepBId)
           const resultBIds = new Set(resultB.map(s => s.id))
 
           for (const id of partBIds) {

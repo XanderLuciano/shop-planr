@@ -43,7 +43,7 @@ describe('Force-Complete Workflow Integration', () => {
 
     // 4. Verify completed status
     expect(forceCompleted.status).toBe('completed')
-    expect(forceCompleted.currentStepIndex).toBe(-1)
+    expect(forceCompleted.currentStepId).toBeNull()
     expect(forceCompleted.forceCompleted).toBe(true)
     expect(forceCompleted.forceCompletedBy).toBe('supervisor1')
     expect(forceCompleted.forceCompletedReason).toBe('Customer accepted partial work')

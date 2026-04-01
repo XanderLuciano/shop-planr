@@ -34,9 +34,9 @@ export default defineEventHandler(async (event) => {
         stepIdSet.add(step.id)
 
         // Current parts at this step
-        const atStep = partService.listPartsByStepIndex(path.id, stepIndex)
+        const atStep = partService.listPartsByCurrentStepId(step.id)
         for (const sn of atStep) {
-          const nextStep = path.steps[stepIndex + 1]
+          const nextStep = path.steps.find(s => s.order === step.order + 1)
           currentParts.push({
             partId: sn.id,
             jobId: job.id,
@@ -48,9 +48,10 @@ export default defineEventHandler(async (event) => {
           })
         }
 
-        // Coming soon (one step before)
-        if (stepIndex > 0) {
-          const upstream = partService.listPartsByStepIndex(path.id, stepIndex - 1)
+        // Coming soon (one step before by order)
+        const prevStep = path.steps.find(s => s.order === step.order - 1)
+        if (prevStep) {
+          const upstream = partService.listPartsByCurrentStepId(prevStep.id)
           for (const sn of upstream) {
             comingSoon.push({
               partId: sn.id,
@@ -62,9 +63,10 @@ export default defineEventHandler(async (event) => {
           }
         }
 
-        // Backlog (two+ steps before)
-        for (let i = 0; i < stepIndex - 1; i++) {
-          const far = partService.listPartsByStepIndex(path.id, i)
+        // Backlog (two+ steps before by order)
+        for (const s of path.steps) {
+          if (s.order >= step.order - 1) continue
+          const far = partService.listPartsByCurrentStepId(s.id)
           for (const sn of far) {
             backlog.push({
               partId: sn.id,

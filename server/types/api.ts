@@ -39,7 +39,7 @@ export interface UpdatePathInput {
   name?: string
   goalQuantity?: number
   advancementMode?: 'strict' | 'flexible' | 'per_step'
-  steps?: { name: string, location?: string, optional?: boolean, dependencyType?: 'physical' | 'preferred' | 'completion_gate' }[]
+  steps?: { id?: string, name: string, location?: string, optional?: boolean, dependencyType?: 'physical' | 'preferred' | 'completion_gate' }[]
 }
 
 // ---- Parts (formerly Serial Numbers) ----
@@ -147,7 +147,7 @@ export interface ForceCompleteInput {
 }
 
 export interface AdvanceToStepInput {
-  targetStepIndex: number
+  targetStepId: string
   userId: string
 }
 

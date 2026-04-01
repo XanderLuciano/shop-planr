@@ -30,7 +30,7 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
       for (const step of path.steps) {
         if (step.id !== stepId) continue
 
-        const parts = partService.listPartsByStepIndex(path.id, step.order)
+        const parts = partService.listPartsByCurrentStepId(step.id)
 
         const isFinalStep = step.order === totalSteps - 1
         const prevStep = step.order > 0 ? path.steps[step.order - 1] : undefined
@@ -38,7 +38,7 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
 
         let previousStepWipCount: number | undefined
         if (step.order > 0 && parts.length === 0) {
-          const prevParts = partService.listPartsByStepIndex(path.id, step.order - 1)
+          const prevParts = partService.listPartsByCurrentStepId(prevStep!.id)
           previousStepWipCount = prevParts.length
         }
 

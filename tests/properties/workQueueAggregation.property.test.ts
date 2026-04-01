@@ -2,9 +2,9 @@
  * Property 1: Queue aggregation correctness
  *
  * For any set of jobs, paths, and parts where some parts have
- * currentStepIndex >= 0, the work queue aggregation returns WorkQueueJob
+ * currentStepId !== null, the work queue aggregation returns WorkQueueJob
  * entries whose partIds collectively contain exactly all active part IDs,
- * each in exactly one group matching its pathId and currentStepIndex.
+ * each in exactly one group matching its pathId and currentStepId.
  *
  * **Validates: Requirements 1.1, 3.2**
  */
@@ -85,7 +85,7 @@ function aggregateWorkQueue(
       const totalSteps = path.steps.length
 
       for (const step of path.steps) {
-        const parts = partService.listPartsByStepIndex(path.id, step.order)
+        const parts = partService.listPartsByCurrentStepId(step.id)
         if (parts.length === 0) continue
 
         const key = `${job.id}|${path.id}|${step.order}`
@@ -160,7 +160,7 @@ describe('Property 1: Queue aggregation correctness', () => {
         const allParts: Array<{
           id: string
           pathId: string
-          currentStepIndex: number
+          currentStepOrder: number
         }> = []
 
         for (const config of configs) {
@@ -190,7 +190,7 @@ describe('Property 1: Queue aggregation correctness', () => {
 
           // Initialize tracking — all start at step 0
           for (const s of parts) {
-            allParts.push({ id: s.id, pathId: path.id, currentStepIndex: 0 })
+            allParts.push({ id: s.id, pathId: path.id, currentStepOrder: 0 })
           }
 
           // Apply advancements
@@ -200,13 +200,13 @@ describe('Property 1: Queue aggregation correctness', () => {
             const tracked = allParts.find(t => t.id === part.id)!
 
             for (let i = 0; i < spec.advanceTimes; i++) {
-              if (tracked.currentStepIndex === -1) break // already completed
+              if (tracked.currentStepOrder === -1) break // already completed
               try {
                 partService.advancePart(part.id, 'user_test')
-                if (tracked.currentStepIndex === config.stepCount - 1) {
-                  tracked.currentStepIndex = -1 // completed
+                if (tracked.currentStepOrder === config.stepCount - 1) {
+                  tracked.currentStepOrder = -1 // completed
                 } else {
-                  tracked.currentStepIndex += 1
+                  tracked.currentStepOrder += 1
                 }
               } catch {
                 break // already completed or error
@@ -218,10 +218,10 @@ describe('Property 1: Queue aggregation correctness', () => {
         // Run aggregation
         const response = aggregateWorkQueue(services, 'user_test')
 
-        // Collect all active parts (currentStepIndex >= 0)
+        // Collect all active parts (currentStepId !== null)
         const expectedActiveIds = new Set(
           allParts
-            .filter(s => s.currentStepIndex >= 0)
+            .filter(s => s.currentStepOrder >= 0)
             .map(s => s.id),
         )
 
@@ -248,7 +248,7 @@ describe('Property 1: Queue aggregation correctness', () => {
           for (const partId of job.partIds) {
             const tracked = allParts.find(t => t.id === partId)!
             expect(tracked.pathId).toBe(job.pathId)
-            expect(tracked.currentStepIndex).toBe(job.stepOrder)
+            expect(tracked.currentStepOrder).toBe(job.stepOrder)
           }
         }
 

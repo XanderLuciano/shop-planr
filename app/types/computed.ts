@@ -15,4 +15,6 @@ export type {
   AdvancementResult,
   PartStepStatusView,
   SnStepStatusView,
+  FullRouteResponse,
+  FullRouteEntry,
 } from '../../server/types/computed'
