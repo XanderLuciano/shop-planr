@@ -28,3 +28,11 @@ When writing or reviewing code for SHOP_ERP, enforce these layer boundaries stri
 - Never modify a migration file after it has been applied. Always create a new migration.
 - Migration files live in `server/repositories/sqlite/migrations/` with format `{NNN}_{description}.sql`.
 - Each migration runs in a transaction. If it fails, the database stays at the previous version.
+
+
+## Data Integrity Preferences
+
+- **Soft-deletes over hard-deletes**: Prefer `removed_at` timestamp columns over physical row deletion for any entity that may be referenced by historical records (routing history, audit trail, certificates, notes). This preserves FK integrity and ensures the audit trail remains complete. Currently `process_steps` uses this pattern; all entities will eventually migrate to soft-delete.
+- **Write-time counters over read-time aggregation**: For frequently-read derived counts (e.g., "how many parts completed this step"), maintain a counter column that is atomically incremented during the write operation, rather than computing the count from a query on every read. Provide a reconciliation operation to re-sync if drift occurs.
+- **Step-ID-based tracking**: Parts track their position by step ID (`current_step_id`), not by positional index. This ensures reordering steps never virtually relocates parts. The step ID is the stable anchor; the step's `order` field is mutable.
+- **Append-only routing history**: A part's journey through process steps is recorded as an append-only log in `part_step_statuses` with incrementing `sequence_number`. Multiple visits to the same step (recycling) produce distinct entries. Never update or delete historical routing entries.
