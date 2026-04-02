@@ -146,15 +146,20 @@ export function createBomService(repos: {
         repos.bomVersions.create(version)
       }
 
-      // Update the BOM entries
-      const updated = repos.bom.update(bomId, {
+      // Update the BOM entries (and name if provided)
+      const updatePayload: Partial<BOM> = {
         entries: input.entries.map(e => ({
           partType: e.partType,
           requiredQuantityPerBuild: e.requiredQuantityPerBuild,
           contributingJobIds: e.contributingJobIds,
         })),
         updatedAt: now,
-      })
+      }
+      if (input.name !== undefined) {
+        assertNonEmpty(input.name, 'name')
+        updatePayload.name = input.name.trim()
+      }
+      const updated = repos.bom.update(bomId, updatePayload)
 
       // Record audit entry
       if (auditService) {
