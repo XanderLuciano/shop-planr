@@ -139,10 +139,14 @@ describe('Property 2: Preservation — Non-Assignment Behavior Unchanged', () =>
           arbSearchString(),
           (users, search) => {
             const result = filterDropdownOptions(users, search)
-            const inactiveIds = new Set(users.filter(u => !u.active).map(u => u.id))
+            // Collect IDs that belong ONLY to inactive users (not also active)
+            const activeIds = new Set(users.filter(u => u.active).map(u => u.id))
+            const purelyInactiveIds = new Set(
+              users.filter(u => !u.active && !activeIds.has(u.id)).map(u => u.id),
+            )
 
             for (const option of result.slice(1)) {
-              expect(inactiveIds.has(option.value!)).toBe(false)
+              expect(purelyInactiveIds.has(option.value!)).toBe(false)
             }
           },
         ),
