@@ -57,21 +57,22 @@ API routes call `getServices().jobService.createJob(...)`.
 
 ## API Route Pattern
 
-All routes follow thin-handler pattern with consistent error handling:
+All routes use `defineApiHandler` (from `server/utils/httpError.ts`, auto-imported by Nitro) which provides centralized error handling with correct RFC 9110 status messages:
 
 ```typescript
-export default defineEventHandler(async (event) => {
-  try {
-    const body = await readBody(event)
-    const result = await getServices().someService.someMethod(body)
-    return result
-  } catch (error) {
-    if (error instanceof ValidationError) throw createError({ statusCode: 400, message: error.message })
-    if (error instanceof NotFoundError) throw createError({ statusCode: 404, message: error.message })
-    throw createError({ statusCode: 500, message: 'Internal server error' })
-  }
+export default defineApiHandler(async (event) => {
+  const body = await readBody(event)
+  return getServices().someService.someMethod(body)
 })
 ```
+
+`defineApiHandler` wraps the handler in a try/catch that maps errors automatically:
+- `ValidationError` → 400 "Bad Request"
+- `NotFoundError` → 404 "Not Found"
+- H3Errors (from `createError()`) → re-thrown unchanged
+- Unknown errors → 500 "Internal Server Error" (original message not leaked)
+
+Do NOT use `defineEventHandler` with manual try/catch blocks. Do NOT use inline `createError()` for 400/404 — throw `ValidationError` or `NotFoundError` instead so the status message mapping is applied.
 
 ## Red Flags
 
@@ -88,6 +89,7 @@ export default defineEventHandler(async (event) => {
 | `server/utils/db.ts` | Repository singleton init |
 | `server/utils/services.ts` | Service singleton init |
 | `server/utils/errors.ts` | `ValidationError`, `NotFoundError` |
+| `server/utils/httpError.ts` | `defineApiHandler`, `httpError`, `STATUS_MESSAGES`, `ERROR_STATUS_MAP` |
 | `server/utils/idGenerator.ts` | `generateId(prefix)` + sequential SN counter |
 | `server/repositories/factory.ts` | Returns `RepositorySet` based on config |
 | `server/repositories/sqlite/index.ts` | DB init, WAL mode, migration runner |

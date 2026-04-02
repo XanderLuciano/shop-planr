@@ -1,6 +1,6 @@
-export default defineEventHandler(async (event) => {
+export default defineApiHandler(async (event) => {
   const partId = getRouterParam(event, 'id')
-  if (!partId) throw createError({ statusCode: 400, message: 'Part ID is required' })
+  if (!partId) throw new ValidationError('Part ID is required')
 
   const { lifecycleService } = getServices()
   const { paths } = getRepositories()
@@ -21,7 +21,7 @@ export default defineEventHandler(async (event) => {
   // Get part to find path
   const { parts } = getRepositories()
   const part = parts.getById(partId)
-  if (!part) throw createError({ statusCode: 404, message: 'Part not found' })
+  if (!part) throw new NotFoundError('Part', partId)
 
   const path = paths.getById(part.pathId)
   if (!path) {

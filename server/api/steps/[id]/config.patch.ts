@@ -1,6 +1,6 @@
-export default defineEventHandler(async (event) => {
+export default defineApiHandler(async (event) => {
   const stepId = getRouterParam(event, 'id')
-  if (!stepId) throw createError({ statusCode: 400, message: 'Step ID is required' })
+  if (!stepId) throw new ValidationError('Step ID is required')
 
   const body = await readBody(event)
   const { pathService } = getServices()
@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   }
 
   if (!Object.keys(update).length) {
-    throw createError({ statusCode: 400, message: 'No valid fields to update' })
+    throw new ValidationError('No valid fields to update')
   }
 
   const result = pathService.updateStep(stepId, update)
