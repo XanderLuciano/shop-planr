@@ -2,18 +2,30 @@ import type { UserRepository } from '../repositories/interfaces/userRepository'
 import type { ShopUser } from '../types/domain'
 import { generateId } from '../utils/idGenerator'
 import { assertNonEmpty } from '../utils/validation'
-import { NotFoundError } from '../utils/errors'
+import { NotFoundError, ValidationError } from '../utils/errors'
 
 export function createUserService(repos: { users: UserRepository }) {
   return {
-    createUser(input: { name: string, department?: string }): ShopUser {
-      assertNonEmpty(input.name, 'name')
+    createUser(input: { username: string, displayName: string, department?: string, isAdmin?: boolean }): ShopUser {
+      assertNonEmpty(input.username, 'username')
+      assertNonEmpty(input.displayName, 'displayName')
+
+      const trimmedUsername = input.username.trim()
+      const trimmedDisplayName = input.displayName.trim()
+
+      const existing = repos.users.getByUsername(trimmedUsername)
+      if (existing) {
+        throw new ValidationError(`Username '${trimmedUsername}' is already taken`)
+      }
+
       return repos.users.create({
         id: generateId('user'),
-        name: input.name.trim(),
+        username: trimmedUsername,
+        displayName: trimmedDisplayName,
+        isAdmin: input.isAdmin ?? false,
         department: input.department,
         active: true,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       })
     },
 
@@ -33,18 +45,36 @@ export function createUserService(repos: { users: UserRepository }) {
       return repos.users.listActive()
     },
 
-    updateUser(id: string, input: { name?: string, department?: string, active?: boolean }): ShopUser {
+    updateUser(id: string, input: { username?: string, displayName?: string, department?: string, active?: boolean, isAdmin?: boolean }): ShopUser {
       const existing = repos.users.getById(id)
       if (!existing) {
         throw new NotFoundError('User', id)
       }
-      if (input.name !== undefined) {
-        assertNonEmpty(input.name, 'name')
+
+      if (input.username !== undefined) {
+        assertNonEmpty(input.username, 'username')
       }
+      if (input.displayName !== undefined) {
+        assertNonEmpty(input.displayName, 'displayName')
+      }
+
       const partial: Partial<ShopUser> = {}
-      if (input.name !== undefined) partial.name = input.name.trim()
+
+      if (input.username !== undefined) {
+        const trimmedUsername = input.username.trim()
+        if (trimmedUsername !== existing.username) {
+          const taken = repos.users.getByUsername(trimmedUsername)
+          if (taken && taken.id !== id) {
+            throw new ValidationError(`Username '${trimmedUsername}' is already taken`)
+          }
+        }
+        partial.username = trimmedUsername
+      }
+      if (input.displayName !== undefined) partial.displayName = input.displayName.trim()
       if (input.department !== undefined) partial.department = input.department
       if (input.active !== undefined) partial.active = input.active
+      if (input.isAdmin !== undefined) partial.isAdmin = input.isAdmin
+
       return repos.users.update(id, partial)
     },
 
@@ -54,7 +84,7 @@ export function createUserService(repos: { users: UserRepository }) {
         throw new NotFoundError('User', id)
       }
       return repos.users.update(id, { active: false })
-    }
+    },
   }
 }
 

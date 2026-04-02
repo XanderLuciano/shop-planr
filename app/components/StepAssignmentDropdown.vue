@@ -20,7 +20,7 @@ const toast = useToast()
  * duplicated in tests/properties/dropdownFilter.property.test.ts
  * to avoid Vue component import issues in test environment.
  *
- * Returns "Unassigned" as first option, then users whose name contains
+ * Returns "Unassigned" as first option, then users whose displayName contains
  * the search string (case-insensitive partial match).
  * "Unassigned" is always visible regardless of search input.
  */
@@ -34,9 +34,9 @@ function filterDropdownOptions(users: ShopUser[], search: string): SelectMenuIte
   const normalizedSearch = search.toLowerCase().trim()
 
   const userOptions: SelectMenuItem[] = users
-    .filter(u => u.active && (normalizedSearch === '' || u.name.toLowerCase().includes(normalizedSearch)))
+    .filter(u => u.active && (normalizedSearch === '' || u.displayName.toLowerCase().includes(normalizedSearch)))
     .map(u => ({
-      label: u.name,
+      label: u.displayName,
       value: u.id,
       icon: 'i-lucide-user',
     }))
@@ -64,7 +64,7 @@ const menuItems = computed<SelectMenuItem[]>(() => {
 const displayLabel = computed(() => {
   if (!selectedValue.value || selectedValue.value === SELECT_UNASSIGNED) return 'Unassigned'
   const user = props.users.find(u => u.id === selectedValue.value)
-  return user?.name ?? 'Unassigned'
+  return user?.displayName ?? 'Unassigned'
 })
 
 async function handleSelection(value: string | null) {

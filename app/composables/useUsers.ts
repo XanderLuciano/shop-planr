@@ -1,4 +1,4 @@
-import { ref, readonly } from 'vue'
+import { ref, readonly, computed } from 'vue'
 import type { ShopUser } from '~/types/domain'
 
 const STORAGE_KEY = 'shop_erp_selected_user'
@@ -71,10 +71,13 @@ export function useUsers() {
     return selectedUser.value
   }
 
+  const isAdmin = computed(() => selectedUser.value?.isAdmin === true)
+
   return {
     users: readonly(users),
     selectedUser: readonly(selectedUser),
     loading: readonly(loading),
+    isAdmin,
     fetchUsers,
     selectUser,
     clearUser,

@@ -6,6 +6,7 @@ const route = useRoute()
 const jobId = route.params.id as string
 
 const { getJob, updateJob, deleteJob } = useJobs()
+const { isAdmin } = useUsers()
 const toast = useToast()
 const { getPath: fetchPathDetail } = usePaths()
 const { templates, fetchTemplates, applyTemplate } = useTemplates()
@@ -359,6 +360,7 @@ onMounted(() => {
           <div class="flex items-center gap-1.5">
             <UButton icon="i-lucide-pencil" size="xs" variant="ghost" label="Edit" @click="navigateTo(`/jobs/edit/${encodeURIComponent(jobId)}`)" />
             <UButton
+              v-if="isAdmin"
               icon="i-lucide-trash-2"
               size="xs"
               variant="soft"
@@ -490,6 +492,7 @@ onMounted(() => {
               </div>
               <div class="flex items-center gap-1">
                 <PathDeleteButton
+                  v-if="isAdmin"
                   :path-id="p.id"
                   :path-name="p.name"
                   :part-count="getPathPartCount(p.id)"

@@ -48,8 +48,8 @@ function insertJob(db: Database.default.Database, jobId: string) {
 function insertUser(db: Database.default.Database, userId: string, active: boolean) {
   const now = new Date().toISOString()
   db.prepare(
-    'INSERT INTO users (id, name, department, active, created_at) VALUES (?, ?, ?, ?, ?)',
-  ).run(userId, `User-${userId}`, null, active ? 1 : 0, now)
+    'INSERT INTO users (id, username, display_name, is_admin, department, active, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+  ).run(userId, `user-${userId}`, `User-${userId}`, 0, null, active ? 1 : 0, now)
 }
 
 /**
