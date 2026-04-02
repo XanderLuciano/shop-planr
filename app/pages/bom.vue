@@ -57,6 +57,7 @@ async function onEditSave(bomId: string, payload: { name: string, entries: { par
   editError.value = ''
   try {
     await editBom(bomId, {
+      name: payload.name,
       entries: payload.entries,
       changeDescription: 'Updated BOM entries',
       userId: operatorId.value ?? 'system',

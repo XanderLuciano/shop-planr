@@ -170,6 +170,7 @@ export interface CreateStepOverrideInput {
 // ---- BOM Edit ----
 
 export interface EditBomInput {
+  name?: string
   entries: { partType: string; requiredQuantityPerBuild: number; contributingJobIds: readonly string[] }[]
   changeDescription: string
   userId: string
