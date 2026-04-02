@@ -307,7 +307,7 @@ onMounted(async () => {
       <ProcessAdvancementPanel
         v-else
         :job="job"
-        :loading="advanceLoading"
+        :loading="advanceLoading || skipLoading"
         :notes="notes"
         @advance="handleAdvance"
         @skip="handleSkip"

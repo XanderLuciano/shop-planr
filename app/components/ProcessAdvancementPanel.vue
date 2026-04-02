@@ -185,13 +185,14 @@ onMounted(() => { selectAll() })
     <div class="flex items-center gap-2 pt-1">
       <UButton
         :loading="loading"
-        :disabled="!!validationError || selectedParts.size === 0"
+        :disabled="loading || !!validationError || selectedParts.size === 0"
         size="sm" color="primary" label="Advance" icon="i-lucide-arrow-right"
         @click="handleAdvance"
       />
       <UButton
         v-if="job.stepOptional && !job.isFinalStep"
-        :disabled="selectedParts.size === 0"
+        :loading="loading"
+        :disabled="loading || selectedParts.size === 0"
         size="sm"
         variant="outline"
         color="neutral"
