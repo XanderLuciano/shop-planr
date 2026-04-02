@@ -12,4 +12,5 @@ export interface CertRepository {
   getAttachmentsForSerial?: (serialId: string) => CertAttachment[]
   listAttachmentsByCertId(certId: string): CertAttachment[]
   batchAttach(attachments: CertAttachment[]): CertAttachment[]
+  deleteAttachmentsByPartIds(partIds: string[]): number
 }

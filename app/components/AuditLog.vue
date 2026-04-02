@@ -20,6 +20,7 @@ const actionConfig: Record<AuditAction, { label: string, color: string, icon: st
   deferred_step_completed: { label: 'Deferred Completed', color: 'text-green-400', icon: 'i-lucide-check-circle-2' },
   step_waived: { label: 'Step Waived', color: 'text-purple-400', icon: 'i-lucide-circle-slash' },
   bom_edited: { label: 'BOM Edited', color: 'text-cyan-500', icon: 'i-lucide-table' },
+  path_deleted: { label: 'Path Deleted', color: 'text-red-400', icon: 'i-lucide-folder-x' },
 }
 
 function formatTime(ts: string): string {

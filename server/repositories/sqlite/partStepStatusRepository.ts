@@ -143,4 +143,13 @@ export class SQLitePartStepStatusRepository implements PartStepStatusRepository 
   updateBySerialAndStep(serialId: string, stepId: string, partial: Partial<PartStepStatus>): PartStepStatus {
     return this.updateByPartAndStep(serialId, stepId, partial)
   }
+
+  deleteByPartIds(partIds: string[]): number {
+    if (partIds.length === 0) return 0
+    const placeholders = partIds.map(() => '?').join(',')
+    const result = this.db.prepare(
+      `DELETE FROM part_step_statuses WHERE part_id IN (${placeholders})`
+    ).run(...partIds)
+    return result.changes
+  }
 }

@@ -193,3 +193,9 @@ export interface UpdatePrioritiesInput {
 export interface CreateLibraryEntryInput {
   name: string
 }
+
+// ---- Path Deletion ----
+
+export interface DeletePathInput {
+  userId: string
+}

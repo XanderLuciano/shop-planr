@@ -7,7 +7,7 @@ export interface PartBrowserFilters {
   jobName?: string
   pathName?: string
   stepName?: string
-  status?: 'in-progress' | 'completed' | 'all'
+  status?: 'in-progress' | 'completed' | 'scrapped' | 'all'
   assignee?: string // user name or 'Unassigned'
 }
 

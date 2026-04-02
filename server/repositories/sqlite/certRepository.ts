@@ -119,4 +119,13 @@ export class SQLiteCertRepository implements CertRepository {
     })()
     return results
   }
+
+  deleteAttachmentsByPartIds(partIds: string[]): number {
+    if (partIds.length === 0) return 0
+    const placeholders = partIds.map(() => '?').join(',')
+    const result = this.db.prepare(
+      `DELETE FROM cert_attachments WHERE part_id IN (${placeholders})`
+    ).run(...partIds)
+    return result.changes
+  }
 }

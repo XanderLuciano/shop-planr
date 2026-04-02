@@ -22,6 +22,9 @@ vi.stubGlobal('usePaths', () => ({
   updatePath: vi.fn(),
   deletePath: vi.fn(),
 }))
+vi.stubGlobal('useUsers', () => ({
+  requireUser: () => ({ id: 'test-user-id', username: 'test', displayName: 'Test', isAdmin: true, active: true, createdAt: '' }),
+}))
 
 import { useJobForm } from '~/app/composables/useJobForm'
 

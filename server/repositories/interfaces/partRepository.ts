@@ -14,6 +14,7 @@ export interface PartRepository {
   countCompletedByJobId(jobId: string): number
   countScrappedByJobId(jobId: string): number
   listAll(): Part[]
+  deleteByPathId(pathId: string): number
 }
 
 /** @deprecated Use `PartRepository` instead. Backward-compatible alias. */

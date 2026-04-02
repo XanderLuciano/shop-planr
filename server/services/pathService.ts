@@ -1,6 +1,12 @@
 import type { PathRepository } from '../repositories/interfaces/pathRepository'
 import type { PartRepository } from '../repositories/interfaces/partRepository'
 import type { UserRepository } from '../repositories/interfaces/userRepository'
+import type { NoteRepository } from '../repositories/interfaces/noteRepository'
+import type { PartStepOverrideRepository } from '../repositories/interfaces/partStepOverrideRepository'
+import type { CertRepository } from '../repositories/interfaces/certRepository'
+import type { PartStepStatusRepository } from '../repositories/interfaces/partStepStatusRepository'
+import type { AuditService } from './auditService'
+import type { Database } from 'better-sqlite3'
 import type { Path, ProcessStep } from '../types/domain'
 import type { StepInput } from '../types/domain'
 import type { CreatePathInput, UpdatePathInput } from '../types/api'
@@ -10,7 +16,7 @@ import type { StepDistribution } from '../types/computed'
 export type { StepInput } from '../types/domain'
 import { generateId } from '../utils/idGenerator'
 import { assertNonEmpty, assertNonEmptyArray, assertPositive } from '../utils/validation'
-import { NotFoundError, ValidationError } from '../utils/errors'
+import { NotFoundError, ValidationError, ForbiddenError } from '../utils/errors'
 
 /** Result of reconciling existing steps with incoming step inputs. */
 export interface StepReconciliation {
@@ -81,7 +87,12 @@ export function createPathService(repos: {
   paths: PathRepository
   parts: PartRepository
   users?: UserRepository
-}) {
+  notes?: NoteRepository
+  partStepOverrides?: PartStepOverrideRepository
+  certs?: CertRepository
+  partStepStatuses?: PartStepStatusRepository
+  db?: Database
+}, auditService?: AuditService) {
   return {
     createPath(input: CreatePathInput): Path {
       assertNonEmpty(input.name, 'name')
@@ -170,18 +181,94 @@ export function createPathService(repos: {
       return repos.paths.update(id, partial)
     },
 
-    deletePath(id: string): boolean {
+    deletePath(id: string, userId?: string): { deletedPartIds: string[], deletedPartCount: number } {
+      // If userId is provided, validate admin authorization
+      if (userId !== undefined) {
+        if (!userId) {
+          throw new ValidationError('userId is required')
+        }
+        if (!repos.users) {
+          throw new ValidationError('User repository not available')
+        }
+        const user = repos.users.getById(userId)
+        if (!user) {
+          throw new ValidationError(`User not found: ${userId}`)
+        }
+        if (!user.isAdmin) {
+          throw new ForbiddenError('Admin access required to delete paths')
+        }
+      }
+
       const existing = repos.paths.getById(id)
       if (!existing) {
         throw new NotFoundError('Path', id)
       }
 
       const parts = repos.parts.listByPathId(id)
-      if (parts.length > 0) {
+
+      if (parts.length === 0) {
+        // Zero-part path: delete directly (existing behavior)
+        repos.paths.delete(id)
+        const result = { deletedPartIds: [], deletedPartCount: 0 }
+
+        // Record audit entry if userId provided
+        if (userId && auditService) {
+          auditService.recordPathDeletion({
+            userId,
+            pathId: id,
+            jobId: existing.jobId,
+            metadata: {
+              pathName: existing.name,
+              deletedPartIds: [],
+              deletedPartCount: 0,
+            },
+          })
+        }
+
+        return result
+      }
+
+      // Path has parts — need cascade delete with transaction
+      if (!repos.notes || !repos.partStepOverrides || !repos.certs || !repos.partStepStatuses || !repos.db) {
         throw new ValidationError('Cannot delete path with parts attached')
       }
 
-      return repos.paths.delete(id)
+      const partIds = parts.map(p => p.id)
+      const stepIds = existing.steps.map(s => s.id)
+
+      // Cascade delete inside transaction in FK-safe order
+      repos.db.transaction(() => {
+        // 1. Delete notes by stepIds
+        repos.notes!.deleteByStepIds(stepIds)
+        // 2. Delete part step overrides by partIds
+        repos.partStepOverrides!.deleteByPartIds(partIds)
+        // 3. Delete cert attachments by partIds
+        repos.certs!.deleteAttachmentsByPartIds(partIds)
+        // 4. Delete part step statuses by partIds
+        repos.partStepStatuses!.deleteByPartIds(partIds)
+        // 5. Delete parts by pathId
+        repos.parts.deleteByPathId(id)
+        // 6. Delete path (steps auto-cascade via ON DELETE CASCADE)
+        repos.paths.delete(id)
+      })()
+
+      const result = { deletedPartIds: partIds, deletedPartCount: partIds.length }
+
+      // Record audit entry after transaction commits
+      if (userId && auditService) {
+        auditService.recordPathDeletion({
+          userId,
+          pathId: id,
+          jobId: existing.jobId,
+          metadata: {
+            pathName: existing.name,
+            deletedPartIds: partIds,
+            deletedPartCount: partIds.length,
+          },
+        })
+      }
+
+      return result
     },
 
     getStepDistribution(pathId: string, prefetchedPath?: Path): StepDistribution[] {

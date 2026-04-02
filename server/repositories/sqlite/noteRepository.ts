@@ -84,4 +84,13 @@ export class SQLiteNoteRepository implements NoteRepository {
     ).all(jobId) as NoteRow[]
     return rows.map(rowToDomain)
   }
+
+  deleteByStepIds(stepIds: string[]): number {
+    if (stepIds.length === 0) return 0
+    const placeholders = stepIds.map(() => '?').join(',')
+    const result = this.db.prepare(
+      `DELETE FROM step_notes WHERE step_id IN (${placeholders})`
+    ).run(...stepIds)
+    return result.changes
+  }
 }

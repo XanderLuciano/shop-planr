@@ -7,6 +7,7 @@ export interface PartStepOverrideRepository {
   listByPartId(partId: string): PartStepOverride[]
   listActiveByPartId(partId: string): PartStepOverride[]
   update(id: string, partial: Partial<PartStepOverride>): PartStepOverride
+  deleteByPartIds(partIds: string[]): number
 }
 
 /** @deprecated Use `PartStepOverrideRepository` instead. Backward-compatible alias. */

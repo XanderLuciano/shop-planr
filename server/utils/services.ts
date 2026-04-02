@@ -55,7 +55,16 @@ export function getServices(): ServiceSet {
     const auditService = createAuditService({ audit: repos.audit })
     const userService = createUserService({ users: repos.users })
     const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts, bom: repos.bom })
-    const pathService = createPathService({ paths: repos.paths, parts: repos.parts, users: repos.users })
+    const pathService = createPathService({
+      paths: repos.paths,
+      parts: repos.parts,
+      users: repos.users,
+      notes: repos.notes,
+      partStepOverrides: repos.partStepOverrides,
+      certs: repos.certs,
+      partStepStatuses: repos.partStepStatuses,
+      db: repos._db,
+    }, auditService)
     const templateService = createTemplateService({ templates: repos.templates, paths: repos.paths })
 
     // Lifecycle service depends on auditService

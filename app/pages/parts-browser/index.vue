@@ -44,6 +44,7 @@ const statusOptions = [
   { label: 'All Statuses', value: 'all' },
   { label: 'In Progress', value: 'in-progress' },
   { label: 'Completed', value: 'completed' },
+  { label: 'Scrapped', value: 'scrapped' },
 ]
 const assigneeOptions = computed(() => {
   const names = [...new Set(parts.value.map(s => s.assignedTo).filter((v): v is string => !!v))].sort()
@@ -195,11 +196,11 @@ onMounted(() => {
             <td class="px-3 py-2">{{ s.currentStepName }}</td>
             <td class="px-3 py-2">
               <UBadge
-                :color="s.status === 'completed' ? 'success' : 'warning'"
+                :color="s.status === 'completed' ? 'success' : s.status === 'scrapped' ? 'error' : 'warning'"
                 variant="subtle"
                 size="xs"
               >
-                {{ s.status === 'completed' ? 'Completed' : 'In Progress' }}
+                {{ s.status === 'completed' ? 'Completed' : s.status === 'scrapped' ? 'Scrapped' : 'In Progress' }}
               </UBadge>
             </td>
             <td class="px-3 py-2 text-(--ui-text-muted)">{{ s.assignedTo ?? 'Unassigned' }}</td>
@@ -232,11 +233,11 @@ onMounted(() => {
         <div class="flex items-center justify-between">
           <span class="font-mono text-sm font-medium text-(--ui-text-highlighted)">{{ s.id }}</span>
           <UBadge
-            :color="s.status === 'completed' ? 'success' : 'warning'"
+            :color="s.status === 'completed' ? 'success' : s.status === 'scrapped' ? 'error' : 'warning'"
             variant="subtle"
             size="xs"
           >
-            {{ s.status === 'completed' ? 'Completed' : 'In Progress' }}
+            {{ s.status === 'completed' ? 'Completed' : s.status === 'scrapped' ? 'Scrapped' : 'In Progress' }}
           </UBadge>
         </div>
         <div class="text-xs text-(--ui-text-muted)">{{ s.jobName }}</div>

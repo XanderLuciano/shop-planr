@@ -42,7 +42,8 @@ function createMockPartRepo(parts: Part[] = []): PartRepository {
     countByJobId: vi.fn(),
     countCompletedByJobId: vi.fn(),
     countScrappedByJobId: vi.fn(() => 0),
-    listAll: vi.fn(() => [])
+    listAll: vi.fn(() => []),
+    deleteByPathId: vi.fn(() => 0)
   }
 }
 
@@ -389,7 +390,7 @@ describe('PathService', () => {
         jobId: 'job_1', name: 'Route', goalQuantity: 10, steps: [{ name: 'S1' }]
       })
       const result = service.deletePath(path.id)
-      expect(result).toBe(true)
+      expect(result).toEqual({ deletedPartIds: [], deletedPartCount: 0 })
       expect(pathRepo.delete).toHaveBeenCalledWith(path.id)
     })
 
