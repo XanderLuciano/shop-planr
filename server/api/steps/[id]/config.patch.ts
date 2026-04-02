@@ -1,4 +1,4 @@
-export default defineEventHandler(async (event) => {
+export default defineApiHandler(async (event) => {
   const stepId = getRouterParam(event, 'id')
   if (!stepId) throw createError({ statusCode: 400, message: 'Step ID is required' })
 
