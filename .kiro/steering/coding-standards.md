@@ -30,7 +30,7 @@ When adding a new sentinel, add it to `selectSentinel.ts` with a typed constant,
 
 `~` resolves to `app/` at runtime, but to project root in vitest. This causes runtime errors if misused.
 
-**Server code (`server/`):** NEVER use `~`. Use relative paths only. `server/utils/` exports are auto-imported by Nitro (no import needed for `ValidationError`, `NotFoundError`, `getServices`, `getRepositories`, `defineEventHandler`, `readBody`, `getRouterParam`, `createError`, etc).
+**Server code (`server/`):** NEVER use `~`. Use relative paths only. `server/utils/` exports are auto-imported by Nitro (no import needed for `ValidationError`, `NotFoundError`, `getServices`, `getRepositories`, `defineApiHandler`, `readBody`, `getRouterParam`, etc).
 
 **App code (`app/`):** NEVER write `~/app/` (doubles to `app/app/`). Use `~/` which already points to `app/`. Composables, components, and utils are auto-imported. For types not auto-imported, inline the definition.
 
@@ -47,7 +47,32 @@ Dependencies flow left-to-right only. No skipping layers.
 
 ## API Route Pattern
 
-Thin handlers: parse input → call service → return result. Catch `ValidationError` (400) and `NotFoundError` (404). Both are auto-imported.
+All API routes MUST use `defineApiHandler` (from `server/utils/httpError.ts`, auto-imported) instead of `defineEventHandler`. This wrapper provides centralized error handling with correct RFC 9110 status messages. Do NOT use `defineEventHandler` or manual try/catch blocks in routes.
+
+```ts
+// CORRECT — use defineApiHandler, no try/catch needed
+export default defineApiHandler(async (event) => {
+  const body = await readBody(event)
+  return getServices().jobService.createJob(body)
+})
+```
+
+```ts
+// WRONG — do NOT use defineEventHandler with manual catch blocks
+export default defineEventHandler(async (event) => {
+  try { ... } catch (error) { ... }
+})
+```
+
+For input validation errors in route handlers, throw `ValidationError` (auto-imported). For missing resources, throw `NotFoundError` (auto-imported). Do NOT use inline `createError()` for 400/404 errors — it bypasses the centralized status message mapping and produces incorrect `statusMessage` values.
+
+```ts
+// CORRECT
+if (!id) throw new ValidationError('ID is required')
+
+// WRONG — missing statusMessage, produces "Server Error"
+if (!id) throw createError({ statusCode: 400, message: 'ID is required' })
+```
 
 ## API Error Handling — Empty vs. Not Found
 
