@@ -78,7 +78,7 @@ export function httpError(error: unknown): never {
  * ```
  */
 export function defineApiHandler<T>(
-  handler: (event: H3Event) => T | Promise<T>,
+  handler: (event: InstanceType<typeof H3Event>) => T | Promise<T>,
 ) {
   return defineEventHandler(async (event) => {
     try {
