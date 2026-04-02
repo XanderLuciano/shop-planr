@@ -1,15 +1,14 @@
 /**
  * Property-based tests for the HTTP Error Handler utility.
  *
- * Tests live in this file and are added incrementally by tasks 1.2–1.5.
- *
  * httpError.ts relies on Nitro auto-imports (ValidationError, NotFoundError,
- * createError, isError, defineEventHandler, H3Event). We provide these as
- * globals before importing the module under test.
+ * createError, isError, defineEventHandler). We stub these as globals before
+ * importing the module under test.
  */
-import { describe, it, expect, vi, beforeAll } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import fc from 'fast-check'
-import { createError, isError, defineEventHandler, H3Event } from 'h3'
+import { createError, isError, defineEventHandler } from 'h3'
+import type { H3Event } from 'h3'
 import { ValidationError, NotFoundError } from '~/server/utils/errors'
 
 // Provide Nitro auto-imports as globals so httpError.ts can resolve them
@@ -18,7 +17,6 @@ vi.stubGlobal('NotFoundError', NotFoundError)
 vi.stubGlobal('createError', createError)
 vi.stubGlobal('isError', isError)
 vi.stubGlobal('defineEventHandler', defineEventHandler)
-vi.stubGlobal('H3Event', H3Event)
 
 // Import AFTER globals are stubbed
 const { httpError, ERROR_STATUS_MAP, STATUS_MESSAGES, defineApiHandler } = await import('~/server/utils/httpError')

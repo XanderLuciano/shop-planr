@@ -5,7 +5,7 @@
  * data-driven mapping structure, and specific error class examples.
  */
 import { describe, it, expect, vi } from 'vitest'
-import { createError, isError, defineEventHandler, H3Event } from 'h3'
+import { createError, isError, defineEventHandler } from 'h3'
 import { ValidationError, NotFoundError } from '~/server/utils/errors'
 
 // Provide Nitro auto-imports as globals so httpError.ts can resolve them
@@ -14,7 +14,6 @@ vi.stubGlobal('NotFoundError', NotFoundError)
 vi.stubGlobal('createError', createError)
 vi.stubGlobal('isError', isError)
 vi.stubGlobal('defineEventHandler', defineEventHandler)
-vi.stubGlobal('H3Event', H3Event)
 
 // Import AFTER globals are stubbed
 const { httpError, ERROR_STATUS_MAP, STATUS_MESSAGES } = await import('~/server/utils/httpError')
