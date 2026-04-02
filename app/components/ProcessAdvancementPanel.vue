@@ -190,7 +190,7 @@ onMounted(() => { selectAll() })
         @click="handleAdvance"
       />
       <UButton
-        v-if="job.stepOptional && !job.isFinalStep"
+        v-if="shouldShowSkip(job.stepOptional, job.isFinalStep)"
         :loading="loading"
         :disabled="loading || selectedParts.size === 0"
         size="sm"

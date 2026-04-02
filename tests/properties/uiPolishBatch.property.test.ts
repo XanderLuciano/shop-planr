@@ -53,22 +53,36 @@ describe('Property 1: Scrap removes part from list and deselects', () => {
   })
 })
 
+import { shouldShowSkip } from '~/app/utils/shouldShowSkip'
+
 /**
- * Property 2: Skip button visibility equals stepOptional flag
+ * Property 2: Skip button visibility equals stepOptional && !isFinalStep
  *
- * The Skip button should be visible if and only if stepOptional is true.
+ * The Skip button should be visible iff the step is optional and not the final step.
  *
  * **Validates: Requirements 2.1, 2.5**
  */
 describe('Property 2: Skip button visibility equals stepOptional flag', () => {
-  it('visibility matches stepOptional boolean', () => {
+  it('visibility matches stepOptional && !isFinalStep', () => {
     fc.assert(
       fc.property(
         fc.boolean(),
-        (stepOptional) => {
-          // The skip button visibility is purely driven by the stepOptional flag
-          const skipVisible = stepOptional === true
-          expect(skipVisible).toBe(stepOptional)
+        fc.boolean(),
+        (stepOptional, isFinalStep) => {
+          const result = shouldShowSkip(stepOptional, isFinalStep)
+          expect(result).toBe(stepOptional && !isFinalStep)
+        }
+      ),
+      { numRuns: 100 }
+    )
+  })
+
+  it('returns false when stepOptional is undefined', () => {
+    fc.assert(
+      fc.property(
+        fc.boolean(),
+        (isFinalStep) => {
+          expect(shouldShowSkip(undefined, isFinalStep)).toBe(false)
         }
       ),
       { numRuns: 100 }
