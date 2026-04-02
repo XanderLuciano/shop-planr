@@ -35,14 +35,13 @@ No new services, repositories, or API routes are needed. This is a modification 
 
 ### Migration Strategy
 
-Migration `009_user_admin_roles.sql` will:
-1. Add `username TEXT`, `display_name TEXT`, `is_admin INTEGER DEFAULT 0` columns
-2. Populate `username` and `display_name` from existing `name` values
-3. Handle duplicate `name` values by appending numeric suffixes to `username`
-4. Apply `NOT NULL` and `UNIQUE` constraints on `username`, `NOT NULL` on `display_name`
-5. Drop the `name` column
+Migration `009_user_admin_roles.sql` uses the table-recreation pattern (consistent with migrations 006–008):
+1. Create `users_new` with the target schema (`username TEXT NOT NULL`, `display_name TEXT NOT NULL`, `is_admin INTEGER NOT NULL DEFAULT 0`) — no `name` column
+2. Copy data from `users` into `users_new`, populating `username` and `display_name` from `name`, deduplicating usernames via `ROW_NUMBER() OVER (PARTITION BY name ORDER BY rowid)`
+3. Drop `users`, rename `users_new` to `users`
+4. Create `UNIQUE INDEX idx_users_username ON users(username)`
 
-SQLite doesn't support `ALTER TABLE ... DROP COLUMN` in older versions, but better-sqlite3 uses a recent SQLite version (3.35+) that does. We'll use `ALTER TABLE users DROP COLUMN name` directly.
+Table recreation is used instead of `ALTER TABLE ... DROP COLUMN` + `ADD COLUMN` because SQLite's `ADD COLUMN` doesn't support `NOT NULL` without a default value, and we need `username NOT NULL` without a default.
 
 ### Admin Gating Approach
 
@@ -154,51 +153,40 @@ export function useUsers() {
 **Migration 009: `009_user_admin_roles.sql`**
 
 ```sql
--- Step 1: Add new columns (nullable initially for population)
-ALTER TABLE users ADD COLUMN username TEXT;
-ALTER TABLE users ADD COLUMN display_name TEXT;
-ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0;
+-- 1. Create users_new with target schema (no name column)
+CREATE TABLE users_new (
+  id TEXT PRIMARY KEY,
+  username TEXT NOT NULL,
+  display_name TEXT NOT NULL,
+  department TEXT,
+  is_admin INTEGER NOT NULL DEFAULT 0,
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL
+);
 
--- Step 2: Populate from existing name column
-UPDATE users SET username = name, display_name = name;
+-- 2. Copy data, deduplicating username from name via ROW_NUMBER()
+INSERT INTO users_new (id, username, display_name, department, is_admin, active, created_at)
+SELECT id,
+  CASE WHEN rn = 1 THEN name ELSE name || '_' || (rn) END AS username,
+  name AS display_name, department, 0 AS is_admin, active, created_at
+FROM (
+  SELECT *, ROW_NUMBER() OVER (PARTITION BY name ORDER BY rowid) AS rn
+  FROM users
+);
 
--- Step 3: Handle duplicate usernames by appending suffix
--- (Handled programmatically in the migration runner or via a WITH/CTE approach)
--- For each group of duplicate names, append _2, _3, etc. to all but the first
+-- 3. Drop old table, rename new table
+DROP TABLE users;
+ALTER TABLE users_new RENAME TO users;
 
--- Step 4: Apply NOT NULL constraint
--- SQLite requires table recreation for adding NOT NULL to existing columns,
--- but since we just populated all rows, we can use a CHECK or recreate.
--- Simpler: since all rows are populated, just drop and recreate with constraints.
-
--- Step 5: Drop old name column
-ALTER TABLE users DROP COLUMN name;
-
--- Step 6: Create unique index on username
+-- 4. Create unique index on username
 CREATE UNIQUE INDEX idx_users_username ON users(username);
 ```
 
-Because SQLite's `ALTER TABLE ADD COLUMN` doesn't support `NOT NULL` without a default, and we need `username` to be `NOT NULL` without a default, the migration will use the table-recreation pattern:
-
-1. Create `users_new` with the target schema (no `name`, has `username NOT NULL UNIQUE`, `display_name NOT NULL`, `is_admin INTEGER NOT NULL DEFAULT 0`)
-2. Copy data from `users` into `users_new`, populating `username`/`display_name` from `name`, deduplicating usernames
-3. Drop `users`
-4. Rename `users_new` to `users`
-
 ### Duplicate Username Handling
 
-The migration must handle the edge case where two existing users share the same `name`. Strategy:
-- Group by `name`, ordered by `rowid`
-- First occurrence keeps the name as-is for `username`
+The migration handles the edge case where two existing users share the same `name` using `ROW_NUMBER() OVER (PARTITION BY name ORDER BY rowid)`:
+- First occurrence (rank 1) keeps the name as-is for `username`
 - Subsequent duplicates get `name_2`, `name_3`, etc.
-
-This is best handled with a procedural approach in the migration SQL using window functions:
-
-```sql
--- ROW_NUMBER() OVER (PARTITION BY name ORDER BY rowid) gives occurrence rank
--- rank 1 → username = name
--- rank > 1 → username = name || '_' || rank
-```
 
 ### Row-to-Domain Mapping
 
