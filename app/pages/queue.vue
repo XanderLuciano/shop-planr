@@ -64,8 +64,8 @@ const operatorMenuItems = computed<DropdownMenuItem[][]>(() => {
     return [[{ label: 'No operators available', disabled: true }]]
   }
   return [
-    activeUsers.value.map((user: { id: string, name: string }) => ({
-      label: user.name,
+    activeUsers.value.map((user: { id: string, displayName: string }) => ({
+      label: user.displayName,
       icon: user.id === operatorId.value ? 'i-lucide-check' : 'i-lucide-user',
       onSelect() {
         handleSelectOperator(user.id)

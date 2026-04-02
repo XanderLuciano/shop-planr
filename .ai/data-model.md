@@ -25,7 +25,7 @@
 | `boms` | Bill of materials | id, name |
 | `bom_entries` | Part types in a BOM | bom_id, part_type, required_quantity_per_build |
 | `bom_contributing_jobs` | Jobs feeding a BOM entry | bom_entry_id, job_id |
-| `users` | Kiosk-mode user profiles | id, name, department, active |
+| `users` | Kiosk-mode user profiles | id, username (UNIQUE), display_name, is_admin, department, active |
 | `audit_entries` | Append-only action log | id, action, user_id, timestamp, part_id, etc. |
 | `settings` | Singleton app config | id='app_settings', jira_connection (JSON), jira_field_mappings (JSON), page_toggles (JSON) |
 | `step_notes` | Defect/note records | id, step_id, part_ids (JSON), text, created_by |

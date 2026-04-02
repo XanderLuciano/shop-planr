@@ -11,6 +11,13 @@ function createMockJobRepo(): JobRepository {
   const store = new Map<string, Job>()
   return {
     create: vi.fn((job: Job) => { store.set(job.id, job); return job }),
+    createWithAutoIncPriority: vi.fn((job: Omit<Job, 'priority'>) => {
+      let max = 0
+      for (const j of store.values()) { if (j.priority > max) max = j.priority }
+      const fullJob = { ...job, priority: max + 1 } as Job
+      store.set(fullJob.id, fullJob)
+      return fullJob
+    }),
     getById: vi.fn((id: string) => store.get(id) ?? null),
     list: vi.fn(() => [...store.values()].sort((a, b) => a.priority - b.priority)),
     update: vi.fn((id: string, partial: Partial<Job>) => {

@@ -6,6 +6,7 @@ import type { Job, FilterState } from '~/types/domain'
 import type { JobProgress } from '~/types/computed'
 
 const { jobs, loading, fetchJobs } = useJobs()
+const { isAdmin } = useUsers()
 const { filters, updateFilter, clearFilters, applyFilters } = useViewFilters()
 const {
   isEditingPriority,
@@ -134,7 +135,8 @@ const activeJobs = computed(() =>
   })
 )
 
-function onEditPriority() {
+async function onEditPriority() {
+  await loadAllProgress()
   enterEditMode([...activeJobs.value])
 }
 
@@ -193,9 +195,6 @@ function onDragEnd() {
 
 // --- Touch handlers (mobile drag-and-drop) ---
 
-const touchStartY = ref(0)
-const touchCurrentEl = ref<HTMLElement | null>(null)
-
 function getCardIndexFromPoint(y: number): number | null {
   const container = document.querySelector('[data-priority-mobile-list]')
   if (!container) return null
@@ -211,9 +210,6 @@ function getCardIndexFromPoint(y: number): number | null {
 
 function onTouchStart(e: TouchEvent, index: number) {
   dragIndex.value = index
-  const touch = e.touches[0]
-  if (touch) touchStartY.value = touch.clientY
-  touchCurrentEl.value = e.currentTarget as HTMLElement
 }
 
 function onTouchMove(e: TouchEvent) {
@@ -329,10 +325,11 @@ onMounted(() => {
             icon="i-lucide-arrow-up-down"
             variant="outline"
             size="sm"
-            :disabled="loading || !filteredJobs.length"
+            :disabled="loading || !activeJobs.length"
             @click="onEditPriority"
           />
           <UButton
+            v-if="isAdmin"
             icon="i-lucide-plus"
             label="New Job"
             size="sm"

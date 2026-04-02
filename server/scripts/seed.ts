@@ -197,11 +197,11 @@ export function seedDatabase(dbPath: string): void {
     console.log(`  Template: ${tmplAnodize.name}`)
 
     // ── Users ──
-    const mike = svc.userService.createUser({ name: 'SAMPLE-Mike', department: 'CNC Department' })
-    const sarah = svc.userService.createUser({ name: 'SAMPLE-Sarah', department: 'QC' })
-    const tony = svc.userService.createUser({ name: 'SAMPLE-Tony', department: 'CNC Department' })
-    const lisa = svc.userService.createUser({ name: 'SAMPLE-Lisa', department: 'Deburr / Finishing' })
-    console.log(`  Users: ${mike.name}, ${sarah.name}, ${tony.name}, ${lisa.name}`)
+    const mike = svc.userService.createUser({ username: 'SAMPLE-Mike', displayName: 'SAMPLE-Mike', department: 'CNC Department' })
+    const sarah = svc.userService.createUser({ username: 'SAMPLE-Sarah', displayName: 'SAMPLE-Sarah', department: 'QC', isAdmin: true })
+    const tony = svc.userService.createUser({ username: 'SAMPLE-Tony', displayName: 'SAMPLE-Tony', department: 'CNC Department' })
+    const lisa = svc.userService.createUser({ username: 'SAMPLE-Lisa', displayName: 'SAMPLE-Lisa', department: 'Deburr / Finishing' })
+    console.log(`  Users: ${mike.displayName}, ${sarah.displayName}, ${tony.displayName}, ${lisa.displayName}`)
 
     // ── Certificates ──
     const certAluminum6061 = svc.certService.createCert({
@@ -538,7 +538,7 @@ export function resetDatabase(dbPath: string): void {
         db.prepare(`DELETE FROM certs WHERE name LIKE 'SAMPLE-%'`).run()
 
         // Delete SAMPLE users
-        db.prepare(`DELETE FROM users WHERE name LIKE 'SAMPLE-%'`).run()
+        db.prepare(`DELETE FROM users WHERE username LIKE 'SAMPLE-%'`).run()
       })()
 
       console.log(`  Deleted ${sampleJobIds.length} jobs, ${samplePartIds.length} parts, ${samplePathIds.length} paths`)

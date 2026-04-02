@@ -1,4 +1,13 @@
 <script setup lang="ts">
+const { isAdmin, init } = useUsers()
+
+onMounted(async () => {
+  await init()
+  if (!isAdmin.value) {
+    navigateTo('/jobs')
+  }
+})
+
 function onSaved(jobId: string) {
   navigateTo(`/jobs/${encodeURIComponent(jobId)}`)
 }

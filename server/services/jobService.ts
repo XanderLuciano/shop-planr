@@ -21,12 +21,10 @@ export function createJobService(repos: {
       assertPositive(input.goalQuantity, 'goalQuantity')
 
       const now = new Date().toISOString()
-      const priority = repos.jobs.getMaxPriority() + 1
-      return repos.jobs.create({
+      return repos.jobs.createWithAutoIncPriority({
         id: generateId('job'),
         name: input.name.trim(),
         goalQuantity: input.goalQuantity,
-        priority,
         jiraTicketKey: input.jiraTicketKey,
         jiraTicketSummary: input.jiraTicketSummary,
         jiraPartNumber: input.jiraPartNumber,
@@ -141,9 +139,11 @@ export function createJobService(repos: {
       const allJobs = repos.jobs.list()
       const completedJobIds = new Set<string>()
       for (const job of allJobs) {
-        const completed = repos.parts.countCompletedByJobId(job.id)
-        if (completed >= job.goalQuantity && job.goalQuantity > 0) {
-          completedJobIds.add(job.id)
+        if (job.goalQuantity > 0) {
+          const completed = repos.parts.countCompletedByJobId(job.id)
+          if (completed >= job.goalQuantity) {
+            completedJobIds.add(job.id)
+          }
         }
       }
       const activeJobs = allJobs.filter(j => !completedJobIds.has(j.id))

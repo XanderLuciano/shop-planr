@@ -1,5 +1,5 @@
--- 010_priority_not_null_resequence.sql
--- Fix: re-sequence priorities to break ties from 009 backfill (identical created_at),
+-- 011_priority_not_null_resequence.sql
+-- Fix: re-sequence priorities to break ties from 010 backfill (identical created_at),
 -- and add NOT NULL DEFAULT 0 constraint for defensive data integrity.
 
 -- Step 1: Ensure no NULL priorities exist before re-sequencing
@@ -28,7 +28,17 @@ CREATE TABLE jobs_new (
   updated_at TEXT NOT NULL
 );
 
-INSERT INTO jobs_new SELECT * FROM jobs;
+INSERT INTO jobs_new (
+  id, name, goal_quantity, priority,
+  jira_ticket_key, jira_ticket_summary, jira_part_number, jira_priority,
+  jira_epic_link, jira_labels, created_at, updated_at
+)
+SELECT
+  id, name, goal_quantity, priority,
+  jira_ticket_key, jira_ticket_summary, jira_part_number, jira_priority,
+  jira_epic_link, jira_labels, created_at, updated_at
+FROM jobs;
+
 DROP TABLE jobs;
 ALTER TABLE jobs_new RENAME TO jobs;
 

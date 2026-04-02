@@ -75,9 +75,13 @@ describe('Property 2: List sorted by priority', () => {
   it('list() returns jobs sorted by priority ascending after a random reorder via updatePriorities', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 2, max: 20 }),
-        fc.context(),
-        (n, ctx) => {
+        fc.integer({ min: 2, max: 20 }).chain((n) =>
+          fc.tuple(
+            fc.constant(n),
+            fc.shuffledSubarray(Array.from({ length: n }, (_, i) => i), { minLength: n, maxLength: n })
+          )
+        ),
+        ([n, indices]) => {
           db = createTestDb()
           const { jobService } = setupServices(db)
 
@@ -88,20 +92,10 @@ describe('Property 2: List sorted by priority', () => {
             createdIds.push(job.id)
           }
 
-          // Generate a random permutation of priorities 1..N
-          const indices = Array.from({ length: n }, (_, i) => i)
-          // Fisher-Yates shuffle
-          for (let i = indices.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [indices[i], indices[j]] = [indices[j], indices[i]]
-          }
-
           const priorities = createdIds.map((id, idx) => ({
             jobId: id,
             priority: indices[idx] + 1,
           }))
-
-          ctx.log(`Permutation: ${JSON.stringify(priorities.map(p => p.priority))}`)
 
           // Apply the reorder
           jobService.updatePriorities({ priorities })

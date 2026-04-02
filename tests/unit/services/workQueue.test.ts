@@ -125,7 +125,7 @@ function aggregateGroupedWork(
 
   const users = userService.listUsers()
   const userNameMap = new Map<string, string>()
-  for (const u of users) userNameMap.set(u.id, u.name)
+  for (const u of users) userNameMap.set(u.id, u.displayName)
 
   const groupMap = new Map<string | null, WorkQueueJob[]>()
   for (const entry of entries) {
@@ -263,8 +263,8 @@ describe('Work Queue API Endpoint Unit Tests', () => {
       const userRepo = new SQLiteUserRepository(ctx.db)
       const userService = createUserService({ users: userRepo })
 
-      // Create a user (to prove unassigned steps don't get this user's name)
-      userService.createUser({ name: 'Mike Johnson' })
+      // Create a user (to prove unassigned steps don't get this user's displayName)
+      userService.createUser({ username: 'mike.johnson', displayName: 'Mike Johnson' })
 
       // Create a job with parts — steps have no assignedTo by default
       const job = ctx.jobService.createJob({ name: 'Bracket Assembly', goalQuantity: 3 })

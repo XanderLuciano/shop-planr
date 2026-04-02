@@ -37,7 +37,7 @@ async function loadAllUsers() {
   }
 }
 
-async function onCreateUser(data: { name: string, department?: string }) {
+async function onCreateUser(data: { username: string, displayName: string, department?: string, isAdmin?: boolean }) {
   userError.value = ''
   userSuccess.value = ''
   userSaving.value = true
@@ -54,7 +54,7 @@ async function onCreateUser(data: { name: string, department?: string }) {
   }
 }
 
-async function onUpdateUser(data: { name: string, department?: string, active?: boolean }) {
+async function onUpdateUser(data: { username?: string, displayName?: string, department?: string, active?: boolean, isAdmin?: boolean }) {
   if (!editingUser.value) return
   userError.value = ''
   userSuccess.value = ''
@@ -258,7 +258,15 @@ onMounted(async () => {
             class="flex items-center justify-between px-3 py-2 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50"
           >
             <div class="flex items-center gap-2 min-w-0 flex-1">
-              <span class="text-sm font-medium text-(--ui-text-highlighted)">{{ u.name }}</span>
+              <span class="text-sm font-medium text-(--ui-text-highlighted)">{{ u.displayName }}</span>
+              <UBadge
+                v-if="u.isAdmin"
+                size="xs"
+                color="primary"
+                variant="subtle"
+              >
+                Admin
+              </UBadge>
               <span
                 v-if="u.department"
                 class="text-xs text-(--ui-text-muted)"

@@ -296,7 +296,7 @@ describe('SQLite migration system', () => {
       const db = initDatabase(dbPath)
 
       const applied = db.prepare('SELECT version, name FROM _migrations ORDER BY version').all() as any[]
-      expect(applied).toHaveLength(10)
+      expect(applied).toHaveLength(11)
       expect(applied[0].version).toBe(1)
       expect(applied[0].name).toBe('initial_schema')
       expect(applied[1].version).toBe(2)
@@ -314,9 +314,11 @@ describe('SQLite migration system', () => {
       expect(applied[7].version).toBe(8)
       expect(applied[7].name).toBe('nullable_step_order')
       expect(applied[8].version).toBe(9)
-      expect(applied[8].name).toBe('add_job_priority')
+      expect(applied[8].name).toBe('user_admin_roles')
       expect(applied[9].version).toBe(10)
-      expect(applied[9].name).toBe('priority_not_null_resequence')
+      expect(applied[9].name).toBe('add_job_priority')
+      expect(applied[10].version).toBe(11)
+      expect(applied[10].name).toBe('priority_not_null_resequence')
 
       db.close()
     })

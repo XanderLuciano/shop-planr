@@ -47,8 +47,13 @@ describe('Property 3: Valid priority update persists correctly', () => {
   it('after updatePriorities with a valid permutation, each job has the specified priority and the set is exactly {1..N}', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 1, max: 20 }),
-        (n) => {
+        fc.integer({ min: 1, max: 20 }).chain((n) =>
+          fc.tuple(
+            fc.constant(n),
+            fc.shuffledSubarray(Array.from({ length: n }, (_, i) => i + 1), { minLength: n, maxLength: n })
+          )
+        ),
+        ([n, permutation]) => {
           db = createTestDb()
           const { jobService } = setupServices(db)
 
@@ -57,13 +62,6 @@ describe('Property 3: Valid priority update persists correctly', () => {
           for (let i = 0; i < n; i++) {
             const job = jobService.createJob({ name: `Job ${i}`, goalQuantity: 10 })
             createdJobs.push({ id: job.id })
-          }
-
-          // Generate a random valid permutation of 1..N using Fisher-Yates
-          const permutation = Array.from({ length: n }, (_, i) => i + 1)
-          for (let i = permutation.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [permutation[i], permutation[j]] = [permutation[j], permutation[i]]
           }
 
           // Build the priority mapping: each job gets a shuffled priority

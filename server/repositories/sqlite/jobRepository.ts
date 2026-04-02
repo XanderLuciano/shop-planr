@@ -42,6 +42,33 @@ export class SQLiteJobRepository implements JobRepository {
     this.db = db
   }
 
+  createWithAutoIncPriority(job: Omit<Job, 'priority'>): Job {
+    const fullJob = this.db.transaction(() => {
+      const maxRow = this.db.prepare('SELECT COALESCE(MAX(priority), 0) AS max_priority FROM jobs').get() as { max_priority: number }
+      const priority = maxRow.max_priority + 1
+      const jobWithPriority = { ...job, priority } as Job
+      this.db.prepare(`
+        INSERT INTO jobs (id, name, goal_quantity, priority, jira_ticket_key, jira_ticket_summary, jira_part_number, jira_priority, jira_epic_link, jira_labels, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        jobWithPriority.id,
+        jobWithPriority.name,
+        jobWithPriority.goalQuantity,
+        jobWithPriority.priority,
+        jobWithPriority.jiraTicketKey ?? null,
+        jobWithPriority.jiraTicketSummary ?? null,
+        jobWithPriority.jiraPartNumber ?? null,
+        jobWithPriority.jiraPriority ?? null,
+        jobWithPriority.jiraEpicLink ?? null,
+        jobWithPriority.jiraLabels ? JSON.stringify(jobWithPriority.jiraLabels) : null,
+        jobWithPriority.createdAt,
+        jobWithPriority.updatedAt
+      )
+      return jobWithPriority
+    })()
+    return fullJob
+  }
+
   create(job: Job): Job {
     this.db.prepare(`
       INSERT INTO jobs (id, name, goal_quantity, priority, jira_ticket_key, jira_ticket_summary, jira_part_number, jira_priority, jira_epic_link, jira_labels, created_at, updated_at)
