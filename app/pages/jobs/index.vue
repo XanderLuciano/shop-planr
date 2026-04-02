@@ -126,7 +126,7 @@ function progressFor(jobId: string): JobProgress | null {
 // --- Priority edit actions ---
 
 function onEditPriority() {
-  enterEditMode([...filteredJobs.value])
+  enterEditMode([...jobs.value])
 }
 
 function onCancelEdit() {
