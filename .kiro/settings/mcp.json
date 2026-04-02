@@ -28,8 +28,10 @@
       ]
     },
     "shop-planr": {
-      "command": "npx",
-      "args": ["tsx", "mcp-server/index.ts"],
+      "command": "/Users/xanderr/.nvm/versions/node/v22.16.0/bin/node",
+      "args": [
+        "/Users/xanderr/dev/shop-erp/mcp-server/dist/index.mjs"
+      ],
       "env": {
         "SHOP_PLANR_URL": "http://localhost:3000"
       },

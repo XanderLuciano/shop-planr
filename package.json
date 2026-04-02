@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "seed": "npx tsx server/scripts/seed.ts",
     "seed:reset": "npx tsx server/scripts/seed.ts --reset",
-    "screenshots": "npx tsx scripts/screenshots.ts"
+    "screenshots": "npx tsx scripts/screenshots.ts",
+    "mcp:build": "esbuild mcp-server/index.ts --bundle --platform=node --target=node20 --format=esm --outfile=mcp-server/dist/index.mjs"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.82",

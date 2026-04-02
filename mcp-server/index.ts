@@ -1,33 +1,39 @@
-#!/usr/bin/env npx tsx
+#!/usr/bin/env node
 /**
  * Shop Planr MCP Server
  *
  * A Model Context Protocol server that wraps the Shop Planr HTTP API,
  * allowing AI agents to query and create jobs, paths, parts, and users.
  *
+ * Uses the low-level Server API with raw JSON Schema to avoid zod
+ * serialization issues between MCP SDK and zod v4.
+ *
  * Usage:
- *   npx tsx mcp-server/index.ts
+ *   node mcp-server/dist/index.mjs
  *
  * Expects the Nuxt dev server running at BASE_URL (default: http://localhost:3000).
  */
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
-import { z } from 'zod'
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js'
 
 const BASE_URL = process.env.SHOP_PLANR_URL || 'http://localhost:3000'
 
 // ---- HTTP helpers ----
 
-async function apiGet<T = unknown>(path: string): Promise<T> {
+async function apiGet(path: string) {
   const res = await fetch(`${BASE_URL}${path}`)
   if (!res.ok) {
     const text = await res.text()
     throw new Error(`GET ${path} failed (${res.status}): ${text}`)
   }
-  return res.json() as Promise<T>
+  return res.json()
 }
 
-async function apiPost<T = unknown>(path: string, body: unknown): Promise<T> {
+async function apiPost(path: string, body: unknown) {
   const res = await fetch(`${BASE_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -37,10 +43,10 @@ async function apiPost<T = unknown>(path: string, body: unknown): Promise<T> {
     const text = await res.text()
     throw new Error(`POST ${path} failed (${res.status}): ${text}`)
   }
-  return res.json() as Promise<T>
+  return res.json()
 }
 
-async function apiPut<T = unknown>(path: string, body: unknown): Promise<T> {
+async function apiPut(path: string, body: unknown) {
   const res = await fetch(`${BASE_URL}${path}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -50,10 +56,10 @@ async function apiPut<T = unknown>(path: string, body: unknown): Promise<T> {
     const text = await res.text()
     throw new Error(`PUT ${path} failed (${res.status}): ${text}`)
   }
-  return res.json() as Promise<T>
+  return res.json()
 }
 
-async function apiDelete<T = unknown>(path: string, body?: unknown): Promise<T> {
+async function apiDelete(path: string, body?: unknown) {
   const res = await fetch(`${BASE_URL}${path}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
@@ -63,435 +69,402 @@ async function apiDelete<T = unknown>(path: string, body?: unknown): Promise<T> 
     const text = await res.text()
     throw new Error(`DELETE ${path} failed (${res.status}): ${text}`)
   }
-  return res.json() as Promise<T>
+  return res.json()
 }
 
-async function apiPatch<T = unknown>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-  if (!res.ok) {
-    const text = await res.text()
-    throw new Error(`PATCH ${path} failed (${res.status}): ${text}`)
-  }
-  return res.json() as Promise<T>
-}
-
-function textResult(data: unknown): { content: { type: 'text' as const; text: string }[] } {
+function ok(data: unknown) {
   return { content: [{ type: 'text' as const, text: JSON.stringify(data, null, 2) }] }
 }
 
-// ---- Server setup ----
+function err(message: string) {
+  return { content: [{ type: 'text' as const, text: message }], isError: true }
+}
 
-const server = new McpServer({
-  name: 'shop-planr',
-  version: '1.0.0',
-})
+// ---- Tool definitions with raw JSON Schema ----
+
+interface ToolDef {
+  name: string
+  description: string
+  inputSchema: Record<string, unknown>
+  handler: (args: Record<string, unknown>) => Promise<unknown>
+}
+
+const tools: ToolDef[] = []
+
+function defineTool(
+  name: string,
+  description: string,
+  properties: Record<string, unknown>,
+  required: string[],
+  handler: (args: Record<string, unknown>) => Promise<unknown>,
+) {
+  tools.push({
+    name,
+    description,
+    inputSchema: { type: 'object', properties, required },
+    handler,
+  })
+}
 
 // ============================================================
 // JOBS
 // ============================================================
 
-server.tool(
-  'list_jobs',
-  'List all production jobs with their basic info (id, name, goalQuantity, priority, timestamps)',
-  {},
-  async () => textResult(await apiGet('/api/jobs')),
+defineTool('list_jobs', 'List all production jobs', {}, [], async () =>
+  ok(await apiGet('/api/jobs')),
 )
 
-server.tool(
-  'get_job',
-  'Get a single job by ID, including its paths, steps, and progress summary',
-  { jobId: z.string().describe('The job ID (e.g. job_abc123)') },
-  async ({ jobId }) => textResult(await apiGet(`/api/jobs/${jobId}`)),
+defineTool('get_job', 'Get a job by ID with paths, steps, and progress', {
+  jobId: { type: 'string', description: 'The job ID' },
+}, ['jobId'], async ({ jobId }) =>
+  ok(await apiGet(`/api/jobs/${jobId}`)),
 )
 
-server.tool(
-  'create_job',
-  'Create a new production job',
-  {
-    name: z.string().describe('Job name'),
-    goalQuantity: z.number().int().positive().describe('Target quantity to produce'),
-  },
-  async (args) => textResult(await apiPost('/api/jobs', args)),
+defineTool('create_job', 'Create a new production job', {
+  name: { type: 'string', description: 'Job name' },
+  goalQuantity: { type: 'number', description: 'Target quantity to produce' },
+}, ['name', 'goalQuantity'], async (args) =>
+  ok(await apiPost('/api/jobs', args)),
 )
 
-server.tool(
-  'update_job',
-  'Update an existing job (name and/or goalQuantity)',
-  {
-    jobId: z.string().describe('The job ID to update'),
-    name: z.string().optional().describe('New job name'),
-    goalQuantity: z.number().int().positive().optional().describe('New goal quantity'),
-  },
-  async ({ jobId, ...body }) => textResult(await apiPut(`/api/jobs/${jobId}`, body)),
+defineTool('update_job', 'Update an existing job', {
+  jobId: { type: 'string', description: 'The job ID to update' },
+  name: { type: 'string', description: 'New job name' },
+  goalQuantity: { type: 'number', description: 'New goal quantity' },
+}, ['jobId'], async ({ jobId, ...body }) =>
+  ok(await apiPut(`/api/jobs/${jobId}`, body)),
 )
 
-server.tool(
-  'delete_job',
-  'Delete a job (only if it has no paths, parts, or BOM references)',
-  {
-    jobId: z.string().describe('The job ID to delete'),
-  },
-  async ({ jobId }) => textResult(await apiDelete(`/api/jobs/${jobId}`)),
+defineTool('delete_job', 'Delete a job (must have no paths/parts/BOM refs)', {
+  jobId: { type: 'string', description: 'The job ID to delete' },
+}, ['jobId'], async ({ jobId }) =>
+  ok(await apiDelete(`/api/jobs/${jobId}`)),
 )
 
 // ============================================================
-// PATHS (routes with process steps)
+// PATHS
 // ============================================================
 
-server.tool(
-  'get_path',
-  'Get a path by ID, including its steps, step distribution, and completed count',
-  { pathId: z.string().describe('The path ID') },
-  async ({ pathId }) => textResult(await apiGet(`/api/paths/${pathId}`)),
+defineTool('get_path', 'Get a path by ID with steps, distribution, and completed count', {
+  pathId: { type: 'string', description: 'The path ID' },
+}, ['pathId'], async ({ pathId }) =>
+  ok(await apiGet(`/api/paths/${pathId}`)),
 )
 
-server.tool(
-  'create_path',
-  'Create a new path (route) for a job with ordered process steps',
-  {
-    jobId: z.string().describe('The job this path belongs to'),
-    name: z.string().describe('Path name (e.g. "Main Route", "Rework Route")'),
-    goalQuantity: z.number().int().positive().describe('How many parts to route through this path'),
-    advancementMode: z.enum(['strict', 'flexible', 'per_step']).optional()
-      .describe('How parts advance: strict (sequential only), flexible (skip allowed), per_step (configured per step). Default: strict'),
-    steps: z.array(z.object({
-      name: z.string().describe('Step name (e.g. "CNC Machining", "Inspection")'),
-      location: z.string().optional().describe('Physical location (e.g. "Bay 3")'),
-      optional: z.boolean().optional().describe('Whether this step can be skipped'),
-      dependencyType: z.enum(['physical', 'preferred', 'completion_gate']).optional()
-        .describe('Dependency type. Default: physical'),
-    })).describe('Ordered list of process steps'),
+defineTool('create_path', 'Create a new path (route) for a job with process steps', {
+  jobId: { type: 'string', description: 'The job this path belongs to' },
+  name: { type: 'string', description: 'Path name' },
+  goalQuantity: { type: 'number', description: 'How many parts to route' },
+  advancementMode: { type: 'string', enum: ['strict', 'flexible', 'per_step'], description: 'Default: strict' },
+  steps: {
+    type: 'array',
+    description: 'Ordered process steps',
+    items: {
+      type: 'object',
+      properties: {
+        name: { type: 'string', description: 'Step name' },
+        location: { type: 'string', description: 'Physical location' },
+        optional: { type: 'boolean', description: 'Can be skipped' },
+        dependencyType: { type: 'string', enum: ['physical', 'preferred', 'completion_gate'] },
+      },
+      required: ['name'],
+    },
   },
-  async (args) => textResult(await apiPost('/api/paths', args)),
+}, ['jobId', 'name', 'goalQuantity', 'steps'], async (args) =>
+  ok(await apiPost('/api/paths', args)),
 )
 
-server.tool(
-  'update_path',
-  'Update a path (name, goalQuantity, advancementMode, and/or steps)',
-  {
-    pathId: z.string().describe('The path ID to update'),
-    name: z.string().optional().describe('New path name'),
-    goalQuantity: z.number().int().positive().optional().describe('New goal quantity'),
-    advancementMode: z.enum(['strict', 'flexible', 'per_step']).optional().describe('New advancement mode'),
-    steps: z.array(z.object({
-      id: z.string().optional().describe('Existing step ID to preserve (omit for new steps)'),
-      name: z.string().describe('Step name'),
-      location: z.string().optional(),
-      optional: z.boolean().optional(),
-      dependencyType: z.enum(['physical', 'preferred', 'completion_gate']).optional(),
-    })).optional().describe('Updated step list (order matters)'),
+defineTool('update_path', 'Update a path', {
+  pathId: { type: 'string', description: 'The path ID' },
+  name: { type: 'string', description: 'New path name' },
+  goalQuantity: { type: 'number', description: 'New goal quantity' },
+  advancementMode: { type: 'string', enum: ['strict', 'flexible', 'per_step'] },
+  steps: {
+    type: 'array',
+    items: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: 'Existing step ID to preserve' },
+        name: { type: 'string' },
+        location: { type: 'string' },
+        optional: { type: 'boolean' },
+        dependencyType: { type: 'string', enum: ['physical', 'preferred', 'completion_gate'] },
+      },
+      required: ['name'],
+    },
   },
-  async ({ pathId, ...body }) => textResult(await apiPut(`/api/paths/${pathId}`, body)),
+}, ['pathId'], async ({ pathId, ...body }) =>
+  ok(await apiPut(`/api/paths/${pathId}`, body)),
 )
 
-server.tool(
-  'delete_path',
-  'Delete a path and cascade-delete all its parts and dependent records (admin only)',
-  {
-    pathId: z.string().describe('The path ID to delete'),
-    userId: z.string().describe('Admin user ID performing the deletion'),
-  },
-  async ({ pathId, userId }) => textResult(await apiDelete(`/api/paths/${pathId}`, { userId })),
+defineTool('delete_path', 'Delete a path with cascade (admin only)', {
+  pathId: { type: 'string', description: 'The path ID' },
+  userId: { type: 'string', description: 'Admin user ID' },
+}, ['pathId', 'userId'], async ({ pathId, userId }) =>
+  ok(await apiDelete(`/api/paths/${pathId}`, { userId })),
 )
 
 // ============================================================
-// PARTS (serial numbers)
+// PARTS
 // ============================================================
 
-server.tool(
-  'list_parts',
-  'List all parts across all jobs with enriched info (job name, path name, current step, status)',
-  {},
-  async () => textResult(await apiGet('/api/parts')),
+defineTool('list_parts', 'List all parts with enriched info (job, path, step, status)', {}, [], async () =>
+  ok(await apiGet('/api/parts')),
 )
 
-server.tool(
-  'get_part',
-  'Get a single part by ID with full detail',
-  { partId: z.string().describe('The part ID') },
-  async ({ partId }) => textResult(await apiGet(`/api/parts/${partId}`)),
+defineTool('get_part', 'Get a single part by ID', {
+  partId: { type: 'string', description: 'The part ID' },
+}, ['partId'], async ({ partId }) =>
+  ok(await apiGet(`/api/parts/${partId}`)),
 )
 
-server.tool(
-  'create_parts',
-  'Batch-create parts (serial numbers) for a job/path combination',
-  {
-    jobId: z.string().describe('The job ID'),
-    pathId: z.string().describe('The path ID'),
-    quantity: z.number().int().positive().describe('Number of parts to create'),
-    userId: z.string().describe('User ID performing the creation'),
-    certId: z.string().optional().describe('Optional certificate ID to auto-attach'),
-  },
-  async (args) => textResult(await apiPost('/api/parts', args)),
+defineTool('create_parts', 'Batch-create parts for a job/path', {
+  jobId: { type: 'string', description: 'The job ID' },
+  pathId: { type: 'string', description: 'The path ID' },
+  quantity: { type: 'number', description: 'Number of parts to create' },
+  userId: { type: 'string', description: 'User ID performing creation' },
+  certId: { type: 'string', description: 'Optional certificate ID to auto-attach' },
+}, ['jobId', 'pathId', 'quantity', 'userId'], async (args) =>
+  ok(await apiPost('/api/parts', args)),
 )
 
-server.tool(
-  'advance_part',
-  'Advance a part to its next process step',
-  {
-    partId: z.string().describe('The part ID to advance'),
-    userId: z.string().describe('User ID performing the advancement'),
-  },
-  async ({ partId, userId }) => textResult(await apiPost(`/api/parts/${partId}/advance`, { userId })),
+defineTool('advance_part', 'Advance a part to its next step', {
+  partId: { type: 'string', description: 'The part ID' },
+  userId: { type: 'string', description: 'User ID' },
+}, ['partId', 'userId'], async ({ partId, userId }) =>
+  ok(await apiPost(`/api/parts/${partId}/advance`, { userId })),
 )
 
-server.tool(
-  'get_part_route',
-  'Get the full routing info for a part (all steps with statuses)',
-  { partId: z.string().describe('The part ID') },
-  async ({ partId }) => textResult(await apiGet(`/api/parts/${partId}/full-route`)),
+defineTool('get_part_route', 'Get full routing info for a part', {
+  partId: { type: 'string', description: 'The part ID' },
+}, ['partId'], async ({ partId }) =>
+  ok(await apiGet(`/api/parts/${partId}/full-route`)),
 )
 
-server.tool(
-  'get_part_step_statuses',
-  'Get step-by-step status history for a part',
-  { partId: z.string().describe('The part ID') },
-  async ({ partId }) => textResult(await apiGet(`/api/parts/${partId}/step-statuses`)),
+defineTool('get_part_step_statuses', 'Get step-by-step status history for a part', {
+  partId: { type: 'string', description: 'The part ID' },
+}, ['partId'], async ({ partId }) =>
+  ok(await apiGet(`/api/parts/${partId}/step-statuses`)),
 )
 
 // ============================================================
 // USERS
 // ============================================================
 
-server.tool(
-  'list_users',
-  'List all active users (id, username, displayName, isAdmin)',
-  {},
-  async () => textResult(await apiGet('/api/users')),
+defineTool('list_users', 'List all active users', {}, [], async () =>
+  ok(await apiGet('/api/users')),
 )
 
-server.tool(
-  'create_user',
-  'Create a new user',
-  {
-    username: z.string().describe('Unique username'),
-    displayName: z.string().describe('Display name'),
-    isAdmin: z.boolean().optional().describe('Whether user has admin privileges. Default: false'),
-  },
-  async (args) => textResult(await apiPost('/api/users', args)),
+defineTool('create_user', 'Create a new user', {
+  username: { type: 'string', description: 'Unique username' },
+  displayName: { type: 'string', description: 'Display name' },
+  isAdmin: { type: 'boolean', description: 'Admin privileges (default: false)' },
+}, ['username', 'displayName'], async (args) =>
+  ok(await apiPost('/api/users', args)),
 )
 
-server.tool(
-  'update_user',
-  'Update an existing user',
-  {
-    userId: z.string().describe('The user ID to update'),
-    username: z.string().optional().describe('New username'),
-    displayName: z.string().optional().describe('New display name'),
-    isAdmin: z.boolean().optional().describe('Admin flag'),
-    active: z.boolean().optional().describe('Active flag'),
-  },
-  async ({ userId, ...body }) => textResult(await apiPut(`/api/users/${userId}`, body)),
+defineTool('update_user', 'Update an existing user', {
+  userId: { type: 'string', description: 'The user ID' },
+  username: { type: 'string' },
+  displayName: { type: 'string' },
+  isAdmin: { type: 'boolean' },
+  active: { type: 'boolean' },
+}, ['userId'], async ({ userId, ...body }) =>
+  ok(await apiPut(`/api/users/${userId}`, body)),
 )
 
 // ============================================================
 // TEMPLATES
 // ============================================================
 
-server.tool(
-  'list_templates',
-  'List all route templates',
-  {},
-  async () => textResult(await apiGet('/api/templates')),
+defineTool('list_templates', 'List all route templates', {}, [], async () =>
+  ok(await apiGet('/api/templates')),
 )
 
-server.tool(
-  'get_template',
-  'Get a route template by ID',
-  { templateId: z.string().describe('The template ID') },
-  async ({ templateId }) => textResult(await apiGet(`/api/templates/${templateId}`)),
+defineTool('get_template', 'Get a route template by ID', {
+  templateId: { type: 'string', description: 'The template ID' },
+}, ['templateId'], async ({ templateId }) =>
+  ok(await apiGet(`/api/templates/${templateId}`)),
 )
 
-server.tool(
-  'create_template',
-  'Create a reusable route template with steps',
-  {
-    name: z.string().describe('Template name'),
-    steps: z.array(z.object({
-      name: z.string().describe('Step name'),
-      location: z.string().optional().describe('Physical location'),
-    })).describe('Ordered list of template steps'),
+defineTool('create_template', 'Create a reusable route template', {
+  name: { type: 'string', description: 'Template name' },
+  steps: {
+    type: 'array',
+    description: 'Ordered steps',
+    items: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        location: { type: 'string' },
+      },
+      required: ['name'],
+    },
   },
-  async (args) => textResult(await apiPost('/api/templates', args)),
+}, ['name', 'steps'], async (args) =>
+  ok(await apiPost('/api/templates', args)),
 )
 
-server.tool(
-  'apply_template',
-  'Apply a template to create a new path on a job',
-  {
-    templateId: z.string().describe('The template ID to apply'),
-    jobId: z.string().describe('The job to create the path on'),
-    goalQuantity: z.number().int().positive().describe('Goal quantity for the new path'),
-    pathName: z.string().optional().describe('Custom name for the new path'),
-  },
-  async ({ templateId, ...body }) => textResult(await apiPost(`/api/templates/${templateId}/apply`, body)),
+defineTool('apply_template', 'Apply a template to create a path on a job', {
+  templateId: { type: 'string', description: 'The template ID' },
+  jobId: { type: 'string', description: 'The job ID' },
+  goalQuantity: { type: 'number', description: 'Goal quantity' },
+  pathName: { type: 'string', description: 'Custom path name' },
+}, ['templateId', 'jobId', 'goalQuantity'], async ({ templateId, ...body }) =>
+  ok(await apiPost(`/api/templates/${templateId}/apply`, body)),
 )
 
 // ============================================================
 // CERTIFICATES
 // ============================================================
 
-server.tool(
-  'list_certs',
-  'List all certificates',
-  {},
-  async () => textResult(await apiGet('/api/certs')),
+defineTool('list_certs', 'List all certificates', {}, [], async () =>
+  ok(await apiGet('/api/certs')),
 )
 
-server.tool(
-  'create_cert',
-  'Create a new certificate (material or process)',
-  {
-    type: z.enum(['material', 'process']).describe('Certificate type'),
-    name: z.string().describe('Certificate name'),
-    metadata: z.record(z.unknown()).optional().describe('Optional metadata key-value pairs'),
-  },
-  async (args) => textResult(await apiPost('/api/certs', args)),
+defineTool('create_cert', 'Create a certificate (material or process)', {
+  type: { type: 'string', enum: ['material', 'process'], description: 'Certificate type' },
+  name: { type: 'string', description: 'Certificate name' },
+}, ['type', 'name'], async (args) =>
+  ok(await apiPost('/api/certs', args)),
 )
 
-server.tool(
-  'batch_attach_cert',
-  'Attach a certificate to multiple parts at once',
-  {
-    certId: z.string().describe('The certificate ID'),
-    partIds: z.array(z.string()).describe('Array of part IDs to attach the cert to'),
-    userId: z.string().describe('User performing the attachment'),
-  },
-  async (args) => textResult(await apiPost('/api/certs/batch-attach', args)),
+defineTool('batch_attach_cert', 'Attach a certificate to multiple parts', {
+  certId: { type: 'string', description: 'The certificate ID' },
+  partIds: { type: 'array', items: { type: 'string' }, description: 'Part IDs' },
+  userId: { type: 'string', description: 'User performing attachment' },
+}, ['certId', 'partIds', 'userId'], async (args) =>
+  ok(await apiPost('/api/certs/batch-attach', args)),
 )
 
 // ============================================================
 // AUDIT
 // ============================================================
 
-server.tool(
-  'list_audit_entries',
-  'List audit trail entries with optional filters',
-  {},
-  async () => textResult(await apiGet('/api/audit')),
+defineTool('list_audit_entries', 'List audit trail entries', {}, [], async () =>
+  ok(await apiGet('/api/audit')),
 )
 
-server.tool(
-  'get_part_audit',
-  'Get audit trail entries for a specific part',
-  { partId: z.string().describe('The part ID') },
-  async ({ partId }) => textResult(await apiGet(`/api/audit/part/${partId}`)),
+defineTool('get_part_audit', 'Get audit entries for a specific part', {
+  partId: { type: 'string', description: 'The part ID' },
+}, ['partId'], async ({ partId }) =>
+  ok(await apiGet(`/api/audit/part/${partId}`)),
 )
 
 // ============================================================
 // OPERATOR / WORK QUEUE
 // ============================================================
 
-server.tool(
-  'get_work_queue',
-  'Get the operator work queue (all active work grouped by step)',
-  {},
-  async () => textResult(await apiGet('/api/operator/work-queue')),
+defineTool('get_work_queue', 'Get operator work queue grouped by step', {}, [], async () =>
+  ok(await apiGet('/api/operator/work-queue')),
 )
 
-server.tool(
-  'get_step_view',
-  'Get detailed step view for a specific process step',
-  { stepId: z.string().describe('The step ID') },
-  async ({ stepId }) => textResult(await apiGet(`/api/operator/step/${stepId}`)),
+defineTool('get_step_view', 'Get detailed step view for a process step', {
+  stepId: { type: 'string', description: 'The step ID' },
+}, ['stepId'], async ({ stepId }) =>
+  ok(await apiGet(`/api/operator/step/${stepId}`)),
 )
 
-server.tool(
-  'get_user_queue',
-  'Get work queue items assigned to a specific user',
-  { userId: z.string().describe('The user ID') },
-  async ({ userId }) => textResult(await apiGet(`/api/operator/queue/${userId}`)),
+defineTool('get_user_queue', 'Get work queue for a specific user', {
+  userId: { type: 'string', description: 'The user ID' },
+}, ['userId'], async ({ userId }) =>
+  ok(await apiGet(`/api/operator/queue/${userId}`)),
 )
 
 // ============================================================
 // NOTES
 // ============================================================
 
-server.tool(
-  'create_note',
-  'Create a process step note/defect',
-  {
-    jobId: z.string().describe('The job ID'),
-    pathId: z.string().describe('The path ID'),
-    stepId: z.string().describe('The step ID'),
-    partIds: z.array(z.string()).describe('Part IDs this note applies to'),
-    text: z.string().describe('Note text'),
-    createdBy: z.string().describe('User ID creating the note'),
-  },
-  async (args) => textResult(await apiPost('/api/notes', args)),
+defineTool('create_note', 'Create a process step note/defect', {
+  jobId: { type: 'string' },
+  pathId: { type: 'string' },
+  stepId: { type: 'string' },
+  partIds: { type: 'array', items: { type: 'string' } },
+  text: { type: 'string', description: 'Note text' },
+  createdBy: { type: 'string', description: 'User ID' },
+}, ['jobId', 'pathId', 'stepId', 'partIds', 'text', 'createdBy'], async (args) =>
+  ok(await apiPost('/api/notes', args)),
 )
 
-server.tool(
-  'get_notes_by_step',
-  'Get all notes for a specific step',
-  { stepId: z.string().describe('The step ID') },
-  async ({ stepId }) => textResult(await apiGet(`/api/notes/step/${stepId}`)),
+defineTool('get_notes_by_step', 'Get notes for a step', {
+  stepId: { type: 'string' },
+}, ['stepId'], async ({ stepId }) =>
+  ok(await apiGet(`/api/notes/step/${stepId}`)),
 )
 
-server.tool(
-  'get_notes_by_part',
-  'Get all notes for a specific part',
-  { partId: z.string().describe('The part ID') },
-  async ({ partId }) => textResult(await apiGet(`/api/notes/part/${partId}`)),
+defineTool('get_notes_by_part', 'Get notes for a part', {
+  partId: { type: 'string' },
+}, ['partId'], async ({ partId }) =>
+  ok(await apiGet(`/api/notes/part/${partId}`)),
 )
 
 // ============================================================
-// LIFECYCLE (scrap, force-complete, advance-to)
+// LIFECYCLE
 // ============================================================
 
-server.tool(
-  'scrap_part',
-  'Scrap a part with a reason',
-  {
-    partId: z.string().describe('The part ID to scrap'),
-    reason: z.enum(['out_of_tolerance', 'process_defect', 'damaged', 'operator_error', 'other'])
-      .describe('Scrap reason'),
-    explanation: z.string().optional().describe('Required when reason is "other"'),
-    userId: z.string().describe('User performing the scrap'),
-  },
-  async ({ partId, ...body }) => textResult(await apiPost(`/api/parts/${partId}/scrap`, body)),
+defineTool('scrap_part', 'Scrap a part with a reason', {
+  partId: { type: 'string' },
+  reason: { type: 'string', enum: ['out_of_tolerance', 'process_defect', 'damaged', 'operator_error', 'other'] },
+  explanation: { type: 'string', description: 'Required when reason is "other"' },
+  userId: { type: 'string' },
+}, ['partId', 'reason', 'userId'], async ({ partId, ...body }) =>
+  ok(await apiPost(`/api/parts/${partId}/scrap`, body)),
 )
 
-server.tool(
-  'force_complete_part',
-  'Force-complete a part (skip remaining steps)',
-  {
-    partId: z.string().describe('The part ID'),
-    reason: z.string().optional().describe('Reason for force completion'),
-    userId: z.string().describe('User performing the force completion'),
-  },
-  async ({ partId, ...body }) => textResult(await apiPost(`/api/parts/${partId}/force-complete`, body)),
+defineTool('force_complete_part', 'Force-complete a part (skip remaining steps)', {
+  partId: { type: 'string' },
+  reason: { type: 'string' },
+  userId: { type: 'string' },
+}, ['partId', 'userId'], async ({ partId, ...body }) =>
+  ok(await apiPost(`/api/parts/${partId}/force-complete`, body)),
 )
 
-server.tool(
-  'advance_part_to_step',
-  'Advance a part directly to a specific step (flexible/per_step mode)',
-  {
-    partId: z.string().describe('The part ID'),
-    targetStepId: z.string().describe('The step ID to advance to'),
-    userId: z.string().describe('User performing the advancement'),
-  },
-  async ({ partId, ...body }) => textResult(await apiPost(`/api/parts/${partId}/advance-to`, body)),
+defineTool('advance_part_to_step', 'Advance a part to a specific step', {
+  partId: { type: 'string' },
+  targetStepId: { type: 'string', description: 'The step to advance to' },
+  userId: { type: 'string' },
+}, ['partId', 'targetStepId', 'userId'], async ({ partId, ...body }) =>
+  ok(await apiPost(`/api/parts/${partId}/advance-to`, body)),
 )
 
 // ============================================================
 // SETTINGS
 // ============================================================
 
-server.tool(
-  'get_settings',
-  'Get application settings (Jira config, page toggles)',
-  {},
-  async () => textResult(await apiGet('/api/settings')),
+defineTool('get_settings', 'Get application settings', {}, [], async () =>
+  ok(await apiGet('/api/settings')),
 )
 
 // ============================================================
-// Start server
+// Server setup (low-level API — no zod serialization)
 // ============================================================
+
+const server = new Server(
+  { name: 'shop-planr', version: '1.0.0' },
+  { capabilities: { tools: {} } },
+)
+
+server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  tools: tools.map(t => ({
+    name: t.name,
+    description: t.description,
+    inputSchema: t.inputSchema,
+  })),
+}))
+
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  const tool = tools.find(t => t.name === request.params.name)
+  if (!tool) {
+    return err(`Unknown tool: ${request.params.name}`)
+  }
+  try {
+    const args = (request.params.arguments ?? {}) as Record<string, unknown>
+    return await tool.handler(args) as { content: { type: 'text'; text: string }[] }
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e)
+    return err(message)
+  }
+})
 
 async function main() {
   const transport = new StdioServerTransport()
@@ -499,7 +472,7 @@ async function main() {
   console.error(`Shop Planr MCP server running (API: ${BASE_URL})`)
 }
 
-main().catch((err) => {
-  console.error('Fatal error:', err)
+main().catch((e) => {
+  console.error('Fatal:', e)
   process.exit(1)
 })

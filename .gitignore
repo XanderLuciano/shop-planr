@@ -9,3 +9,6 @@ data/
 .env
 *.swp
 .vscode
+
+# MCP server build output
+mcp-server/dist/
