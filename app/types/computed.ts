@@ -17,4 +17,8 @@ export type {
   SnStepStatusView,
   FullRouteResponse,
   FullRouteEntry,
+  GroupByDimension,
+  WorkQueueFilterState,
+  WorkQueuePreset,
+  WorkQueueGroup,
 } from '../../server/types/computed'

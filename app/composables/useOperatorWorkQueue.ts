@@ -35,11 +35,13 @@ export function useOperatorWorkQueue() {
       .filter((g): g is OperatorGroup => g !== null)
   })
 
-  async function fetchGroupedWork(): Promise<void> {
+  async function fetchGroupedWork(params?: { groupBy?: string }): Promise<void> {
     loading.value = true
     error.value = null
     try {
-      response.value = await $fetch<WorkQueueGroupedResponse>('/api/operator/work-queue')
+      response.value = await $fetch<WorkQueueGroupedResponse>('/api/operator/work-queue', {
+        query: params?.groupBy ? { groupBy: params.groupBy } : undefined,
+      })
     } catch (e: any) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch work queue'
       response.value = null
