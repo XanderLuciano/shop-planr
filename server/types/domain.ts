@@ -11,6 +11,7 @@ export interface Job {
   id: string
   name: string
   goalQuantity: number
+  priority: number
   jiraTicketKey?: string
   jiraTicketSummary?: string
   jiraPartNumber?: string

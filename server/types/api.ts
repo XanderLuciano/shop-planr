@@ -181,6 +181,12 @@ export interface UpdateAdvancementModeInput {
   advancementMode: 'strict' | 'flexible' | 'per_step'
 }
 
+// ---- Job Priority ----
+
+export interface UpdatePrioritiesInput {
+  priorities: { jobId: string; priority: number }[]
+}
+
 // ---- Library ----
 
 export interface CreateLibraryEntryInput {

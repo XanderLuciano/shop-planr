@@ -7,6 +7,7 @@ interface JobRow {
   id: string
   name: string
   goal_quantity: number
+  priority: number
   jira_ticket_key: string | null
   jira_ticket_summary: string | null
   jira_part_number: string | null
@@ -22,6 +23,7 @@ function rowToDomain(row: JobRow): Job {
     id: row.id,
     name: row.name,
     goalQuantity: row.goal_quantity,
+    priority: row.priority,
     jiraTicketKey: row.jira_ticket_key ?? undefined,
     jiraTicketSummary: row.jira_ticket_summary ?? undefined,
     jiraPartNumber: row.jira_part_number ?? undefined,
@@ -42,12 +44,13 @@ export class SQLiteJobRepository implements JobRepository {
 
   create(job: Job): Job {
     this.db.prepare(`
-      INSERT INTO jobs (id, name, goal_quantity, jira_ticket_key, jira_ticket_summary, jira_part_number, jira_priority, jira_epic_link, jira_labels, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO jobs (id, name, goal_quantity, priority, jira_ticket_key, jira_ticket_summary, jira_part_number, jira_priority, jira_epic_link, jira_labels, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       job.id,
       job.name,
       job.goalQuantity,
+      job.priority,
       job.jiraTicketKey ?? null,
       job.jiraTicketSummary ?? null,
       job.jiraPartNumber ?? null,
@@ -66,7 +69,7 @@ export class SQLiteJobRepository implements JobRepository {
   }
 
   list(): Job[] {
-    const rows = this.db.prepare('SELECT * FROM jobs ORDER BY created_at DESC').all() as JobRow[]
+    const rows = this.db.prepare('SELECT * FROM jobs ORDER BY priority ASC').all() as JobRow[]
     return rows.map(rowToDomain)
   }
 
@@ -77,11 +80,12 @@ export class SQLiteJobRepository implements JobRepository {
     const updated: Job = { ...existing, ...partial, id, updatedAt: partial.updatedAt ?? new Date().toISOString() }
 
     this.db.prepare(`
-      UPDATE jobs SET name = ?, goal_quantity = ?, jira_ticket_key = ?, jira_ticket_summary = ?, jira_part_number = ?, jira_priority = ?, jira_epic_link = ?, jira_labels = ?, updated_at = ?
+      UPDATE jobs SET name = ?, goal_quantity = ?, priority = ?, jira_ticket_key = ?, jira_ticket_summary = ?, jira_part_number = ?, jira_priority = ?, jira_epic_link = ?, jira_labels = ?, updated_at = ?
       WHERE id = ?
     `).run(
       updated.name,
       updated.goalQuantity,
+      updated.priority,
       updated.jiraTicketKey ?? null,
       updated.jiraTicketSummary ?? null,
       updated.jiraPartNumber ?? null,
@@ -97,5 +101,21 @@ export class SQLiteJobRepository implements JobRepository {
   delete(id: string): boolean {
     const result = this.db.prepare('DELETE FROM jobs WHERE id = ?').run(id)
     return result.changes > 0
+  }
+
+  bulkUpdatePriority(entries: { id: string; priority: number }[]): void {
+    const stmt = this.db.prepare('UPDATE jobs SET priority = ?, updated_at = ? WHERE id = ?')
+    const now = new Date().toISOString()
+
+    this.db.transaction(() => {
+      for (const entry of entries) {
+        stmt.run(entry.priority, now, entry.id)
+      }
+    })()
+  }
+
+  getMaxPriority(): number {
+    const row = this.db.prepare('SELECT COALESCE(MAX(priority), 0) AS max_priority FROM jobs').get() as { max_priority: number }
+    return row.max_priority
   }
 }

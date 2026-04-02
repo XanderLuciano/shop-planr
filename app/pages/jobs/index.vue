@@ -7,12 +7,27 @@ import type { JobProgress } from '~/types/computed'
 
 const { jobs, loading, fetchJobs } = useJobs()
 const { filters, updateFilter, clearFilters, applyFilters } = useViewFilters()
+const {
+  isEditingPriority,
+  orderedJobs,
+  saving,
+  enterEditMode,
+  cancelEdit,
+  reorder,
+  savePriorities
+} = useJobPriority()
+
+const toast = useToast()
 
 const jobProgressMap = ref<Record<string, JobProgress>>({})
 const expanded = ref<ExpandedState>({})
 const expandAllPathsSignal = ref(0)
 const collapseAllPathsSignal = ref(0)
 const jobsWithExpandedPaths = ref<Set<string>>(new Set())
+
+// Drag state
+const dragIndex = ref<number | null>(null)
+const dropTargetIndex = ref<number | null>(null)
 
 const hasExpandedJobs = computed(() =>
   expanded.value === true || Object.keys(expanded.value).length > 0
@@ -61,6 +76,11 @@ const filteredJobs = computed(() =>
   })
 )
 
+/** The rows to display in the table: orderedJobs in edit mode, filteredJobs otherwise */
+const displayedJobs = computed(() =>
+  isEditingPriority.value ? orderedJobs.value : filteredJobs.value
+)
+
 // Prune jobsWithExpandedPaths when filtered jobs change (removes stale entries for jobs no longer visible)
 watch(filteredJobs, (visibleJobs) => {
   if (jobsWithExpandedPaths.value.size === 0) return
@@ -103,6 +123,70 @@ function progressFor(jobId: string): JobProgress | null {
   return jobProgressMap.value[jobId] ?? null
 }
 
+// --- Priority edit actions ---
+
+function onEditPriority() {
+  enterEditMode([...filteredJobs.value])
+}
+
+function onCancelEdit() {
+  cancelEdit()
+}
+
+async function onSavePriorities() {
+  try {
+    await savePriorities(loadJobs)
+  } catch {
+    toast.add({
+      title: 'Failed to save priorities',
+      description: 'Please try again or cancel.',
+      color: 'error'
+    })
+  }
+}
+
+// --- Drag-and-drop handlers ---
+
+function onDragStart(e: DragEvent, index: number) {
+  dragIndex.value = index
+  if (e.dataTransfer) {
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', String(index))
+  }
+}
+
+function onDragOver(e: DragEvent, index: number) {
+  e.preventDefault()
+  if (e.dataTransfer) {
+    e.dataTransfer.dropEffect = 'move'
+  }
+  dropTargetIndex.value = index
+}
+
+function onDragLeave() {
+  dropTargetIndex.value = null
+}
+
+function onDrop(e: DragEvent, toIndex: number) {
+  e.preventDefault()
+  const fromIndex = dragIndex.value
+  if (fromIndex !== null && fromIndex !== toIndex) {
+    reorder(fromIndex, toIndex)
+  }
+  dragIndex.value = null
+  dropTargetIndex.value = null
+}
+
+function onDragEnd() {
+  dragIndex.value = null
+  dropTargetIndex.value = null
+}
+
+function onRowSelect(_e: any, row: any) {
+  if (isEditingPriority.value) return
+  navigateTo(`/jobs/${encodeURIComponent(row.original.id)}`)
+}
+
 const columns: TableColumn<Job>[] = [
   {
     accessorKey: 'expand',
@@ -121,6 +205,12 @@ const columns: TableColumn<Job>[] = [
         }
       })
     }
+  },
+  {
+    accessorKey: 'priority',
+    header: '#',
+    size: 50,
+    cell: ({ row }: { row: Row<Job> }) => row.original.priority
   },
   {
     accessorKey: 'name',
@@ -148,19 +238,12 @@ const columns: TableColumn<Job>[] = [
         inProgress: p.inProgressParts
       })
     }
-  },
-  {
-    accessorKey: 'jiraPriority',
-    header: 'Priority',
-    cell: ({ row }: { row: Row<Job> }) => row.original.jiraPriority || '—'
   }
 ]
 
 onMounted(() => {
   loadJobs()
 })
-
-
 </script>
 
 <template>
@@ -169,15 +252,45 @@ onMounted(() => {
       <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
         Jobs
       </h1>
-      <UButton
-        icon="i-lucide-plus"
-        label="New Job"
-        size="sm"
-        @click="navigateTo('/jobs/new')"
-      />
+      <div class="flex items-center gap-2">
+        <template v-if="isEditingPriority">
+          <UButton
+            label="Cancel"
+            variant="outline"
+            color="neutral"
+            size="sm"
+            :disabled="saving"
+            @click="onCancelEdit"
+          />
+          <UButton
+            label="Save"
+            icon="i-lucide-check"
+            size="sm"
+            :loading="saving"
+            @click="onSavePriorities"
+          />
+        </template>
+        <template v-else>
+          <UButton
+            label="Edit Priority"
+            icon="i-lucide-arrow-up-down"
+            variant="outline"
+            size="sm"
+            :disabled="loading || !filteredJobs.length"
+            @click="onEditPriority"
+          />
+          <UButton
+            icon="i-lucide-plus"
+            label="New Job"
+            size="sm"
+            @click="navigateTo('/jobs/new')"
+          />
+        </template>
+      </div>
     </div>
 
     <ViewFilters
+      v-if="!isEditingPriority"
       :filters="filters"
       @change="onFiltersChange"
     >
@@ -206,24 +319,99 @@ onMounted(() => {
     </div>
 
     <div
-      v-else-if="!filteredJobs.length"
+      v-else-if="!displayedJobs.length"
       class="text-sm text-(--ui-text-muted) py-8 text-center"
     >
       {{ jobs.length ? 'No jobs match the current filters.' : 'No jobs yet. Create your first job to get started.' }}
     </div>
 
+    <!-- Desktop: Edit mode with drag-and-drop table -->
+    <div
+      v-if="!loading && displayedJobs.length && isEditingPriority"
+      class="hidden md:block"
+    >
+      <table class="w-full text-xs">
+        <thead>
+          <tr class="text-left text-(--ui-text-muted) border-b border-(--ui-border)">
+            <th class="py-1.5 w-8" />
+            <th class="py-1.5 w-12">
+              #
+            </th>
+            <th class="py-1.5">
+              Job Name
+            </th>
+            <th class="py-1.5">
+              Part #
+            </th>
+            <th class="py-1.5">
+              Goal Qty
+            </th>
+            <th class="py-1.5 w-[200px]">
+              Progress
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="(job, index) in orderedJobs"
+            :key="job.id"
+            draggable="true"
+            class="border-b border-(--ui-border)/50 transition-colors"
+            :class="{
+              'opacity-50': dragIndex === index,
+              'border-t-2 border-t-(--ui-primary)': dropTargetIndex === index && dragIndex !== null && dragIndex !== index
+            }"
+            @dragstart="onDragStart($event, index)"
+            @dragover="onDragOver($event, index)"
+            @dragleave="onDragLeave"
+            @drop="onDrop($event, index)"
+            @dragend="onDragEnd"
+          >
+            <td class="py-1 cursor-grab active:cursor-grabbing">
+              <UIcon
+                name="i-lucide-grip-vertical"
+                class="size-4 text-(--ui-text-muted)"
+              />
+            </td>
+            <td class="py-1 text-(--ui-text-muted)">
+              {{ index + 1 }}
+            </td>
+            <td class="py-1">
+              {{ job.name }}
+            </td>
+            <td class="py-1">
+              {{ job.jiraPartNumber || '—' }}
+            </td>
+            <td class="py-1">
+              {{ job.goalQuantity }}
+            </td>
+            <td class="py-1">
+              <ProgressBar
+                v-if="progressFor(job.id)"
+                :completed="progressFor(job.id)!.completedParts"
+                :goal="progressFor(job.id)!.goalQuantity"
+                :in-progress="progressFor(job.id)!.inProgressParts"
+              />
+              <span v-else class="text-(--ui-text-muted)">—</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Desktop: Normal mode UTable -->
     <UTable
-      v-if="!loading && filteredJobs.length"
+      v-if="!loading && displayedJobs.length && !isEditingPriority"
       class="hidden md:block"
       v-model:expanded="expanded"
-      :data="filteredJobs"
+      :data="displayedJobs"
       :columns="columns"
       :ui="{
         th: 'text-xs py-1.5',
         td: 'text-xs py-1',
         tr: 'cursor-pointer hover:bg-(--ui-bg-elevated)/50'
       }"
-      @select="(_e: any, row: any) => navigateTo(`/jobs/${encodeURIComponent(row.original.id)}`)"
+      @select="onRowSelect"
     >
       <template #expanded="{ row }">
         <JobExpandableRow
@@ -235,7 +423,29 @@ onMounted(() => {
       </template>
     </UTable>
 
-    <div v-if="!loading && filteredJobs.length" class="md:hidden space-y-2">
+    <!-- Mobile: Edit mode with drag-and-drop cards -->
+    <div v-if="!loading && displayedJobs.length && isEditingPriority" class="md:hidden space-y-2">
+      <JobMobileCard
+        v-for="(job, index) in orderedJobs"
+        :key="job.id"
+        :job="job"
+        :progress="progressFor(job.id)"
+        :editing="true"
+        :index="index"
+        :class="{
+          'opacity-50': dragIndex === index,
+          'border-t-2 border-t-(--ui-primary)': dropTargetIndex === index && dragIndex !== null && dragIndex !== index
+        }"
+        @dragstart="onDragStart($event, index)"
+        @dragover="onDragOver($event, index)"
+        @drop="onDrop($event, index)"
+        @dragend="onDragEnd"
+        @dragleave="onDragLeave"
+      />
+    </div>
+
+    <!-- Mobile: Normal mode cards -->
+    <div v-if="!loading && filteredJobs.length && !isEditingPriority" class="md:hidden space-y-2">
       <JobMobileCard
         v-for="job in filteredJobs"
         :key="job.id"

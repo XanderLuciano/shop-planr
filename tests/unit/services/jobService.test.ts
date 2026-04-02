@@ -19,7 +19,15 @@ function createMockJobRepo(): JobRepository {
       store.set(id, updated)
       return updated
     }),
-    delete: vi.fn((id: string) => store.delete(id))
+    delete: vi.fn((id: string) => store.delete(id)),
+    bulkUpdatePriority: vi.fn(),
+    getMaxPriority: vi.fn(() => {
+      let max = 0
+      for (const job of store.values()) {
+        if (job.priority > max) max = job.priority
+      }
+      return max
+    })
   }
 }
 

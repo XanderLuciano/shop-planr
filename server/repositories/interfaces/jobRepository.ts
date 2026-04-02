@@ -6,4 +6,6 @@ export interface JobRepository {
   list(): Job[]
   update(id: string, partial: Partial<Job>): Job
   delete(id: string): boolean
+  bulkUpdatePriority(entries: { id: string; priority: number }[]): void
+  getMaxPriority(): number
 }
