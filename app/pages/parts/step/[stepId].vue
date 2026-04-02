@@ -29,6 +29,7 @@ const {
 const { advanceBatch } = useWorkQueue()
 
 const advanceLoading = ref(false)
+const skipLoading = ref(false)
 const toast = useToast()
 
 // Operator dropdown items
@@ -78,6 +79,46 @@ async function handleAdvance(payload: { partIds: string[], note?: string }) {
     })
   } finally {
     advanceLoading.value = false
+  }
+}
+
+async function handleSkip(payload: { partIds: string[] }) {
+  if (!job.value || !operatorId.value) {
+    toast.add({
+      title: 'Operator required',
+      description: 'Please select an operator before skipping.',
+      color: 'warning',
+    })
+    return
+  }
+
+  if (!job.value.nextStepId) return
+
+  skipLoading.value = true
+  try {
+    const { advanceToStep } = useLifecycle()
+    for (const partId of payload.partIds) {
+      await advanceToStep(partId, {
+        targetStepId: job.value.nextStepId,
+        userId: operatorId.value,
+      })
+    }
+
+    toast.add({
+      title: 'Step skipped',
+      description: `${payload.partIds.length} part${payload.partIds.length !== 1 ? 's' : ''} skipped to ${job.value.nextStepName ?? 'next step'}`,
+      color: 'success',
+    })
+
+    await fetchStep()
+  } catch (e: any) {
+    toast.add({
+      title: 'Skip failed',
+      description: e?.message ?? 'An error occurred',
+      color: 'error',
+    })
+  } finally {
+    skipLoading.value = false
   }
 }
 
@@ -269,7 +310,9 @@ onMounted(async () => {
         :loading="advanceLoading"
         :notes="notes"
         @advance="handleAdvance"
+        @skip="handleSkip"
         @cancel="handleCancel"
+        @scrapped="fetchStep"
       />
     </template>
   </div>

@@ -54,6 +54,7 @@ export default defineEventHandler(async (event) => {
             nextStepName: nextStep?.name,
             nextStepLocation: nextStep?.location,
             isFinalStep,
+            stepOptional: step.optional ?? false,
           }
           break
         }

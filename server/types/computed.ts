@@ -139,6 +139,7 @@ export interface WorkQueueJob {
   nextStepName?: string
   nextStepLocation?: string
   isFinalStep: boolean
+  stepOptional?: boolean
 }
 
 /** Response from the operator work queue endpoint */
