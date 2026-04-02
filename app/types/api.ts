@@ -24,4 +24,5 @@ export type {
   EditBomInput,
   UpdateAdvancementModeInput,
   CreateLibraryEntryInput,
+  UpdatePrioritiesInput,
 } from '../../server/types/api'

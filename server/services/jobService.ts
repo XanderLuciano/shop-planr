@@ -3,7 +3,7 @@ import type { PathRepository } from '../repositories/interfaces/pathRepository'
 import type { PartRepository } from '../repositories/interfaces/partRepository'
 import type { BomRepository } from '../repositories/interfaces/bomRepository'
 import type { Job } from '../types/domain'
-import type { CreateJobInput, UpdateJobInput } from '../types/api'
+import type { CreateJobInput, UpdateJobInput, UpdatePrioritiesInput } from '../types/api'
 import type { JobProgress } from '../types/computed'
 import { generateId } from '../utils/idGenerator'
 import { assertPositive, assertNonEmpty } from '../utils/validation'
@@ -21,7 +21,7 @@ export function createJobService(repos: {
       assertPositive(input.goalQuantity, 'goalQuantity')
 
       const now = new Date().toISOString()
-      return repos.jobs.create({
+      return repos.jobs.createWithAutoIncPriority({
         id: generateId('job'),
         name: input.name.trim(),
         goalQuantity: input.goalQuantity,
@@ -127,6 +127,77 @@ export function createJobService(repos: {
       }
 
       repos.jobs.delete(id)
+    },
+
+    updatePriorities(input: UpdatePrioritiesInput): Job[] {
+      // 1. Validate array not empty
+      if (!input.priorities || input.priorities.length === 0) {
+        throw new ValidationError('Priorities list must not be empty')
+      }
+
+      // Determine which jobs are completed (completedParts >= goalQuantity)
+      const allJobs = repos.jobs.list()
+      const completedJobIds = new Set<string>()
+      for (const job of allJobs) {
+        if (job.goalQuantity > 0) {
+          const completed = repos.parts.countCompletedByJobId(job.id)
+          if (completed >= job.goalQuantity) {
+            completedJobIds.add(job.id)
+          }
+        }
+      }
+      const activeJobs = allJobs.filter(j => !completedJobIds.has(j.id))
+
+      // 2. Validate count matches active (non-completed) job count
+      if (input.priorities.length !== activeJobs.length) {
+        throw new ValidationError(
+          `Priority list must include all ${activeJobs.length} active jobs, got ${input.priorities.length}`
+        )
+      }
+
+      // 3. Validate no duplicate job IDs
+      const idSet = new Set(input.priorities.map(e => e.jobId))
+      if (idSet.size !== input.priorities.length) {
+        throw new ValidationError('Duplicate job IDs in priority list')
+      }
+
+      // 4. Validate all job IDs exist and are active
+      const activeIds = new Set(activeJobs.map(j => j.id))
+      for (const entry of input.priorities) {
+        if (!activeIds.has(entry.jobId)) {
+          const exists = allJobs.some(j => j.id === entry.jobId)
+          if (!exists) {
+            throw new NotFoundError('Job', entry.jobId)
+          }
+          throw new ValidationError(`Job ${entry.jobId} is completed and cannot be prioritized`)
+        }
+      }
+
+      // 5. Validate no duplicate priority values
+      const prioritySet = new Set(input.priorities.map(e => e.priority))
+      if (prioritySet.size !== input.priorities.length) {
+        throw new ValidationError('Duplicate priority values in priority list')
+      }
+
+      // 6. Validate priorities form contiguous sequence 1..N
+      for (let i = 1; i <= input.priorities.length; i++) {
+        if (!prioritySet.has(i)) {
+          throw new ValidationError('Priorities must be sequential from 1 to N')
+        }
+      }
+
+      // Build bulk update: active jobs get their new priority, completed jobs get 0
+      const entries = input.priorities.map(e => ({ id: e.jobId, priority: e.priority }))
+      for (const job of allJobs) {
+        if (completedJobIds.has(job.id) && job.priority !== 0) {
+          entries.push({ id: job.id, priority: 0 })
+        }
+      }
+
+      repos.jobs.bulkUpdatePriority(entries)
+
+      // Return updated list sorted by priority
+      return repos.jobs.list()
     },
 
     canDeleteJob(id: string): { canDelete: boolean; reasons: string[] } {

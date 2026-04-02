@@ -2,28 +2,65 @@
 import type { Job } from '~/types/domain'
 import type { JobProgress } from '~/types/computed'
 
-defineProps<{
+withDefaults(defineProps<{
   job: Job
   progress: JobProgress | null
-}>()
+  editing?: boolean
+  index?: number
+}>(), {
+  editing: false,
+  index: 0
+})
 
 defineEmits<{
   click: []
+  dragstart: [event: DragEvent]
+  dragover: [event: DragEvent]
+  drop: [event: DragEvent]
+  dragend: []
+  dragleave: []
+  touchstart: [event: TouchEvent]
+  touchmove: [event: TouchEvent]
+  touchend: [event: TouchEvent]
 }>()
 </script>
 
 <template>
   <div
-    class="p-3 rounded-lg border border-(--ui-border) hover:bg-(--ui-bg-elevated)/50 cursor-pointer space-y-2"
-    role="button"
-    tabindex="0"
-    @click="$emit('click')"
-    @keydown.enter.prevent="$emit('click')"
-    @keydown.space.prevent="$emit('click')"
+    class="p-3 rounded-lg border border-(--ui-border) space-y-2"
+    :class="{
+      'hover:bg-(--ui-bg-elevated)/50 cursor-pointer': !editing,
+      'cursor-grab active:cursor-grabbing': editing
+    }"
+    :draggable="editing"
+    :role="editing ? undefined : 'button'"
+    :tabindex="editing ? undefined : 0"
+    @click="!editing && $emit('click')"
+    @keydown.enter.prevent="!editing && $emit('click')"
+    @keydown.space.prevent="!editing && $emit('click')"
+    @dragstart="editing && $emit('dragstart', $event)"
+    @dragover="editing && $emit('dragover', $event)"
+    @drop="editing && $emit('drop', $event)"
+    @dragend="editing && $emit('dragend')"
+    @dragleave="editing && $emit('dragleave')"
+    @touchstart.passive="editing && $emit('touchstart', $event)"
+    @touchmove="editing && $emit('touchmove', $event)"
+    @touchend="editing && $emit('touchend', $event)"
   >
     <div class="flex items-center justify-between">
-      <span class="font-medium text-sm">{{ job.name }}</span>
-      <span v-if="job.jiraPriority" class="text-xs text-(--ui-text-muted)">{{ job.jiraPriority }}</span>
+      <div class="flex items-center gap-2">
+        <UIcon
+          v-if="editing"
+          name="i-lucide-grip-vertical"
+          class="size-4 text-(--ui-text-muted) shrink-0"
+        />
+        <span
+          v-if="editing"
+          class="text-xs font-mono text-(--ui-text-muted) shrink-0"
+        >{{ index + 1 }}.</span>
+        <span class="font-medium text-sm">{{ job.name }}</span>
+      </div>
+      <span v-if="job.jiraPriority && !editing" class="text-xs text-(--ui-text-muted)">{{ job.jiraPriority }}</span>
     </div>
     <div class="flex items-center gap-3 text-xs text-(--ui-text-muted)">
       <span v-if="job.jiraPartNumber">Part: {{ job.jiraPartNumber }}</span>
