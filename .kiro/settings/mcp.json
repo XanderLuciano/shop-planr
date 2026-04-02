@@ -26,6 +26,34 @@
         "list_tables",
         "describe_table"
       ]
+    },
+    "shop-planr": {
+      "command": "npx",
+      "args": ["tsx", "mcp-server/index.ts"],
+      "env": {
+        "SHOP_PLANR_URL": "http://localhost:3000"
+      },
+      "autoApprove": [
+        "list_jobs",
+        "get_job",
+        "list_parts",
+        "get_part",
+        "list_users",
+        "list_templates",
+        "get_template",
+        "list_certs",
+        "list_audit_entries",
+        "get_work_queue",
+        "get_step_view",
+        "get_user_queue",
+        "get_settings",
+        "get_part_route",
+        "get_part_step_statuses",
+        "get_part_audit",
+        "get_notes_by_step",
+        "get_notes_by_part",
+        "get_path"
+      ]
     }
   }
 }
