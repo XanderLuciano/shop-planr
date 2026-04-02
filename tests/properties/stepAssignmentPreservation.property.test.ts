@@ -40,9 +40,9 @@ function filterDropdownOptions(users: ShopUser[], search: string): DropdownOptio
   const normalizedSearch = search.toLowerCase().trim()
 
   const userOptions: DropdownOption[] = users
-    .filter(u => u.active && (normalizedSearch === '' || u.name.toLowerCase().includes(normalizedSearch)))
+    .filter(u => u.active && (normalizedSearch === '' || u.displayName.toLowerCase().includes(normalizedSearch)))
     .map(u => ({
-      label: u.name,
+      label: u.displayName,
       value: u.id,
     }))
 
@@ -54,7 +54,9 @@ function filterDropdownOptions(users: ShopUser[], search: string): DropdownOptio
 const arbShopUser = (): fc.Arbitrary<ShopUser> =>
   fc.record({
     id: fc.string({ minLength: 3, maxLength: 20 }).filter(s => s.trim().length >= 3),
-    name: fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length >= 1),
+    username: fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length >= 1),
+    displayName: fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length >= 1),
+    isAdmin: fc.boolean(),
     department: fc.option(fc.string({ minLength: 1, maxLength: 30 }), { nil: undefined }),
     active: fc.boolean(),
     createdAt: fc.constant(new Date().toISOString()),
@@ -114,14 +116,14 @@ describe('Property 2: Preservation — Non-Assignment Behavior Unchanged', () =>
             const normalizedSearch = search.toLowerCase().trim()
 
             const expectedUsers = users.filter(u =>
-              u.active && (normalizedSearch === '' || u.name.toLowerCase().includes(normalizedSearch)),
+              u.active && (normalizedSearch === '' || u.displayName.toLowerCase().includes(normalizedSearch)),
             )
 
             const resultUsers = result.slice(1)
             expect(resultUsers.length).toBe(expectedUsers.length)
 
             for (let i = 0; i < resultUsers.length; i++) {
-              expect(resultUsers[i]!.label).toBe(expectedUsers[i]!.name)
+              expect(resultUsers[i]!.label).toBe(expectedUsers[i]!.displayName)
               expect(resultUsers[i]!.value).toBe(expectedUsers[i]!.id)
             }
           },

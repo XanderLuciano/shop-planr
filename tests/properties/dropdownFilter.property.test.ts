@@ -19,7 +19,7 @@ interface DropdownOption {
 
 /**
  * Pure dropdown filter logic.
- * Returns "Unassigned" as first option, then active users whose name
+ * Returns "Unassigned" as first option, then active users whose displayName
  * contains the search string (case-insensitive partial match).
  * "Unassigned" is always visible regardless of search input.
  */
@@ -32,9 +32,9 @@ export function filterDropdownOptions(users: ShopUser[], search: string): Dropdo
   const normalizedSearch = search.toLowerCase().trim()
 
   const userOptions: DropdownOption[] = users
-    .filter(u => u.active && (normalizedSearch === '' || u.name.toLowerCase().includes(normalizedSearch)))
+    .filter(u => u.active && (normalizedSearch === '' || u.displayName.toLowerCase().includes(normalizedSearch)))
     .map(u => ({
-      label: u.name,
+      label: u.displayName,
       value: u.id,
     }))
 
@@ -46,7 +46,9 @@ export function filterDropdownOptions(users: ShopUser[], search: string): Dropdo
 const arbShopUser = (): fc.Arbitrary<ShopUser> =>
   fc.record({
     id: fc.string({ minLength: 3, maxLength: 20 }).filter(s => s.trim().length >= 3),
-    name: fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length >= 1),
+    username: fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length >= 1),
+    displayName: fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length >= 1),
+    isAdmin: fc.boolean(),
     department: fc.option(fc.string({ minLength: 1, maxLength: 30 }), { nil: undefined }),
     active: fc.boolean(),
     createdAt: fc.constant(new Date().toISOString()),
@@ -100,7 +102,7 @@ describe('Property 4: Dropdown option list with search filtering', () => {
 
           // Expected: active users whose name contains the search string
           const expectedUsers = users.filter(u =>
-            u.active && (normalizedSearch === '' || u.name.toLowerCase().includes(normalizedSearch)),
+            u.active && (normalizedSearch === '' || u.displayName.toLowerCase().includes(normalizedSearch)),
           )
 
           // Result minus the "Unassigned" entry
@@ -111,7 +113,7 @@ describe('Property 4: Dropdown option list with search filtering', () => {
 
           // Each result user should correspond to an expected user
           for (let i = 0; i < resultUsers.length; i++) {
-            expect(resultUsers[i]!.label).toBe(expectedUsers[i]!.name)
+            expect(resultUsers[i]!.label).toBe(expectedUsers[i]!.displayName)
             expect(resultUsers[i]!.value).toBe(expectedUsers[i]!.id)
           }
         },
@@ -133,7 +135,7 @@ describe('Property 4: Dropdown option list with search filtering', () => {
           expect(result[0]!.label).toBe('Unassigned')
 
           for (let i = 0; i < activeUsers.length; i++) {
-            expect(result[i + 1]!.label).toBe(activeUsers[i]!.name)
+            expect(result[i + 1]!.label).toBe(activeUsers[i]!.displayName)
             expect(result[i + 1]!.value).toBe(activeUsers[i]!.id)
           }
         },

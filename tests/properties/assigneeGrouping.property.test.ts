@@ -4,7 +4,7 @@
  * For any set of jobs with paths whose steps have various assignedTo values
  * (some set to user IDs, some undefined), the grouped work-queue endpoint should:
  * place each WorkQueueJob entry into the group matching its step's assignedTo value;
- * resolve operatorName to the matching ShopUser.name for assigned steps;
+ * resolve operatorName to the matching ShopUser.displayName for assigned steps;
  * place steps with no assignedTo into a group with operatorId = null and
  * operatorName = "Unassigned"; and ensure every active step appears in exactly one group.
  *
@@ -66,11 +66,11 @@ function aggregateGroupedWork(
     }
   }
 
-  // Build userId → name lookup
+  // Build userId → displayName lookup
   const users = userService.listUsers()
   const userNameMap = new Map<string, string>()
   for (const u of users) {
-    userNameMap.set(u.id, u.name)
+    userNameMap.set(u.id, u.displayName)
   }
 
   // Group entries by assignedTo
@@ -158,8 +158,8 @@ describe('Property 6: Assignee Grouping Correctness', () => {
         const userService = createUserService({ users: userRepo })
 
         // Create users
-        const createdUsers = scenario.userNames.map(name =>
-          userService.createUser({ name }),
+        const createdUsers = scenario.userNames.map((name, i) =>
+          userService.createUser({ username: `user_${i}_${name.replace(/\s+/g, '_')}`, displayName: name }),
         )
 
         // Track expected: stepId → assignedTo (userId or undefined)
@@ -237,10 +237,10 @@ describe('Property 6: Assignee Grouping Correctness', () => {
           expectedGroups.get(assignedTo)!.add(stepId)
         }
 
-        // Build userId → name map for verification
+        // Build userId → displayName map for verification
         const userNameMap = new Map<string, string>()
         for (const u of createdUsers) {
-          userNameMap.set(u.id, u.name)
+          userNameMap.set(u.id, u.displayName)
         }
 
         // 1. Every active step appears in exactly one group
@@ -264,7 +264,7 @@ describe('Property 6: Assignee Grouping Correctness', () => {
           }
         }
 
-        // 3. Operator name resolution: assigned groups have correct ShopUser.name
+        // 3. Operator name resolution: assigned groups have correct ShopUser.displayName
         for (const group of response.groups) {
           if (group.operatorId !== null) {
             const expectedName = userNameMap.get(group.operatorId)

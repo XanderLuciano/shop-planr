@@ -6,6 +6,7 @@ import type { Job, FilterState } from '~/types/domain'
 import type { JobProgress } from '~/types/computed'
 
 const { jobs, loading, fetchJobs } = useJobs()
+const { isAdmin } = useUsers()
 const { filters, updateFilter, clearFilters, applyFilters } = useViewFilters()
 
 const jobProgressMap = ref<Record<string, JobProgress>>({})
@@ -170,6 +171,7 @@ onMounted(() => {
         Jobs
       </h1>
       <UButton
+        v-if="isAdmin"
         icon="i-lucide-plus"
         label="New Job"
         size="sm"

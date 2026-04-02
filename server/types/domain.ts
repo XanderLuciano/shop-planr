@@ -179,7 +179,9 @@ export interface AuditEntry {
 
 export interface ShopUser {
   id: string
-  name: string
+  username: string
+  displayName: string
+  isAdmin: boolean
   department?: string
   active: boolean
   createdAt: string

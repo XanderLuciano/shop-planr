@@ -48,7 +48,7 @@ export default defineEventHandler(async () => {
     const users = userService.listUsers()
     const userNameMap = new Map<string, string>()
     for (const u of users) {
-      userNameMap.set(u.id, u.name)
+      userNameMap.set(u.id, u.displayName)
     }
 
     // Group entries by assignedTo

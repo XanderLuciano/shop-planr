@@ -15,7 +15,7 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
 
   return [
     users.value.map(user => ({
-      label: user.name,
+      label: user.displayName,
       icon: user.id === selectedUser.value?.id ? 'i-lucide-check' : 'i-lucide-user',
       onSelect() {
         selectUser(user)
@@ -36,9 +36,9 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
       :variant="selectedUser ? 'ghost' : 'soft'"
       :color="selectedUser ? 'neutral' : 'warning'"
       :icon="selectedUser ? 'i-lucide-user' : 'i-lucide-user-x'"
-      :label="isMobile ? undefined : (selectedUser?.name ?? 'Select User')"
+      :label="isMobile ? undefined : (selectedUser?.displayName ?? 'Select User')"
       :trailing-icon="isMobile ? undefined : 'i-lucide-chevron-down'"
-      :aria-label="selectedUser?.name ?? 'Select User'"
+      :aria-label="selectedUser?.displayName ?? 'Select User'"
     />
   </UDropdownMenu>
 </template>

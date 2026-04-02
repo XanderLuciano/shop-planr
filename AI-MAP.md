@@ -101,7 +101,7 @@ tests/
 | Dev server | `npm run dev` | Nuxt dev with HMR |
 | Build | `npm run build` | Production build to `.output/` |
 | Preview | `npm run preview` | Preview production build locally |
-| Test | `npm run test` | `vitest run` — 920 tests, 158 files |
+| Test | `npm run test` | `vitest run` — 998 tests, 182 files |
 | Test watch | `npm run test:watch` | `vitest` in watch mode |
 | Lint | `npm run lint` | ESLint with Nuxt config |
 | Typecheck | `npm run typecheck` | `nuxt typecheck` |
@@ -153,7 +153,7 @@ Dependencies flow left-to-right only. All business logic lives in services. See 
 | `/api/bom/**` | `bomService` | Bill of materials roll-ups + edit + version history |
 | `/api/settings/**` | `settingsService` | Jira config + field mappings + page toggles |
 | `/api/notes/**` | `noteService` | Process step notes/defects |
-| `/api/users/**` | `userService` | Simple kiosk-mode user profiles |
+| `/api/users/**` | `userService` | Kiosk-mode user profiles with username, displayName, isAdmin |
 | `/api/operator/**` | (aggregates job/path/serial) | Workstation view data |
 | `/api/steps/:id/assign` | `pathService` | Step assignment (PATCH) |
 | `/api/steps/:id/config` | `pathService` | Step config: optional + dependencyType (PATCH) |
@@ -200,7 +200,7 @@ Core entities and relationships:
 - **SnStepOverride** → per-serial step overrides (fast-track, reversible)
 - **BomVersion** → immutable BOM edit snapshots
 - **ProcessLibraryEntry** / **LocationLibraryEntry** → reusable process name and location libraries
-- **ShopUser** → simple kiosk-mode identity (no passwords)
+- **ShopUser** → simple kiosk-mode identity with `username` (unique), `displayName`, `isAdmin` flag (no passwords); admin flag gates UI features like job creation
 - **StepNote** → defect/note on serial(s) at a process step
 - **AppSettings** → singleton: Jira connection + field mappings + page toggles (5 default PI project mappings, 9 page visibility toggles)
 

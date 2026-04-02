@@ -166,7 +166,7 @@ function aggregateGroupedWork(
   const users = userService.listUsers()
   const userNameMap = new Map<string, string>()
   for (const u of users) {
-    userNameMap.set(u.id, u.name)
+    userNameMap.set(u.id, u.displayName)
   }
 
   const groupMap = new Map<string | null, WorkQueueJob[]>()
@@ -370,8 +370,8 @@ describe('Operator View Redesign Integration', () => {
     // Create users
     const userRepo = new SQLiteUserRepository(db)
     const userService = createUserService({ users: userRepo })
-    const mike = userService.createUser({ name: 'Mike Johnson' })
-    const sarah = userService.createUser({ name: 'Sarah Chen' })
+    const mike = userService.createUser({ username: 'mike.johnson', displayName: 'Mike Johnson' })
+    const sarah = userService.createUser({ username: 'sarah.chen', displayName: 'Sarah Chen' })
 
     // Job with 3 steps: step 0 assigned to Mike, step 1 assigned to Sarah, step 2 unassigned
     const job = jobService.createJob({ name: 'Widget Assembly', goalQuantity: 6 })
