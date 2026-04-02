@@ -9,6 +9,8 @@ import fc from 'fast-check'
 import { createTestContext } from '../integration/helpers'
 import { generateId } from '../../server/utils/idGenerator'
 import { ForbiddenError } from '../../server/utils/errors'
+import { filterParts } from '../../app/composables/usePartBrowser'
+import type { EnrichedPart } from '../../server/types/computed'
 
 // Feature: admin-path-delete, Property 1: Non-admin users are rejected
 // **Validates: Requirements 1.2**
@@ -310,9 +312,6 @@ describe('Property 3: Audit entry completeness', () => {
 
 // Feature: admin-path-delete, Property 4: Scrapped status filter
 // **Validates: Requirements 6.3**
-import { filterParts } from '../../app/composables/usePartBrowser'
-import type { EnrichedPart } from '../../server/types/computed'
-
 describe('Property 4: Scrapped status filter', () => {
   const statusArb = fc.oneof(
     fc.constant('in-progress' as const),

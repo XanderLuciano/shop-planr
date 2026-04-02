@@ -181,22 +181,19 @@ export function createPathService(repos: {
       return repos.paths.update(id, partial)
     },
 
-    deletePath(id: string, userId?: string): { deletedPartIds: string[], deletedPartCount: number } {
-      // If userId is provided, validate admin authorization
-      if (userId !== undefined) {
-        if (!userId) {
-          throw new ValidationError('userId is required')
-        }
-        if (!repos.users) {
-          throw new ValidationError('User repository not available')
-        }
-        const user = repos.users.getById(userId)
-        if (!user) {
-          throw new ValidationError(`User not found: ${userId}`)
-        }
-        if (!user.isAdmin) {
-          throw new ForbiddenError('Admin access required to delete paths')
-        }
+    deletePath(id: string, userId: string): { deletedPartIds: string[], deletedPartCount: number } {
+      if (!userId) {
+        throw new ValidationError('userId is required')
+      }
+      if (!repos.users) {
+        throw new ValidationError('User repository not available')
+      }
+      const user = repos.users.getById(userId)
+      if (!user) {
+        throw new ValidationError(`User not found: ${userId}`)
+      }
+      if (!user.isAdmin) {
+        throw new ForbiddenError('Admin access required to delete paths')
       }
 
       const existing = repos.paths.getById(id)
@@ -211,8 +208,8 @@ export function createPathService(repos: {
         repos.paths.delete(id)
         const result = { deletedPartIds: [], deletedPartCount: 0 }
 
-        // Record audit entry if userId provided
-        if (userId && auditService) {
+        // Record audit entry
+        if (auditService) {
           auditService.recordPathDeletion({
             userId,
             pathId: id,
@@ -255,7 +252,7 @@ export function createPathService(repos: {
       const result = { deletedPartIds: partIds, deletedPartCount: partIds.length }
 
       // Record audit entry after transaction commits
-      if (userId && auditService) {
+      if (auditService) {
         auditService.recordPathDeletion({
           userId,
           pathId: id,
