@@ -3,6 +3,7 @@ import type { WorkQueueJob, PartStepStatusView } from '~/types/computed'
 import type { StepNote, CertAttachment, PartStepOverride } from '~/types/domain'
 
 const route = useRoute()
+const router = useRouter()
 const partId = route.params.id as string
 
 const {
@@ -37,8 +38,13 @@ const stepStatuses = ref<PartStepStatusView[]>([])
 const overrides = ref<PartStepOverride[]>([])
 const certAttachments = ref<CertAttachment[]>([])
 
-// Tab state
-const activeTab = ref('routing')
+// Hash-based tab state
+const activeTab = computed(() => hashToTab(route.hash))
+
+function setTab(tab: string) {
+  router.replace({ hash: tabToHash(tab) })
+}
+
 const tabs = [
   { label: 'Routing', value: 'routing' },
   { label: 'Siblings', value: 'siblings' },
@@ -81,7 +87,7 @@ watch(activeTab, async (tab) => {
     await fetchSiblings()
     siblingsLoaded.value = true
   }
-})
+}, { immediate: true })
 
 // Computed states
 const isScrapped = computed(() => part.value?.status === 'scrapped')
@@ -325,7 +331,7 @@ onMounted(async () => {
           :class="activeTab === tab.value
             ? 'border-(--ui-primary) text-(--ui-text-highlighted)'
             : 'border-transparent text-(--ui-text-muted) hover:text-(--ui-text-highlighted)'"
-          @click="activeTab = tab.value"
+          @click="setTab(tab.value)"
         >
           {{ tab.label }}
         </button>

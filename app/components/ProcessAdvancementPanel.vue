@@ -11,13 +11,21 @@ const props = defineProps<{
 const emit = defineEmits<{
   advance: [payload: { partIds: string[], note?: string }]
   cancel: []
+  scrapped: []
+  skip: [payload: { partIds: string[] }]
 }>()
 
+const localPartIds = ref<string[]>([...props.job.partIds])
 const selectedParts = ref<Set<string>>(new Set())
 const quantity = ref(props.job.partCount)
 const note = ref('')
 const validationError = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
+
+// Re-sync localPartIds when the prop changes (e.g. after server re-fetch)
+watch(() => props.job.partIds, (newIds) => {
+  localPartIds.value = [...newIds]
+})
 
 // Scrap / force-complete dialog state
 const showScrapDialog = ref(false)
@@ -33,8 +41,9 @@ watch(selectedParts, (sel) => {
 watch(quantity, () => { validateQuantity() })
 
 function validateQuantity() {
-  if (quantity.value > props.job.partCount) {
-    validationError.value = `Cannot exceed ${props.job.partCount} available part${props.job.partCount !== 1 ? 's' : ''}`
+  const count = localPartIds.value.length
+  if (quantity.value > count) {
+    validationError.value = `Cannot exceed ${count} available part${count !== 1 ? 's' : ''}`
   } else if (quantity.value < 1) {
     validationError.value = 'Quantity must be at least 1'
   } else {
@@ -50,17 +59,17 @@ function togglePart(partId: string) {
 }
 
 function selectByQuantity() {
-  const q = Math.min(Math.max(1, quantity.value), props.job.partCount)
+  const q = Math.min(Math.max(1, quantity.value), localPartIds.value.length)
   const next = new Set<string>()
-  for (let i = 0; i < q && i < props.job.partIds.length; i++) {
-    next.add(props.job.partIds[i]!)
+  for (let i = 0; i < q && i < localPartIds.value.length; i++) {
+    next.add(localPartIds.value[i]!)
   }
   selectedParts.value = next
 }
 
 function selectAll() {
-  selectedParts.value = new Set(props.job.partIds)
-  quantity.value = props.job.partCount
+  selectedParts.value = new Set(localPartIds.value)
+  quantity.value = localPartIds.value.length
 }
 
 function selectNone() {
@@ -70,9 +79,15 @@ function selectNone() {
 
 function handleAdvance() {
   if (validationError.value || selectedParts.value.size === 0) return
-  const ids = props.job.partIds.filter((id: string) => selectedParts.value.has(id))
+  const ids = localPartIds.value.filter((id: string) => selectedParts.value.has(id))
   const trimmedNote = note.value.trim()
   emit('advance', { partIds: ids, note: trimmedNote || undefined })
+}
+
+function handleSkip() {
+  if (selectedParts.value.size === 0) return
+  const ids = localPartIds.value.filter((id: string) => selectedParts.value.has(id))
+  emit('skip', { partIds: ids })
 }
 
 function formatDestination(): string {
@@ -93,6 +108,15 @@ function openForceComplete(partId: string) {
   showForceCompleteDialog.value = true
 }
 
+function handleScrapped() {
+  if (!scrapTargetId.value) return
+  const scrappedId = scrapTargetId.value
+  localPartIds.value = removePartFromList(localPartIds.value, scrappedId)
+  selectedParts.value = removePartFromSelection(selectedParts.value, scrappedId)
+  scrapTargetId.value = null
+  emit('scrapped')
+}
+
 onMounted(() => { selectAll() })
 </script>
 
@@ -108,7 +132,7 @@ onMounted(() => { selectAll() })
     <div>
       <div class="flex items-center justify-between mb-1">
         <span class="text-xs font-semibold text-(--ui-text-highlighted)">
-          Parts ({{ selectedParts.size }}/{{ job.partCount }})
+          Parts ({{ selectedParts.size }}/{{ localPartIds.length }})
         </span>
         <div class="flex gap-1">
           <UButton size="xs" variant="ghost" label="All" @click="selectAll" />
@@ -117,7 +141,7 @@ onMounted(() => { selectAll() })
       </div>
       <div class="max-h-40 overflow-y-auto border border-(--ui-border) rounded-md divide-y divide-(--ui-border)">
         <div
-          v-for="partId in job.partIds"
+          v-for="partId in localPartIds"
           :key="partId"
           class="flex items-center justify-between px-2 py-1.5 hover:bg-(--ui-bg-elevated)/30"
         >
@@ -126,8 +150,9 @@ onMounted(() => { selectAll() })
             <span class="font-mono">{{ partId }}</span>
           </label>
           <div class="flex items-center gap-0.5 shrink-0">
+            <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-eye" title="View part detail" :to="partDetailLink(partId)" @click.stop />
             <UButton size="xs" variant="ghost" color="error" icon="i-lucide-trash-2" title="Scrap" @click="openScrap(partId)" />
-            <UButton size="xs" variant="ghost" color="warning" icon="i-lucide-shield-check" title="Force Complete" @click="openForceComplete(partId)" />
+            <UButton size="xs" variant="ghost" color="success" icon="i-lucide-shield-check" title="Force Complete" @click="openForceComplete(partId)" />
           </div>
         </div>
       </div>
@@ -137,8 +162,8 @@ onMounted(() => { selectAll() })
     <div>
       <label class="text-xs font-semibold text-(--ui-text-highlighted) block mb-1">Quantity</label>
       <div class="flex items-center gap-2">
-      <UInput v-model.number="quantity" type="number" :min="1" :max="job.partCount" size="sm" class="w-24" @blur="selectByQuantity" />
-        <span class="text-xs text-(--ui-text-muted)">of {{ job.partCount }} available</span>
+      <UInput v-model.number="quantity" type="number" :min="1" :max="localPartIds.length" size="sm" class="w-24" @blur="selectByQuantity" />
+        <span class="text-xs text-(--ui-text-muted)">of {{ localPartIds.length }} available</span>
       </div>
       <p v-if="validationError" class="text-xs text-(--ui-error) mt-1">{{ validationError }}</p>
     </div>
@@ -160,9 +185,20 @@ onMounted(() => { selectAll() })
     <div class="flex items-center gap-2 pt-1">
       <UButton
         :loading="loading"
-        :disabled="!!validationError || selectedParts.size === 0"
+        :disabled="loading || !!validationError || selectedParts.size === 0"
         size="sm" color="primary" label="Advance" icon="i-lucide-arrow-right"
         @click="handleAdvance"
+      />
+      <UButton
+        v-if="shouldShowSkip(job.stepOptional, job.isFinalStep)"
+        :loading="loading"
+        :disabled="loading || selectedParts.size === 0"
+        size="sm"
+        variant="outline"
+        color="neutral"
+        label="Skip"
+        icon="i-lucide-skip-forward"
+        @click="handleSkip"
       />
       <UButton size="sm" variant="ghost" label="Cancel" @click="emit('cancel')" />
     </div>
@@ -178,7 +214,7 @@ onMounted(() => { selectAll() })
       :part-id="scrapTargetId"
       :model-value="showScrapDialog"
       @update:model-value="showScrapDialog = $event"
-      @scrapped="scrapTargetId = null"
+      @scrapped="handleScrapped"
     />
 
     <!-- Force complete dialog -->

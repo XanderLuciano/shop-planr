@@ -29,6 +29,7 @@ function getProcessStep(stepId: string) {
 function stepBorderClass(step: StepDistribution) {
   const ps = getProcessStep(step.stepId)
   if (step.isBottleneck) return 'border-amber-400 bg-amber-50 dark:bg-amber-950/30'
+  if (shouldHighlightStep(step.partCount, step.isBottleneck)) return 'border-blue-400 bg-blue-50 dark:bg-blue-950/30'
   if (ps?.optional) return 'border-dashed border-(--ui-border) bg-(--ui-bg-elevated)/50'
   return 'border-(--ui-border) bg-(--ui-bg-elevated)/50'
 }
