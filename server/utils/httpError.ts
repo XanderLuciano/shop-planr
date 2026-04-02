@@ -40,12 +40,15 @@ export const ERROR_STATUS_MAP: ErrorStatusEntry[] = [
 /**
  * Classifies an error and throws a properly-formed H3Error.
  *
- * 1. H3Error → re-throw unchanged (preserves upstream createError() calls)
+ * 1. H3Error → normalize statusMessage if absent, then re-throw
  * 2. Mapped error class → statusCode from map, statusMessage from STATUS_MESSAGES, original message
  * 3. Unknown → 500 with generic message (prevents leaking internal details)
  */
 export function httpError(error: unknown): never {
   if (isError(error)) {
+    if (!error.statusMessage && error.statusCode && STATUS_MESSAGES[error.statusCode]) {
+      error.statusMessage = STATUS_MESSAGES[error.statusCode]
+    }
     throw error
   }
 

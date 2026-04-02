@@ -119,11 +119,12 @@ describe('Property 3: H3Error passthrough', () => {
   /**
    * For any H3Error with an arbitrary statusCode (400–599) and message,
    * calling httpError() should re-throw the exact same error object
-   * (reference equality), preserving all fields unchanged.
+   * (reference equality). If statusMessage was absent and the statusCode is
+   * in STATUS_MESSAGES, it will be normalized in-place before re-throwing.
    *
    * **Validates: Requirements 2.4**
    */
-  it('re-throws H3Errors unchanged (reference equality)', () => {
+  it('re-throws H3Errors with reference equality and normalizes missing statusMessage', () => {
     const arbH3Error = fc.record({
       statusCode: fc.integer({ min: 400, max: 599 }),
       message: fc.string({ minLength: 1 }),
@@ -143,6 +144,16 @@ describe('Property 3: H3Error passthrough', () => {
 
         // Must be the exact same object — reference equality
         expect(caught).toBe(original)
+
+        // statusMessage must be normalized when STATUS_MESSAGES has an entry for the code;
+        // when the code is absent from STATUS_MESSAGES, statusMessage must remain unchanged
+        const h3Err = caught as ReturnType<typeof createError>
+        if (STATUS_MESSAGES[statusCode]) {
+          expect(h3Err.statusMessage).toBe(STATUS_MESSAGES[statusCode])
+        }
+        else {
+          expect(h3Err.statusMessage).toBe(original.statusMessage)
+        }
       }),
       { numRuns: 100 },
     )
