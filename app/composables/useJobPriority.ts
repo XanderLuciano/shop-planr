@@ -20,8 +20,10 @@ export function useJobPriority() {
 
   function reorder(fromIndex: number, toIndex: number) {
     const list = orderedJobs.value
-    const [item] = list.splice(fromIndex, 1)
-    list.splice(toIndex, 0, item)
+    const item = list.splice(fromIndex, 1)[0]
+    if (item) {
+      list.splice(toIndex, 0, item)
+    }
   }
 
   async function savePriorities(refresh?: () => Promise<void>) {
