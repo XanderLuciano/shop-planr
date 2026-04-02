@@ -14,7 +14,7 @@
  *   - app/composables/useJobs.ts contains `import type { Job } from '~/server/types/domain'`
  *   - app/composables/useParts.ts contains `import type { Part } from '~/server/types/domain'`
  *   - app/composables/useJira.ts contains `import type { JiraTicket, ... } from '~/server/services/jiraService'`
- *   - app/composables/useOperatorWorkQueue.ts contains `import type { OperatorGroup, ... } from '~/server/types/computed'`
+ *   - app/composables/useOperatorWorkQueue.ts contains `import type { WorkQueueGroup, ... } from '~/server/types/computed'`
  *   - app/pages/jira.vue contains `import type { JiraTicket } from '~/server/services/jiraService'`
  *   - app/pages/jobs/index.vue contains `import type { Job, FilterState } from '~/server/types/domain'`
  *   - app/components/AdvanceToStepDropdown.vue contains `import type { ProcessStep } from '~/server/types/domain'`

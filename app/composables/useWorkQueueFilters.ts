@@ -55,28 +55,9 @@ export function useWorkQueueFilters() {
   const presets = ref<WorkQueuePreset[]>([])
   const activePresetId = ref<string | null>(null)
 
-  // --- Raw groups: map OperatorGroup[] → WorkQueueGroup[] ---
-  // The API now returns WorkQueueGroup[] in the response when groupBy is used,
-  // but the response type is still WorkQueueGroupedResponse with OperatorGroup[].
-  // We map to WorkQueueGroup[] for the filtering layer.
+  // --- Raw groups: direct pass-through from the work queue composable ---
   const rawGroups = computed<WorkQueueGroup[]>(() => {
-    const groups = workQueue.groups.value
-    if (!groups.length) return []
-
-    // Check if the response already has WorkQueueGroup shape (groupType field)
-    const first = groups[0] as any
-    if ('groupType' in first) {
-      return groups as unknown as WorkQueueGroup[]
-    }
-
-    // Legacy OperatorGroup shape — map to WorkQueueGroup
-    return groups.map(g => ({
-      groupKey: (g as any).operatorId ?? null,
-      groupLabel: (g as any).operatorName ?? 'Unknown',
-      groupType: groupBy.value,
-      jobs: g.jobs,
-      totalParts: g.totalParts,
-    }))
+    return workQueue.groups.value
   })
 
   // --- Computed: filtered groups ---

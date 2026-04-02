@@ -4,7 +4,7 @@
  * For any response from the all-work endpoint or the grouped work-queue endpoint,
  * the top-level totalParts field should equal the sum of partCount across all
  * WorkQueueJob entries in the response. For the grouped endpoint, each
- * OperatorGroup.totalParts should also equal the sum of partCount across that
+ * WorkQueueGroup.totalParts should also equal the sum of partCount across that
  * group's jobs.
  *
  * **Validates: Requirements 1.4, 4.6**
@@ -14,7 +14,7 @@ import fc from 'fast-check'
 import type {
   WorkQueueJob,
   WorkQueueResponse,
-  OperatorGroup,
+  WorkQueueGroup,
   WorkQueueGroupedResponse,
 } from '../../server/types/computed'
 
@@ -35,6 +35,7 @@ const workQueueJobArb: fc.Arbitrary<WorkQueueJob> = fc.record({
   nextStepName: fc.option(fc.string({ minLength: 1, maxLength: 15 }), { nil: undefined }),
   nextStepLocation: fc.option(fc.string({ minLength: 1, maxLength: 15 }), { nil: undefined }),
   isFinalStep: fc.boolean(),
+  jobPriority: fc.integer({ min: 0, max: 100 }),
 })
 
 /** WorkQueueResponse with totalParts computed as sum of partCounts (well-formed) */
@@ -46,23 +47,25 @@ const wellFormedWorkQueueResponseArb: fc.Arbitrary<WorkQueueResponse> = fc
     totalParts: jobs.reduce((sum, j) => sum + j.partCount, 0),
   }))
 
-/** OperatorGroup with totalParts computed as sum of partCounts (well-formed) */
-const wellFormedOperatorGroupArb: fc.Arbitrary<OperatorGroup> = fc
+/** WorkQueueGroup with totalParts computed as sum of partCounts (well-formed) */
+const wellFormedGroupArb: fc.Arbitrary<WorkQueueGroup> = fc
   .tuple(
     fc.option(fc.uuid(), { nil: null }),
     fc.string({ minLength: 1, maxLength: 20 }),
     fc.array(workQueueJobArb, { minLength: 0, maxLength: 6 }),
+    fc.constantFrom('user' as const, 'location' as const, 'step' as const),
   )
-  .map(([operatorId, operatorName, jobs]) => ({
-    operatorId,
-    operatorName: operatorId === null ? 'Unassigned' : operatorName,
+  .map(([groupKey, groupLabel, jobs, groupType]) => ({
+    groupKey,
+    groupLabel: groupKey === null ? 'Unassigned' : groupLabel,
+    groupType,
     jobs,
     totalParts: jobs.reduce((sum, j) => sum + j.partCount, 0),
   }))
 
 /** WorkQueueGroupedResponse with totalParts computed correctly at both levels */
 const wellFormedGroupedResponseArb: fc.Arbitrary<WorkQueueGroupedResponse> = fc
-  .array(wellFormedOperatorGroupArb, { minLength: 0, maxLength: 5 })
+  .array(wellFormedGroupArb, { minLength: 0, maxLength: 5 })
   .map((groups) => ({
     groups,
     totalParts: groups.reduce((sum, g) => sum + g.totalParts, 0),
@@ -95,7 +98,7 @@ describe('Property 2: TotalParts Invariant', () => {
     )
   })
 
-  it('each OperatorGroup.totalParts equals sum of partCount across that group\'s jobs', () => {
+  it('each WorkQueueGroup.totalParts equals sum of partCount across that group\'s jobs', () => {
     fc.assert(
       fc.property(wellFormedGroupedResponseArb, (response) => {
         for (const group of response.groups) {

@@ -107,6 +107,7 @@ function aggregateWorkQueue(
           nextStepName: nextStep?.name,
           nextStepLocation: nextStep?.location,
           isFinalStep,
+          jobPriority: job.priority,
         })
       }
     }

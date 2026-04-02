@@ -138,7 +138,7 @@ function handleClearFilters() {
 
 function handleUpdateFilters(f: Record<string, string | undefined>) {
   for (const [key, value] of Object.entries(f)) {
-    setFilter(key as any, value)
+    setFilter(key as keyof import('~/types/computed').WorkQueueFilterState, value)
   }
 }
 
@@ -320,18 +320,6 @@ onMounted(async () => {
           class="mt-2"
           @click="handleClearFilters"
         />
-      </div>
-
-      <!-- No search results (search active but no filter dropdowns) -->
-      <div
-        v-else-if="sortedGroups.length === 0 && searchQuery.trim().length > 0"
-        class="text-center py-8 text-sm text-(--ui-text-muted)"
-      >
-        <UIcon
-          name="i-lucide-search-x"
-          class="size-8 mx-auto mb-2 opacity-40"
-        />
-        <p>No results matching "{{ searchQuery.trim() }}"</p>
       </div>
 
       <!-- Work queue groups -->

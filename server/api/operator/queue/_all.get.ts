@@ -35,6 +35,7 @@ export default defineApiHandler(async () => {
           nextStepName: nextStep?.name,
           nextStepLocation: nextStep?.location,
           isFinalStep,
+          jobPriority: job.priority,
         })
       }
     }

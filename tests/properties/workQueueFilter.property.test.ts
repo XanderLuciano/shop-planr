@@ -42,6 +42,7 @@ const workQueueJobArb: fc.Arbitrary<WorkQueueJob> = fc.record({
   nextStepName: fc.option(fc.string({ minLength: 1, maxLength: 20 }), { nil: undefined }),
   nextStepLocation: fc.option(fc.string({ minLength: 1, maxLength: 20 }), { nil: undefined }),
   isFinalStep: fc.boolean(),
+  jobPriority: fc.integer({ min: 0, max: 100 }),
 })
 
 const jobsArb = fc.array(workQueueJobArb, { minLength: 0, maxLength: 10 })

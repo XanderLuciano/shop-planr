@@ -19,7 +19,7 @@ import type {
   WorkQueueJob,
   WorkQueueResponse,
   WorkQueueGroupedResponse,
-  OperatorGroup,
+  WorkQueueGroup,
   StepViewResponse,
 } from '../../server/types/computed'
 
@@ -58,6 +58,7 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
           nextStepName: nextStep?.name,
           nextStepLocation: nextStep?.location,
           isFinalStep,
+          jobPriority: job.priority,
         })
       }
     }
@@ -109,6 +110,7 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
           nextStepName: nextStep?.name,
           nextStepLocation: nextStep?.location,
           isFinalStep,
+          jobPriority: job.priority,
         }
         const notes = noteService.getNotesForStep(stepId)
         return {
@@ -157,6 +159,7 @@ function aggregateGroupedWork(
             nextStepName: nextStep?.name,
             nextStepLocation: nextStep?.location,
             isFinalStep,
+            jobPriority: job.priority,
           },
         })
       }
@@ -177,13 +180,13 @@ function aggregateGroupedWork(
     else groupMap.set(key, [entry.job])
   }
 
-  const groups: OperatorGroup[] = []
+  const groups: WorkQueueGroup[] = []
   for (const [operatorId, groupJobs] of groupMap) {
     const totalParts = groupJobs.reduce((sum, j) => sum + j.partCount, 0)
     const operatorName = operatorId
       ? (userNameMap.get(operatorId) ?? operatorId)
       : 'Unassigned'
-    groups.push({ operatorId, operatorName, jobs: groupJobs, totalParts })
+    groups.push({ groupKey: operatorId, groupLabel: operatorName, groupType: 'user', jobs: groupJobs, totalParts })
   }
 
   const totalParts = entries.reduce((sum, e) => sum + e.job.partCount, 0)
@@ -410,27 +413,27 @@ describe('Operator View Redesign Integration', () => {
     expect(response.groups).toHaveLength(3)
 
     // Mike's group: step 0 (Cutting) with 3 parts
-    const mikeGroup = response.groups.find(g => g.operatorId === mike.id)!
+    const mikeGroup = response.groups.find(g => g.groupKey === mike.id)!
     expect(mikeGroup).toBeDefined()
-    expect(mikeGroup.operatorName).toBe('Mike Johnson')
+    expect(mikeGroup.groupLabel).toBe('Mike Johnson')
     expect(mikeGroup.jobs).toHaveLength(1)
     expect(mikeGroup.jobs[0].stepName).toBe('Cutting')
     expect(mikeGroup.jobs[0].partCount).toBe(3)
     expect(mikeGroup.totalParts).toBe(3)
 
     // Sarah's group: step 1 (Welding) with 2 parts
-    const sarahGroup = response.groups.find(g => g.operatorId === sarah.id)!
+    const sarahGroup = response.groups.find(g => g.groupKey === sarah.id)!
     expect(sarahGroup).toBeDefined()
-    expect(sarahGroup.operatorName).toBe('Sarah Chen')
+    expect(sarahGroup.groupLabel).toBe('Sarah Chen')
     expect(sarahGroup.jobs).toHaveLength(1)
     expect(sarahGroup.jobs[0].stepName).toBe('Welding')
     expect(sarahGroup.jobs[0].partCount).toBe(2)
     expect(sarahGroup.totalParts).toBe(2)
 
     // Unassigned group: step 2 (Painting) with 1 part
-    const unassignedGroup = response.groups.find(g => g.operatorId === null)!
+    const unassignedGroup = response.groups.find(g => g.groupKey === null)!
     expect(unassignedGroup).toBeDefined()
-    expect(unassignedGroup.operatorName).toBe('Unassigned')
+    expect(unassignedGroup.groupLabel).toBe('Unassigned')
     expect(unassignedGroup.jobs).toHaveLength(1)
     expect(unassignedGroup.jobs[0].stepName).toBe('Painting')
     expect(unassignedGroup.jobs[0].partCount).toBe(1)

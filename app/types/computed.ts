@@ -9,7 +9,6 @@ export type {
   EnrichedSerial,
   WorkQueueJob,
   WorkQueueResponse,
-  OperatorGroup,
   WorkQueueGroupedResponse,
   StepViewResponse,
   AdvancementResult,

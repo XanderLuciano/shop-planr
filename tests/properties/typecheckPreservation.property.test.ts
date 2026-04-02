@@ -199,7 +199,6 @@ describe('Preservation Test 3 — Domain type exports are complete', () => {
         'EnrichedPart',
         'WorkQueueJob',
         'WorkQueueResponse',
-        'OperatorGroup',
         'WorkQueueGroupedResponse',
         'StepViewResponse',
         'AdvancementResult',

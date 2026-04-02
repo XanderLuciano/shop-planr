@@ -150,17 +150,9 @@ export interface WorkQueueResponse {
   totalParts: number
 }
 
-/** A group of work entries assigned to a single operator */
-export interface OperatorGroup {
-  operatorId: string | null
-  operatorName: string
-  jobs: WorkQueueJob[]
-  totalParts: number
-}
-
 /** Response from the grouped work queue endpoint */
 export interface WorkQueueGroupedResponse {
-  groups: OperatorGroup[]
+  groups: WorkQueueGroup[]
   totalParts: number
 }
 
