@@ -175,5 +175,5 @@ Add a master priority system to the Jobs page. Each job gets a `priority` INTEGE
     - Append PR Review Fixes addendum to design doc
     - _Fixes: Review issue #5 (spec divergence)_
 
-  - [x] 9.5 Update migration test to expect 10 migrations
-    - _Validates migration 010 is applied correctly_
+  - [x] 9.5 Update migration test to expect 11 migrations (001–011)
+    - _Validates migrations 001–011 are applied correctly_

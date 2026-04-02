@@ -41,25 +41,29 @@ describe('Property 7: Reorder conservation and correctness', () => {
           )
         ),
         ([jobs, fromIndex, toIndex]) => {
-          const { enterEditMode, reorder, orderedJobs } = useJobPriority()
+          const { enterEditMode, reorder, cancelEdit, orderedJobs } = useJobPriority()
 
-          const originalIds = jobs.map((j) => j.id)
-          const originalCount = jobs.length
+          try {
+            const originalIds = jobs.map((j) => j.id)
+            const originalCount = jobs.length
 
-          enterEditMode(jobs)
+            enterEditMode(jobs)
 
-          reorder(fromIndex, toIndex)
+            reorder(fromIndex, toIndex)
 
-          const reorderedIds = orderedJobs.value.map((j) => j.id)
+            const reorderedIds = orderedJobs.value.map((j) => j.id)
 
-          // 1. Total count is unchanged
-          expect(reorderedIds.length).toBe(originalCount)
+            // 1. Total count is unchanged
+            expect(reorderedIds.length).toBe(originalCount)
 
-          // 2. Same set of job IDs (just reordered)
-          expect([...reorderedIds].sort()).toEqual([...originalIds].sort())
+            // 2. Same set of job IDs (just reordered)
+            expect([...reorderedIds].sort()).toEqual([...originalIds].sort())
 
-          // 3. The job originally at fromIndex is now at toIndex
-          expect(reorderedIds[toIndex]).toBe(originalIds[fromIndex])
+            // 3. The job originally at fromIndex is now at toIndex
+            expect(reorderedIds[toIndex]).toBe(originalIds[fromIndex])
+          } finally {
+            cancelEdit()
+          }
         }
       ),
       { numRuns: 200 }

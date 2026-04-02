@@ -1,4 +1,4 @@
--- 009_add_job_priority.sql
+-- 010_add_job_priority.sql
 -- Add priority column to jobs table for shop-floor ordering (1 = highest priority)
 
 ALTER TABLE jobs ADD COLUMN priority INTEGER;

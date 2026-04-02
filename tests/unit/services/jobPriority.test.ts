@@ -35,13 +35,6 @@ function createMockJobRepo(): JobRepository {
         }
       }
     }),
-    getMaxPriority: vi.fn(() => {
-      let max = 0
-      for (const job of store.values()) {
-        if (job.priority > max) max = job.priority
-      }
-      return max
-    })
   }
 }
 

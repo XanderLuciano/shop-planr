@@ -146,12 +146,23 @@ function onCancelEdit() {
 
 async function onSavePriorities() {
   try {
-    await savePriorities(loadJobs)
+    await savePriorities()
   } catch {
     toast.add({
       title: 'Failed to save priorities',
       description: 'Please try again or cancel.',
       color: 'error'
+    })
+    return
+  }
+
+  try {
+    await loadJobs()
+  } catch {
+    toast.add({
+      title: 'Priorities saved, but failed to refresh jobs',
+      description: 'Your changes were saved. Please refresh the page.',
+      color: 'warning'
     })
   }
 }
@@ -228,7 +239,6 @@ function onTouchEnd() {
   }
   dragIndex.value = null
   dropTargetIndex.value = null
-  touchCurrentEl.value = null
 }
 
 function onRowSelect(_e: any, row: any) {
