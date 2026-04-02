@@ -3,10 +3,10 @@ export default defineApiHandler(async (event) => {
 
   const conn = settingsService.getJiraConnection()
   if (!conn.enabled) {
-    throw createError({ statusCode: 400, message: 'Jira integration is not enabled' })
+    throw new ValidationError('Jira integration is not enabled')
   }
   if (!conn.pushEnabled) {
-    throw createError({ statusCode: 400, message: 'Jira push is not enabled' })
+    throw new ValidationError('Jira push is not enabled')
   }
 
   const body = await readBody(event)

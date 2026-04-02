@@ -1,6 +1,6 @@
 export default defineApiHandler(async (event) => {
   const partId = getRouterParam(event, 'id')
-  if (!partId) throw createError({ statusCode: 400, message: 'Part ID is required' })
+  if (!partId) throw new ValidationError('Part ID is required')
 
   const { partStepOverrides } = getRepositories()
   return partStepOverrides.listByPartId(partId)

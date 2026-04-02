@@ -7,7 +7,7 @@ export default defineApiHandler(async (event) => {
   const path = pathService.getPath(part.pathId)
   const step = part.currentStepId !== null ? path.steps.find(s => s.id === part.currentStepId) : undefined
   if (!step) {
-    throw createError({ statusCode: 400, message: 'Part is already completed, cannot attach cert' })
+    throw new ValidationError('Part is already completed, cannot attach cert')
   }
 
   return certService.attachCertToSerial({
