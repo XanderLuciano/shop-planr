@@ -125,8 +125,17 @@ function progressFor(jobId: string): JobProgress | null {
 
 // --- Priority edit actions ---
 
+/** Active jobs = not completed (completedParts < goalQuantity or goalQuantity is 0) */
+const activeJobs = computed(() =>
+  jobs.value.filter((j) => {
+    const p = progressFor(j.id)
+    if (!p) return true
+    return !(p.completedParts >= p.goalQuantity && p.goalQuantity > 0)
+  })
+)
+
 function onEditPriority() {
-  enterEditMode([...jobs.value])
+  enterEditMode([...activeJobs.value])
 }
 
 function onCancelEdit() {

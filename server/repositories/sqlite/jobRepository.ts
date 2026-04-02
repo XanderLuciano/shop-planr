@@ -69,7 +69,7 @@ export class SQLiteJobRepository implements JobRepository {
   }
 
   list(): Job[] {
-    const rows = this.db.prepare('SELECT * FROM jobs ORDER BY priority ASC').all() as JobRow[]
+    const rows = this.db.prepare('SELECT * FROM jobs ORDER BY CASE WHEN priority = 0 THEN 1 ELSE 0 END, priority ASC').all() as JobRow[]
     return rows.map(rowToDomain)
   }
 

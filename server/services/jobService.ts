@@ -137,11 +137,21 @@ export function createJobService(repos: {
         throw new ValidationError('Priorities list must not be empty')
       }
 
-      // 2. Validate count matches total job count
+      // Determine which jobs are completed (completedParts >= goalQuantity)
       const allJobs = repos.jobs.list()
-      if (input.priorities.length !== allJobs.length) {
+      const completedJobIds = new Set<string>()
+      for (const job of allJobs) {
+        const completed = repos.parts.countCompletedByJobId(job.id)
+        if (completed >= job.goalQuantity && job.goalQuantity > 0) {
+          completedJobIds.add(job.id)
+        }
+      }
+      const activeJobs = allJobs.filter(j => !completedJobIds.has(j.id))
+
+      // 2. Validate count matches active (non-completed) job count
+      if (input.priorities.length !== activeJobs.length) {
         throw new ValidationError(
-          `Priority list must include all ${allJobs.length} jobs, got ${input.priorities.length}`
+          `Priority list must include all ${activeJobs.length} active jobs, got ${input.priorities.length}`
         )
       }
 
@@ -151,11 +161,15 @@ export function createJobService(repos: {
         throw new ValidationError('Duplicate job IDs in priority list')
       }
 
-      // 4. Validate all job IDs exist
-      const existingIds = new Set(allJobs.map(j => j.id))
+      // 4. Validate all job IDs exist and are active
+      const activeIds = new Set(activeJobs.map(j => j.id))
       for (const entry of input.priorities) {
-        if (!existingIds.has(entry.jobId)) {
-          throw new NotFoundError('Job', entry.jobId)
+        if (!activeIds.has(entry.jobId)) {
+          const exists = allJobs.some(j => j.id === entry.jobId)
+          if (!exists) {
+            throw new NotFoundError('Job', entry.jobId)
+          }
+          throw new ValidationError(`Job ${entry.jobId} is completed and cannot be prioritized`)
         }
       }
 
@@ -172,10 +186,15 @@ export function createJobService(repos: {
         }
       }
 
-      // Execute bulk update
-      repos.jobs.bulkUpdatePriority(
-        input.priorities.map(e => ({ id: e.jobId, priority: e.priority }))
-      )
+      // Build bulk update: active jobs get their new priority, completed jobs get 0
+      const entries = input.priorities.map(e => ({ id: e.jobId, priority: e.priority }))
+      for (const job of allJobs) {
+        if (completedJobIds.has(job.id) && job.priority !== 0) {
+          entries.push({ id: job.id, priority: 0 })
+        }
+      }
+
+      repos.jobs.bulkUpdatePriority(entries)
 
       // Return updated list sorted by priority
       return repos.jobs.list()
