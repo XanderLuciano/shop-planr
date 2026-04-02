@@ -5,7 +5,7 @@ import type { BOM } from '~/types/domain'
 const { boms, loading, fetchBoms, createBom, getBomWithSummary } = useBom()
 const { jobs, fetchJobs } = useJobs()
 const { editBom } = useBomVersions()
-const { operatorId } = useOperatorIdentity()
+const { operatorId, init: initIdentity } = useOperatorIdentity()
 
 const showForm = ref(false)
 const formSaving = ref(false)
@@ -78,7 +78,7 @@ function toggleVersions(bomId: string) {
 }
 
 onMounted(async () => {
-  await Promise.all([fetchBoms(), fetchJobs()])
+  await Promise.all([fetchBoms(), fetchJobs(), initIdentity()])
 })
 </script>
 
