@@ -263,4 +263,73 @@ describe('BomService', () => {
       expect(() => service.getBomSummary('nonexistent')).toThrow(NotFoundError)
     })
   })
+
+  describe('editBom', () => {
+    it('updates BOM name when provided', () => {
+      const bom = service.createBom({
+        name: 'Original Name',
+        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }]
+      })
+      const updated = service.editBom(bom.id, {
+        name: 'Renamed BOM',
+        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }],
+        changeDescription: 'Renamed',
+        userId: 'user_1',
+      })
+      expect(updated.name).toBe('Renamed BOM')
+    })
+
+    it('trims whitespace from name', () => {
+      const bom = service.createBom({
+        name: 'Test',
+        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }]
+      })
+      const updated = service.editBom(bom.id, {
+        name: '  Padded Name  ',
+        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }],
+        changeDescription: 'Trimmed',
+        userId: 'user_1',
+      })
+      expect(updated.name).toBe('Padded Name')
+    })
+
+    it('keeps existing name when name is not provided', () => {
+      const bom = service.createBom({
+        name: 'Keep This',
+        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }]
+      })
+      const updated = service.editBom(bom.id, {
+        entries: [{ partType: 'New Part', requiredQuantityPerBuild: 2, contributingJobIds: [] }],
+        changeDescription: 'Entries only',
+        userId: 'user_1',
+      })
+      expect(updated.name).toBe('Keep This')
+    })
+
+    it('throws ValidationError for empty name', () => {
+      const bom = service.createBom({
+        name: 'Test',
+        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }]
+      })
+      expect(() => service.editBom(bom.id, {
+        name: '',
+        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }],
+        changeDescription: 'Bad name',
+        userId: 'user_1',
+      })).toThrow(ValidationError)
+    })
+
+    it('throws ValidationError for whitespace-only name', () => {
+      const bom = service.createBom({
+        name: 'Test',
+        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }]
+      })
+      expect(() => service.editBom(bom.id, {
+        name: '   ',
+        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }],
+        changeDescription: 'Whitespace name',
+        userId: 'user_1',
+      })).toThrow(ValidationError)
+    })
+  })
 })
