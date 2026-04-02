@@ -103,4 +103,19 @@ export class SQLitePartStepOverrideRepository implements PartStepOverrideReposit
   listActiveBySerialId(serialId: string): PartStepOverride[] {
     return this.listActiveByPartId(serialId)
   }
+
+  deleteByPartIds(partIds: string[]): number {
+    if (partIds.length === 0) return 0
+    const CHUNK_SIZE = 500
+    let totalChanges = 0
+    for (let i = 0; i < partIds.length; i += CHUNK_SIZE) {
+      const chunk = partIds.slice(i, i + CHUNK_SIZE)
+      const placeholders = chunk.map(() => '?').join(',')
+      const result = this.db.prepare(
+        `DELETE FROM part_step_overrides WHERE part_id IN (${placeholders})`
+      ).run(...chunk)
+      totalChanges += result.changes
+    }
+    return totalChanges
+  }
 }

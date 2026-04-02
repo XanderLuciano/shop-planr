@@ -18,6 +18,9 @@ vi.stubGlobal('usePaths', () => ({
   updatePath: mockUpdatePath,
   deletePath: mockDeletePath,
 }))
+vi.stubGlobal('useUsers', () => ({
+  requireUser: () => ({ id: 'test-user-id', username: 'test', displayName: 'Test', isAdmin: true, active: true, createdAt: '' }),
+}))
 
 import { useJobForm, computePathChanges } from '~/app/composables/useJobForm'
 
@@ -261,7 +264,7 @@ describe('useJobForm', () => {
       // Order: deletes first, then updates, then creates
       expect(callOrder).toEqual(['deletePath', 'updatePath', 'createPath'])
 
-      expect(mockDeletePath).toHaveBeenCalledWith('path-remove')
+      expect(mockDeletePath).toHaveBeenCalledWith('path-remove', 'test-user-id')
       expect(mockUpdatePath).toHaveBeenCalledWith('path-keep', expect.objectContaining({ name: 'Updated Path' }))
       expect(mockCreatePath).toHaveBeenCalledWith(expect.objectContaining({
         jobId: 'job-1',

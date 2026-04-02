@@ -162,4 +162,9 @@ export class SQLitePartRepository implements PartRepository {
     const rows = this.db.prepare('SELECT * FROM parts ORDER BY created_at ASC').all() as PartRow[]
     return rows.map(rowToDomain)
   }
+
+  deleteByPathId(pathId: string): number {
+    const result = this.db.prepare('DELETE FROM parts WHERE path_id = ?').run(pathId)
+    return result.changes
+  }
 }

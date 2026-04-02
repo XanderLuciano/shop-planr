@@ -3,7 +3,8 @@ import { createPathService } from '../../../server/services/pathService'
 import { NotFoundError, ValidationError } from '../../../server/utils/errors'
 import type { PathRepository } from '../../../server/repositories/interfaces/pathRepository'
 import type { PartRepository } from '../../../server/repositories/interfaces/partRepository'
-import type { Path, Part } from '../../../server/types/domain'
+import type { UserRepository } from '../../../server/repositories/interfaces/userRepository'
+import type { Path, Part, ShopUser } from '../../../server/types/domain'
 
 function createMockPathRepo(): PathRepository {
   const store = new Map<string, Path>()
@@ -42,19 +43,43 @@ function createMockPartRepo(parts: Part[] = []): PartRepository {
     countByJobId: vi.fn(),
     countCompletedByJobId: vi.fn(),
     countScrappedByJobId: vi.fn(() => 0),
-    listAll: vi.fn(() => [])
+    listAll: vi.fn(() => []),
+    deleteByPathId: vi.fn(() => 0)
   }
+}
+
+function createMockUserRepo(users: ShopUser[] = []): UserRepository {
+  const store = new Map<string, ShopUser>(users.map(u => [u.id, u]))
+  return {
+    create: vi.fn((user: ShopUser) => { store.set(user.id, user); return user }),
+    getById: vi.fn((id: string) => store.get(id) ?? null),
+    getByUsername: vi.fn(() => null),
+    list: vi.fn(() => [...store.values()]),
+    listActive: vi.fn(() => [...store.values()].filter(u => u.active)),
+    update: vi.fn(),
+  }
+}
+
+const ADMIN_USER: ShopUser = {
+  id: 'admin_1',
+  username: 'admin',
+  displayName: 'Admin',
+  isAdmin: true,
+  active: true,
+  createdAt: new Date().toISOString(),
 }
 
 describe('PathService', () => {
   let pathRepo: PathRepository
   let partRepo: PartRepository
+  let userRepo: UserRepository
   let service: ReturnType<typeof createPathService>
 
   beforeEach(() => {
     pathRepo = createMockPathRepo()
     partRepo = createMockPartRepo()
-    service = createPathService({ paths: pathRepo, parts: partRepo })
+    userRepo = createMockUserRepo([ADMIN_USER])
+    service = createPathService({ paths: pathRepo, parts: partRepo, users: userRepo })
   })
 
   describe('createPath', () => {
@@ -388,8 +413,8 @@ describe('PathService', () => {
       const path = service.createPath({
         jobId: 'job_1', name: 'Route', goalQuantity: 10, steps: [{ name: 'S1' }]
       })
-      const result = service.deletePath(path.id)
-      expect(result).toBe(true)
+      const result = service.deletePath(path.id, ADMIN_USER.id)
+      expect(result).toEqual({ deletedPartIds: [], deletedPartCount: 0 })
       expect(pathRepo.delete).toHaveBeenCalledWith(path.id)
     })
 
@@ -402,14 +427,14 @@ describe('PathService', () => {
         { id: 'p1', jobId: 'job_1', pathId: path.id, currentStepId: path.steps[0].id, status: 'in_progress', createdAt: '', updatedAt: '', forceCompleted: false }
       ]
       const partRepoWithData = createMockPartRepo(parts)
-      const svc = createPathService({ paths: pathRepo, parts: partRepoWithData })
+      const svc = createPathService({ paths: pathRepo, parts: partRepoWithData, users: userRepo })
 
-      expect(() => svc.deletePath(path.id)).toThrow(ValidationError)
-      expect(() => svc.deletePath(path.id)).toThrow('Cannot delete path with parts attached')
+      expect(() => svc.deletePath(path.id, ADMIN_USER.id)).toThrow(ValidationError)
+      expect(() => svc.deletePath(path.id, ADMIN_USER.id)).toThrow('Cannot delete path with parts attached')
     })
 
     it('throws NotFoundError for non-existent path ID', () => {
-      expect(() => service.deletePath('nonexistent')).toThrow(NotFoundError)
+      expect(() => service.deletePath('nonexistent', ADMIN_USER.id)).toThrow(NotFoundError)
     })
   })
 })

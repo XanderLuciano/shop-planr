@@ -21,9 +21,10 @@ export function usePaths() {
     })
   }
 
-  async function deletePath(id: string): Promise<void> {
+  async function deletePath(id: string, userId: string): Promise<void> {
     await $fetch(`/api/paths/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      body: { userId }
     })
   }
 

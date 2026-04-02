@@ -159,6 +159,7 @@ export type AuditAction
     | 'deferred_step_completed'
     | 'step_waived'
     | 'bom_edited'
+    | 'path_deleted'
 
 export interface AuditEntry {
   id: string

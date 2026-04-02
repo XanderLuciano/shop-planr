@@ -98,6 +98,7 @@ export function computePathChanges(originalPaths: Path[], currentDrafts: PathDra
 export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths: Path[] }) {
   const { createJob, updateJob } = useJobs()
   const { createPath, updatePath, deletePath } = usePaths()
+  const { requireUser } = useUsers()
 
   // ---- State ----
   const jobDraft = ref<JobDraft>(
@@ -283,7 +284,7 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
 
     // Deletes first
     for (const path of changes.toDelete) {
-      await deletePath(path.id)
+      await deletePath(path.id, requireUser().id)
     }
 
     // Then updates

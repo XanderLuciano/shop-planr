@@ -6,11 +6,12 @@
  */
 import { describe, it, expect, vi } from 'vitest'
 import { createError, isError, defineEventHandler } from 'h3'
-import { ValidationError, NotFoundError } from '~/server/utils/errors'
+import { ValidationError, NotFoundError, ForbiddenError } from '~/server/utils/errors'
 
 // Provide Nitro auto-imports as globals so httpError.ts can resolve them
 vi.stubGlobal('ValidationError', ValidationError)
 vi.stubGlobal('NotFoundError', NotFoundError)
+vi.stubGlobal('ForbiddenError', ForbiddenError)
 vi.stubGlobal('createError', createError)
 vi.stubGlobal('isError', isError)
 vi.stubGlobal('defineEventHandler', defineEventHandler)
@@ -106,6 +107,30 @@ describe('ValidationError mapping', () => {
     expect(h3Err.statusCode).toBe(400)
     expect(h3Err.statusMessage).toBe('Bad Request')
     expect(h3Err.message).toBe('Name is required')
+  })
+})
+
+/**
+ * Validates: Requirements 1.2
+ * ForbiddenError("msg") → 403, "Forbidden", "msg"
+ */
+describe('ForbiddenError mapping', () => {
+  it('maps ForbiddenError to 403 with correct statusMessage and message', () => {
+    const error = new ForbiddenError('Admin access required to delete paths')
+
+    let caught: unknown
+    try {
+      httpError(error)
+    }
+    catch (e) {
+      caught = e
+    }
+
+    expect(isError(caught)).toBe(true)
+    const h3Err = caught as ReturnType<typeof createError>
+    expect(h3Err.statusCode).toBe(403)
+    expect(h3Err.statusMessage).toBe('Forbidden')
+    expect(h3Err.message).toBe('Admin access required to delete paths')
   })
 })
 

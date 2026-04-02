@@ -19,6 +19,7 @@ import { SQLitePartStepStatusRepository } from '../../server/repositories/sqlite
 import { SQLitePartStepOverrideRepository } from '../../server/repositories/sqlite/partStepOverrideRepository'
 import { SQLiteBomVersionRepository } from '../../server/repositories/sqlite/bomVersionRepository'
 import { SQLiteLibraryRepository } from '../../server/repositories/sqlite/libraryRepository'
+import { SQLiteUserRepository } from '../../server/repositories/sqlite/userRepository'
 import { createJobService } from '../../server/services/jobService'
 import { createPathService } from '../../server/services/pathService'
 import { createPartService } from '../../server/services/partService'
@@ -57,6 +58,7 @@ export function createTestContext() {
     partStepOverrides: new SQLitePartStepOverrideRepository(db),
     bomVersions: new SQLiteBomVersionRepository(db),
     library: new SQLiteLibraryRepository(db),
+    users: new SQLiteUserRepository(db),
   }
 
   const partIdGenerator = createSequentialPartIdGenerator({
@@ -83,7 +85,16 @@ export function createTestContext() {
   )
 
   const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts })
-  const pathService = createPathService({ paths: repos.paths, parts: repos.parts })
+  const pathService = createPathService({
+    paths: repos.paths,
+    parts: repos.parts,
+    users: repos.users,
+    notes: repos.notes,
+    partStepOverrides: repos.partStepOverrides,
+    certs: repos.certs,
+    partStepStatuses: repos.partStepStatuses,
+    db,
+  }, auditService)
   const partService = createPartService(
     { parts: repos.parts, paths: repos.paths, certs: repos.certs, jobs: repos.jobs },
     auditService,

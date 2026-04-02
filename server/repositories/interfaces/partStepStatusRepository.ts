@@ -11,6 +11,7 @@ export interface PartStepStatusRepository {
   updateByPartAndStep(partId: string, stepId: string, partial: Partial<PartStepStatus>): PartStepStatus
   updateLatestByPartAndStep(partId: string, stepId: string, partial: Partial<PartStepStatus>): PartStepStatus
   getNextSequenceNumber(partId: string): number
+  deleteByPartIds(partIds: string[]): number
 }
 
 /** @deprecated Use `PartStepStatusRepository` instead. Backward-compatible alias. */
