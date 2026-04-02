@@ -321,6 +321,7 @@ onMounted(() => {
         </template>
         <template v-else>
           <UButton
+            v-if="isAdmin"
             label="Edit Priority"
             icon="i-lucide-arrow-up-down"
             variant="outline"
