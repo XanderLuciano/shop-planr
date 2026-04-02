@@ -83,30 +83,32 @@ async function handleAdvance(payload: { partIds: string[], note?: string }) {
 }
 
 async function handleSkip(payload: { partIds: string[] }) {
-  if (!job.value || !operatorId.value) {
-    toast.add({
-      title: 'Operator required',
-      description: 'Please select an operator before skipping.',
-      color: 'warning',
-    })
-    return
-  }
-
-  if (!job.value.nextStepId) return
+  if (!job.value) return
 
   skipLoading.value = true
   try {
     const { advanceToStep } = useLifecycle()
-    for (const partId of payload.partIds) {
-      await advanceToStep(partId, {
-        targetStepId: job.value.nextStepId,
-        userId: operatorId.value,
+    const result = await executeSkip({
+      partIds: payload.partIds,
+      operatorId: operatorId.value,
+      nextStepId: job.value.nextStepId,
+      advanceToStep,
+    })
+
+    if (!result.skipped) {
+      toast.add({
+        title: result.error === 'Operator required' ? 'Operator required' : 'Skip failed',
+        description: result.error === 'Operator required'
+          ? 'Please select an operator before skipping.'
+          : result.error ?? 'An error occurred',
+        color: 'warning',
       })
+      return
     }
 
     toast.add({
       title: 'Step skipped',
-      description: `${payload.partIds.length} part${payload.partIds.length !== 1 ? 's' : ''} skipped to ${job.value.nextStepName ?? 'next step'}`,
+      description: `${result.count} part${result.count !== 1 ? 's' : ''} skipped to ${job.value.nextStepName ?? 'next step'}`,
       color: 'success',
     })
 
