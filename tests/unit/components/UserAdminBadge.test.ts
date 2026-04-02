@@ -6,24 +6,39 @@
  * a user should have an "Admin" badge displayed next to their name
  * if and only if their `isAdmin` field is `true`.
  *
- * The Settings page renders the badge with `v-if="u.isAdmin"`.
- * This test validates the condition logic: for each user in a mixed list,
- * the badge presence matches the `isAdmin` flag exactly.
+ * Mounts a minimal reproduction of the Settings user-row template
+ * and asserts on actual DOM presence of the badge element.
  *
  * **Validates: Requirements 7.1, 7.2**
  */
 import { describe, it, expect } from 'vitest'
+import { mount } from '@vue/test-utils'
+import { defineComponent, h } from 'vue'
 import type { ShopUser } from '../../server/types/domain'
 
 /**
- * Simulates the badge visibility logic from settings.vue:
- *   <UBadge v-if="u.isAdmin" ...>Admin</UBadge>
- *
- * Returns true if the badge should be rendered for this user.
+ * Minimal reproduction of the Settings page user-row template.
+ * Mirrors the real markup: displayName + conditional "Admin" badge.
  */
-function shouldShowAdminBadge(user: ShopUser): boolean {
-  return user.isAdmin
-}
+const UserRow = defineComponent({
+  name: 'UserRow',
+  props: {
+    users: { type: Array as () => ShopUser[], required: true },
+  },
+  setup(props) {
+    return () =>
+      h('div', { class: 'user-list' },
+        props.users.map(u =>
+          h('div', { key: u.id, class: 'user-row', 'data-user-id': u.id }, [
+            h('span', { class: 'display-name' }, u.displayName),
+            u.isAdmin
+              ? h('span', { class: 'admin-badge' }, 'Admin')
+              : null,
+          ]),
+        ),
+      )
+  },
+})
 
 function makeUser(overrides: Partial<ShopUser> = {}): ShopUser {
   return {
@@ -38,7 +53,7 @@ function makeUser(overrides: Partial<ShopUser> = {}): ShopUser {
 }
 
 describe('Property 6: Admin Badge Matches isAdmin Flag', () => {
-  it('badge shown for admin users only in a mixed list', () => {
+  it('badge rendered for admin users only in a mixed list', () => {
     const users: ShopUser[] = [
       makeUser({ id: '1', displayName: 'Alice', isAdmin: true }),
       makeUser({ id: '2', displayName: 'Bob', isAdmin: false }),
@@ -47,51 +62,64 @@ describe('Property 6: Admin Badge Matches isAdmin Flag', () => {
       makeUser({ id: '5', displayName: 'Eve', isAdmin: false }),
     ]
 
-    const badgeResults = users.map(u => ({
-      displayName: u.displayName,
-      isAdmin: u.isAdmin,
-      badgeVisible: shouldShowAdminBadge(u),
-    }))
+    const wrapper = mount(UserRow, { props: { users } })
 
-    for (const result of badgeResults) {
-      expect(result.badgeVisible).toBe(result.isAdmin)
+    for (const u of users) {
+      const row = wrapper.find(`[data-user-id="${u.id}"]`)
+      expect(row.exists()).toBe(true)
+      expect(row.find('.display-name').text()).toBe(u.displayName)
+
+      const badge = row.find('.admin-badge')
+      if (u.isAdmin) {
+        expect(badge.exists()).toBe(true)
+        expect(badge.text()).toBe('Admin')
+      } else {
+        expect(badge.exists()).toBe(false)
+      }
     }
+
+    wrapper.unmount()
   })
 
-  it('badge not shown when all users are non-admin', () => {
+  it('no badges rendered when all users are non-admin', () => {
     const users: ShopUser[] = [
       makeUser({ id: '1', displayName: 'Alice', isAdmin: false }),
       makeUser({ id: '2', displayName: 'Bob', isAdmin: false }),
-      makeUser({ id: '3', displayName: 'Carol', isAdmin: false }),
     ]
 
-    for (const u of users) {
-      expect(shouldShowAdminBadge(u)).toBe(false)
-    }
+    const wrapper = mount(UserRow, { props: { users } })
+    expect(wrapper.findAll('.admin-badge')).toHaveLength(0)
+    wrapper.unmount()
   })
 
-  it('badge shown for all users when all are admin', () => {
+  it('all rows have badges when all users are admin', () => {
     const users: ShopUser[] = [
       makeUser({ id: '1', displayName: 'Alice', isAdmin: true }),
       makeUser({ id: '2', displayName: 'Bob', isAdmin: true }),
     ]
 
-    for (const u of users) {
-      expect(shouldShowAdminBadge(u)).toBe(true)
-    }
+    const wrapper = mount(UserRow, { props: { users } })
+    expect(wrapper.findAll('.admin-badge')).toHaveLength(2)
+    wrapper.unmount()
   })
 
-  it('badge not shown for empty user list', () => {
-    const users: ShopUser[] = []
-    const badgeResults = users.map(u => shouldShowAdminBadge(u))
-    expect(badgeResults).toEqual([])
+  it('no rows rendered for empty user list', () => {
+    const wrapper = mount(UserRow, { props: { users: [] } })
+    expect(wrapper.findAll('.user-row')).toHaveLength(0)
+    expect(wrapper.findAll('.admin-badge')).toHaveLength(0)
+    wrapper.unmount()
   })
 
   it('badge matches isAdmin for single user', () => {
-    const admin = makeUser({ isAdmin: true })
-    const regular = makeUser({ isAdmin: false })
+    const admin = makeUser({ id: '1', isAdmin: true })
+    const regular = makeUser({ id: '2', isAdmin: false })
 
-    expect(shouldShowAdminBadge(admin)).toBe(true)
-    expect(shouldShowAdminBadge(regular)).toBe(false)
+    const wrapperAdmin = mount(UserRow, { props: { users: [admin] } })
+    expect(wrapperAdmin.find('.admin-badge').exists()).toBe(true)
+    wrapperAdmin.unmount()
+
+    const wrapperRegular = mount(UserRow, { props: { users: [regular] } })
+    expect(wrapperRegular.find('.admin-badge').exists()).toBe(false)
+    wrapperRegular.unmount()
   })
 })
