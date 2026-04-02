@@ -48,7 +48,7 @@ export function useJobPriority() {
 
   return {
     isEditingPriority: readonly(isEditingPriority),
-    orderedJobs,
+    orderedJobs: readonly(orderedJobs),
     saving: readonly(saving),
     enterEditMode,
     cancelEdit,

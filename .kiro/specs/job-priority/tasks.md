@@ -145,3 +145,35 @@ Add a master priority system to the Jobs page. Each job gets a `priority` INTEGE
 - Property tests validate universal correctness properties from the design document
 - The design uses native HTML5 drag-and-drop — no new dependencies needed
 - The existing `jiraPriority` string field is unrelated and remains unchanged
+
+## PR Review Fixes
+
+- [x] 9. Fix issues identified during PR review
+  - [x] 9.1 Migration 010: fix backfill tie-breaking and add NOT NULL constraint
+    - Re-sequence priorities using `rowid` as tiebreaker for identical `created_at` timestamps
+    - Recreate `jobs` table with `priority INTEGER NOT NULL DEFAULT 0`
+    - Recreate `idx_jobs_priority` index
+    - _Fixes: Review issues #1 (tie-breaking) and #6 (NOT NULL constraint)_
+    - _Requirements: 9.1, 9.2_
+
+  - [x] 9.2 Make `orderedJobs` readonly in composable return
+    - Wrap `orderedJobs` in `readonly()` to match design doc's `Readonly<Ref<Job[]>>` spec
+    - _Fixes: Review issue #2_
+
+  - [x] 9.3 Add touch event support for mobile drag-and-drop
+    - Add `touchstart`, `touchmove`, `touchend` handlers to Jobs page
+    - Add touch event emits to `JobMobileCard` component
+    - Use `getCardIndexFromPoint` helper to resolve drop target from touch coordinates
+    - _Fixes: Review issue #4_
+    - _Requirements: 8.2_
+
+  - [x] 9.4 Update spec documents to reflect completed jobs behavior
+    - Update Requirement 3 to reference active (non-completed) jobs instead of all jobs
+    - Add Requirements 3.10, 3.11 for completed job priority = 0 behavior
+    - Add Requirement 8.2 for touch event support
+    - Add Requirement 9 for data integrity (NOT NULL constraint)
+    - Append PR Review Fixes addendum to design doc
+    - _Fixes: Review issue #5 (spec divergence)_
+
+  - [x] 9.5 Update migration test to expect 10 migrations
+    - _Validates migration 010 is applied correctly_

@@ -565,3 +565,54 @@ export default defineEventHandler(async (event) => {
 - No new external dependencies required
 - Drag-and-drop: use native HTML5 drag-and-drop API or Vue's built-in event handling (no library needed for simple list reorder)
 - If richer DnD UX is desired, `vuedraggable` (Vue 3 compatible) could be added, but the initial implementation should use native events to keep dependencies minimal
+
+
+## Addendum: PR Review Fixes
+
+The following changes were made after the initial implementation based on a PR review of the `feat/job-priority` branch.
+
+### Fix 1: Migration Backfill Tie-Breaking (Issue #1)
+
+The original migration 009 used `COUNT(*) FROM jobs j2 WHERE j2.created_at <= jobs.created_at` to assign sequential priorities. If two jobs share the same `created_at` timestamp, they would receive the same priority — violating uniqueness. Migration 010 (`priority_not_null_resequence`) re-sequences using `rowid` as a tiebreaker:
+
+```sql
+UPDATE jobs SET priority = (
+  SELECT COUNT(*) FROM jobs j2
+  WHERE j2.created_at < jobs.created_at
+     OR (j2.created_at = jobs.created_at AND j2.rowid <= jobs.rowid)
+);
+```
+
+### Fix 2: orderedJobs Readonly (Issue #2)
+
+The `useJobPriority` composable now wraps `orderedJobs` in `readonly()` in its return value, matching the design doc's `Readonly<Ref<Job[]>>` specification. Internal mutations via `reorder()` still work because they operate on the unwrapped ref.
+
+### Fix 3: API Body Validation (Issue #3)
+
+No code change — the project consistently uses thin API handlers that pass the body directly to the service layer, which performs all validation. This is the established pattern per the coding standards. The service already guards against `null`/`undefined` priorities arrays.
+
+### Fix 4: Mobile Touch Event Support (Issue #4)
+
+HTML5 drag-and-drop events (`dragstart`, `dragover`, `drop`) do not fire on touch devices. Added touch event handlers (`touchstart`, `touchmove`, `touchend`) to the Jobs page and `JobMobileCard` component. The touch handler uses `document.elementFromPoint` via a `getCardIndexFromPoint` helper to determine the drop target during `touchmove`, then calls `reorder()` on `touchend`.
+
+### Fix 5: Completed Jobs Excluded from Priority Editing (Spec Divergence)
+
+The implementation diverges from the original spec in a deliberate way: completed jobs (where `completedParts >= goalQuantity`) are excluded from the priority edit list and assigned `priority = 0`. This means:
+
+- `updatePriorities` validates against active (non-completed) job count, not total job count
+- Completed jobs are sorted to the bottom of the list via `ORDER BY CASE WHEN priority = 0 THEN 1 ELSE 0 END, priority ASC`
+- The composable's `enterEditMode` receives only active jobs from the page
+
+This is better UX — completed jobs shouldn't be dragged around in the priority queue. The requirements and design docs are updated to reflect this behavior.
+
+### Fix 6: NOT NULL Constraint on Priority Column (Issue #6)
+
+Migration 010 recreates the `jobs` table with `priority INTEGER NOT NULL DEFAULT 0` for defensive data integrity. SQLite doesn't support `ALTER TABLE ... ALTER COLUMN`, so the migration uses the create-copy-drop-rename pattern.
+
+### Schema Change (Migration 010)
+
+```sql
+-- Re-sequence with rowid tiebreaker
+-- Recreate jobs table with: priority INTEGER NOT NULL DEFAULT 0
+-- Recreate idx_jobs_priority index
+```

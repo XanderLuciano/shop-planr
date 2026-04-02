@@ -12,7 +12,7 @@
 
 | Table | Purpose | Key columns |
 |-------|---------|-------------|
-| `jobs` | Production orders | id, name, goal_quantity, jira_ticket_key, jira_* fields |
+| `jobs` | Production orders | id, name, goal_quantity, priority (NOT NULL DEFAULT 0), jira_ticket_key, jira_* fields |
 | `paths` | Route instances per job | id, job_id (FK), name, goal_quantity, advancement_mode |
 | `process_steps` | Ordered steps in a path | id, path_id (FK), name, step_order, location, assigned_to, optional, dependency_type, removed_at, completed_count |
 | `parts` | Individual tracked parts | id, job_id, path_id, current_step_id (FK, NULL=completed), status, scrap fields, force-complete fields |

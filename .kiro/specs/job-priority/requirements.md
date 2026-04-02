@@ -41,19 +41,21 @@ This document defines the requirements for the Job Page Priority feature (GitHub
 
 ### Requirement 3: Bulk Update Job Priorities
 
-**User Story:** As a shop manager, I want to submit a reordered priority list for all jobs, so that the new ordering is persisted atomically.
+**User Story:** As a shop manager, I want to submit a reordered priority list for all active jobs, so that the new ordering is persisted atomically.
 
 #### Acceptance Criteria
 
-1. WHEN a valid Priority_List is submitted to the Bulk_Priority_Endpoint, THE Job_Service SHALL update every job's priority to the specified value
-2. WHEN a Priority_List is submitted, THE Job_Service SHALL validate that the list includes every existing job exactly once
+1. WHEN a valid Priority_List is submitted to the Bulk_Priority_Endpoint, THE Job_Service SHALL update every active job's priority to the specified value
+2. WHEN a Priority_List is submitted, THE Job_Service SHALL validate that the list includes every active (non-completed) job exactly once
 3. WHEN a Priority_List contains duplicate job IDs, THEN THE Job_Service SHALL reject the request with a validation error
 4. WHEN a Priority_List contains duplicate priority values, THEN THE Job_Service SHALL reject the request with a validation error
 5. WHEN a Priority_List contains priorities that do not form a contiguous sequence from 1 to N, THEN THE Job_Service SHALL reject the request with a validation error
 6. WHEN a Priority_List references a job ID that does not exist, THEN THE Job_Service SHALL reject the request with a not-found error
-7. WHEN a Priority_List count does not match the total number of jobs in the database, THEN THE Job_Service SHALL reject the request with a validation error
+7. WHEN a Priority_List count does not match the total number of active jobs in the database, THEN THE Job_Service SHALL reject the request with a validation error
 8. WHEN the Bulk_Priority_Endpoint processes a valid request, THE Job_Repository SHALL execute all priority updates within a single database transaction
 9. IF a database error occurs during the bulk update, THEN THE Job_Repository SHALL roll back all changes so that no partial updates persist
+10. WHEN a job is completed (completedParts >= goalQuantity), THE Job_Service SHALL exclude it from the Priority_List and assign it priority 0
+11. WHEN priorities are saved, THE Job_Service SHALL also set priority 0 for any completed jobs that still have a non-zero priority
 
 ### Requirement 4: Enter and Exit Priority Edit Mode
 
@@ -103,3 +105,13 @@ This document defines the requirements for the Job Page Priority feature (GitHub
 #### Acceptance Criteria
 
 1. WHILE in Priority_Edit_Mode on a mobile viewport, THE Jobs_Page SHALL enable drag-and-drop reordering on the JobMobileCard list
+2. WHILE in Priority_Edit_Mode on a touch device, THE Jobs_Page SHALL support touch-based drag-and-drop via touchstart, touchmove, and touchend events
+
+### Requirement 9: Data Integrity
+
+**User Story:** As a system administrator, I want the priority column to enforce NOT NULL constraints, so that no job can exist without a valid priority value.
+
+#### Acceptance Criteria
+
+1. THE Job_Repository SHALL enforce a NOT NULL DEFAULT 0 constraint on the `priority` column
+2. WHEN the database is migrated from 009 to 010, THE migration SHALL re-sequence priorities using rowid as a tiebreaker for jobs with identical created_at timestamps

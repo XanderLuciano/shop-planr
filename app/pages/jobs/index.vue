@@ -78,7 +78,7 @@ const filteredJobs = computed(() =>
 
 /** The rows to display in the table: orderedJobs in edit mode, filteredJobs otherwise */
 const displayedJobs = computed(() =>
-  isEditingPriority.value ? orderedJobs.value : filteredJobs.value
+  isEditingPriority.value ? [...orderedJobs.value] : filteredJobs.value
 )
 
 // Prune jobsWithExpandedPaths when filtered jobs change (removes stale entries for jobs no longer visible)
@@ -154,7 +154,7 @@ async function onSavePriorities() {
   }
 }
 
-// --- Drag-and-drop handlers ---
+// --- Drag-and-drop handlers (desktop HTML5 drag) ---
 
 function onDragStart(e: DragEvent, index: number) {
   dragIndex.value = index
@@ -189,6 +189,50 @@ function onDrop(e: DragEvent, toIndex: number) {
 function onDragEnd() {
   dragIndex.value = null
   dropTargetIndex.value = null
+}
+
+// --- Touch handlers (mobile drag-and-drop) ---
+
+const touchStartY = ref(0)
+const touchCurrentEl = ref<HTMLElement | null>(null)
+
+function getCardIndexFromPoint(y: number): number | null {
+  const container = document.querySelector('[data-priority-mobile-list]')
+  if (!container) return null
+  const children = Array.from(container.children) as HTMLElement[]
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i]
+    if (!child) continue
+    const rect = child.getBoundingClientRect()
+    if (y >= rect.top && y <= rect.bottom) return i
+  }
+  return null
+}
+
+function onTouchStart(e: TouchEvent, index: number) {
+  dragIndex.value = index
+  const touch = e.touches[0]
+  if (touch) touchStartY.value = touch.clientY
+  touchCurrentEl.value = e.currentTarget as HTMLElement
+}
+
+function onTouchMove(e: TouchEvent) {
+  if (dragIndex.value === null) return
+  e.preventDefault()
+  const touch = e.touches[0]
+  if (!touch) return
+  const y = touch.clientY
+  const targetIndex = getCardIndexFromPoint(y)
+  dropTargetIndex.value = targetIndex
+}
+
+function onTouchEnd() {
+  if (dragIndex.value !== null && dropTargetIndex.value !== null && dragIndex.value !== dropTargetIndex.value) {
+    reorder(dragIndex.value, dropTargetIndex.value)
+  }
+  dragIndex.value = null
+  dropTargetIndex.value = null
+  touchCurrentEl.value = null
 }
 
 function onRowSelect(_e: any, row: any) {
@@ -433,7 +477,7 @@ onMounted(() => {
     </UTable>
 
     <!-- Mobile: Edit mode with drag-and-drop cards -->
-    <div v-if="!loading && displayedJobs.length && isEditingPriority" class="md:hidden space-y-2">
+    <div v-if="!loading && displayedJobs.length && isEditingPriority" class="md:hidden space-y-2" data-priority-mobile-list>
       <JobMobileCard
         v-for="(job, index) in orderedJobs"
         :key="job.id"
@@ -450,6 +494,9 @@ onMounted(() => {
         @drop="onDrop($event, index)"
         @dragend="onDragEnd"
         @dragleave="onDragLeave"
+        @touchstart="onTouchStart($event, index)"
+        @touchmove="onTouchMove($event)"
+        @touchend="onTouchEnd"
       />
     </div>
 

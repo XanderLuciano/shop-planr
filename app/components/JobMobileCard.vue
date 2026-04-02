@@ -19,6 +19,9 @@ defineEmits<{
   drop: [event: DragEvent]
   dragend: []
   dragleave: []
+  touchstart: [event: TouchEvent]
+  touchmove: [event: TouchEvent]
+  touchend: [event: TouchEvent]
 }>()
 </script>
 
@@ -40,6 +43,9 @@ defineEmits<{
     @drop="editing && $emit('drop', $event)"
     @dragend="editing && $emit('dragend')"
     @dragleave="editing && $emit('dragleave')"
+    @touchstart.passive="editing && $emit('touchstart', $event)"
+    @touchmove="editing && $emit('touchmove', $event)"
+    @touchend="editing && $emit('touchend', $event)"
   >
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
