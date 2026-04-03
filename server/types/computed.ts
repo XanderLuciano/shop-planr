@@ -140,6 +140,7 @@ export interface WorkQueueJob {
   nextStepLocation?: string
   isFinalStep: boolean
   stepOptional?: boolean
+  assignedTo?: string
   jobPriority: number
 }
 

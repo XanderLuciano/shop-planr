@@ -35,9 +35,8 @@ export function applyFilters(
       // Property filters (AND logic)
       if (hasLocation && job.stepLocation !== filters.location) return false
       if (hasStepName && job.stepName !== filters.stepName) return false
-      // userId filter: WorkQueueJob has no assignedTo field.
-      // When groupType is 'user', groupKey is the userId — handle at group level.
-      if (hasUserId && group.groupType === 'user' && group.groupKey !== filters.userId) return false
+      // userId filter: match against job.assignedTo (works across all group types)
+      if (hasUserId && job.assignedTo !== filters.userId) return false
 
       // Text search (OR across fields, case-insensitive substring)
       if (hasSearch) {

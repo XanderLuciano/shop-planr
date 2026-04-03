@@ -16,6 +16,7 @@ function makeJob(overrides: Partial<WorkQueueJob> = {}): WorkQueueJob {
     partIds: ['p1'],
     partCount: 1,
     isFinalStep: false,
+    jobPriority: 0,
     ...overrides,
   }
 }
@@ -230,21 +231,24 @@ describe('applyFilters', () => {
     expect(result[0].totalParts).toBe(5)
   })
 
-  // ---- userId filter (group-level for user groupType) ----
+  // ---- userId filter (job-level via assignedTo) ----
 
-  it('userId filter works when groupType is user (filters at group level)', () => {
+  it('userId filter works across all group types via job.assignedTo', () => {
     const groups = [
       makeGroup({
         groupKey: 'user-1',
         groupLabel: 'Alice',
         groupType: 'user',
-        jobs: [makeJob({ jobId: 'j1' }), makeJob({ jobId: 'j2' })],
+        jobs: [
+          makeJob({ jobId: 'j1', assignedTo: 'user-1' }),
+          makeJob({ jobId: 'j2', assignedTo: 'user-1' }),
+        ],
       }),
       makeGroup({
         groupKey: 'user-2',
         groupLabel: 'Bob',
         groupType: 'user',
-        jobs: [makeJob({ jobId: 'j3' })],
+        jobs: [makeJob({ jobId: 'j3', assignedTo: 'user-2' })],
       }),
     ]
 
@@ -261,13 +265,54 @@ describe('applyFilters', () => {
         groupKey: 'user-2',
         groupLabel: 'Bob',
         groupType: 'user',
-        jobs: [makeJob({ jobId: 'j1' })],
+        jobs: [makeJob({ jobId: 'j1', assignedTo: 'user-2' })],
       }),
     ]
 
     const result = applyFilters(groups, { userId: 'user-1' }, '')
 
     expect(result).toHaveLength(0)
+  })
+
+  it('userId filter works when grouped by location', () => {
+    const groups = [
+      makeGroup({
+        groupKey: 'CNC Bay 1',
+        groupLabel: 'CNC Bay 1',
+        groupType: 'location',
+        jobs: [
+          makeJob({ jobId: 'j1', assignedTo: 'user-1', stepLocation: 'CNC Bay 1' }),
+          makeJob({ jobId: 'j2', assignedTo: 'user-2', stepLocation: 'CNC Bay 1' }),
+        ],
+      }),
+    ]
+
+    const result = applyFilters(groups, { userId: 'user-1' }, '')
+
+    expect(result).toHaveLength(1)
+    expect(result[0].jobs).toHaveLength(1)
+    expect(result[0].jobs[0].jobId).toBe('j1')
+  })
+
+  it('userId filter works when grouped by step', () => {
+    const groups = [
+      makeGroup({
+        groupKey: 'Deburr',
+        groupLabel: 'Deburr',
+        groupType: 'step',
+        jobs: [
+          makeJob({ jobId: 'j1', assignedTo: 'user-1' }),
+          makeJob({ jobId: 'j2', assignedTo: 'user-2' }),
+          makeJob({ jobId: 'j3' }), // unassigned
+        ],
+      }),
+    ]
+
+    const result = applyFilters(groups, { userId: 'user-1' }, '')
+
+    expect(result).toHaveLength(1)
+    expect(result[0].jobs).toHaveLength(1)
+    expect(result[0].jobs[0].jobId).toBe('j1')
   })
 })
 
