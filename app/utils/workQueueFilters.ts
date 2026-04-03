@@ -41,10 +41,11 @@ export function applyFilters(
       // Text search (OR across fields, case-insensitive substring)
       if (hasSearch) {
         const matchesJobName = job.jobName.toLowerCase().includes(q)
+        const matchesPathName = job.pathName.toLowerCase().includes(q)
         const matchesStepName = job.stepName.toLowerCase().includes(q)
         const matchesLocation = job.stepLocation?.toLowerCase().includes(q) ?? false
         const matchesGroupLabel = group.groupLabel.toLowerCase().includes(q)
-        if (!matchesJobName && !matchesStepName && !matchesLocation && !matchesGroupLabel) {
+        if (!matchesJobName && !matchesPathName && !matchesStepName && !matchesLocation && !matchesGroupLabel) {
           return false
         }
       }

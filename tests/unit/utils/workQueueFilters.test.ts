@@ -151,6 +151,22 @@ describe('applyFilters', () => {
     expect(result[0].jobs[0].jobId).toBe('j2')
   })
 
+  it('text search matches pathName', () => {
+    const groups = [
+      makeGroup({
+        jobs: [
+          makeJob({ jobId: 'j1', pathName: 'Main Route' }),
+          makeJob({ jobId: 'j2', pathName: 'Secondary Path' }),
+        ],
+      }),
+    ]
+
+    const result = applyFilters(groups, emptyFilters, 'secondary')
+
+    expect(result[0].jobs).toHaveLength(1)
+    expect(result[0].jobs[0].jobId).toBe('j2')
+  })
+
   it('text search matches stepLocation', () => {
     const groups = [
       makeGroup({
