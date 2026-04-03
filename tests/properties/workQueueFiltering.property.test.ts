@@ -42,12 +42,8 @@ const arbStepName = () =>
 const arbOptionalUserId = () =>
   fc.option(fc.constantFrom('user-1', 'user-2', 'user-3', 'user-4'), { nil: undefined, freq: 3 })
 
-/**
- * Arbitrary WorkQueueJob with an extra `jobPriority` field via type assertion.
- * The `jobPriority` field is not yet on the WorkQueueJob type (added in task 4.1),
- * but the grouping function accesses it via a cast.
- */
-const arbWorkQueueJob = (): fc.Arbitrary<WorkQueueJob & { jobPriority: number }> =>
+/** Arbitrary WorkQueueJob with all required fields for grouping and filtering. */
+const arbWorkQueueJob = (): fc.Arbitrary<WorkQueueJob> =>
   fc.record({
     jobId: arbId(),
     jobName: fc.stringMatching(/^[A-Z][a-z]{2,8}$/),
@@ -66,7 +62,7 @@ const arbWorkQueueJob = (): fc.Arbitrary<WorkQueueJob & { jobPriority: number }>
   }).map((r) => ({
     ...r,
     partIds: r.partIds as readonly string[],
-  })) as fc.Arbitrary<WorkQueueJob & { jobPriority: number }>
+  })) as fc.Arbitrary<WorkQueueJob>
 
 /** Arbitrary work queue entry (job + optional assignedTo + location) */
 const arbWorkQueueEntry = () =>

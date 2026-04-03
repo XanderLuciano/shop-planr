@@ -40,7 +40,6 @@ export function groupEntriesByDimension(
     if (jobs.length === 0) continue
 
     // Sort by jobPriority descending (highest first).
-    // jobPriority is added to WorkQueueJob in task 4.1; treat missing as 0.
     jobs.sort((a, b) => (getPriority(b) - getPriority(a)))
 
     const totalParts = jobs.reduce((sum, j) => sum + j.partCount, 0)
