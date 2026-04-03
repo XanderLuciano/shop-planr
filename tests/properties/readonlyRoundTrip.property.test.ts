@@ -174,6 +174,7 @@ const arbWorkQueueJob = (): fc.Arbitrary<WorkQueueJob> =>
     nextStepName: fc.option(arbName(), { nil: undefined }),
     nextStepLocation: fc.option(fc.string({ minLength: 1, maxLength: 30 }), { nil: undefined }),
     isFinalStep: fc.boolean(),
+    jobPriority: fc.integer({ min: 0, max: 100 }),
   })
 
 

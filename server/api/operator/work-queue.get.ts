@@ -1,6 +1,14 @@
-import type { WorkQueueJob, OperatorGroup, WorkQueueGroupedResponse } from '../../types/computed'
+import type { WorkQueueJob, WorkQueueGroup, GroupByDimension } from '../../types/computed'
 
-export default defineApiHandler(async () => {
+const VALID_GROUP_BY: GroupByDimension[] = ['user', 'location', 'step']
+
+export default defineApiHandler(async (event) => {
+  const query = getQuery(event)
+  const rawGroupBy = query.groupBy as string | undefined
+  const groupBy: GroupByDimension = VALID_GROUP_BY.includes(rawGroupBy as GroupByDimension)
+    ? (rawGroupBy as GroupByDimension)
+    : 'location'
+
   const { jobService, pathService, partService, userService } = getServices()
   const jobs = jobService.listJobs()
 
@@ -25,6 +33,7 @@ export default defineApiHandler(async () => {
           job: {
             jobId: job.id,
             jobName: job.name,
+            jobPriority: job.priority,
             pathId: path.id,
             pathName: path.name,
             stepId: step.id,
@@ -34,6 +43,7 @@ export default defineApiHandler(async () => {
             totalSteps,
             partIds: parts.map(s => s.id),
             partCount: parts.length,
+            assignedTo: step.assignedTo,
             nextStepName: nextStep?.name,
             nextStepLocation: nextStep?.location,
             isFinalStep,
@@ -50,42 +60,13 @@ export default defineApiHandler(async () => {
     userNameMap.set(u.id, u.displayName)
   }
 
-  // Group entries by assignedTo
-  const groupMap = new Map<string | null, WorkQueueJob[]>()
-
-  for (const entry of entries) {
-    const key = entry.assignedTo ?? null
-    const list = groupMap.get(key)
-    if (list) {
-      list.push(entry.job)
-    } else {
-      groupMap.set(key, [entry.job])
-    }
-  }
-
-  // Convert to OperatorGroup array
-  const groups: OperatorGroup[] = []
-
-  for (const [operatorId, groupJobs] of groupMap) {
-    const totalParts = groupJobs.reduce((sum, j) => sum + j.partCount, 0)
-    const operatorName = operatorId
-      ? (userNameMap.get(operatorId) ?? operatorId)
-      : 'Unassigned'
-
-    groups.push({
-      operatorId,
-      operatorName,
-      jobs: groupJobs,
-      totalParts,
-    })
-  }
+  // Group entries by the requested dimension
+  const groups: WorkQueueGroup[] = groupEntriesByDimension(entries, groupBy, userNameMap)
 
   const totalParts = entries.reduce((sum, e) => sum + e.job.partCount, 0)
 
-  const response: WorkQueueGroupedResponse = {
+  return {
     groups,
     totalParts,
   }
-
-  return response
 })

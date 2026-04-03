@@ -10,7 +10,7 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { createTestContext, type TestContext } from '../../integration/helpers'
 import { SQLiteUserRepository } from '../../../server/repositories/sqlite/userRepository'
 import { createUserService } from '../../../server/services/userService'
-import type { WorkQueueJob, WorkQueueResponse, OperatorGroup, WorkQueueGroupedResponse, StepViewResponse } from '../../../server/types/computed'
+import type { WorkQueueJob, WorkQueueResponse, WorkQueueGroup, WorkQueueGroupedResponse, StepViewResponse } from '../../../server/types/computed'
 
 // ---- Pure function replications of endpoint logic ----
 
@@ -37,6 +37,7 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
           stepId: step.id, stepName: step.name, stepOrder: step.order, stepLocation: step.location,
           totalSteps, partIds: parts.map(s => s.id), partCount: parts.length,
           nextStepName: nextStep?.name, nextStepLocation: nextStep?.location, isFinalStep,
+          jobPriority: job.priority,
         })
       }
     }
@@ -80,6 +81,7 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
             previousStepId: prevStep?.id, previousStepName: prevStep?.name,
             nextStepId: nextStep?.id,
             nextStepName: nextStep?.name, nextStepLocation: nextStep?.location, isFinalStep,
+            jobPriority: job.priority,
           },
           notes: noteService.getNotesForStep(stepId),
           ...(previousStepWipCount !== undefined && { previousStepWipCount }),
@@ -117,6 +119,7 @@ function aggregateGroupedWork(
             stepId: step.id, stepName: step.name, stepOrder: step.order, stepLocation: step.location,
             totalSteps, partIds: parts.map(s => s.id), partCount: parts.length,
             nextStepName: nextStep?.name, nextStepLocation: nextStep?.location, isFinalStep,
+            jobPriority: job.priority,
           },
         })
       }
@@ -135,11 +138,11 @@ function aggregateGroupedWork(
     else groupMap.set(key, [entry.job])
   }
 
-  const groups: OperatorGroup[] = []
+  const groups: WorkQueueGroup[] = []
   for (const [operatorId, groupJobs] of groupMap) {
     const totalParts = groupJobs.reduce((sum, j) => sum + j.partCount, 0)
     const operatorName = operatorId ? (userNameMap.get(operatorId) ?? operatorId) : 'Unassigned'
-    groups.push({ operatorId, operatorName, jobs: groupJobs, totalParts })
+    groups.push({ groupKey: operatorId, groupLabel: operatorName, groupType: 'user', jobs: groupJobs, totalParts })
   }
 
   const totalParts = entries.reduce((sum, e) => sum + e.job.partCount, 0)
@@ -258,7 +261,7 @@ describe('Work Queue API Endpoint Unit Tests', () => {
       expect(response.totalParts).toBe(0)
     })
 
-    it('places unassigned steps into a group with operatorId=null and operatorName="Unassigned"', () => {
+    it('places unassigned steps into a group with groupKey=null and groupLabel="Unassigned"', () => {
       ctx = createTestContext()
       const userRepo = new SQLiteUserRepository(ctx.db)
       const userService = createUserService({ users: userRepo })
@@ -285,8 +288,8 @@ describe('Work Queue API Endpoint Unit Tests', () => {
       expect(response.groups.length).toBe(1)
 
       const group = response.groups[0]
-      expect(group.operatorId).toBeNull()
-      expect(group.operatorName).toBe('Unassigned')
+      expect(group.groupKey).toBeNull()
+      expect(group.groupLabel).toBe('Unassigned')
       expect(group.totalParts).toBe(3)
       expect(group.jobs.length).toBe(1) // only step 0 has parts
     })

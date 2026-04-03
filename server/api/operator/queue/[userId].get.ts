@@ -38,9 +38,11 @@ export default defineApiHandler(async (event) => {
           totalSteps,
           partIds: parts.map(s => s.id),
           partCount: parts.length,
+          assignedTo: step.assignedTo,
           nextStepName: nextStep?.name,
           nextStepLocation: nextStep?.location,
           isFinalStep,
+          jobPriority: job.priority,
         })
       }
     }

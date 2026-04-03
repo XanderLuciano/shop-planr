@@ -9,7 +9,6 @@ export type {
   EnrichedSerial,
   WorkQueueJob,
   WorkQueueResponse,
-  OperatorGroup,
   WorkQueueGroupedResponse,
   StepViewResponse,
   AdvancementResult,
@@ -17,4 +16,8 @@ export type {
   SnStepStatusView,
   FullRouteResponse,
   FullRouteEntry,
+  GroupByDimension,
+  WorkQueueFilterState,
+  WorkQueuePreset,
+  WorkQueueGroup,
 } from '../../server/types/computed'

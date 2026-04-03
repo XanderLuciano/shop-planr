@@ -33,14 +33,15 @@ app/
   app.config.ts          → UI color config (primary: violet, neutral: neutral)
   pages/
     index.vue            → Placeholder homepage (to become dashboard)
-  components/            → 50+ components: SectionCard (reusable card wrapper), lifecycle dialogs (ScrapDialog, ForceCompleteDialog, AdvanceToStepDropdown), config panels (StepConfigPanel, AdvancementModeSelector, LibraryManager), job form (JobCreationForm), serial creation (SerialCreationPanel — first-step batch creation + advancement), page visibility (PageVisibilitySettings — toggle switches for nav pages), docs (EndpointCard MDC, DocsSidebar, DocsSearch), job view (JobViewToolbar — expand/collapse all jobs/paths buttons, JobExpandableRow — multi-path expansion with bulk signals, JobMobileCard — card-based job display for mobile viewports), utility (BonusBadge, PathDeleteButton, CertDetailView, TemplateEditor, etc.)
-  composables/           → 24+ composables: useJobForm, useLifecycle, useLibrary, useBomVersions, useAudit (with filters), usePartsView, useStepView, useOperatorWorkQueue, useSettings (extended with pageToggles), useDocsNavigation, useDocsSearch, useMobileBreakpoint (matchMedia-based mobile viewport detection), useJobPriority (drag-and-drop priority editing) + existing ones
+  components/            → 50+ components: SectionCard (reusable card wrapper), lifecycle dialogs (ScrapDialog, ForceCompleteDialog, AdvanceToStepDropdown), config panels (StepConfigPanel, AdvancementModeSelector, LibraryManager), job form (JobCreationForm), serial creation (SerialCreationPanel — first-step batch creation + advancement), page visibility (PageVisibilitySettings — toggle switches for nav pages), docs (EndpointCard MDC, DocsSidebar, DocsSearch), job view (JobViewToolbar — expand/collapse all jobs/paths buttons, JobExpandableRow — multi-path expansion with bulk signals, JobMobileCard — card-based job display for mobile viewports), work queue (WorkQueueFilterBar — group-by selector, filter dropdowns, text search, preset management), utility (BonusBadge, PathDeleteButton, CertDetailView, TemplateEditor, etc.)
+  composables/           → 25+ composables: useJobForm, useLifecycle, useLibrary, useBomVersions, useAudit (with filters), usePartsView, useStepView, useOperatorWorkQueue (extended with groupBy param), useWorkQueueFilters (wraps useOperatorWorkQueue with groupBy/filter/preset/URL-sync), useSettings (extended with pageToggles), useDocsNavigation, useDocsSearch, useMobileBreakpoint (matchMedia-based mobile viewport detection), useJobPriority (drag-and-drop priority editing) + existing ones
   middleware/
     pageGuard.global.ts  → Global route middleware: blocks navigation to disabled pages, redirects to /
   utils/
     pageToggles.ts       → Re-exports DEFAULT_PAGE_TOGGLES, ROUTE_TOGGLE_MAP, ALWAYS_ENABLED_ROUTES, isPageEnabled() for client-side auto-import
     resolveBackNavigation.ts → Pure helper: computes back-arrow destination/label from `from` query param (auto-imported)
     docsMethodColor.ts   → getMethodColor() — maps HTTP methods to Tailwind color classes for EndpointCard badges
+    workQueueFilters.ts  → applyFilters() + extractAvailableValues() — pure client-side filtering for work queue groups
   assets/css/
     main.css             → Tailwind imports + custom violet #8750FF scale + green scale
 server/
@@ -58,6 +59,7 @@ server/
     serialization.ts     → serialize(), deserialize(), prettyPrint() for all domain types
     validation.ts        → assertPositive, assertNonEmpty, assertNonEmptyArray, assertOneOf, etc.
     db.ts                → getRepositories() singleton — lazy-inits from runtimeConfig
+    workQueueGrouping.ts → groupEntriesByDimension() — pure server-side grouping by user/location/step dimension
     services.ts          → getServices() singleton — wires all 12 services together
     pageToggles.ts       → DEFAULT_PAGE_TOGGLES, ROUTE_TOGGLE_MAP, ALWAYS_ENABLED_ROUTES, mergePageToggles(), isPageEnabled() — auto-imported by Nitro
   types/
@@ -174,7 +176,7 @@ Dependencies flow left-to-right only. All business logic lives in services. See 
 | Assignees | `app/pages/assignees.vue` | ~~Removed~~ — subsumed by Work Queue |
 | Parts View | `app/pages/parts/index.vue` | All active parts grouped by job/step, click navigates to Step View |
 | Step View | `app/pages/parts/step/[stepId].vue` | Dedicated step page: advancement panel or serial creation, bookmarkable URL |
-| Work Queue | `app/pages/queue.vue` | Work grouped by operator/assignee, URL-synced operator filter |
+| Work Queue | `app/pages/queue.vue` | Work grouped by user/location/step (configurable), URL-synced filters, saved presets |
 | Templates | `app/pages/templates.vue` | Route template CRUD with library dropdowns + editing |
 | BOM | `app/pages/bom.vue` | Bill of materials roll-ups + edit + version history |
 | Jira | `app/pages/jira.vue` | Jira ticket dashboard (conditional) |

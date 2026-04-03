@@ -15,7 +15,7 @@ import fc from 'fast-check'
 import { createTestContext, type TestContext } from '../integration/helpers'
 import { SQLiteUserRepository } from '../../server/repositories/sqlite/userRepository'
 import { createUserService } from '../../server/services/userService'
-import type { WorkQueueJob, OperatorGroup, WorkQueueGroupedResponse } from '../../server/types/computed'
+import type { WorkQueueJob, WorkQueueGroup, WorkQueueGroupedResponse } from '../../server/types/computed'
 
 /**
  * Replicate the grouping logic from server/api/operator/work-queue.get.ts
@@ -60,6 +60,8 @@ function aggregateGroupedWork(
             nextStepName: nextStep?.name,
             nextStepLocation: nextStep?.location,
             isFinalStep,
+            assignedTo: step.assignedTo,
+            jobPriority: job.priority,
           },
         })
       }
@@ -85,14 +87,14 @@ function aggregateGroupedWork(
     }
   }
 
-  const groups: OperatorGroup[] = []
+  const groups: WorkQueueGroup[] = []
   for (const [operatorId, groupJobs] of groupMap) {
     const totalParts = groupJobs.reduce((sum, j) => sum + j.partCount, 0)
     const operatorName = operatorId
       ? (userNameMap.get(operatorId) ?? operatorId)
       : 'Unassigned'
 
-    groups.push({ operatorId, operatorName, jobs: groupJobs, totalParts })
+    groups.push({ groupKey: operatorId, groupLabel: operatorName, groupType: 'user', jobs: groupJobs, totalParts })
   }
 
   const totalParts = entries.reduce((sum, e) => sum + e.job.partCount, 0)
@@ -260,24 +262,24 @@ describe('Property 6: Assignee Grouping Correctness', () => {
         for (const group of response.groups) {
           for (const job of group.jobs) {
             const expectedAssignedTo = stepAssignments.get(job.stepId) ?? null
-            expect(group.operatorId).toBe(expectedAssignedTo)
+            expect(group.groupKey).toBe(expectedAssignedTo)
           }
         }
 
         // 3. Operator name resolution: assigned groups have correct ShopUser.displayName
         for (const group of response.groups) {
-          if (group.operatorId !== null) {
-            const expectedName = userNameMap.get(group.operatorId)
+          if (group.groupKey !== null) {
+            const expectedName = userNameMap.get(group.groupKey)
             expect(expectedName).toBeDefined()
-            expect(group.operatorName).toBe(expectedName)
+            expect(group.groupLabel).toBe(expectedName)
           }
         }
 
-        // 4. Unassigned group has operatorId = null and operatorName = "Unassigned"
-        const unassignedGroup = response.groups.find(g => g.operatorId === null)
+        // 4. Unassigned group has groupKey = null and groupLabel = "Unassigned"
+        const unassignedGroup = response.groups.find(g => g.groupKey === null)
         if (expectedGroups.has(null)) {
           expect(unassignedGroup).toBeDefined()
-          expect(unassignedGroup!.operatorName).toBe('Unassigned')
+          expect(unassignedGroup!.groupLabel).toBe('Unassigned')
         }
 
         // 5. Number of groups matches expected

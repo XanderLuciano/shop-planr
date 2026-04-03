@@ -140,6 +140,8 @@ export interface WorkQueueJob {
   nextStepLocation?: string
   isFinalStep: boolean
   stepOptional?: boolean
+  assignedTo?: string
+  jobPriority: number
 }
 
 /** Response from the operator work queue endpoint */
@@ -149,17 +151,9 @@ export interface WorkQueueResponse {
   totalParts: number
 }
 
-/** A group of work entries assigned to a single operator */
-export interface OperatorGroup {
-  operatorId: string | null
-  operatorName: string
-  jobs: WorkQueueJob[]
-  totalParts: number
-}
-
 /** Response from the grouped work queue endpoint */
 export interface WorkQueueGroupedResponse {
-  groups: OperatorGroup[]
+  groups: WorkQueueGroup[]
   totalParts: number
 }
 
@@ -191,3 +185,34 @@ export interface PartStepStatusView {
 
 /** @deprecated Use `PartStepStatusView` instead. Backward-compatible alias. */
 export type SnStepStatusView = PartStepStatusView
+
+// ---- Work Queue Filtering & Grouping ----
+
+/** Supported grouping dimensions for the work queue */
+export type GroupByDimension = 'user' | 'location' | 'step'
+
+/** Active property filters for the work queue */
+export interface WorkQueueFilterState {
+  location?: string
+  stepName?: string
+  userId?: string
+}
+
+/** A saved filter/group configuration preset */
+export interface WorkQueuePreset {
+  id: string
+  name: string
+  groupBy: GroupByDimension
+  filters: WorkQueueFilterState
+  searchQuery: string
+  createdAt: string
+}
+
+/** A generalized group — can represent a user, location, or step grouping */
+export interface WorkQueueGroup {
+  groupKey: string | null
+  groupLabel: string
+  groupType: GroupByDimension
+  jobs: WorkQueueJob[]
+  totalParts: number
+}

@@ -47,6 +47,7 @@ export default defineApiHandler(async (event) => {
           totalSteps,
           partIds: parts.map(s => s.id),
           partCount: parts.length,
+          assignedTo: step.assignedTo,
           previousStepId: prevStep?.id,
           previousStepName: prevStep?.name,
           nextStepId: nextStep?.id,
@@ -54,6 +55,7 @@ export default defineApiHandler(async (event) => {
           nextStepLocation: nextStep?.location,
           isFinalStep,
           stepOptional: step.optional ?? false,
+          jobPriority: job.priority,
         }
         break
       }

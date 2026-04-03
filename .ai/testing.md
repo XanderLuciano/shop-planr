@@ -32,9 +32,9 @@ After making changes, always verify in this order:
 tests/
   unit/
     services/           → jobService, pathService, serialService, reconcileSteps, etc. (11 files)
-    utils/              → serialization, validation, idGenerator, errors, progressBar, services (6 files)
-    composables/        → useBarcode, useViewFilters, useJobForm, workQueueSearch (4 files)
-    components/         → SerialCreationPanel, serialNoteAdd, EndpointCard, DocsSidebar, JobEditNavigation, JobViewToolbar (6 files)
+    utils/              → serialization, validation, idGenerator, errors, progressBar, services, workQueueGrouping, workQueueFilters, workQueueApiGrouping (9 files)
+    composables/        → useBarcode, useViewFilters, useJobForm, workQueueSearch, useWorkQueueFilters.preset (5 files)
+    components/         → SerialCreationPanel, serialNoteAdd, EndpointCard, DocsSidebar, JobEditNavigation, JobViewToolbar, WorkQueueFilterBar (7 files)
     repositories/       → hasStepDependents (1 file)
     repositories/sqlite/ → migrations (1 file)
   properties/
@@ -43,6 +43,8 @@ tests/
     stepAdvancement.property.test.ts     → CP-3: Sequential advancement
     countConservation.property.test.ts   → CP-4: Step count conservation
     roundTrip.property.test.ts           → CP-5: Serialization round-trip (32 sub-tests)
+    workQueueFiltering.property.test.ts  → CP-WQF-1,2,3,4,6,10: Grouping completeness, filter subset, empty filter identity, monotonicity, dimension consistency, priority ordering (6 tests)
+    workQueueComposable.property.test.ts → CP-WQF-5,7,8,9: URL round-trip, search backward compat, preset round-trip, preset capacity (4 tests)
     auditTrail.property.test.ts          → CP-6: Audit immutability (2 sub-tests)
     progressBar.property.test.ts         → CP-7: Progress accuracy (2 sub-tests)
     templateIndependence.property.test.ts → CP-8: Template independence (2 sub-tests)

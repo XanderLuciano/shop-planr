@@ -52,6 +52,7 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
           nextStepName: nextStep?.name,
           nextStepLocation: nextStep?.location,
           isFinalStep,
+          assignedTo: step.assignedTo,
         })
       }
     }
