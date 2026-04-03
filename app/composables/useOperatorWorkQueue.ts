@@ -1,5 +1,5 @@
 import { ref, computed, readonly } from 'vue'
-import type { WorkQueueGroup, WorkQueueGroupedResponse } from '~/types/computed'
+import type { WorkQueueGroup, WorkQueueGroupedResponse, GroupByDimension } from '~/types/computed'
 
 const response = ref<WorkQueueGroupedResponse | null>(null)
 const loading = ref(false)
@@ -35,7 +35,7 @@ export function useOperatorWorkQueue() {
       .filter((g): g is WorkQueueGroup => g !== null)
   })
 
-  async function fetchGroupedWork(params?: { groupBy?: string }): Promise<void> {
+  async function fetchGroupedWork(params?: { groupBy?: GroupByDimension }): Promise<void> {
     loading.value = true
     error.value = null
     try {
