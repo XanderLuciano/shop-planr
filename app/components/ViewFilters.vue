@@ -39,7 +39,20 @@ const hasActiveFilters = computed(() => {
       icon="i-lucide-briefcase"
       class="w-36"
       @update:model-value="update('jobName', ($event as string) || undefined)"
-    />
+    >
+      <template #trailing>
+        <UButton
+          v-if="filters.jobName"
+          icon="i-lucide-x"
+          color="neutral"
+          variant="link"
+          size="xs"
+          :padded="false"
+          aria-label="Clear job name filter"
+          @click="update('jobName', undefined)"
+        />
+      </template>
+    </UInput>
     <USelect
       :model-value="filters.status ?? 'all'"
       :items="statusOptions"
@@ -54,7 +67,20 @@ const hasActiveFilters = computed(() => {
       icon="i-lucide-signal"
       class="w-28"
       @update:model-value="update('priority', ($event as string) || undefined)"
-    />
+    >
+      <template #trailing>
+        <UButton
+          v-if="filters.priority"
+          icon="i-lucide-x"
+          color="neutral"
+          variant="link"
+          size="xs"
+          :padded="false"
+          aria-label="Clear priority filter"
+          @click="update('priority', undefined)"
+        />
+      </template>
+    </UInput>
     <UInput
       :model-value="filters.stepName ?? ''"
       size="sm"
@@ -62,7 +88,20 @@ const hasActiveFilters = computed(() => {
       icon="i-lucide-footprints"
       class="w-28"
       @update:model-value="update('stepName', ($event as string) || undefined)"
-    />
+    >
+      <template #trailing>
+        <UButton
+          v-if="filters.stepName"
+          icon="i-lucide-x"
+          color="neutral"
+          variant="link"
+          size="xs"
+          :padded="false"
+          aria-label="Clear step filter"
+          @click="update('stepName', undefined)"
+        />
+      </template>
+    </UInput>
     <UButton
       v-if="hasActiveFilters"
       size="xs"
