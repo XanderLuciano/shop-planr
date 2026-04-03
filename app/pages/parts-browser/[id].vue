@@ -136,6 +136,7 @@ const workQueueJob = computed<WorkQueueJob | null>(() => {
     nextStepName: nextStep?.name,
     nextStepLocation: nextStep?.location,
     isFinalStep: isFinal,
+    assignedTo: currentStep.value.assignedTo,
     jobPriority: job.value.priority ?? 0,
   }
 })

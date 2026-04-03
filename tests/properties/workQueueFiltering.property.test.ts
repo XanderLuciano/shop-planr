@@ -61,6 +61,7 @@ const arbWorkQueueJob = (): fc.Arbitrary<WorkQueueJob & { jobPriority: number }>
     partIds: fc.array(arbId(), { minLength: 1, maxLength: 5 }),
     partCount: fc.integer({ min: 1, max: 50 }),
     isFinalStep: fc.boolean(),
+    assignedTo: arbOptionalUserId(),
     jobPriority: fc.integer({ min: 0, max: 100 }),
   }).map((r) => ({
     ...r,

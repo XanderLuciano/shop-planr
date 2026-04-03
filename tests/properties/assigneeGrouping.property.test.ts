@@ -60,6 +60,7 @@ function aggregateGroupedWork(
             nextStepName: nextStep?.name,
             nextStepLocation: nextStep?.location,
             isFinalStep,
+            assignedTo: step.assignedTo,
             jobPriority: job.priority,
           },
         })

@@ -61,6 +61,7 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
           nextStepName: nextStep?.name,
           nextStepLocation: nextStep?.location,
           isFinalStep,
+          assignedTo: step.assignedTo,
         }
 
         const notes = noteService.getNotesForStep(stepId)

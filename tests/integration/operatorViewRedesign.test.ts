@@ -58,6 +58,7 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
           nextStepName: nextStep?.name,
           nextStepLocation: nextStep?.location,
           isFinalStep,
+          assignedTo: step.assignedTo,
           jobPriority: job.priority,
         })
       }
@@ -110,6 +111,7 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
           nextStepName: nextStep?.name,
           nextStepLocation: nextStep?.location,
           isFinalStep,
+          assignedTo: step.assignedTo,
           jobPriority: job.priority,
         }
         const notes = noteService.getNotesForStep(stepId)
@@ -159,6 +161,7 @@ function aggregateGroupedWork(
             nextStepName: nextStep?.name,
             nextStepLocation: nextStep?.location,
             isFinalStep,
+            assignedTo: step.assignedTo,
             jobPriority: job.priority,
           },
         })

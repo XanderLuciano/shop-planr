@@ -69,8 +69,8 @@ export function applyFilters(
  *
  * - `locations`: unique sorted non-empty `job.stepLocation` values
  * - `stepNames`: unique sorted non-empty `job.stepName` values
- * - `userIds`: empty array (WorkQueueJob has no assignedTo field;
- *   user data comes from the user service)
+ * - `userIds`: empty array (user data comes from the user service,
+ *   not from WorkQueueJob)
  */
 export function extractAvailableValues(
   groups: WorkQueueGroup[],
