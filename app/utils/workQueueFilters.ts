@@ -69,25 +69,26 @@ export function applyFilters(
  *
  * - `locations`: unique sorted non-empty `job.stepLocation` values
  * - `stepNames`: unique sorted non-empty `job.stepName` values
- * - `userIds`: empty array (user data comes from the user service,
- *   not from WorkQueueJob)
+ * - `userIds`: unique sorted non-empty `job.assignedTo` values
  */
 export function extractAvailableValues(
   groups: WorkQueueGroup[],
 ): { locations: string[]; stepNames: string[]; userIds: string[] } {
   const locationSet = new Set<string>()
   const stepNameSet = new Set<string>()
+  const userIdSet = new Set<string>()
 
   for (const group of groups) {
     for (const job of group.jobs) {
       if (job.stepLocation) locationSet.add(job.stepLocation)
       if (job.stepName) stepNameSet.add(job.stepName)
+      if (job.assignedTo) userIdSet.add(job.assignedTo)
     }
   }
 
   return {
     locations: [...locationSet].sort(),
     stepNames: [...stepNameSet].sort(),
-    userIds: [],
+    userIds: [...userIdSet].sort(),
   }
 }

@@ -321,15 +321,15 @@ describe('extractAvailableValues', () => {
     const groups = [
       makeGroup({
         jobs: [
-          makeJob({ stepLocation: 'CNC Bay 1', stepName: 'Deburr' }),
-          makeJob({ stepLocation: 'Assembly', stepName: 'QC Check' }),
-          makeJob({ stepLocation: 'CNC Bay 1', stepName: 'Deburr' }), // duplicate
+          makeJob({ stepLocation: 'CNC Bay 1', stepName: 'Deburr', assignedTo: 'user-1' }),
+          makeJob({ stepLocation: 'Assembly', stepName: 'QC Check', assignedTo: 'user-2' }),
+          makeJob({ stepLocation: 'CNC Bay 1', stepName: 'Deburr', assignedTo: 'user-1' }), // duplicate
         ],
       }),
       makeGroup({
         groupKey: 'g2',
         jobs: [
-          makeJob({ stepLocation: 'Welding', stepName: 'Assembly' }),
+          makeJob({ stepLocation: 'Welding', stepName: 'Assembly' }), // no assignedTo
         ],
       }),
     ]
@@ -338,7 +338,7 @@ describe('extractAvailableValues', () => {
 
     expect(result.locations).toEqual(['Assembly', 'CNC Bay 1', 'Welding'])
     expect(result.stepNames).toEqual(['Assembly', 'Deburr', 'QC Check'])
-    expect(result.userIds).toEqual([])
+    expect(result.userIds).toEqual(['user-1', 'user-2'])
   })
 
   it('excludes undefined/empty stepLocation values', () => {
