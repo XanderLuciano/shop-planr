@@ -11,7 +11,7 @@ interface Props {
   filters: WorkQueueFilterState
   availableLocations: string[]
   availableSteps: string[]
-  availableUsers: { id: string; displayName: string }[]
+  availableUsers: readonly { id: string; displayName: string }[]
   presets: WorkQueuePreset[]
   activePresetId: string | null
   searchQuery?: string

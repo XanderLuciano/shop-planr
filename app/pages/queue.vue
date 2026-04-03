@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { WorkQueueJob, WorkQueueGroup } from '~/types/computed'
+import type { WorkQueueJob, WorkQueueGroup, WorkQueueFilterState } from '~/types/computed'
 import type { DropdownMenuItem } from '@nuxt/ui'
 
 const route = useRoute()
@@ -136,9 +136,9 @@ function handleClearFilters() {
   debouncedSearch.value = ''
 }
 
-function handleUpdateFilters(f: Record<string, string | undefined>) {
+function handleUpdateFilters(f: WorkQueueFilterState) {
   for (const [key, value] of Object.entries(f)) {
-    setFilter(key as keyof import('~/types/computed').WorkQueueFilterState, value)
+    setFilter(key as keyof WorkQueueFilterState, value)
   }
 }
 

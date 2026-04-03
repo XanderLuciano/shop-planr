@@ -116,6 +116,8 @@ const workQueueJob = computed<WorkQueueJob | null>(() => {
   const isFinal = currentOrder === Math.max(...steps.map(s => s.order))
   const nextStep = isFinal ? null : steps.find(s => s.order === currentOrder + 1) ?? null
 
+  const prevStep = currentOrder > 0 ? steps.find(s => s.order === currentOrder - 1) ?? null : null
+
   return {
     jobId: job.value.id,
     jobName: job.value.name,
@@ -128,9 +130,13 @@ const workQueueJob = computed<WorkQueueJob | null>(() => {
     totalSteps: steps.length,
     partIds: [part.value.id],
     partCount: 1,
+    previousStepId: prevStep?.id,
+    previousStepName: prevStep?.name,
+    nextStepId: nextStep?.id,
     nextStepName: nextStep?.name,
     nextStepLocation: nextStep?.location,
     isFinalStep: isFinal,
+    jobPriority: job.value.priority ?? 0,
   }
 })
 
