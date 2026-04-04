@@ -64,6 +64,7 @@ export function httpError(error: unknown): never {
     }
   }
 
+  console.error('[API 500]', error)
   throw createError({
     statusCode: 500,
     statusMessage: STATUS_MESSAGES[500] ?? 'Unknown Error',
