@@ -25,7 +25,7 @@ export default withNuxt({
   // Relax strict rules for test files — tests legitimately use any/delete for mocking
   files: ['tests/**/*.ts', 'tests/**/*.test.ts'],
   rules: {
-    '@typescript-eslint/no-explicit-any': 'warn',
-    '@typescript-eslint/no-dynamic-delete': 'warn',
+    '@typescript-eslint/no-explicit-any': 'off',
+    '@typescript-eslint/no-dynamic-delete': 'off',
   },
 })
