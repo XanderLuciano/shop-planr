@@ -58,7 +58,7 @@ async function onSubmit() {
           jiraPushResult.value = result.error ?? 'Jira push failed'
           jiraPushIsError.value = true
         }
-      } catch (e: any) {
+      } catch (e) {
         jiraPushResult.value = e?.data?.message ?? e?.message ?? 'Jira push failed'
         jiraPushIsError.value = true
       } finally {
@@ -69,7 +69,7 @@ async function onSubmit() {
     text.value = ''
     pushToJira.value = false
     emit('created', note)
-  } catch (e: any) {
+  } catch (e) {
     localError.value = e?.data?.message ?? e?.message ?? 'Failed to create note'
   }
 }

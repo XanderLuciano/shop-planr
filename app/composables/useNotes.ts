@@ -23,7 +23,7 @@ export function useNotes() {
       })
       notes.value = [note, ...notes.value]
       return note
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to create note'
       throw e
     } finally {
@@ -38,7 +38,7 @@ export function useNotes() {
       const result = await $fetch<StepNote[]>(`/api/notes/part/${partId}`)
       notes.value = result
       return result
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch notes'
       return []
     } finally {
@@ -53,7 +53,7 @@ export function useNotes() {
       const result = await $fetch<StepNote[]>(`/api/notes/step/${stepId}`)
       notes.value = result
       return result
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch notes'
       return []
     } finally {

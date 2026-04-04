@@ -82,7 +82,7 @@ async function handleSelection(value: string | null) {
       body: { userId },
     })
     emit('assigned', props.stepId, userId)
-  } catch (e: any) {
+  } catch (e) {
     // Revert on failure
     selectedValue.value = oldValue
     previousValue.value = oldValue

@@ -130,7 +130,7 @@ async function loadJob() {
     paths.value = [...detail.paths]
     progress.value = detail.progress
     await loadAllDistributions()
-  } catch (e: any) {
+  } catch (e) {
     error.value = e?.data?.message ?? e?.message ?? 'Failed to load job'
   } finally {
     loading.value = false
@@ -196,7 +196,7 @@ async function saveGoalQty() {
     await updateJob(job.value.id, { name: job.value.name, goalQuantity: goalQtyDraft.value })
     editingGoalQty.value = false
     await loadJob()
-  } catch (e: any) {
+  } catch (e) {
     error.value = e?.data?.message ?? e?.message ?? 'Failed to update goal quantity'
   } finally {
     goalQtySaving.value = false
@@ -244,7 +244,7 @@ async function onApplyTemplate() {
     selectedTemplateId.value = ''
     applyGoalQty.value = job.value?.goalQuantity ?? 1
     await loadJob()
-  } catch (e: any) {
+  } catch (e) {
     applyError.value = e?.data?.message ?? e?.message ?? 'Failed to apply template'
   } finally {
     applyingTemplate.value = false
@@ -259,7 +259,7 @@ async function onPushDescription() {
     const result = await pushDescriptionTable(jobId)
     jiraPushMessage.value = result.success ? 'Status table pushed to Jira description' : (result.error ?? 'Push failed')
     jiraPushError.value = !result.success
-  } catch (e: any) {
+  } catch (e) {
     jiraPushMessage.value = e?.data?.message ?? e?.message ?? 'Push failed'
     jiraPushError.value = true
   } finally {
@@ -275,7 +275,7 @@ async function onPushComment() {
     const result = await pushCommentSummary(jobId)
     jiraPushMessage.value = result.success ? 'Comment summary pushed to Jira' : (result.error ?? 'Push failed')
     jiraPushError.value = !result.success
-  } catch (e: any) {
+  } catch (e) {
     jiraPushMessage.value = e?.data?.message ?? e?.message ?? 'Push failed'
     jiraPushError.value = true
   } finally {
@@ -288,7 +288,7 @@ async function confirmDelete() {
   try {
     await deleteJob(jobId)
     navigateTo('/jobs')
-  } catch (e: any) {
+  } catch (e) {
     toast.add({
       title: 'Cannot delete job',
       description: e?.data?.message ?? e?.message ?? 'Failed to delete job',

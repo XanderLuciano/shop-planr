@@ -28,7 +28,7 @@ export function usePartDetail(partId: string) {
       job.value = jobData
       path.value = pathData
       distribution.value = pathData.distribution
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to load part detail'
     } finally {
       loading.value = false
@@ -43,7 +43,7 @@ export function usePartDetail(partId: string) {
       siblingParts.value = all.filter(
         s => s.jobId === part.value!.jobId && s.pathId === part.value!.pathId,
       )
-    } catch (e: any) {
+    } catch (e) {
       // Non-critical — don't overwrite main error
       console.error('Failed to fetch siblings:', e)
     }
@@ -59,7 +59,7 @@ export function usePartDetail(partId: string) {
       part.value = partData
       path.value = pathData
       distribution.value = pathData.distribution
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to refresh after advance'
     }
   }

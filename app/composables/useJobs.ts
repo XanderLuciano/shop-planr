@@ -13,7 +13,7 @@ export function useJobs() {
     error.value = null
     try {
       jobs.value = await $fetch<Job[]>('/api/jobs')
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch jobs'
       jobs.value = []
     } finally {

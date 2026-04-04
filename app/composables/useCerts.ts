@@ -12,7 +12,7 @@ export function useCerts() {
     error.value = null
     try {
       certs.value = await $fetch<Certificate[]>('/api/certs')
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch certificates'
       certs.value = []
     } finally {

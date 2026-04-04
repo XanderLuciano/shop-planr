@@ -12,7 +12,7 @@ export function useTemplates() {
     error.value = null
     try {
       templates.value = await $fetch<TemplateRoute[]>('/api/templates')
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch templates'
       templates.value = []
     } finally {

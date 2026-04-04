@@ -29,7 +29,7 @@ export function useWorkQueue() {
     error.value = null
     try {
       queue.value = await $fetch<WorkQueueResponse>(`/api/operator/queue/${encodeURIComponent(userId)}`)
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch work queue'
       queue.value = null
     } finally {

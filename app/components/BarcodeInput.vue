@@ -66,12 +66,13 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 // Expose the input ref so the composable's global hotkey can focus it
-function setInputRef(el: any) {
+function setInputRef(el: ComponentPublicInstance | Element | null) {
   // UInput renders an <input> inside — grab the actual element
-  if (el?.$el) {
-    barcodeInputRef.value = el.$el.querySelector('input') ?? el.$el
+  if (el && '$el' in el) {
+    const root = el.$el as HTMLElement
+    barcodeInputRef.value = (root.querySelector('input') ?? root) as HTMLInputElement
   } else {
-    barcodeInputRef.value = el
+    barcodeInputRef.value = el as HTMLInputElement | null
   }
 }
 </script>

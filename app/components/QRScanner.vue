@@ -10,6 +10,7 @@ const errorMessage = ref<string | null>(null)
 const scanning = ref(false)
 let animationFrameId: number | null = null
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const hasBarcodeDetector = typeof (globalThis as any).BarcodeDetector !== 'undefined'
 
 async function startCamera() {
@@ -30,7 +31,7 @@ async function startCamera() {
         scanning.value = false
       }
     }
-  } catch (err: any) {
+  } catch (err) {
     if (err.name === 'NotAllowedError') {
       errorMessage.value = 'Camera permission denied. Please allow camera access and try again.'
     } else if (err.name === 'NotFoundError') {
@@ -44,6 +45,7 @@ async function startCamera() {
 function detectLoop() {
   if (!scanning.value || !videoRef.value) return
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const detector = new (globalThis as any).BarcodeDetector({ formats: ['qr_code', 'code_128', 'code_39', 'ean_13', 'ean_8'] })
 
   async function tick() {

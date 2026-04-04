@@ -47,7 +47,7 @@ async function onCreateUser(data: { username: string, displayName: string, depar
     userSuccess.value = 'User created'
     await loadAllUsers()
     await fetchUsers()
-  } catch (e: any) {
+  } catch (e) {
     userError.value = e?.data?.message ?? e?.message ?? 'Failed to create user'
   } finally {
     userSaving.value = false
@@ -65,7 +65,7 @@ async function onUpdateUser(data: { username?: string, displayName?: string, dep
     userSuccess.value = 'User updated'
     await loadAllUsers()
     await fetchUsers()
-  } catch (e: any) {
+  } catch (e) {
     userError.value = e?.data?.message ?? e?.message ?? 'Failed to update user'
   } finally {
     userSaving.value = false
@@ -81,7 +81,7 @@ async function toggleUserActive(user: ShopUser) {
     })
     await loadAllUsers()
     await fetchUsers()
-  } catch (e: any) {
+  } catch (e) {
     userError.value = e?.data?.message ?? e?.message ?? 'Failed to update user'
   }
 }
@@ -93,7 +93,7 @@ async function onSaveConnection(connection: Partial<JiraConnectionSettings>) {
   try {
     await updateSettings({ jiraConnection: connection })
     settingsSuccess.value = 'Connection settings saved'
-  } catch (e: any) {
+  } catch (e) {
     settingsError.value = e?.data?.message ?? e?.message ?? 'Failed to save settings'
   } finally {
     settingsSaving.value = false
@@ -107,7 +107,7 @@ async function onSaveMappings(mappings: JiraFieldMapping[]) {
   try {
     await updateSettings({ jiraFieldMappings: mappings })
     settingsSuccess.value = 'Field mappings saved'
-  } catch (e: any) {
+  } catch (e) {
     settingsError.value = e?.data?.message ?? e?.message ?? 'Failed to save mappings'
   } finally {
     settingsSaving.value = false
@@ -121,7 +121,7 @@ async function onSaveToggles(toggles: PageToggles) {
   try {
     await updateSettings({ pageToggles: toggles })
     settingsSuccess.value = 'Page visibility saved'
-  } catch (e: any) {
+  } catch (e) {
     settingsError.value = e?.data?.message ?? e?.message ?? 'Failed to save page visibility'
     // Revert toggles on failure — re-fetch settings to restore previous state
     await fetchSettings()

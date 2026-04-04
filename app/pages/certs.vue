@@ -26,7 +26,7 @@ async function onCreateCert(data: { type: 'material' | 'process', name: string, 
   try {
     await createCert(data)
     showForm.value = false
-  } catch (e: any) {
+  } catch (e) {
     formError.value = e?.data?.message ?? e?.message ?? 'Failed to create certificate'
   } finally {
     formSaving.value = false
@@ -95,7 +95,7 @@ async function onBatchAttach() {
     })
     batchSuccess.value = `Attached certificate to ${ids.length} part(s)`
     batchPartIds.value = ''
-  } catch (e: any) {
+  } catch (e) {
     batchError.value = e?.data?.message ?? e?.message ?? 'Failed to batch attach'
   } finally {
     batchSaving.value = false

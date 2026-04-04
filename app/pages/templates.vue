@@ -76,7 +76,7 @@ async function onSubmit() {
     })
     showForm.value = false
     resetForm()
-  } catch (e: any) {
+  } catch (e) {
     formError.value = e?.data?.message ?? e?.message ?? 'Failed to create template'
   } finally {
     formSaving.value = false

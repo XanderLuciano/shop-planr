@@ -27,7 +27,7 @@ async function performDelete() {
     confirming.value = false
     showModal.value = false
     emit('deleted')
-  } catch (e: any) {
+  } catch (e) {
     const status = e?.response?.status ?? e?.statusCode
     if (status === 403) {
       error.value = 'Admin access required'

@@ -25,6 +25,14 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2025-01-15',
 
+  typescript: {
+    tsConfig: {
+      compilerOptions: {
+        useUnknownInCatchVariables: false,
+      },
+    },
+  },
+
   eslint: {
     config: {
       stylistic: {

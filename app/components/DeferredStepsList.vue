@@ -25,7 +25,7 @@ async function handleComplete(stepId: string) {
   }
   try {
     await completeDeferredStep(props.partId, stepId, { userId: operatorId.value })
-  } catch (e: any) {
+  } catch (e) {
     actionError.value = e?.data?.message ?? e?.message ?? 'Failed to complete step'
   }
 }
@@ -57,7 +57,7 @@ async function confirmWaive() {
       approverId: operatorId.value,
     })
     cancelWaive()
-  } catch (e: any) {
+  } catch (e) {
     actionError.value = e?.data?.message ?? e?.message ?? 'Failed to waive step'
   }
 }

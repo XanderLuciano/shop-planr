@@ -75,7 +75,7 @@ async function handleSave() {
       },
     })
     emit('saved')
-  } catch (e: any) {
+  } catch (e) {
     error.value = e?.data?.message ?? e?.message ?? 'Failed to update template'
   } finally {
     loading.value = false

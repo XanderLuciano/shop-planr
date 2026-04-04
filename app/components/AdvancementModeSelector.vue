@@ -34,7 +34,7 @@ async function handleChange(value: string) {
     })
     selected.value = mode
     emit('updated', mode)
-  } catch (e: any) {
+  } catch (e) {
     error.value = e?.data?.message ?? e?.message ?? 'Failed to update advancement mode'
     selected.value = props.currentMode
   } finally {

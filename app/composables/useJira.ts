@@ -18,7 +18,7 @@ export function useJira() {
       tickets.value = result.tickets
       error.value = result.error
       fromCache.value = result.fromCache
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch Jira tickets'
       tickets.value = []
     } finally {

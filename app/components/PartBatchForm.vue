@@ -64,7 +64,7 @@ async function onSubmit() {
     quantity.value = 1
     selectedCertId.value = SELECT_NONE
     emit('created', parts)
-  } catch (e: any) {
+  } catch (e) {
     error.value = e?.data?.message ?? e?.message ?? 'Failed to create parts'
   } finally {
     saving.value = false

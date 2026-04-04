@@ -71,7 +71,7 @@ async function handleAdvance(payload: { partIds: string[], note?: string }) {
 
     // Refresh step data
     await fetchStep()
-  } catch (e: any) {
+  } catch (e) {
     toast.add({
       title: 'Advancement failed',
       description: e?.message ?? 'An error occurred',
@@ -113,7 +113,7 @@ async function handleSkip(payload: { partIds: string[] }) {
     })
 
     await fetchStep()
-  } catch (e: any) {
+  } catch (e) {
     toast.add({
       title: 'Skip failed',
       description: e?.message ?? 'An error occurred',

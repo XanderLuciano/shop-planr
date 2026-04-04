@@ -18,7 +18,7 @@ export function useLifecycle() {
         method: 'POST',
         body: input,
       })
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to scrap part'
       throw e
     } finally {
@@ -37,7 +37,7 @@ export function useLifecycle() {
         method: 'POST',
         body: input,
       })
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to force complete part'
       throw e
     } finally {
@@ -56,7 +56,7 @@ export function useLifecycle() {
         method: 'POST',
         body: input,
       })
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to advance part'
       throw e
     } finally {
@@ -74,7 +74,7 @@ export function useLifecycle() {
         method: 'POST',
         body: input,
       })
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to complete deferred step'
       throw e
     } finally {
@@ -93,7 +93,7 @@ export function useLifecycle() {
         method: 'POST',
         body: input,
       })
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to waive step'
       throw e
     } finally {
@@ -114,7 +114,7 @@ export function useLifecycle() {
         method: 'POST',
         body: input,
       })
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to create step override'
       throw e
     } finally {
@@ -129,7 +129,7 @@ export function useLifecycle() {
       await $fetch(`/api/parts/${encodeURIComponent(partId)}/overrides/${encodeURIComponent(stepId)}`, {
         method: 'DELETE',
       })
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to reverse step override'
       throw e
     } finally {
@@ -142,7 +142,7 @@ export function useLifecycle() {
     error.value = null
     try {
       return await $fetch<PartStepStatusView[]>(`/api/parts/${encodeURIComponent(partId)}/step-statuses`)
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch step statuses'
       throw e
     } finally {
@@ -155,7 +155,7 @@ export function useLifecycle() {
     error.value = null
     try {
       return await $fetch<{ canComplete: boolean, blockers: string[] }>(`/api/parts/${encodeURIComponent(partId)}/can-complete`)
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to check completion status'
       throw e
     } finally {

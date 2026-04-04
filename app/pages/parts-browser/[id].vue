@@ -76,10 +76,10 @@ const sortedSiblings = computed(() => {
 
 const siblingTotalCount = computed(() => siblingParts.value.length)
 const siblingCompletedCount = computed(() =>
-  siblingParts.value.filter((s: any) => s.status === 'completed' || s.currentStepId === null).length,
+  siblingParts.value.filter(s => s.status === 'completed' || s.currentStepId === null).length,
 )
 const siblingInProgressCount = computed(() =>
-  siblingParts.value.filter((s: any) => s.status === 'in-progress' || (s.currentStepId !== null && s.status !== 'scrapped')).length,
+  siblingParts.value.filter(s => s.status === 'in-progress' || (s.currentStepId !== null && s.status !== 'scrapped')).length,
 )
 
 watch(activeTab, async (tab) => {
@@ -189,7 +189,7 @@ async function handleSaveNote() {
     showNoteForm.value = false
     noteText.value = ''
     toast.add({ title: 'Note created', color: 'success' })
-  } catch (e: any) {
+  } catch (e) {
     toast.add({ title: 'Failed to create note', description: e?.data?.message ?? e?.message ?? 'Failed to create note', color: 'error' })
   } finally {
     noteSaving.value = false
@@ -222,7 +222,7 @@ async function handleAdvance(payload: { partIds: string[], note?: string }) {
     await refreshAfterAdvance()
     await loadLifecycleData()
     toast.add({ title: 'Part advanced', description: `${part.value!.id} moved forward`, color: 'success' })
-  } catch (e: any) {
+  } catch (e) {
     toast.add({ title: 'Advancement failed', description: e?.message ?? 'An error occurred', color: 'error' })
   } finally {
     advanceLoading.value = false

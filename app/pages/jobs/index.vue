@@ -241,7 +241,7 @@ function onTouchEnd() {
   dropTargetIndex.value = null
 }
 
-function onRowSelect(_e: any, row: any) {
+function onRowSelect(_e: Event, row: { original: Job }) {
   if (isEditingPriority.value) return
   navigateTo(`/jobs/${encodeURIComponent(row.original.id)}`)
 }

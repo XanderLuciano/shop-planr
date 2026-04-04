@@ -100,7 +100,7 @@ async function onSave() {
       })
     }
     emit('save', result)
-  } catch (e: any) {
+  } catch (e) {
     error.value = e?.data?.message ?? e?.message ?? 'Failed to save path'
   } finally {
     saving.value = false

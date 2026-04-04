@@ -42,7 +42,7 @@ export function useOperatorWorkQueue() {
       response.value = await $fetch<WorkQueueGroupedResponse>('/api/operator/work-queue', {
         query: params?.groupBy ? { groupBy: params.groupBy } : undefined,
       })
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch work queue'
       response.value = null
     } finally {

@@ -52,7 +52,7 @@ async function handleAttach() {
     selectedCertId.value = ''
     searchQuery.value = ''
     emit('attached')
-  } catch (e: any) {
+  } catch (e) {
     attachError.value = e?.data?.message ?? e?.message ?? 'Failed to attach certificate'
   } finally {
     attaching.value = false

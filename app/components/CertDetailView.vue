@@ -19,7 +19,7 @@ onMounted(async () => {
     ])
     cert.value = certData
     attachments.value = attachData
-  } catch (e: any) {
+  } catch (e) {
     error.value = e?.data?.message ?? e?.message ?? 'Failed to load certificate'
   } finally {
     loading.value = false

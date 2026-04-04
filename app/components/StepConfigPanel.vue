@@ -49,7 +49,7 @@ async function saveChanges() {
       },
     })
     emit('updated')
-  } catch (e: any) {
+  } catch (e) {
     error.value = e?.data?.message ?? e?.message ?? 'Failed to update step config'
   } finally {
     loading.value = false

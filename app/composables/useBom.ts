@@ -13,7 +13,7 @@ export function useBom() {
     error.value = null
     try {
       boms.value = await $fetch<BOM[]>('/api/bom')
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch BOMs'
       boms.value = []
     } finally {

@@ -14,7 +14,7 @@ export function useFullRoute(partId: string) {
       const data = await $fetch<FullRouteResponse>(`/api/parts/${encodeURIComponent(partId)}/full-route`)
       entries.value = data.entries
       isCompleted.value = data.isCompleted
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch full route'
       entries.value = []
       isCompleted.value = false

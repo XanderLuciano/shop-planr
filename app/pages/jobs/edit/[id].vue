@@ -16,7 +16,7 @@ async function loadJob() {
     const data = await $fetch<Job & { paths: Path[], progress: JobProgress }>(`/api/jobs/${jobId}`)
     const { paths, ...job } = data
     jobWithPaths.value = { ...job, paths }
-  } catch (e: any) {
+  } catch (e) {
     error.value = e?.data?.message ?? e?.message ?? 'Job not found'
   } finally {
     loading.value = false

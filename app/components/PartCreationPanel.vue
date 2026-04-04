@@ -76,7 +76,7 @@ async function handleCreate() {
     })
     successMessage.value = `${created.length} part${created.length !== 1 ? 's' : ''} created`
     emit('created', created.length)
-  } catch (e: any) {
+  } catch (e) {
     errorMessage.value = e?.data?.message ?? e?.message ?? 'Failed to create parts'
   } finally {
     creating.value = false
@@ -97,7 +97,7 @@ async function handleCreateAndAdvance() {
     const createdIds = created.map(s => s.id)
     emit('created', created.length)
     emit('advance', { partIds: createdIds, note: note.value.trim() || undefined })
-  } catch (e: any) {
+  } catch (e) {
     errorMessage.value = e?.data?.message ?? e?.message ?? 'Failed to create parts'
   } finally {
     creating.value = false
