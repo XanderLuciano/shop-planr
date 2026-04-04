@@ -66,13 +66,13 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 // Expose the input ref so the composable's global hotkey can focus it
-function setInputRef(el: ComponentPublicInstance | Element | null) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function setInputRef(el: any) {
   // UInput renders an <input> inside — grab the actual element
-  if (el && '$el' in el) {
-    const root = el.$el as HTMLElement
-    barcodeInputRef.value = (root.querySelector('input') ?? root) as HTMLInputElement
+  if (el?.$el) {
+    barcodeInputRef.value = el.$el.querySelector('input') ?? el.$el
   } else {
-    barcodeInputRef.value = el as HTMLInputElement | null
+    barcodeInputRef.value = el
   }
 }
 </script>
