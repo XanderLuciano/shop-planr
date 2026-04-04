@@ -112,5 +112,6 @@ If any check fails due to your changes, fix it before moving on. Do not leave br
 - Trailing commas are required on multiline constructs (`always-multiline`). The Nuxt preset enforces this via `@stylistic/comma-dangle`.
 - No semicolons — the codebase follows the Nuxt/Vue convention (ASI).
 - `catch (e)` — do NOT annotate catch variables with `: any`. The tsconfig sets `useUnknownInCatchVariables: false`, so `e` is implicitly `any`. Just write `catch (e)`.
-- `no-explicit-any` is enforced in source code (`app/`, `server/`). In test files it's turned off. If you must use `any` in source, add an inline `// eslint-disable-next-line @typescript-eslint/no-explicit-any` with a comment explaining why.
+- `no-explicit-any` is enforced in source code (`app/`, `server/`). In test files it's turned off. Do NOT use `any` in source code — find or create proper types instead.
 - Unused variables must be prefixed with `_` or removed. Prefer removing dead code over prefixing — only use `_` for intentionally ignored params (e.g., `(_event, row) => ...`).
+- NEVER use `eslint-disable` comments to bypass lint rules. Fix the underlying issue instead.
