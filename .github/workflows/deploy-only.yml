@@ -29,6 +29,19 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Smoke test built output
+        run: |
+          node .output/server/index.mjs &
+          SERVER_PID=$!
+          sleep 5
+          echo "Checking frontend..."
+          curl -sf http://localhost:3000 > /dev/null
+          echo "✅ Frontend OK"
+          echo "Checking API..."
+          curl -sf http://localhost:3000/api/jobs > /dev/null
+          echo "✅ API OK"
+          kill $SERVER_PID
+
       - name: Clean previous deploy artifacts
         uses: appleboy/ssh-action@029f5b4aeeeb58fdfe1410a5d17f967dacf36262 # v1.0.3
         with:
@@ -63,13 +76,23 @@ jobs:
             docker compose up -d
             docker image prune -f
 
-            # Health check - wait for container to be healthy
+            # Health check - frontend + API
             echo "Waiting for container to start..."
             sleep 5
+            FAILED=0
             if curl -sf http://localhost:3005 > /dev/null; then
-              echo "✅ Health check passed"
+              echo "✅ Frontend health check passed"
             else
-              echo "❌ Health check failed"
+              echo "❌ Frontend health check failed"
+              FAILED=1
+            fi
+            if curl -sf http://localhost:3005/api/jobs > /dev/null; then
+              echo "✅ API health check passed"
+            else
+              echo "❌ API health check failed"
+              FAILED=1
+            fi
+            if [ $FAILED -ne 0 ]; then
               docker logs shop-planr --tail 50
               exit 1
             fi

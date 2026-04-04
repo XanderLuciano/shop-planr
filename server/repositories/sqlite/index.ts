@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3'
 import { createHash } from 'crypto'
-import { readdirSync, readFileSync } from 'fs'
+import { existsSync, readdirSync, readFileSync } from 'fs'
 import { join, resolve } from 'path'
 import { fileURLToPath } from 'url'
 import { SQLiteJobRepository } from './jobRepository'
@@ -77,7 +77,8 @@ export function loadMigrationFiles(migrationsDir?: string): MigrationFile[] {
     dir = migrationsDir
   } else {
     try {
-      dir = fileURLToPath(new URL('migrations', import.meta.url))
+      const candidate = fileURLToPath(new URL('migrations', import.meta.url))
+      dir = existsSync(candidate) ? candidate : resolve(process.cwd(), 'server/repositories/sqlite/migrations')
     } catch {
       dir = resolve(process.cwd(), 'server/repositories/sqlite/migrations')
     }
