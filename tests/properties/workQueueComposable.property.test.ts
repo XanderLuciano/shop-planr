@@ -19,6 +19,11 @@ import type {
   WorkQueueJob,
 } from '~/server/types/computed'
 
+// Import composable AFTER mocks are in place
+import { useWorkQueueFilters } from '~/app/composables/useWorkQueueFilters'
+// Import the real pure function for CP-WQF-7
+import { applyFilters as realApplyFilters } from '~/app/utils/workQueueFilters'
+
 // ---------------------------------------------------------------------------
 // Mocks — must be set up BEFORE importing the composable
 // ---------------------------------------------------------------------------
@@ -52,11 +57,6 @@ vi.stubGlobal('localStorage', {
   get length() { return Object.keys(storageMap).length },
   key: (index: number) => Object.keys(storageMap)[index] ?? null,
 })
-
-// Import composable AFTER mocks are in place
-import { useWorkQueueFilters } from '~/app/composables/useWorkQueueFilters'
-// Import the real pure function for CP-WQF-7
-import { applyFilters as realApplyFilters } from '~/app/utils/workQueueFilters'
 
 // ---------------------------------------------------------------------------
 // Shared arbitrary generators
@@ -153,8 +153,7 @@ describe('Property 5: URL State Round-Trip (CP-WQF-5)', () => {
 
           if (searchVal) {
             expect(wq.searchQuery.value).toBe(searchVal)
-          }
-          else {
+          } else {
             expect(wq.searchQuery.value).toBe('')
           }
         },
@@ -338,8 +337,7 @@ describe('Property 9: Preset Capacity (CP-WQF-9)', () => {
 
             // Newest should be the last saved
             expect(wq.presets.value[19].name).toBe(`Preset ${saveCount}`)
-          }
-          else {
+          } else {
             expect(wq.presets.value).toHaveLength(saveCount)
           }
 

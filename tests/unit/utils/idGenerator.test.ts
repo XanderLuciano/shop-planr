@@ -25,7 +25,7 @@ describe('createSequentialPartIdGenerator', () => {
     let counter = 0
     const gen = createSequentialPartIdGenerator({
       getCounter: () => counter,
-      setCounter: (v) => { counter = v }
+      setCounter: (v) => { counter = v },
     })
 
     expect(gen.next()).toBe('part_00001')
@@ -38,7 +38,7 @@ describe('createSequentialPartIdGenerator', () => {
     let counter = 42
     const gen = createSequentialPartIdGenerator({
       getCounter: () => counter,
-      setCounter: (v) => { counter = v }
+      setCounter: (v) => { counter = v },
     })
 
     expect(gen.next()).toBe('part_00043')
@@ -49,7 +49,7 @@ describe('createSequentialPartIdGenerator', () => {
     let counter = 0
     const gen = createSequentialPartIdGenerator({
       getCounter: () => counter,
-      setCounter: (v) => { counter = v }
+      setCounter: (v) => { counter = v },
     })
 
     const batch = gen.nextBatch(3)
@@ -61,7 +61,7 @@ describe('createSequentialPartIdGenerator', () => {
     let counter = 5
     const gen = createSequentialPartIdGenerator({
       getCounter: () => counter,
-      setCounter: (v) => { counter = v }
+      setCounter: (v) => { counter = v },
     })
 
     expect(gen.nextBatch(0)).toEqual([])
@@ -74,7 +74,7 @@ describe('createSequentialPartIdGenerator', () => {
       getCounter: () => counter,
       setCounter: (v) => { counter = v },
       prefix: 'PART-',
-      padLength: 8
+      padLength: 8,
     })
 
     expect(gen.next()).toBe('PART-00000001')

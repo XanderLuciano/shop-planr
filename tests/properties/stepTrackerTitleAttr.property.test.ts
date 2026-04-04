@@ -8,7 +8,6 @@
  */
 import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
-import type { StepDistribution } from '~/server/types/computed'
 
 // --- Pure model functions ---
 
@@ -34,7 +33,7 @@ function getLocationTitleAttr(location: string): string {
  * Simulates CSS truncation by taking a substring of the display text.
  * The title attribute must remain the full original string regardless of truncation.
  */
-function simulateTruncation(text: string, maxDisplayChars: number): { displayText: string; titleAttr: string } {
+function simulateTruncation(text: string, maxDisplayChars: number): { displayText: string, titleAttr: string } {
   const displayText = text.length > maxDisplayChars
     ? text.substring(0, maxDisplayChars) + '…'
     : text
@@ -95,8 +94,7 @@ describe('Property 2: Truncated text has accessible full text', () => {
           if (stepName.length > maxDisplayChars) {
             expect(displayText).not.toBe(titleAttr)
             expect(displayText.length).toBeLessThan(titleAttr.length + 1) // +1 for ellipsis char
-          }
-          else {
+          } else {
             // When not truncated, display equals title
             expect(displayText).toBe(titleAttr)
           }

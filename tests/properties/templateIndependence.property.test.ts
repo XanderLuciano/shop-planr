@@ -33,7 +33,7 @@ function setupServices(db: Database.default.Database) {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
     parts: new SQLitePartRepository(db),
-    templates: new SQLiteTemplateRepository(db)
+    templates: new SQLiteTemplateRepository(db),
   }
 
   const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts })
@@ -56,7 +56,7 @@ describe('Property 8: Template Route Independence', () => {
         fc.record({
           templateStepCount: fc.integer({ min: 1, max: 5 }),
           // Modification: replace all steps with a different set
-          newStepCount: fc.integer({ min: 1, max: 5 })
+          newStepCount: fc.integer({ min: 1, max: 5 }),
         }),
         ({ templateStepCount, newStepCount }) => {
           db = createTestDb()
@@ -65,12 +65,12 @@ describe('Property 8: Template Route Independence', () => {
           // Create a template with random steps
           const templateSteps = Array.from({ length: templateStepCount }, (_, i) => ({
             name: `Template Step ${i}`,
-            location: i % 2 === 0 ? `Location ${i}` : undefined
+            location: i % 2 === 0 ? `Location ${i}` : undefined,
           }))
 
           const template = templateService.createTemplate({
             name: 'Test Template',
-            steps: templateSteps
+            steps: templateSteps,
           })
 
           // Snapshot template before modification
@@ -78,20 +78,20 @@ describe('Property 8: Template Route Independence', () => {
           const stepsBefore = templateBefore.steps.map(s => ({
             name: s.name,
             order: s.order,
-            location: s.location
+            location: s.location,
           }))
 
           // Apply template to a job
           const job = jobService.createJob({ name: 'Test Job', goalQuantity: 10 })
           const derivedPath = templateService.applyTemplate(template.id, {
             jobId: job.id,
-            goalQuantity: 10
+            goalQuantity: 10,
           })
 
           // Modify the derived path's steps (replace with completely different steps)
           const newSteps = Array.from({ length: newStepCount }, (_, i) => ({
             name: `Modified Step ${i}`,
-            location: `New Location ${i}`
+            location: `New Location ${i}`,
           }))
           pathService.updatePath(derivedPath.id, { steps: newSteps })
 
@@ -100,7 +100,7 @@ describe('Property 8: Template Route Independence', () => {
           const stepsAfter = templateAfter.steps.map(s => ({
             name: s.name,
             order: s.order,
-            location: s.location
+            location: s.location,
           }))
 
           expect(stepsAfter).toEqual(stepsBefore)
@@ -108,9 +108,9 @@ describe('Property 8: Template Route Independence', () => {
 
           db.close()
           db = null as any
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -119,19 +119,19 @@ describe('Property 8: Template Route Independence', () => {
       fc.property(
         fc.record({
           templateStepCount: fc.integer({ min: 1, max: 4 }),
-          pathCount: fc.integer({ min: 2, max: 4 })
+          pathCount: fc.integer({ min: 2, max: 4 }),
         }),
         ({ templateStepCount, pathCount }) => {
           db = createTestDb()
           const { jobService, pathService, templateService } = setupServices(db)
 
           const templateSteps = Array.from({ length: templateStepCount }, (_, i) => ({
-            name: `Step ${i}`
+            name: `Step ${i}`,
           }))
 
           const template = templateService.createTemplate({
             name: 'Shared Template',
-            steps: templateSteps
+            steps: templateSteps,
           })
 
           const templateBefore = templateService.getTemplate(template.id)
@@ -145,7 +145,7 @@ describe('Property 8: Template Route Independence', () => {
             const p = templateService.applyTemplate(template.id, {
               jobId: job.id,
               goalQuantity: 10,
-              pathName: `Path ${i}`
+              pathName: `Path ${i}`,
             })
             derivedPaths.push(p)
           }
@@ -153,7 +153,7 @@ describe('Property 8: Template Route Independence', () => {
           // Modify each derived path differently
           for (let i = 0; i < derivedPaths.length; i++) {
             pathService.updatePath(derivedPaths[i].id, {
-              steps: [{ name: `Custom Step for Path ${i}` }]
+              steps: [{ name: `Custom Step for Path ${i}` }],
             })
           }
 
@@ -171,9 +171,9 @@ describe('Property 8: Template Route Independence', () => {
 
           db.close()
           db = null as any
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })

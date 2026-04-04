@@ -49,14 +49,14 @@ describe('Property 5: Non-existent job ID rejection', () => {
     fc.assert(
       fc.property(
         fc.integer({ min: 2, max: 15 }),
-        fc.integer({ min: 0 }),  // index offset to pick which job ID to replace
-        fc.uuid(),               // fake non-existent job ID
+        fc.integer({ min: 0 }), // index offset to pick which job ID to replace
+        fc.uuid(), // fake non-existent job ID
         (n, indexOffset, fakeId) => {
           db = createTestDb()
           const { jobService } = setupServices(db)
 
           // Create N jobs
-          const createdJobs: { id: string; priority: number }[] = []
+          const createdJobs: { id: string, priority: number }[] = []
           for (let i = 0; i < n; i++) {
             const job = jobService.createJob({ name: `Job ${i}`, goalQuantity: 10 })
             createdJobs.push({ id: job.id, priority: job.priority })
@@ -87,9 +87,9 @@ describe('Property 5: Non-existent job ID rejection', () => {
 
           db.close()
           db = null as any
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })

@@ -24,6 +24,7 @@ export const STATUS_MESSAGES: Record<number, string> = {
  * Entry in the data-driven error class → status code mapping.
  */
 export interface ErrorStatusEntry {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   errorClass: new (...args: any[]) => Error
   statusCode: number
 }
@@ -87,8 +88,7 @@ export function defineApiHandler<T>(
   return defineEventHandler(async (event) => {
     try {
       return await handler(event)
-    }
-    catch (error) {
+    } catch (error) {
       httpError(error)
     }
   })

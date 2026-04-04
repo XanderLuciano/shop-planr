@@ -72,7 +72,7 @@ export class SQLitePathRepository implements PathRepository {
     if (!row) return null
 
     const stepRows = this.db.prepare(
-      'SELECT * FROM process_steps WHERE path_id = ? AND removed_at IS NULL ORDER BY step_order ASC'
+      'SELECT * FROM process_steps WHERE path_id = ? AND removed_at IS NULL ORDER BY step_order ASC',
     ).all(id) as StepRow[]
 
     return {
@@ -89,12 +89,12 @@ export class SQLitePathRepository implements PathRepository {
 
   listByJobId(jobId: string): Path[] {
     const rows = this.db.prepare(
-      'SELECT * FROM paths WHERE job_id = ? ORDER BY created_at ASC'
+      'SELECT * FROM paths WHERE job_id = ? ORDER BY created_at ASC',
     ).all(jobId) as PathRow[]
 
     return rows.map((row) => {
       const stepRows = this.db.prepare(
-        'SELECT * FROM process_steps WHERE path_id = ? AND removed_at IS NULL ORDER BY step_order ASC'
+        'SELECT * FROM process_steps WHERE path_id = ? AND removed_at IS NULL ORDER BY step_order ASC',
       ).all(row.id) as StepRow[]
 
       return {
@@ -118,14 +118,14 @@ export class SQLitePathRepository implements PathRepository {
       ...existing,
       ...partial,
       id,
-      updatedAt: partial.updatedAt ?? new Date().toISOString()
+      updatedAt: partial.updatedAt ?? new Date().toISOString(),
     }
 
     const updatePathStmt = this.db.prepare(`
       UPDATE paths SET name = ?, goal_quantity = ?, advancement_mode = ?, updated_at = ? WHERE id = ?
     `)
     const setTempOrderStmt = this.db.prepare(
-      'UPDATE process_steps SET step_order = ? WHERE id = ?'
+      'UPDATE process_steps SET step_order = ? WHERE id = ?',
     )
     const updateStepStmt = this.db.prepare(`
       UPDATE process_steps SET name = ?, step_order = ?, location = ?, optional = ?, dependency_type = ? WHERE id = ?
@@ -135,7 +135,7 @@ export class SQLitePathRepository implements PathRepository {
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `)
     const deleteStepStmt = this.db.prepare(
-      'DELETE FROM process_steps WHERE id = ?'
+      'DELETE FROM process_steps WHERE id = ?',
     )
 
     this.db.transaction(() => {
@@ -154,7 +154,7 @@ export class SQLitePathRepository implements PathRepository {
         for (const stepId of idsToDelete) {
           if (this.hasStepDependents(stepId)) {
             throw new ValidationError(
-              'Cannot remove step because it has associated data (certificates, notes, part statuses, or overrides). Remove the associated data first, or keep the step.'
+              'Cannot remove step because it has associated data (certificates, notes, part statuses, or overrides). Remove the associated data first, or keep the step.',
             )
           }
         }
@@ -191,14 +191,14 @@ export class SQLitePathRepository implements PathRepository {
 
   getStepById(stepId: string): ProcessStep | null {
     const row = this.db.prepare(
-      'SELECT * FROM process_steps WHERE id = ? AND removed_at IS NULL'
+      'SELECT * FROM process_steps WHERE id = ? AND removed_at IS NULL',
     ).get(stepId) as StepRow | undefined
     return row ? stepRowToDomain(row) : null
   }
 
   getStepByIdIncludeRemoved(stepId: string): ProcessStep | null {
     const row = this.db.prepare(
-      'SELECT * FROM process_steps WHERE id = ?'
+      'SELECT * FROM process_steps WHERE id = ?',
     ).get(stepId) as StepRow | undefined
     return row ? stepRowToDomain(row) : null
   }
@@ -236,7 +236,7 @@ export class SQLitePathRepository implements PathRepository {
     ]
     for (const table of tables) {
       const row = this.db.prepare(
-        `SELECT 1 FROM ${table} WHERE step_id = ? LIMIT 1`
+        `SELECT 1 FROM ${table} WHERE step_id = ? LIMIT 1`,
       ).get(stepId)
       if (row) return true
     }
@@ -245,7 +245,7 @@ export class SQLitePathRepository implements PathRepository {
 
   softDeleteStep(stepId: string, removedAt: string): void {
     this.db.prepare(
-      'UPDATE process_steps SET removed_at = ?, step_order = NULL WHERE id = ?'
+      'UPDATE process_steps SET removed_at = ?, step_order = NULL WHERE id = ?',
     ).run(removedAt, stepId)
   }
 }

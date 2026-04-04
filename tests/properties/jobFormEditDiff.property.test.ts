@@ -13,6 +13,8 @@
 import { describe, it, vi } from 'vitest'
 import fc from 'fast-check'
 
+import { computePathChanges, type PathDraft } from '~/app/composables/useJobForm'
+
 // Stub auto-imported composables
 vi.stubGlobal('useJobs', () => ({
   createJob: vi.fn(),
@@ -23,9 +25,6 @@ vi.stubGlobal('usePaths', () => ({
   updatePath: vi.fn(),
   deletePath: vi.fn(),
 }))
-
-import { computePathChanges, type PathDraft } from '~/app/composables/useJobForm'
-import type { Path } from '~/server/types/domain'
 
 const processStepArb = fc.record({
   id: fc.uuid(),
@@ -50,26 +49,6 @@ const originalPathArb = fc.record({
 })
 
 // A draft that references an existing path (for updates/unchanged)
-function existingDraftArb(existingId: string): fc.Arbitrary<PathDraft> {
-  return fc.record({
-    _clientId: fc.uuid(),
-    _existingId: fc.constant(existingId),
-    name: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
-    goalQuantity: fc.integer({ min: 1, max: 1000 }),
-    advancementMode: fc.constantFrom('strict' as const, 'flexible' as const, 'per_step' as const),
-    steps: fc.array(
-      fc.record({
-        _clientId: fc.uuid(),
-        name: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
-        location: fc.string({ minLength: 0, maxLength: 20 }),
-        optional: fc.boolean(),
-        dependencyType: fc.constantFrom('physical' as const, 'preferred' as const, 'completion_gate' as const),
-      }),
-      { minLength: 1, maxLength: 4 },
-    ),
-  })
-}
-
 // A brand-new draft (no _existingId)
 const newDraftArb: fc.Arbitrary<PathDraft> = fc.record({
   _clientId: fc.uuid(),
@@ -149,7 +128,6 @@ describe('Property 10: Edit diff correctly classifies path changes', () => {
           // No overlaps: delete IDs, update existingIds, and create clientIds are disjoint
           const deleteIds = new Set(result.toDelete.map(d => d.id))
           const updateIds = new Set(result.toUpdate.map(d => d._existingId!))
-          const createClientIds = new Set(result.toCreate.map(d => d._clientId))
 
           // Delete and update IDs should not overlap
           for (const uid of updateIds) {

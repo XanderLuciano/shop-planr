@@ -34,7 +34,7 @@ function onSubmit() {
   if (!validate()) return
   emit('submit', {
     name: name.value.trim(),
-    goalQuantity: goalQuantity.value
+    goalQuantity: goalQuantity.value,
   })
 }
 </script>

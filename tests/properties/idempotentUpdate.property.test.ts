@@ -26,7 +26,7 @@ const arbExistingStepsNonEmpty = fc.integer({ min: 1, max: 10 }).chain(n =>
       optional: fc.boolean(),
       dependencyType: fc.constantFrom('physical' as const, 'preferred' as const, 'completion_gate' as const),
     }),
-    { minLength: n, maxLength: n }
+    { minLength: n, maxLength: n },
   ).map(items =>
     items.map((item, i) => ({
       id: `step_${i}`,
@@ -36,8 +36,8 @@ const arbExistingStepsNonEmpty = fc.integer({ min: 1, max: 10 }).chain(n =>
       optional: item.optional,
       dependencyType: item.dependencyType,
       completedCount: 0,
-    }))
-  )
+    })),
+  ),
 )
 
 describe('Property 5: Idempotent Update', () => {
@@ -70,9 +70,9 @@ describe('Property 5: Idempotent Update', () => {
           for (let i = 0; i < existingSteps.length; i++) {
             expect(result.toUpdate[i].id).toBe(existingSteps[i].id)
           }
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })

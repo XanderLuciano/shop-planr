@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { JiraTicket } from '~/types/jira'
-import type { TemplateRoute } from '~/types/domain'
 import type { TableColumn } from '@nuxt/ui'
 
 const { tickets, loading, error, fromCache, fetchTickets, linkTicket, refreshTickets } = useJira()
@@ -31,7 +30,7 @@ const linkedTicketKeys = computed(() => {
 })
 
 const unlinkedTickets = computed(() =>
-  tickets.value.filter(t => !linkedTicketKeys.value.has(t.key))
+  tickets.value.filter(t => !linkedTicketKeys.value.has(t.key)),
 )
 
 // Table columns
@@ -62,13 +61,13 @@ async function confirmLink() {
     await linkTicket({
       ticketKey: selectedTicket.value.key,
       templateId: selectedOrUndefined(selectedTemplateId.value),
-      goalQuantity: overrideQuantity.value || undefined
+      goalQuantity: overrideQuantity.value || undefined,
     })
     showLinkModal.value = false
     selectedTicket.value = null
     // Re-fetch jobs so the filter updates
     await fetchJobs()
-  } catch (e: any) {
+  } catch (e) {
     linkError.value = e?.data?.message ?? e?.message ?? 'Failed to link ticket'
   } finally {
     linking.value = false

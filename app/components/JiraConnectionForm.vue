@@ -15,7 +15,7 @@ const form = reactive({
   username: props.connection.username,
   apiToken: props.connection.apiToken,
   enabled: props.connection.enabled,
-  pushEnabled: props.connection.pushEnabled
+  pushEnabled: props.connection.pushEnabled,
 })
 
 const testStatus = ref<'idle' | 'testing' | 'success' | 'error'>('idle')

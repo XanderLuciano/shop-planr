@@ -23,12 +23,21 @@ function onCancel() {
       to="/jobs"
       class="inline-flex items-center gap-1 text-xs text-(--ui-text-muted) hover:text-(--ui-text-highlighted) transition-colors"
     >
-      <UIcon name="i-lucide-arrow-left" class="size-3" />
+      <UIcon
+        name="i-lucide-arrow-left"
+        class="size-3"
+      />
       Back to Jobs
     </NuxtLink>
 
-    <h1 class="text-lg font-bold text-(--ui-text-highlighted)">New Job</h1>
+    <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
+      New Job
+    </h1>
 
-    <JobCreationForm mode="create" @saved="onSaved" @cancel="onCancel" />
+    <JobCreationForm
+      mode="create"
+      @saved="onSaved"
+      @cancel="onCancel"
+    />
   </div>
 </template>

@@ -31,7 +31,7 @@ function openFormWithText(text: string): NoteFormState {
  * Mirrors the Cancel button handler in parts-browser/[id].vue:
  *   showNoteForm.value = false; noteText.value = ''
  */
-function cancelForm(state: NoteFormState): NoteFormState {
+function cancelForm(_state: NoteFormState): NoteFormState {
   return { showNoteForm: false, noteText: '' }
 }
 

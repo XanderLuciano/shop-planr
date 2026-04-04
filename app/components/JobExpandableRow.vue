@@ -111,7 +111,7 @@ async function onExpandAllPaths() {
           const detail = await $fetch<{ distribution: StepDist[], completedCount?: number }>(`/api/paths/${pathId}`)
           pathDistributions.value[pathId] = detail.distribution ?? []
           pathCompletedCounts.value[pathId] = detail.completedCount ?? 0
-        })
+        }),
       )
       for (let j = 0; j < batch.length; j++) {
         if (results[j]!.status === 'rejected' && !pathDistributions.value[batch[j]!]) {

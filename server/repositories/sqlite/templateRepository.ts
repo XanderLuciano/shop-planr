@@ -36,7 +36,7 @@ function rowToDomain(row: TemplateRow, steps: TemplateStep[]): TemplateRoute {
     name: row.name,
     steps,
     createdAt: row.created_at,
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
   }
 }
 
@@ -72,7 +72,7 @@ export class SQLiteTemplateRepository implements TemplateRepository {
     if (!row) return null
 
     const stepRows = this.db.prepare(
-      'SELECT * FROM template_steps WHERE template_id = ? ORDER BY step_order ASC'
+      'SELECT * FROM template_steps WHERE template_id = ? ORDER BY step_order ASC',
     ).all(id) as TemplateStepRow[]
 
     return rowToDomain(row, stepRows.map(stepRowToDomain))
@@ -82,7 +82,7 @@ export class SQLiteTemplateRepository implements TemplateRepository {
     const rows = this.db.prepare('SELECT * FROM templates ORDER BY created_at DESC').all() as TemplateRow[]
     return rows.map((row) => {
       const stepRows = this.db.prepare(
-        'SELECT * FROM template_steps WHERE template_id = ? ORDER BY step_order ASC'
+        'SELECT * FROM template_steps WHERE template_id = ? ORDER BY step_order ASC',
       ).all(row.id) as TemplateStepRow[]
       return rowToDomain(row, stepRows.map(stepRowToDomain))
     })
@@ -96,7 +96,7 @@ export class SQLiteTemplateRepository implements TemplateRepository {
       ...existing,
       ...partial,
       id,
-      updatedAt: partial.updatedAt ?? new Date().toISOString()
+      updatedAt: partial.updatedAt ?? new Date().toISOString(),
     }
 
     const updateTemplate = this.db.prepare('UPDATE templates SET name = ?, updated_at = ? WHERE id = ?')

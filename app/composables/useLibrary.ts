@@ -12,7 +12,7 @@ export function useLibrary() {
     error.value = null
     try {
       processes.value = await $fetch<ProcessLibraryEntry[]>('/api/library/processes')
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch processes'
     } finally {
       loading.value = false
@@ -24,7 +24,7 @@ export function useLibrary() {
     error.value = null
     try {
       locations.value = await $fetch<LocationLibraryEntry[]>('/api/library/locations')
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch locations'
     } finally {
       loading.value = false
@@ -41,7 +41,7 @@ export function useLibrary() {
       })
       processes.value = [...processes.value, entry]
       return entry
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to add process'
       throw e
     } finally {
@@ -55,7 +55,7 @@ export function useLibrary() {
     try {
       await $fetch(`/api/library/processes/${encodeURIComponent(id)}`, { method: 'DELETE' })
       processes.value = processes.value.filter(p => p.id !== id)
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to remove process'
       throw e
     } finally {
@@ -73,7 +73,7 @@ export function useLibrary() {
       })
       locations.value = [...locations.value, entry]
       return entry
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to add location'
       throw e
     } finally {
@@ -87,7 +87,7 @@ export function useLibrary() {
     try {
       await $fetch(`/api/library/locations/${encodeURIComponent(id)}`, { method: 'DELETE' })
       locations.value = locations.value.filter(l => l.id !== id)
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to remove location'
       throw e
     } finally {

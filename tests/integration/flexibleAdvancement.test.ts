@@ -27,10 +27,10 @@ describe('Flexible Advancement Integration', () => {
       name: 'Flexible Path',
       goalQuantity: 5,
       steps: [
-        { name: 'Cut' },       // step 0 — required (default)
-        { name: 'Deburr' },    // step 1 — will be made optional
-        { name: 'Weld' },      // step 2 — required
-        { name: 'Inspect' },   // step 3 — required
+        { name: 'Cut' }, // step 0 — required (default)
+        { name: 'Deburr' }, // step 1 — will be made optional
+        { name: 'Weld' }, // step 2 — required
+        { name: 'Inspect' }, // step 3 — required
       ],
     })
 
@@ -44,7 +44,7 @@ describe('Flexible Advancement Integration', () => {
     // 3. Create part
     const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
-      'operator1'
+      'operator1',
     )
 
     // 4. Advance from step 0 to step 3, skipping steps 1 and 2
@@ -60,10 +60,10 @@ describe('Flexible Advancement Integration', () => {
     const step2Bypass = result.bypassed.find(b => b.stepName === 'Weld')
 
     expect(step1Bypass).toBeDefined()
-    expect(step1Bypass!.classification).toBe('skipped')  // optional → skipped
+    expect(step1Bypass!.classification).toBe('skipped') // optional → skipped
 
     expect(step2Bypass).toBeDefined()
-    expect(step2Bypass!.classification).toBe('deferred')  // required → deferred
+    expect(step2Bypass!.classification).toBe('deferred') // required → deferred
 
     // 6. Verify part is now at step 3
     expect(result.serial.currentStepId).toBe(path.steps[3].id)
@@ -77,7 +77,7 @@ describe('Flexible Advancement Integration', () => {
     const completedDeferred = lifecycleService.completeDeferredStep(
       part.id,
       path.steps[2].id,
-      'operator1'
+      'operator1',
     )
     expect(completedDeferred.status).toBe('completed')
 
@@ -105,7 +105,7 @@ describe('Flexible Advancement Integration', () => {
 
     const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
-      'user1'
+      'user1',
     )
 
     // Trying to skip from step 0 to step 2 in strict mode → should fail
@@ -113,7 +113,7 @@ describe('Flexible Advancement Integration', () => {
       lifecycleService.advanceToStep(part.id, {
         targetStepId: path.steps[2].id,
         userId: 'user1',
-      })
+      }),
     ).toThrow(/strict/)
 
     // Sequential advance (0 → 1) should work
@@ -144,7 +144,7 @@ describe('Flexible Advancement Integration', () => {
 
     const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
-      'user1'
+      'user1',
     )
 
     // Trying to skip past physical dependency → should fail
@@ -152,7 +152,7 @@ describe('Flexible Advancement Integration', () => {
       lifecycleService.advanceToStep(part.id, {
         targetStepId: path.steps[2].id,
         userId: 'user1',
-      })
+      }),
     ).toThrow(/physical/)
   })
 
@@ -171,7 +171,7 @@ describe('Flexible Advancement Integration', () => {
 
     const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
-      'user1'
+      'user1',
     )
 
     // Advance to step 2
@@ -179,7 +179,7 @@ describe('Flexible Advancement Integration', () => {
 
     // Try to go back to step 1 → should fail
     expect(() =>
-      lifecycleService.advanceToStep(part.id, { targetStepId: path.steps[1].id, userId: 'user1' })
+      lifecycleService.advanceToStep(part.id, { targetStepId: path.steps[1].id, userId: 'user1' }),
     ).toThrow(/before/)
   })
 })

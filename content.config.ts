@@ -14,8 +14,8 @@ export default defineContentConfig({
         icon: z.string().optional(),
         requestBody: z.string().optional(),
         responseType: z.string().optional(),
-        errorCodes: z.array(z.number()).optional()
-      })
-    })
-  }
+        errorCodes: z.array(z.number()).optional(),
+      }),
+    }),
+  },
 })

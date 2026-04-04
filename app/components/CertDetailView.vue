@@ -19,7 +19,7 @@ onMounted(async () => {
     ])
     cert.value = certData
     attachments.value = attachData
-  } catch (e: any) {
+  } catch (e) {
     error.value = e?.data?.message ?? e?.message ?? 'Failed to load certificate'
   } finally {
     loading.value = false
@@ -33,22 +33,42 @@ function formatDate(iso: string): string {
 
 <template>
   <div class="space-y-4">
-    <div v-if="loading" class="text-sm text-(--ui-text-muted)">Loading...</div>
-    <div v-else-if="error" class="text-sm text-(--ui-error)">{{ error }}</div>
+    <div
+      v-if="loading"
+      class="text-sm text-(--ui-text-muted)"
+    >
+      Loading...
+    </div>
+    <div
+      v-else-if="error"
+      class="text-sm text-(--ui-error)"
+    >
+      {{ error }}
+    </div>
 
     <template v-else-if="cert">
       <div class="space-y-2">
-        <h3 class="text-lg font-semibold text-(--ui-text-highlighted)">{{ cert.name }}</h3>
+        <h3 class="text-lg font-semibold text-(--ui-text-highlighted)">
+          {{ cert.name }}
+        </h3>
         <div class="flex items-center gap-2">
-          <UBadge :color="cert.type === 'material' ? 'primary' : 'neutral'" variant="subtle">
+          <UBadge
+            :color="cert.type === 'material' ? 'primary' : 'neutral'"
+            variant="subtle"
+          >
             {{ cert.type }}
           </UBadge>
           <span class="text-xs text-(--ui-text-muted)">Created {{ formatDate(cert.createdAt) }}</span>
         </div>
       </div>
 
-      <div v-if="cert.metadata && Object.keys(cert.metadata).length" class="space-y-1">
-        <h4 class="text-sm font-semibold text-(--ui-text-highlighted)">Metadata</h4>
+      <div
+        v-if="cert.metadata && Object.keys(cert.metadata).length"
+        class="space-y-1"
+      >
+        <h4 class="text-sm font-semibold text-(--ui-text-highlighted)">
+          Metadata
+        </h4>
         <div class="border border-(--ui-border) rounded-md p-3">
           <div
             v-for="(value, key) in cert.metadata"
@@ -65,10 +85,16 @@ function formatDate(iso: string): string {
         <h4 class="text-sm font-semibold text-(--ui-text-highlighted)">
           Attached Parts ({{ attachments.length }})
         </h4>
-        <div v-if="!attachments.length" class="text-sm text-(--ui-text-muted)">
+        <div
+          v-if="!attachments.length"
+          class="text-sm text-(--ui-text-muted)"
+        >
           No parts attached
         </div>
-        <div v-else class="border border-(--ui-border) rounded-md divide-y divide-(--ui-border) max-h-60 overflow-y-auto">
+        <div
+          v-else
+          class="border border-(--ui-border) rounded-md divide-y divide-(--ui-border) max-h-60 overflow-y-auto"
+        >
           <div
             v-for="att in attachments"
             :key="`${att.partId}-${att.stepId}`"

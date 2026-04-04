@@ -11,7 +11,7 @@ export function useSettings() {
     error.value = null
     try {
       settings.value = await $fetch<AppSettings>('/api/settings')
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch settings'
       settings.value = null
     } finally {
@@ -26,7 +26,7 @@ export function useSettings() {
   }): Promise<AppSettings> {
     const result = await $fetch<AppSettings>('/api/settings', {
       method: 'PUT',
-      body: input
+      body: input,
     })
     settings.value = result
     return result
@@ -37,6 +37,6 @@ export function useSettings() {
     loading: readonly(loading),
     error: readonly(error),
     fetchSettings,
-    updateSettings
+    updateSettings,
   }
 }

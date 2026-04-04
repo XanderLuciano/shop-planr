@@ -17,7 +17,10 @@ import type { AuditEntry, AuditAction } from '../../server/types/domain'
 function createInMemoryAuditRepo() {
   const entries: AuditEntry[] = []
   return {
-    create: (entry: AuditEntry) => { entries.push(entry); return entry },
+    create: (entry: AuditEntry) => {
+      entries.push(entry)
+      return entry
+    },
     list: () => [...entries],
     listByPartId: (partId: string) => entries.filter(e => e.partId === partId),
     listByJobId: (jobId: string) => entries.filter(e => e.jobId === jobId),
@@ -80,7 +83,7 @@ describe('Property 10: Audit Trail Completeness for Lifecycle Actions', () => {
         const auditService = createAuditService({ audit: repo })
 
         // Perform each lifecycle operation
-        const operations: { fn: () => void; expectedAction: AuditAction }[] = [
+        const operations: { fn: () => void, expectedAction: AuditAction }[] = [
           {
             fn: () => auditService.recordScrap({ userId, partId, jobId, pathId, stepId, metadata: { reason: 'damaged' } }),
             expectedAction: 'part_scrapped',

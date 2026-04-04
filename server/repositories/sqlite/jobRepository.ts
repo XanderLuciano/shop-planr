@@ -31,7 +31,7 @@ function rowToDomain(row: JobRow): Job {
     jiraEpicLink: row.jira_epic_link ?? undefined,
     jiraLabels: row.jira_labels ? JSON.parse(row.jira_labels) : undefined,
     createdAt: row.created_at,
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
   }
 }
 
@@ -62,7 +62,7 @@ export class SQLiteJobRepository implements JobRepository {
         jobWithPriority.jiraEpicLink ?? null,
         jobWithPriority.jiraLabels ? JSON.stringify(jobWithPriority.jiraLabels) : null,
         jobWithPriority.createdAt,
-        jobWithPriority.updatedAt
+        jobWithPriority.updatedAt,
       )
       return jobWithPriority
     })()
@@ -85,7 +85,7 @@ export class SQLiteJobRepository implements JobRepository {
       job.jiraEpicLink ?? null,
       job.jiraLabels ? JSON.stringify(job.jiraLabels) : null,
       job.createdAt,
-      job.updatedAt
+      job.updatedAt,
     )
     return job
   }
@@ -120,7 +120,7 @@ export class SQLiteJobRepository implements JobRepository {
       updated.jiraEpicLink ?? null,
       updated.jiraLabels ? JSON.stringify(updated.jiraLabels) : null,
       updated.updatedAt,
-      id
+      id,
     )
     return updated
   }
@@ -130,7 +130,7 @@ export class SQLiteJobRepository implements JobRepository {
     return result.changes > 0
   }
 
-  bulkUpdatePriority(entries: { id: string; priority: number }[]): void {
+  bulkUpdatePriority(entries: { id: string, priority: number }[]): void {
     const stmt = this.db.prepare('UPDATE jobs SET priority = ?, updated_at = ? WHERE id = ?')
     const now = new Date().toISOString()
 

@@ -73,8 +73,8 @@ describe('Property 14: Template Field Propagation', () => {
   it('applying a template copies optional and dependencyType to ProcessSteps', () => {
     fc.assert(
       fc.property(
-        arbNonEmptyName,  // template name
-        fc.array(arbTemplateStep, { minLength: 1, maxLength: 8 }),  // steps
+        arbNonEmptyName, // template name
+        fc.array(arbTemplateStep, { minLength: 1, maxLength: 8 }), // steps
         (templateName, steps) => {
           const templateRepo = createInMemoryTemplateRepo()
           const pathRepo = createInMemoryPathRepo()

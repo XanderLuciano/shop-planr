@@ -12,7 +12,6 @@ import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
 import {
   mergePageToggles,
-  isPageEnabled,
   DEFAULT_PAGE_TOGGLES,
   VALID_TOGGLE_KEYS,
 } from '~/server/utils/pageToggles'
@@ -37,7 +36,7 @@ const arbPageToggles: fc.Arbitrary<PageToggles> = fc.record({
 })
 
 /** Arbitrary that produces a partial PageToggles (random subset of keys). */
-const arbPartialToggles: fc.Arbitrary<Partial<PageToggles>> = arbPageToggles.chain((full) =>
+const arbPartialToggles: fc.Arbitrary<Partial<PageToggles>> = arbPageToggles.chain(full =>
   fc.subarray(ALL_KEYS, { minLength: 0, maxLength: ALL_KEYS.length }).map((keys) => {
     const partial: Partial<PageToggles> = {}
     for (const k of keys) {
@@ -51,12 +50,12 @@ const arbPartialToggles: fc.Arbitrary<Partial<PageToggles>> = arbPageToggles.cha
 const arbUnknownKeys: fc.Arbitrary<Record<string, unknown>> = fc
   .array(
     fc.tuple(
-      fc.stringMatching(/^[a-z]{3,10}$/).filter((s) => !VALID_TOGGLE_KEYS.has(s)),
+      fc.stringMatching(/^[a-z]{3,10}$/).filter(s => !VALID_TOGGLE_KEYS.has(s)),
       fc.oneof(fc.boolean(), fc.integer(), fc.string()),
     ),
     { minLength: 1, maxLength: 5 },
   )
-  .map((pairs) => Object.fromEntries(pairs))
+  .map(pairs => Object.fromEntries(pairs))
 
 describe('Property 5: Partial update preservation', () => {
   /**
@@ -129,7 +128,7 @@ describe('Property 7: Missing keys default to true', () => {
     fc.assert(
       fc.property(
         // Generate a partial current with a random subset of keys
-        arbPageToggles.chain((full) =>
+        arbPageToggles.chain(full =>
           fc.subarray(ALL_KEYS, { minLength: 0, maxLength: 8 }).map((keys) => {
             const partial: Partial<PageToggles> = {}
             for (const k of keys) {

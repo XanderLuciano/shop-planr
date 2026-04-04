@@ -35,7 +35,7 @@ function validatePhysicalDependencies(
   steps: StepConfig[],
   stepStatuses: StepStatus[],
   overriddenStepIds: Set<string>,
-): { valid: boolean; error?: string } {
+): { valid: boolean, error?: string } {
   // Identify bypassed steps
   for (let i = currentStepOrder + 1; i < targetStepOrder; i++) {
     if (i >= steps.length) continue
@@ -54,7 +54,7 @@ function validatePhysicalDependencies(
 }
 
 /** Generate a step config */
-function stepConfigArb(index: number): fc.Arbitrary<StepConfig> {
+function _stepConfigArb(index: number): fc.Arbitrary<StepConfig> {
   return fc.record({
     id: fc.constant(`step-${index}`),
     name: fc.constant(`Step ${index}`),
@@ -65,7 +65,7 @@ function stepConfigArb(index: number): fc.Arbitrary<StepConfig> {
 }
 
 /** Generate a step status */
-function stepStatusArb(stepId: string): fc.Arbitrary<StepStatus> {
+function _stepStatusArb(stepId: string): fc.Arbitrary<StepStatus> {
   return fc.record({
     stepId: fc.constant(stepId),
     status: fc.constantFrom(

@@ -32,7 +32,7 @@ function onSubmit() {
     displayName: displayName.value.trim(),
     department: department.value.trim() || undefined,
     isAdmin: isAdmin.value,
-    ...(props.user ? { active: active.value } : {})
+    ...(props.user ? { active: active.value } : {}),
   })
 }
 </script>

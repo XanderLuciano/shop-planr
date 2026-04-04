@@ -23,7 +23,7 @@ function addRow() {
     jiraFieldId: '',
     label: '',
     shopErpField: '',
-    isDefault: false
+    isDefault: false,
   })
 }
 

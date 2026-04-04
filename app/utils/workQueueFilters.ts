@@ -74,7 +74,7 @@ export function applyFilters(
  */
 export function extractAvailableValues(
   groups: WorkQueueGroup[],
-): { locations: string[]; stepNames: string[]; userIds: string[] } {
+): { locations: string[], stepNames: string[], userIds: string[] } {
   const locationSet = new Set<string>()
   const stepNameSet = new Set<string>()
   const userIdSet = new Set<string>()

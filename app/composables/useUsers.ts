@@ -82,6 +82,6 @@ export function useUsers() {
     selectUser,
     clearUser,
     requireUser,
-    init
+    init,
   }
 }

@@ -58,7 +58,7 @@ function createServices(db: Database.Database) {
     audit: new SQLiteAuditRepository(db),
     notes: new SQLiteNoteRepository(db),
     users: new SQLiteUserRepository(db),
-    library: new SQLiteLibraryRepository(db)
+    library: new SQLiteLibraryRepository(db),
   }
 
   const partIdGenerator = createSequentialPartIdGenerator({
@@ -68,7 +68,7 @@ function createServices(db: Database.Database) {
     },
     setCounter: (v: number) => {
       db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-    }
+    },
   })
 
   const auditService = createAuditService({ audit: repos.audit })
@@ -77,7 +77,7 @@ function createServices(db: Database.Database) {
   const partService = createPartService(
     { parts: repos.parts, paths: repos.paths, certs: repos.certs },
     auditService,
-    partIdGenerator
+    partIdGenerator,
   )
   const certService = createCertService({ certs: repos.certs }, auditService)
   const templateService = createTemplateService({ templates: repos.templates, paths: repos.paths })
@@ -110,20 +110,24 @@ export function seedDatabase(dbPath: string): void {
     const processes = [
       'CNC Machine', 'Stress Relief', 'Heat Treat', 'Chemfilm', 'Anodize',
       'Hard Anodize', 'Passivate', 'Inspection', 'Deburr', 'Clean',
-      'Laser Engrave', 'Bead Blast'
+      'Laser Engrave', 'Bead Blast',
     ]
     for (const name of processes) {
-      try { svc.libraryService.addProcess(name) } catch { /* already exists */ }
+      try {
+        svc.libraryService.addProcess(name)
+      } catch { /* already exists */ }
     }
     console.log(`  Process library: ${processes.length} entries`)
 
     // ── Location Library ──
     const locations = [
       'CNC Department', 'QC Lab', 'Deburr Station', 'Vendor - Anodize Co.',
-      'Vendor - HeatTreat Inc.', 'Vendor - Chemfilm Services', 'Shipping', 'Laser Room'
+      'Vendor - HeatTreat Inc.', 'Vendor - Chemfilm Services', 'Shipping', 'Laser Room',
     ]
     for (const name of locations) {
-      try { svc.libraryService.addLocation(name) } catch { /* already exists */ }
+      try {
+        svc.libraryService.addLocation(name)
+      } catch { /* already exists */ }
     }
     console.log(`  Location library: ${locations.length} entries`)
 
@@ -134,8 +138,8 @@ export function seedDatabase(dbPath: string): void {
       steps: [
         { name: 'CNC Machine', location: 'CNC Department' },
         { name: 'Deburr', location: 'Deburr Station' },
-        { name: 'Inspection', location: 'QC Lab' }
-      ]
+        { name: 'Inspection', location: 'QC Lab' },
+      ],
     })
     console.log(`  Template: ${tmplBasic.name}`)
 
@@ -147,8 +151,8 @@ export function seedDatabase(dbPath: string): void {
         { name: 'Deburr', location: 'Deburr Station' },
         { name: 'Inspection', location: 'QC Lab' },
         { name: 'Chemfilm', location: 'Vendor - Chemfilm Services' },
-        { name: 'Final Inspection', location: 'QC Lab' }
-      ]
+        { name: 'Final Inspection', location: 'QC Lab' },
+      ],
     })
     console.log(`  Template: ${tmplChemfilm.name}`)
 
@@ -162,8 +166,8 @@ export function seedDatabase(dbPath: string): void {
         { name: 'Deburr', location: 'Deburr Station' },
         { name: 'Inspection', location: 'QC Lab' },
         { name: 'Hard Anodize', location: 'Vendor - Anodize Co.' },
-        { name: 'Final Inspection', location: 'QC Lab' }
-      ]
+        { name: 'Final Inspection', location: 'QC Lab' },
+      ],
     })
     console.log(`  Template: ${tmplHardAnodize.name}`)
 
@@ -177,8 +181,8 @@ export function seedDatabase(dbPath: string): void {
         { name: 'Deburr', location: 'Deburr Station' },
         { name: 'Inspection', location: 'QC Lab' },
         { name: 'Passivate', location: 'Vendor - Chemfilm Services' },
-        { name: 'Final Inspection', location: 'QC Lab' }
-      ]
+        { name: 'Final Inspection', location: 'QC Lab' },
+      ],
     })
     console.log(`  Template: ${tmplSteelPassivate.name}`)
 
@@ -191,8 +195,8 @@ export function seedDatabase(dbPath: string): void {
         { name: 'Bead Blast', location: 'Deburr Station' },
         { name: 'Inspection', location: 'QC Lab' },
         { name: 'Anodize', location: 'Vendor - Anodize Co.' },
-        { name: 'Final Inspection', location: 'QC Lab' }
-      ]
+        { name: 'Final Inspection', location: 'QC Lab' },
+      ],
     })
     console.log(`  Template: ${tmplAnodize.name}`)
 
@@ -207,47 +211,47 @@ export function seedDatabase(dbPath: string): void {
     const certAluminum6061 = svc.certService.createCert({
       type: 'material',
       name: 'SAMPLE-Aluminum 6061-T6 Cert',
-      metadata: { grade: '6061-T6', supplier: 'AlumSupply Inc.', lotNumber: 'L-2025-0447', spec: 'AMS-QQ-A-250/11' }
+      metadata: { grade: '6061-T6', supplier: 'AlumSupply Inc.', lotNumber: 'L-2025-0447', spec: 'AMS-QQ-A-250/11' },
     })
     const certAluminum7075 = svc.certService.createCert({
       type: 'material',
       name: 'SAMPLE-Aluminum 7075-T6 Cert',
-      metadata: { grade: '7075-T651', supplier: 'AlumSupply Inc.', lotNumber: 'L-2025-0892', spec: 'AMS-QQ-A-250/12' }
+      metadata: { grade: '7075-T651', supplier: 'AlumSupply Inc.', lotNumber: 'L-2025-0892', spec: 'AMS-QQ-A-250/12' },
     })
     const certSteel4140 = svc.certService.createCert({
       type: 'material',
       name: 'SAMPLE-Steel 4140 Cert',
-      metadata: { grade: '4140', supplier: 'MetalCo', heatNumber: 'H-2025-0451', spec: 'AMS 6382' }
+      metadata: { grade: '4140', supplier: 'MetalCo', heatNumber: 'H-2025-0451', spec: 'AMS 6382' },
     })
     const certSteel303 = svc.certService.createCert({
       type: 'material',
       name: 'SAMPLE-Stainless 303 Cert',
-      metadata: { grade: '303', supplier: 'MetalCo', heatNumber: 'H-2025-1033', spec: 'AMS 5640' }
+      metadata: { grade: '303', supplier: 'MetalCo', heatNumber: 'H-2025-1033', spec: 'AMS 5640' },
     })
     const certHeatTreat = svc.certService.createCert({
       type: 'process',
       name: 'SAMPLE-Heat Treat Cert',
-      metadata: { vendor: 'HeatTreat Inc.', process: 'Quench & Temper', spec: 'AMS 2759', hardness: 'Rc 28-32' }
+      metadata: { vendor: 'HeatTreat Inc.', process: 'Quench & Temper', spec: 'AMS 2759', hardness: 'Rc 28-32' },
     })
     const _certHardAnodize = svc.certService.createCert({
       type: 'process',
       name: 'SAMPLE-Hard Anodize Cert',
-      metadata: { vendor: 'Anodize Co.', process: 'Type III Hard Anodize', spec: 'MIL-A-8625 Type III', thickness: '0.002"' }
+      metadata: { vendor: 'Anodize Co.', process: 'Type III Hard Anodize', spec: 'MIL-A-8625 Type III', thickness: '0.002"' },
     })
     const certChemfilm = svc.certService.createCert({
       type: 'process',
       name: 'SAMPLE-Chemfilm Cert',
-      metadata: { vendor: 'Chemfilm Services', process: 'Chromate Conversion', spec: 'MIL-DTL-5541 Class 1A' }
+      metadata: { vendor: 'Chemfilm Services', process: 'Chromate Conversion', spec: 'MIL-DTL-5541 Class 1A' },
     })
     const certPassivate = svc.certService.createCert({
       type: 'process',
       name: 'SAMPLE-Passivation Cert',
-      metadata: { vendor: 'Chemfilm Services', process: 'Citric Acid Passivation', spec: 'ASTM A967 / AMS 2700' }
+      metadata: { vendor: 'Chemfilm Services', process: 'Citric Acid Passivation', spec: 'ASTM A967 / AMS 2700' },
     })
     const certAnodize = svc.certService.createCert({
       type: 'process',
       name: 'SAMPLE-Anodize Type II Cert',
-      metadata: { vendor: 'Anodize Co.', process: 'Type II Anodize', spec: 'MIL-A-8625 Type II', color: 'Black' }
+      metadata: { vendor: 'Anodize Co.', process: 'Type II Anodize', spec: 'MIL-A-8625 Type II', color: 'Black' },
     })
     console.log('  Certificates: 9 created (4 material, 5 process)')
 
@@ -259,11 +263,11 @@ export function seedDatabase(dbPath: string): void {
     const path1 = svc.templateService.applyTemplate(tmplChemfilm.id, {
       jobId: job1.id,
       pathName: 'CNC + Chemfilm',
-      goalQuantity: 25
+      goalQuantity: 25,
     })
     const j1parts = svc.partService.batchCreateParts(
       { jobId: job1.id, pathId: path1.id, quantity: 20, certId: certAluminum6061.id },
-      mike.id
+      mike.id,
     )
     // Advance 16 past CNC Machine (step 0 → 1)
     for (let i = 0; i < 16; i++) svc.partService.advancePart(j1parts[i]!.id, mike.id)
@@ -280,7 +284,7 @@ export function seedDatabase(dbPath: string): void {
       svc.certService.attachCertToSerial({
         certId: certChemfilm.id, serialId: j1parts[i]!.id,
         stepId: path1.steps[3]!.id, userId: sarah.id,
-        jobId: job1.id, pathId: path1.id
+        jobId: job1.id, pathId: path1.id,
       })
     }
     // Note on deburr step
@@ -288,7 +292,7 @@ export function seedDatabase(dbPath: string): void {
       jobId: job1.id, pathId: path1.id, stepId: path1.steps[1]!.id,
       partIds: [j1parts[13]!.id, j1parts[14]!.id],
       text: 'Sharp edge on pocket corner — needs extra deburr pass',
-      userId: lisa.id
+      userId: lisa.id,
     })
     console.log(`  Job: ${job1.name} — 20 parts (5 done, 3 at Final Insp, 2 at Chemfilm, 2 at Insp, 4 at Deburr, 4 at CNC)`)
 
@@ -300,11 +304,11 @@ export function seedDatabase(dbPath: string): void {
     const path2 = svc.templateService.applyTemplate(tmplHardAnodize.id, {
       jobId: job2.id,
       pathName: 'CNC + Hard Anodize',
-      goalQuantity: 10
+      goalQuantity: 10,
     })
     const j2parts = svc.partService.batchCreateParts(
       { jobId: job2.id, pathId: path2.id, quantity: 10, certId: certAluminum7075.id },
-      tony.id
+      tony.id,
     )
     // Steps: 0=CNC, 1=Stress Relief, 2=CNC, 3=Deburr, 4=Inspection, 5=Hard Anodize, 6=Final Insp
     // Advance 8 past first CNC (step 0 → 1)
@@ -322,7 +326,7 @@ export function seedDatabase(dbPath: string): void {
       jobId: job2.id, pathId: path2.id, stepId: path2.steps[1]!.id,
       partIds: [j2parts[6]!.id, j2parts[7]!.id],
       text: 'Vendor batch delayed — expected back Thursday',
-      userId: tony.id
+      userId: tony.id,
     })
     console.log(`  Job: ${job2.name} — 10 parts (0 done, 2 at Hard Anodize, 1 at Insp, 1 at Deburr, 2 at CNC2, 2 at Stress Relief, 2 at CNC1)`)
 
@@ -336,11 +340,11 @@ export function seedDatabase(dbPath: string): void {
     const path3a = svc.templateService.applyTemplate(tmplSteelPassivate.id, {
       jobId: job3.id,
       pathName: 'Steel + Passivate',
-      goalQuantity: 30
+      goalQuantity: 30,
     })
     const j3aParts = svc.partService.batchCreateParts(
       { jobId: job3.id, pathId: path3a.id, quantity: 25, certId: certSteel4140.id },
-      mike.id
+      mike.id,
     )
     // Steps: 0=CNC, 1=Heat Treat, 2=CNC, 3=Deburr, 4=Inspection, 5=Passivate, 6=Final Insp
     // Advance 20 past CNC (step 0 → 1)
@@ -352,7 +356,7 @@ export function seedDatabase(dbPath: string): void {
       svc.certService.attachCertToSerial({
         certId: certHeatTreat.id, serialId: j3aParts[i]!.id,
         stepId: path3a.steps[1]!.id, userId: mike.id,
-        jobId: job3.id, pathId: path3a.id
+        jobId: job3.id, pathId: path3a.id,
       })
     }
     // Advance 10 past second CNC (step 2 → 3)
@@ -368,7 +372,7 @@ export function seedDatabase(dbPath: string): void {
       svc.certService.attachCertToSerial({
         certId: certPassivate.id, serialId: j3aParts[i]!.id,
         stepId: path3a.steps[5]!.id, userId: sarah.id,
-        jobId: job3.id, pathId: path3a.id
+        jobId: job3.id, pathId: path3a.id,
       })
     }
     // Complete 2
@@ -378,11 +382,11 @@ export function seedDatabase(dbPath: string): void {
     const path3b = svc.templateService.applyTemplate(tmplBasic.id, {
       jobId: job3.id,
       pathName: 'Basic CNC (no coating)',
-      goalQuantity: 20
+      goalQuantity: 20,
     })
     const j3bParts = svc.partService.batchCreateParts(
       { jobId: job3.id, pathId: path3b.id, quantity: 15, certId: certSteel4140.id },
-      tony.id
+      tony.id,
     )
     // Steps: 0=CNC, 1=Deburr, 2=Inspection
     for (let i = 0; i < 12; i++) svc.partService.advancePart(j3bParts[i]!.id, tony.id)
@@ -393,7 +397,7 @@ export function seedDatabase(dbPath: string): void {
       jobId: job3.id, pathId: path3a.id, stepId: path3a.steps[4]!.id,
       partIds: [j3aParts[7]!.id],
       text: 'OD dimension at high end of tolerance — flagged for review',
-      userId: sarah.id
+      userId: sarah.id,
     })
     console.log(`  Job: ${job3.name} — 40 parts across 2 paths (7 completed total)`)
 
@@ -405,11 +409,11 @@ export function seedDatabase(dbPath: string): void {
     const path4 = svc.templateService.applyTemplate(tmplAnodize.id, {
       jobId: job4.id,
       pathName: 'CNC + Anodize',
-      goalQuantity: 15
+      goalQuantity: 15,
     })
     const j4parts = svc.partService.batchCreateParts(
       { jobId: job4.id, pathId: path4.id, quantity: 15, certId: certAluminum6061.id },
-      mike.id
+      mike.id,
     )
     // Steps: 0=CNC, 1=Deburr, 2=Bead Blast, 3=Inspection, 4=Anodize, 5=Final Insp
     // All 15 past CNC
@@ -427,7 +431,7 @@ export function seedDatabase(dbPath: string): void {
       svc.certService.attachCertToSerial({
         certId: certAnodize.id, serialId: j4parts[i]!.id,
         stepId: path4.steps[4]!.id, userId: sarah.id,
-        jobId: job4.id, pathId: path4.id
+        jobId: job4.id, pathId: path4.id,
       })
     }
     // Complete 8
@@ -448,12 +452,12 @@ export function seedDatabase(dbPath: string): void {
         { name: 'Deburr', location: 'Deburr Station' },
         { name: 'Inspection', location: 'QC Lab' },
         { name: 'Passivate', location: 'Vendor - Chemfilm Services' },
-        { name: 'Final Inspection', location: 'QC Lab' }
-      ]
+        { name: 'Final Inspection', location: 'QC Lab' },
+      ],
     })
     const j5parts = svc.partService.batchCreateParts(
       { jobId: job5.id, pathId: path5.id, quantity: 30, certId: certSteel303.id },
-      tony.id
+      tony.id,
     )
     // Steps: 0=CNC, 1=Deburr, 2=Inspection, 3=Passivate, 4=Final Insp
     // 20 past CNC
@@ -467,7 +471,7 @@ export function seedDatabase(dbPath: string): void {
       jobId: job5.id, pathId: path5.id, stepId: path5.steps[0]!.id,
       partIds: [j5parts[22]!.id, j5parts[23]!.id, j5parts[24]!.id],
       text: 'Tool wear detected on lathe — replaced insert, re-verify dimensions on these parts',
-      userId: tony.id
+      userId: tony.id,
     })
     console.log(`  Job: ${job5.name} — 30 parts (0 done, 5 at Passivate, 7 at Insp, 8 at Deburr, 10 at CNC)`)
 

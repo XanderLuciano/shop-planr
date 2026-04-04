@@ -46,14 +46,6 @@ const DEPRECATED_SERIAL_ACTIONS = [
   'serial_force_completed',
 ]
 
-const EXPECTED_PART_ACTIONS: Record<string, string> = {
-  recordPartCreation: 'part_created',
-  recordPartAdvancement: 'part_advanced',
-  recordPartCompletion: 'part_completed',
-  recordScrap: 'part_scrapped',
-  recordForceComplete: 'part_force_completed',
-}
-
 describe('Property 2: Audit Actions Use Renamed Values', () => {
   it('recordPartCreation produces action "part_created" for any valid input', () => {
     fc.assert(

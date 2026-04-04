@@ -12,6 +12,8 @@
 import { describe, it, vi } from 'vitest'
 import fc from 'fast-check'
 
+import { useJobForm } from '~/app/composables/useJobForm'
+
 // Stub auto-imported composables
 vi.stubGlobal('useJobs', () => ({
   createJob: vi.fn(),
@@ -25,8 +27,6 @@ vi.stubGlobal('usePaths', () => ({
 vi.stubGlobal('useUsers', () => ({
   requireUser: () => ({ id: 'test-user-id', username: 'test', displayName: 'Test', isAdmin: true, active: true, createdAt: '' }),
 }))
-
-import { useJobForm } from '~/app/composables/useJobForm'
 
 const templateStepArb = fc.record({
   name: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),

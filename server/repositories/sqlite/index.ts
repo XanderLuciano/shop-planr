@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3'
 import { createHash } from 'crypto'
 import { readdirSync, readFileSync } from 'fs'
-import { join, resolve, dirname } from 'path'
+import { join, resolve } from 'path'
 import { fileURLToPath } from 'url'
 import { SQLiteJobRepository } from './jobRepository'
 import { SQLitePathRepository } from './pathRepository'
@@ -70,14 +70,17 @@ interface MigrationFile {
  */
 export function loadMigrationFiles(migrationsDir?: string): MigrationFile[] {
   // In Nuxt's bundled context, import.meta.dirname may be undefined.
-  // Fall back to process.cwd()-based resolution for the default migrations path.
+  // Use fileURLToPath + import.meta.url for cross-platform portability,
+  // with process.cwd() fallback for bundled environments.
   let dir: string
   if (migrationsDir) {
     dir = migrationsDir
-  } else if (typeof import.meta.dirname === 'string') {
-    dir = resolve(import.meta.dirname, 'migrations')
   } else {
-    dir = resolve(process.cwd(), 'server/repositories/sqlite/migrations')
+    try {
+      dir = fileURLToPath(new URL('migrations', import.meta.url))
+    } catch {
+      dir = resolve(process.cwd(), 'server/repositories/sqlite/migrations')
+    }
   }
   const files = readdirSync(dir)
     .filter(f => f.endsWith('.sql'))
@@ -121,7 +124,7 @@ export function runMigrations(db: Database.Database, migrationsDir?: string): vo
       console.warn(
         `WARNING: Migration ${migration.version} (${migration.name}) has been modified after being applied. `
         + `Expected checksum ${existingChecksum}, got ${migration.checksum}. `
-        + `Do not edit migrations that have already been applied.`
+        + `Do not edit migrations that have already been applied.`,
       )
     }
   }
@@ -135,7 +138,7 @@ export function runMigrations(db: Database.Database, migrationsDir?: string): vo
     db.transaction(() => {
       db.exec(migration.sql)
       db.prepare(
-        'INSERT INTO _migrations (version, name, applied_at, checksum) VALUES (?, ?, ?, ?)'
+        'INSERT INTO _migrations (version, name, applied_at, checksum) VALUES (?, ?, ?, ?)',
       ).run(migration.version, migration.name, new Date().toISOString(), migration.checksum)
     })()
     db.pragma('foreign_keys = ON')

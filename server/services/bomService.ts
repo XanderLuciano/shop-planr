@@ -26,10 +26,10 @@ export function createBomService(repos: {
         entries: input.entries.map(e => ({
           partType: e.partType,
           requiredQuantityPerBuild: e.requiredQuantityPerBuild,
-          contributingJobIds: e.contributingJobIds
+          contributingJobIds: e.contributingJobIds,
         })),
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       })
     },
 
@@ -61,7 +61,7 @@ export function createBomService(repos: {
         partial.entries = input.entries.map(e => ({
           partType: e.partType,
           requiredQuantityPerBuild: e.requiredQuantityPerBuild,
-          contributingJobIds: e.contributingJobIds
+          contributingJobIds: e.contributingJobIds,
         }))
       }
 
@@ -81,7 +81,7 @@ export function createBomService(repos: {
             requiredQuantityPerBuild: entry.requiredQuantityPerBuild,
             totalCompleted: 0,
             totalInProgress: 0,
-            totalOutstanding: 0
+            totalOutstanding: 0,
           }
         }
 
@@ -102,14 +102,14 @@ export function createBomService(repos: {
           requiredQuantityPerBuild: entry.requiredQuantityPerBuild,
           totalCompleted,
           totalInProgress,
-          totalOutstanding
+          totalOutstanding,
         }
       })
 
       return {
         bomId: bom.id,
         bomName: bom.name,
-        entries
+        entries,
       }
     },
 

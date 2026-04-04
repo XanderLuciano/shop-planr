@@ -22,7 +22,7 @@ const arbExistingSteps = (maxLen: number) =>
         id: fc.string({ minLength: 1, maxLength: 20 }),
         name: fc.string({ minLength: 1, maxLength: 30 }),
       }),
-      { minLength: n, maxLength: n }
+      { minLength: n, maxLength: n },
     ).map(items =>
       items.map((item, i) => ({
         id: `step_${i}_${item.id}`,
@@ -31,8 +31,8 @@ const arbExistingSteps = (maxLen: number) =>
         optional: false,
         dependencyType: 'preferred' as const,
         completedCount: 0,
-      }))
-    )
+      })),
+    ),
   )
 
 // Arbitrary for generating input steps — some with IDs matching existing, some new
@@ -62,15 +62,15 @@ describe('Property 2: Reconciliation Completeness (Count Conservation)', () => {
     fc.assert(
       fc.property(
         arbExistingSteps(10).chain(existing =>
-          arbInputStepsForExisting(existing).map(input => ({ existing, input }))
+          arbInputStepsForExisting(existing).map(input => ({ existing, input })),
         ),
         ({ existing, input }) => {
           const result = reconcileSteps(existing, input)
 
           expect(result.toUpdate.length + result.toInsert.length).toBe(input.length)
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -78,15 +78,15 @@ describe('Property 2: Reconciliation Completeness (Count Conservation)', () => {
     fc.assert(
       fc.property(
         arbExistingSteps(10).chain(existing =>
-          arbInputStepsForExisting(existing).map(input => ({ existing, input }))
+          arbInputStepsForExisting(existing).map(input => ({ existing, input })),
         ),
         ({ existing, input }) => {
           const result = reconcileSteps(existing, input)
 
           expect(result.toUpdate.length + result.toSoftDelete.length).toBe(existing.length)
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -94,7 +94,7 @@ describe('Property 2: Reconciliation Completeness (Count Conservation)', () => {
     fc.assert(
       fc.property(
         arbExistingSteps(10).chain(existing =>
-          arbInputStepsForExisting(existing).map(input => ({ existing, input }))
+          arbInputStepsForExisting(existing).map(input => ({ existing, input })),
         ),
         ({ existing, input }) => {
           const result = reconcileSteps(existing, input)
@@ -105,9 +105,9 @@ describe('Property 2: Reconciliation Completeness (Count Conservation)', () => {
           for (const id of deleteIds) {
             expect(updateIds.has(id)).toBe(false)
           }
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })

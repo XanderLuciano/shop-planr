@@ -68,7 +68,7 @@ export function useBarcode() {
           toast.add({
             title: 'Not Found',
             description: `"${result.value}" not found as Part or Certificate`,
-            color: 'error'
+            color: 'error',
           })
         }
       }
@@ -93,7 +93,7 @@ export function useBarcode() {
       toast.add({
         title: `Part: ${part.id}`,
         description: `Job: ${part.jobId} · Step: ${part.currentStepId === null ? 'Completed' : part.currentStepId} · Certs: ${part.certs.length}`,
-        color: 'success'
+        color: 'success',
       })
       return true
     } catch {
@@ -101,7 +101,7 @@ export function useBarcode() {
         toast.add({
           title: 'Not Found',
           description: `Part "${id}" not found`,
-          color: 'error'
+          color: 'error',
         })
       }
       return false
@@ -124,7 +124,7 @@ export function useBarcode() {
       toast.add({
         title: `Cert: ${cert.name}`,
         description: `Type: ${cert.type}`,
-        color: 'success'
+        color: 'success',
       })
       return true
     } catch {
@@ -132,7 +132,7 @@ export function useBarcode() {
         toast.add({
           title: 'Not Found',
           description: `Certificate "${id}" not found`,
-          color: 'error'
+          color: 'error',
         })
       }
       return false
@@ -145,6 +145,6 @@ export function useBarcode() {
     detectScanType,
     handleScan,
     lookupPart,
-    lookupCert
+    lookupCert,
   }
 }

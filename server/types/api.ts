@@ -171,7 +171,7 @@ export interface CreateStepOverrideInput {
 
 export interface EditBomInput {
   name?: string
-  entries: { partType: string; requiredQuantityPerBuild: number; contributingJobIds: readonly string[] }[]
+  entries: { partType: string, requiredQuantityPerBuild: number, contributingJobIds: readonly string[] }[]
   changeDescription: string
   userId: string
 }
@@ -185,7 +185,7 @@ export interface UpdateAdvancementModeInput {
 // ---- Job Priority ----
 
 export interface UpdatePrioritiesInput {
-  priorities: { jobId: string; priority: number }[]
+  priorities: { jobId: string, priority: number }[]
 }
 
 // ---- Library ----

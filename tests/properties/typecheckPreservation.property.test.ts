@@ -236,7 +236,7 @@ describe('Preservation Test 3 — Domain type exports are complete', () => {
    */
   it('Property: Server type files exist and export expected types', () => {
     // Flatten all (file, exportName) pairs for property testing
-    const allChecks: { relativePath: string; exportName: string }[] = []
+    const allChecks: { relativePath: string, exportName: string }[] = []
     for (const { relativePath, expectedExports } of TYPE_FILES) {
       for (const exportName of expectedExports) {
         allChecks.push({ relativePath, exportName })

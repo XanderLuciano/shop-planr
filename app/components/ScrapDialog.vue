@@ -110,15 +110,25 @@ function handleCancel() {
           />
         </div>
 
-        <p v-if="validationError" class="text-sm text-(--ui-error)">
+        <p
+          v-if="validationError"
+          class="text-sm text-(--ui-error)"
+        >
           {{ validationError }}
         </p>
-        <p v-if="error" class="text-sm text-(--ui-error)">
+        <p
+          v-if="error"
+          class="text-sm text-(--ui-error)"
+        >
           {{ error }}
         </p>
 
         <div class="flex justify-end gap-2 pt-2">
-          <UButton variant="ghost" label="Cancel" @click="handleCancel" />
+          <UButton
+            variant="ghost"
+            label="Cancel"
+            @click="handleCancel"
+          />
           <UButton
             color="error"
             label="Scrap"

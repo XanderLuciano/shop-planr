@@ -9,7 +9,7 @@ withDefaults(defineProps<{
   index?: number
 }>(), {
   editing: false,
-  index: 0
+  index: 0,
 })
 
 defineEmits<{
@@ -30,7 +30,7 @@ defineEmits<{
     class="p-3 rounded-lg border border-(--ui-border) space-y-2"
     :class="{
       'hover:bg-(--ui-bg-elevated)/50 cursor-pointer': !editing,
-      'cursor-grab active:cursor-grabbing': editing
+      'cursor-grab active:cursor-grabbing': editing,
     }"
     :draggable="editing"
     :role="editing ? undefined : 'button'"
@@ -60,7 +60,10 @@ defineEmits<{
         >{{ index + 1 }}.</span>
         <span class="font-medium text-sm">{{ job.name }}</span>
       </div>
-      <span v-if="job.jiraPriority && !editing" class="text-xs text-(--ui-text-muted)">{{ job.jiraPriority }}</span>
+      <span
+        v-if="job.jiraPriority && !editing"
+        class="text-xs text-(--ui-text-muted)"
+      >{{ job.jiraPriority }}</span>
     </div>
     <div class="flex items-center gap-3 text-xs text-(--ui-text-muted)">
       <span v-if="job.jiraPartNumber">Part: {{ job.jiraPartNumber }}</span>

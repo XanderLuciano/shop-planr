@@ -115,7 +115,7 @@ function optionalArray(obj: Record<string, unknown>, field: string, typeName: st
   }
 }
 
-function optionalBoolean(obj: Record<string, unknown>, field: string, typeName: string): void {
+function _optionalBoolean(obj: Record<string, unknown>, field: string, typeName: string): void {
   if (obj[field] !== undefined && obj[field] !== null && typeof obj[field] !== 'boolean') {
     throw new ValidationError(`Deserialization error: ${typeName}.${field} — expected boolean or null, got ${typeof obj[field]}`)
   }
@@ -277,5 +277,5 @@ const validators: Record<DomainType, (obj: Record<string, unknown>) => void> = {
     requireString(obj, 'label', 'JiraFieldMapping')
     requireString(obj, 'shopErpField', 'JiraFieldMapping')
     requireBoolean(obj, 'isDefault', 'JiraFieldMapping')
-  }
+  },
 }

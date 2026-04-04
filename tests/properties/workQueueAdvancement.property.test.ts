@@ -124,7 +124,6 @@ describe('Property 5: Quantity validation rejects over-limit', () => {
   })
 })
 
-
 /**
  * Property 4: Batch advancement by quantity in creation order
  *

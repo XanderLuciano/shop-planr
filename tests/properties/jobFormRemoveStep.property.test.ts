@@ -11,6 +11,8 @@
 import { describe, it, vi } from 'vitest'
 import fc from 'fast-check'
 
+import { useJobForm } from '~/app/composables/useJobForm'
+
 // Stub auto-imported composables
 vi.stubGlobal('useJobs', () => ({
   createJob: vi.fn(),
@@ -24,8 +26,6 @@ vi.stubGlobal('usePaths', () => ({
 vi.stubGlobal('useUsers', () => ({
   requireUser: () => ({ id: 'test-user-id', username: 'test', displayName: 'Test', isAdmin: true, active: true, createdAt: '' }),
 }))
-
-import { useJobForm } from '~/app/composables/useJobForm'
 
 describe('Property 7: removeStep enforces minimum-one constraint', () => {
   it('does not remove the last step when path has exactly one step', () => {
@@ -69,7 +69,9 @@ describe('Property 7: removeStep enforces minimum-one constraint', () => {
           }
 
           // Name steps for identification
-          path.steps.forEach((s, i) => { s.name = `Step-${i}` })
+          path.steps.forEach((s, i) => {
+            s.name = `Step-${i}`
+          })
 
           const removeIdx = removeIdxSeed % path.steps.length
           const targetClientId = path.steps[removeIdx]._clientId

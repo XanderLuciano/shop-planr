@@ -11,7 +11,7 @@ function makeCert(overrides: Partial<Certificate> = {}): Certificate {
     type: 'material',
     name: 'Steel Cert',
     createdAt: '2024-01-01T00:00:00.000Z',
-    ...overrides
+    ...overrides,
   }
 }
 
@@ -20,7 +20,10 @@ function createMockCertRepo(): CertRepository {
   const attachments: CertAttachment[] = []
 
   return {
-    create: vi.fn((c: Certificate) => { certs.set(c.id, c); return c }),
+    create: vi.fn((c: Certificate) => {
+      certs.set(c.id, c)
+      return c
+    }),
     getById: vi.fn((id: string) => certs.get(id) ?? null),
     list: vi.fn(() => [...certs.values()]),
     attachToPart: vi.fn((a: CertAttachment) => {
@@ -29,7 +32,7 @@ function createMockCertRepo(): CertRepository {
       return result
     }),
     getAttachmentsForPart: vi.fn((partId: string) =>
-      attachments.filter(a => a.partId === partId)
+      attachments.filter(a => a.partId === partId),
     ),
     batchAttach: vi.fn((incoming: CertAttachment[]) => {
       const results: CertAttachment[] = []
@@ -39,7 +42,7 @@ function createMockCertRepo(): CertRepository {
         results.push(result)
       }
       return results
-    })
+    }),
   }
 }
 
@@ -52,7 +55,7 @@ function createMockAuditService(): AuditService {
     recordNoteCreation: vi.fn(() => ({}) as any),
     getPartAuditTrail: vi.fn(() => []),
     getJobAuditTrail: vi.fn(() => []),
-    listAuditEntries: vi.fn(() => [])
+    listAuditEntries: vi.fn(() => []),
   }
 }
 
@@ -86,26 +89,26 @@ describe('CertService', () => {
       const result = service.createCert({
         type: 'material',
         name: 'Alloy Cert',
-        metadata: { grade: 'A36', vendor: 'Acme' }
+        metadata: { grade: 'A36', vendor: 'Acme' },
       })
       expect(result.metadata).toEqual({ grade: 'A36', vendor: 'Acme' })
     })
 
     it('throws ValidationError for invalid type', () => {
       expect(() =>
-        service.createCert({ type: 'invalid' as any, name: 'Bad Cert' })
+        service.createCert({ type: 'invalid' as any, name: 'Bad Cert' }),
       ).toThrow(ValidationError)
     })
 
     it('throws ValidationError for empty name', () => {
       expect(() =>
-        service.createCert({ type: 'material', name: '' })
+        service.createCert({ type: 'material', name: '' }),
       ).toThrow(ValidationError)
     })
 
     it('throws ValidationError for whitespace-only name', () => {
       expect(() =>
-        service.createCert({ type: 'material', name: '   ' })
+        service.createCert({ type: 'material', name: '   ' }),
       ).toThrow(ValidationError)
     })
   })
@@ -146,7 +149,7 @@ describe('CertService', () => {
         stepId: 'step_0',
         userId: 'user_1',
         jobId: 'job_1',
-        pathId: 'path_1'
+        pathId: 'path_1',
       })
 
       expect(result.partId).toBe('part_00001')
@@ -160,7 +163,7 @@ describe('CertService', () => {
         certId: 'cert_1',
         stepId: 'step_0',
         jobId: 'job_1',
-        pathId: 'path_1'
+        pathId: 'path_1',
       })
     })
 
@@ -170,8 +173,8 @@ describe('CertService', () => {
           certId: 'nonexistent',
           partId: 'part_00001',
           stepId: 'step_0',
-          userId: 'user_1'
-        })
+          userId: 'user_1',
+        }),
       ).toThrow(NotFoundError)
     })
   })
@@ -183,7 +186,7 @@ describe('CertService', () => {
       const result = service.batchAttachCert({
         certId: 'cert_1',
         partIds: ['part_00001', 'part_00002', 'part_00003'],
-        userId: 'user_1'
+        userId: 'user_1',
       })
 
       expect(result).toHaveLength(3)
@@ -196,8 +199,8 @@ describe('CertService', () => {
         service.batchAttachCert({
           certId: 'nonexistent',
           partIds: ['part_00001'],
-          userId: 'user_1'
-        })
+          userId: 'user_1',
+        }),
       ).toThrow(NotFoundError)
     })
   })
@@ -209,7 +212,7 @@ describe('CertService', () => {
         certId: 'cert_1',
         partId: 'part_00001',
         stepId: 'step_0',
-        userId: 'user_1'
+        userId: 'user_1',
       })
 
       const result = service.getCertsForPart('part_00001')

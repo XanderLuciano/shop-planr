@@ -35,7 +35,7 @@ export default defineApiHandler(async (event) => {
   const activeOverrideStepIds = new Set(overrides.filter(o => o.active).map(o => o.stepId))
 
   // Build one entry per path step, using the latest routing entry if available
-  return path.steps.map(step => {
+  return path.steps.map((step) => {
     const latest = latestByStep.get(step.id)
     return {
       stepId: step.id,

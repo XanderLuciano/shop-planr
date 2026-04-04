@@ -123,53 +123,104 @@ onMounted(() => {
         v-model="selectedJob"
         class="text-xs rounded-md border border-(--ui-border) bg-(--ui-bg) px-2 py-1.5 text-(--ui-text-highlighted)"
       >
-        <option v-for="o in jobOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+        <option
+          v-for="o in jobOptions"
+          :key="o.value"
+          :value="o.value"
+        >
+          {{ o.label }}
+        </option>
       </select>
       <select
         v-model="selectedPath"
         class="text-xs rounded-md border border-(--ui-border) bg-(--ui-bg) px-2 py-1.5 text-(--ui-text-highlighted)"
       >
-        <option v-for="o in pathOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+        <option
+          v-for="o in pathOptions"
+          :key="o.value"
+          :value="o.value"
+        >
+          {{ o.label }}
+        </option>
       </select>
       <select
         v-model="selectedStep"
         class="text-xs rounded-md border border-(--ui-border) bg-(--ui-bg) px-2 py-1.5 text-(--ui-text-highlighted)"
       >
-        <option v-for="o in stepOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+        <option
+          v-for="o in stepOptions"
+          :key="o.value"
+          :value="o.value"
+        >
+          {{ o.label }}
+        </option>
       </select>
       <select
         v-model="selectedStatus"
         class="text-xs rounded-md border border-(--ui-border) bg-(--ui-bg) px-2 py-1.5 text-(--ui-text-highlighted)"
       >
-        <option v-for="o in statusOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+        <option
+          v-for="o in statusOptions"
+          :key="o.value"
+          :value="o.value"
+        >
+          {{ o.label }}
+        </option>
       </select>
       <select
         v-model="selectedAssignee"
         class="text-xs rounded-md border border-(--ui-border) bg-(--ui-bg) px-2 py-1.5 text-(--ui-text-highlighted)"
       >
-        <option v-for="o in assigneeOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+        <option
+          v-for="o in assigneeOptions"
+          :key="o.value"
+          :value="o.value"
+        >
+          {{ o.label }}
+        </option>
       </select>
     </div>
 
     <!-- Count display -->
-    <div v-if="filtersActive" class="text-xs text-(--ui-text-muted)">
+    <div
+      v-if="filtersActive"
+      class="text-xs text-(--ui-text-muted)"
+    >
       Showing {{ filteredCount }} of {{ totalCount }} parts
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="flex items-center gap-2 text-sm text-(--ui-text-muted) py-8">
-      <UIcon name="i-lucide-loader-2" class="animate-spin size-4" />
+    <div
+      v-if="loading"
+      class="flex items-center gap-2 text-sm text-(--ui-text-muted) py-8"
+    >
+      <UIcon
+        name="i-lucide-loader-2"
+        class="animate-spin size-4"
+      />
       Loading parts...
     </div>
 
     <!-- Error -->
-    <div v-else-if="error" class="flex items-center gap-2 text-xs text-(--ui-error)">
+    <div
+      v-else-if="error"
+      class="flex items-center gap-2 text-xs text-(--ui-error)"
+    >
       <span>{{ error }}</span>
-      <UButton size="xs" variant="ghost" icon="i-lucide-refresh-cw" label="Retry" @click="fetchParts" />
+      <UButton
+        size="xs"
+        variant="ghost"
+        icon="i-lucide-refresh-cw"
+        label="Retry"
+        @click="fetchParts"
+      />
     </div>
 
     <!-- Table — desktop -->
-    <div v-if="!loading && !error" class="hidden md:block border border-(--ui-border) rounded-md overflow-hidden">
+    <div
+      v-if="!loading && !error"
+      class="hidden md:block border border-(--ui-border) rounded-md overflow-hidden"
+    >
       <table class="w-full text-sm">
         <thead>
           <tr class="bg-(--ui-bg-elevated)/50 text-xs text-(--ui-text-muted)">
@@ -180,7 +231,10 @@ onMounted(() => {
               @click="setSort(col.key)"
             >
               {{ col.label }}
-              <span v-if="sortColumn === col.key" class="ml-0.5">{{ sortIcon(col.key) }}</span>
+              <span
+                v-if="sortColumn === col.key"
+                class="ml-0.5"
+              >{{ sortIcon(col.key) }}</span>
             </th>
           </tr>
         </thead>
@@ -191,9 +245,15 @@ onMounted(() => {
             class="cursor-pointer hover:bg-(--ui-bg-elevated)/50 transition-colors"
             @click="navigateTo(`/parts-browser/${encodeURIComponent(s.id)}`)"
           >
-            <td class="px-3 py-2 font-medium text-(--ui-text-highlighted)">{{ s.id }}</td>
-            <td class="px-3 py-2">{{ s.jobName }}</td>
-            <td class="px-3 py-2">{{ s.currentStepName }}</td>
+            <td class="px-3 py-2 font-medium text-(--ui-text-highlighted)">
+              {{ s.id }}
+            </td>
+            <td class="px-3 py-2">
+              {{ s.jobName }}
+            </td>
+            <td class="px-3 py-2">
+              {{ s.currentStepName }}
+            </td>
             <td class="px-3 py-2">
               <UBadge
                 :color="s.status === 'completed' ? 'success' : s.status === 'scrapped' ? 'error' : 'warning'"
@@ -203,11 +263,18 @@ onMounted(() => {
                 {{ s.status === 'completed' ? 'Completed' : s.status === 'scrapped' ? 'Scrapped' : 'In Progress' }}
               </UBadge>
             </td>
-            <td class="px-3 py-2 text-(--ui-text-muted)">{{ s.assignedTo ?? 'Unassigned' }}</td>
-            <td class="px-3 py-2 text-(--ui-text-muted)">{{ new Date(s.createdAt).toLocaleDateString() }}</td>
+            <td class="px-3 py-2 text-(--ui-text-muted)">
+              {{ s.assignedTo ?? 'Unassigned' }}
+            </td>
+            <td class="px-3 py-2 text-(--ui-text-muted)">
+              {{ new Date(s.createdAt).toLocaleDateString() }}
+            </td>
           </tr>
           <tr v-if="filteredParts.length === 0">
-            <td colspan="6" class="px-3 py-8 text-center text-(--ui-text-muted)">
+            <td
+              colspan="6"
+              class="px-3 py-8 text-center text-(--ui-text-muted)"
+            >
               No parts found.
             </td>
           </tr>
@@ -216,8 +283,14 @@ onMounted(() => {
     </div>
 
     <!-- Cards — mobile -->
-    <div v-if="!loading && !error" class="md:hidden space-y-2">
-      <div v-if="filteredParts.length === 0" class="text-sm text-(--ui-text-muted) py-8 text-center">
+    <div
+      v-if="!loading && !error"
+      class="md:hidden space-y-2"
+    >
+      <div
+        v-if="filteredParts.length === 0"
+        class="text-sm text-(--ui-text-muted) py-8 text-center"
+      >
         No parts found.
       </div>
       <div
@@ -240,7 +313,9 @@ onMounted(() => {
             {{ s.status === 'completed' ? 'Completed' : s.status === 'scrapped' ? 'Scrapped' : 'In Progress' }}
           </UBadge>
         </div>
-        <div class="text-xs text-(--ui-text-muted)">{{ s.jobName }}</div>
+        <div class="text-xs text-(--ui-text-muted)">
+          {{ s.jobName }}
+        </div>
         <div class="flex items-center justify-between text-xs">
           <span>{{ s.currentStepName }}</span>
           <span class="text-(--ui-text-muted)">{{ s.assignedTo ?? 'Unassigned' }}</span>

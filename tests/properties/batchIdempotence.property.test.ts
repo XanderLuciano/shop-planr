@@ -40,7 +40,7 @@ function setupServices(db: InstanceType<typeof Database>) {
     paths: new SQLitePathRepository(db),
     parts: new SQLitePartRepository(db),
     certs: new SQLiteCertRepository(db),
-    audit: new SQLiteAuditRepository(db)
+    audit: new SQLiteAuditRepository(db),
   }
 
   const partIdGenerator = createSequentialPartIdGenerator({
@@ -50,7 +50,7 @@ function setupServices(db: InstanceType<typeof Database>) {
     },
     setCounter: (v: number) => {
       db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-    }
+    },
   })
 
   const auditService = createAuditService({ audit: repos.audit })
@@ -59,7 +59,7 @@ function setupServices(db: InstanceType<typeof Database>) {
   const partService = createPartService(
     { parts: repos.parts, paths: repos.paths, certs: repos.certs },
     auditService,
-    partIdGenerator
+    partIdGenerator,
   )
   const certService = createCertService({ certs: repos.certs }, auditService)
 
@@ -78,7 +78,7 @@ describe('Property 10: Batch Certificate Application Idempotence', () => {
       fc.property(
         fc.record({
           partCount: fc.integer({ min: 1, max: 10 }),
-          certType: fc.constantFrom('material' as const, 'process' as const)
+          certType: fc.constantFrom('material' as const, 'process' as const),
         }),
         ({ partCount, certType }) => {
           db = createTestDb()
@@ -90,14 +90,14 @@ describe('Property 10: Batch Certificate Application Idempotence', () => {
             jobId: job.id,
             name: 'Main Path',
             goalQuantity: partCount,
-            steps: [{ name: 'OP1' }, { name: 'OP2' }]
+            steps: [{ name: 'OP1' }, { name: 'OP2' }],
           })
           const stepId = path.steps[0].id
 
           // Create parts
           const parts = partService.batchCreateParts(
             { jobId: job.id, pathId: path.id, quantity: partCount },
-            'user_test'
+            'user_test',
           )
 
           // Create a certificate
@@ -110,7 +110,7 @@ describe('Property 10: Batch Certificate Application Idempotence', () => {
             certId: cert.id,
             stepId,
             attachedAt: now,
-            attachedBy: 'user_test'
+            attachedBy: 'user_test',
           }))
           const firstResult = repos.certs.batchAttach(attachments)
 
@@ -147,9 +147,9 @@ describe('Property 10: Batch Certificate Application Idempotence', () => {
 
           db.close()
           db = null as any
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })

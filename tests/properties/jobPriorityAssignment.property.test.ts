@@ -72,9 +72,9 @@ describe('Property 1: New job priority assignment', () => {
 
           db.close()
           db = null as any
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })

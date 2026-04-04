@@ -12,7 +12,7 @@ export function useCerts() {
     error.value = null
     try {
       certs.value = await $fetch<Certificate[]>('/api/certs')
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch certificates'
       certs.value = []
     } finally {
@@ -23,7 +23,7 @@ export function useCerts() {
   async function createCert(input: CreateCertInput): Promise<Certificate> {
     const cert = await $fetch<Certificate>('/api/certs', {
       method: 'POST',
-      body: input
+      body: input,
     })
     await fetchCerts()
     return cert
@@ -36,7 +36,7 @@ export function useCerts() {
   async function batchAttachCert(input: BatchAttachCertInput): Promise<void> {
     await $fetch('/api/certs/batch-attach', {
       method: 'POST',
-      body: input
+      body: input,
     })
   }
 
@@ -47,6 +47,6 @@ export function useCerts() {
     fetchCerts,
     createCert,
     getCert,
-    batchAttachCert
+    batchAttachCert,
   }
 }

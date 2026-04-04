@@ -19,7 +19,7 @@ export function useStepView(stepId: string) {
       job.value = data.job
       notes.value = data.notes
       previousStepWipCount.value = data.previousStepWipCount
-    } catch (e: any) {
+    } catch (e) {
       if (e?.response?.status === 404 || e?.status === 404 || e?.statusCode === 404) {
         notFound.value = true
         error.value = e?.data?.message ?? 'Step not found'

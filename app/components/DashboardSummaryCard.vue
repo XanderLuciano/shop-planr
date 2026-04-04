@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { resolveComponent } from 'vue'
-
 const props = withDefaults(defineProps<{
   title: string
   value: number | string
@@ -8,7 +6,7 @@ const props = withDefaults(defineProps<{
   to?: string
   color?: string
 }>(), {
-  color: 'primary'
+  color: 'primary',
 })
 </script>
 
@@ -40,7 +38,10 @@ const props = withDefaults(defineProps<{
       </div>
     </UCard>
   </NuxtLink>
-  <div v-else class="block">
+  <div
+    v-else
+    class="block"
+  >
     <UCard
       class="hover:ring-1 hover:ring-(--ui-border-accented) transition-shadow"
       :ui="{ body: 'p-3 sm:p-3' }"

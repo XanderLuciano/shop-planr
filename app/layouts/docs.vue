@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const route = useRoute()
-const { navigation: rawNavigation, isActive } = useDocsNavigation()
+const { navigation: rawNavigation } = useDocsNavigation()
 
 /**
  * Unwrap the navigation tree: queryCollectionNavigation returns a root node
@@ -33,8 +33,8 @@ const breadcrumbs = computed(() => {
     .split('/')
     .filter(Boolean)
 
-  const items: { label: string; to: string; icon?: string }[] = [
-    { label: 'API Docs', to: '/api-docs', icon: 'i-lucide-book-open' }
+  const items: { label: string, to: string, icon?: string }[] = [
+    { label: 'API Docs', to: '/api-docs', icon: 'i-lucide-book-open' },
   ]
 
   let currentPath = '/api-docs'
@@ -62,7 +62,10 @@ const breadcrumbs = computed(() => {
         aria-label="Toggle sidebar"
         @click="sidebarOpen = !sidebarOpen"
       >
-        <UIcon :name="sidebarOpen ? 'i-lucide-x' : 'i-lucide-menu'" class="size-5" />
+        <UIcon
+          :name="sidebarOpen ? 'i-lucide-x' : 'i-lucide-menu'"
+          class="size-5"
+        />
       </button>
 
       <!-- Back to App link -->
@@ -70,7 +73,10 @@ const breadcrumbs = computed(() => {
         to="/"
         class="flex items-center gap-1.5 text-sm text-(--ui-text-muted) hover:text-(--ui-text) transition-colors shrink-0"
       >
-        <UIcon name="i-lucide-arrow-left" class="size-4" />
+        <UIcon
+          name="i-lucide-arrow-left"
+          class="size-4"
+        />
         <span class="hidden sm:inline">Back to App</span>
       </NuxtLink>
 
@@ -117,7 +123,10 @@ const breadcrumbs = computed(() => {
                 aria-label="Close sidebar"
                 @click="sidebarOpen = false"
               >
-                <UIcon name="i-lucide-x" class="size-4" />
+                <UIcon
+                  name="i-lucide-x"
+                  class="size-4"
+                />
               </button>
             </div>
             <DocsSidebar
@@ -132,9 +141,17 @@ const breadcrumbs = computed(() => {
       <main class="flex-1 overflow-y-auto">
         <div class="mx-auto max-w-4xl px-6 py-6">
           <!-- Breadcrumbs -->
-          <nav v-if="breadcrumbs.length > 1" class="mb-4" aria-label="Breadcrumb">
+          <nav
+            v-if="breadcrumbs.length > 1"
+            class="mb-4"
+            aria-label="Breadcrumb"
+          >
             <ol class="flex items-center gap-1 text-sm">
-              <li v-for="(crumb, idx) in breadcrumbs" :key="crumb.to" class="flex items-center gap-1">
+              <li
+                v-for="(crumb, idx) in breadcrumbs"
+                :key="crumb.to"
+                class="flex items-center gap-1"
+              >
                 <UIcon
                   v-if="idx > 0"
                   name="i-lucide-chevron-right"
@@ -145,10 +162,17 @@ const breadcrumbs = computed(() => {
                   :to="crumb.to"
                   class="text-(--ui-text-muted) hover:text-(--ui-text) transition-colors"
                 >
-                  <UIcon v-if="crumb.icon" :name="crumb.icon" class="size-3.5 inline-block mr-0.5 align-text-bottom" />
+                  <UIcon
+                    v-if="crumb.icon"
+                    :name="crumb.icon"
+                    class="size-3.5 inline-block mr-0.5 align-text-bottom"
+                  />
                   {{ crumb.label }}
                 </NuxtLink>
-                <span v-else class="text-(--ui-text-highlighted) font-medium">
+                <span
+                  v-else
+                  class="text-(--ui-text-highlighted) font-medium"
+                >
                   {{ crumb.label }}
                 </span>
               </li>

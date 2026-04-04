@@ -38,7 +38,9 @@ watch(selectedParts, (sel) => {
   validateQuantity()
 }, { deep: true })
 
-watch(quantity, () => { validateQuantity() })
+watch(quantity, () => {
+  validateQuantity()
+})
 
 function validateQuantity() {
   const count = localPartIds.value.length
@@ -117,7 +119,9 @@ function handleScrapped() {
   emit('scrapped')
 }
 
-onMounted(() => { selectAll() })
+onMounted(() => {
+  selectAll()
+})
 </script>
 
 <template>
@@ -135,8 +139,18 @@ onMounted(() => { selectAll() })
           Parts ({{ selectedParts.size }}/{{ localPartIds.length }})
         </span>
         <div class="flex gap-1">
-          <UButton size="xs" variant="ghost" label="All" @click="selectAll" />
-          <UButton size="xs" variant="ghost" label="None" @click="selectNone" />
+          <UButton
+            size="xs"
+            variant="ghost"
+            label="All"
+            @click="selectAll"
+          />
+          <UButton
+            size="xs"
+            variant="ghost"
+            label="None"
+            @click="selectNone"
+          />
         </div>
       </div>
       <div class="max-h-40 overflow-y-auto border border-(--ui-border) rounded-md divide-y divide-(--ui-border)">
@@ -146,13 +160,40 @@ onMounted(() => { selectAll() })
           class="flex items-center justify-between px-2 py-1.5 hover:bg-(--ui-bg-elevated)/30"
         >
           <label class="flex items-center gap-2 cursor-pointer text-xs flex-1">
-            <input type="checkbox" :checked="selectedParts.has(partId)" class="rounded" @change="togglePart(partId)">
+            <input
+              type="checkbox"
+              :checked="selectedParts.has(partId)"
+              class="rounded"
+              @change="togglePart(partId)"
+            >
             <span class="font-mono">{{ partId }}</span>
           </label>
           <div class="flex items-center gap-0.5 shrink-0">
-            <UButton size="xs" variant="ghost" color="neutral" icon="i-lucide-eye" title="View part detail" :to="partDetailLink(partId)" @click.stop />
-            <UButton size="xs" variant="ghost" color="error" icon="i-lucide-trash-2" title="Scrap" @click="openScrap(partId)" />
-            <UButton size="xs" variant="ghost" color="success" icon="i-lucide-shield-check" title="Force Complete" @click="openForceComplete(partId)" />
+            <UButton
+              size="xs"
+              variant="ghost"
+              color="neutral"
+              icon="i-lucide-eye"
+              title="View part detail"
+              :to="partDetailLink(partId)"
+              @click.stop
+            />
+            <UButton
+              size="xs"
+              variant="ghost"
+              color="error"
+              icon="i-lucide-trash-2"
+              title="Scrap"
+              @click="openScrap(partId)"
+            />
+            <UButton
+              size="xs"
+              variant="ghost"
+              color="success"
+              icon="i-lucide-shield-check"
+              title="Force Complete"
+              @click="openForceComplete(partId)"
+            />
           </div>
         </div>
       </div>
@@ -162,17 +203,38 @@ onMounted(() => { selectAll() })
     <div>
       <label class="text-xs font-semibold text-(--ui-text-highlighted) block mb-1">Quantity</label>
       <div class="flex items-center gap-2">
-      <UInput v-model.number="quantity" type="number" :min="1" :max="localPartIds.length" size="sm" class="w-24" @blur="selectByQuantity" />
+        <UInput
+          v-model.number="quantity"
+          type="number"
+          :min="1"
+          :max="localPartIds.length"
+          size="sm"
+          class="w-24"
+          @blur="selectByQuantity"
+        />
         <span class="text-xs text-(--ui-text-muted)">of {{ localPartIds.length }} available</span>
       </div>
-      <p v-if="validationError" class="text-xs text-(--ui-error) mt-1">{{ validationError }}</p>
+      <p
+        v-if="validationError"
+        class="text-xs text-(--ui-error) mt-1"
+      >
+        {{ validationError }}
+      </p>
     </div>
 
     <!-- Optional note -->
     <div>
       <label class="text-xs font-semibold text-(--ui-text-highlighted) block mb-1">Note (optional)</label>
-      <UTextarea v-model="note" placeholder="Add observations or issues..." :maxlength="1000" :rows="2" size="sm" />
-      <div class="text-xs text-(--ui-text-muted) text-right mt-0.5">{{ note.length }}/1000</div>
+      <UTextarea
+        v-model="note"
+        placeholder="Add observations or issues..."
+        :maxlength="1000"
+        :rows="2"
+        size="sm"
+      />
+      <div class="text-xs text-(--ui-text-muted) text-right mt-0.5">
+        {{ note.length }}/1000
+      </div>
     </div>
 
     <!-- Existing notes -->
@@ -186,7 +248,10 @@ onMounted(() => { selectAll() })
       <UButton
         :loading="loading"
         :disabled="loading || !!validationError || selectedParts.size === 0"
-        size="sm" color="primary" label="Advance" icon="i-lucide-arrow-right"
+        size="sm"
+        color="primary"
+        label="Advance"
+        icon="i-lucide-arrow-right"
         @click="handleAdvance"
       />
       <UButton
@@ -200,11 +265,19 @@ onMounted(() => { selectAll() })
         icon="i-lucide-skip-forward"
         @click="handleSkip"
       />
-      <UButton size="sm" variant="ghost" label="Cancel" @click="emit('cancel')" />
+      <UButton
+        size="sm"
+        variant="ghost"
+        label="Cancel"
+        @click="emit('cancel')"
+      />
     </div>
 
     <!-- Success message -->
-    <div v-if="successMessage" class="text-xs text-(--ui-success) bg-(--ui-success)/10 px-2 py-1.5 rounded-md">
+    <div
+      v-if="successMessage"
+      class="text-xs text-(--ui-success) bg-(--ui-success)/10 px-2 py-1.5 rounded-md"
+    >
       {{ successMessage }}
     </div>
 

@@ -12,7 +12,7 @@ export function useOperatorView() {
     data.value = null
     try {
       data.value = await $fetch<OperatorStepView>(`/api/operator/${encodeURIComponent(stepName)}`)
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch operator view'
     } finally {
       loading.value = false
@@ -29,6 +29,6 @@ export function useOperatorView() {
     loading: readonly(loading),
     error: readonly(error),
     fetchOperatorView,
-    clear
+    clear,
   }
 }

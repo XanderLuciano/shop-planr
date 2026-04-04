@@ -6,7 +6,7 @@ const route = useRoute()
 const { data: page } = await useAsyncData(
   `docs-${route.path}`,
   () => queryCollection('docs').path(route.path).first(),
-  { watch: [() => route.path] }
+  { watch: [() => route.path] },
 )
 
 if (!page.value) {
@@ -14,16 +14,16 @@ if (!page.value) {
     statusCode: 404,
     statusMessage: 'Page not found',
     message: 'The documentation page you are looking for does not exist.',
-    fatal: true
+    fatal: true,
   })
 }
 
 const { data: surround } = await useAsyncData(
   `docs-surround-${route.path}`,
   () => queryCollectionItemSurroundings('docs', route.path, {
-    fields: ['title', 'path']
+    fields: ['title', 'path'],
   }),
-  { watch: [() => route.path] }
+  { watch: [() => route.path] },
 )
 
 const prev = computed(() => surround.value?.[0] ?? null)
@@ -32,7 +32,11 @@ const next = computed(() => surround.value?.[1] ?? null)
 
 <template>
   <article>
-    <ContentRenderer v-if="page" :value="page" class="prose prose-violet max-w-none" />
+    <ContentRenderer
+      v-if="page"
+      :value="page"
+      class="prose prose-violet max-w-none"
+    />
 
     <!-- Prev / Next navigation -->
     <nav
@@ -44,7 +48,10 @@ const next = computed(() => surround.value?.[1] ?? null)
         :to="prev.path"
         class="group flex items-center gap-2 text-sm text-(--ui-text-muted) hover:text-(--ui-text) transition-colors"
       >
-        <UIcon name="i-lucide-arrow-left" class="size-4 shrink-0" />
+        <UIcon
+          name="i-lucide-arrow-left"
+          class="size-4 shrink-0"
+        />
         <span class="group-hover:underline">{{ prev.title }}</span>
       </NuxtLink>
       <span v-else />
@@ -55,7 +62,10 @@ const next = computed(() => surround.value?.[1] ?? null)
         class="group flex items-center gap-2 text-sm text-(--ui-text-muted) hover:text-(--ui-text) transition-colors"
       >
         <span class="group-hover:underline">{{ next.title }}</span>
-        <UIcon name="i-lucide-arrow-right" class="size-4 shrink-0" />
+        <UIcon
+          name="i-lucide-arrow-right"
+          class="size-4 shrink-0"
+        />
       </NuxtLink>
     </nav>
   </article>

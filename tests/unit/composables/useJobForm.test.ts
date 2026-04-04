@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { Job, Path, ProcessStep } from '~/server/types/domain'
 
+import { useJobForm } from '~/app/composables/useJobForm'
+
 // ---- Mocks ----
 
 const mockCreateJob = vi.fn()
@@ -21,8 +23,6 @@ vi.stubGlobal('usePaths', () => ({
 vi.stubGlobal('useUsers', () => ({
   requireUser: () => ({ id: 'test-user-id', username: 'test', displayName: 'Test', isAdmin: true, active: true, createdAt: '' }),
 }))
-
-import { useJobForm, computePathChanges } from '~/app/composables/useJobForm'
 
 // ---- Helpers ----
 
@@ -201,7 +201,9 @@ describe('useJobForm', () => {
 
     it('sets submitting=true during execution and false after', async () => {
       let resolveCreate: (v: any) => void
-      mockCreateJob.mockImplementation(() => new Promise((r) => { resolveCreate = r }))
+      mockCreateJob.mockImplementation(() => new Promise((r) => {
+        resolveCreate = r
+      }))
 
       const { jobDraft, submitting, submit } = useJobForm('create')
       jobDraft.value.name = 'Job'
@@ -234,9 +236,15 @@ describe('useJobForm', () => {
       mockCreatePath.mockResolvedValue({})
 
       const callOrder: string[] = []
-      mockDeletePath.mockImplementation(async () => { callOrder.push('deletePath') })
-      mockUpdatePath.mockImplementation(async () => { callOrder.push('updatePath') })
-      mockCreatePath.mockImplementation(async () => { callOrder.push('createPath') })
+      mockDeletePath.mockImplementation(async () => {
+        callOrder.push('deletePath')
+      })
+      mockUpdatePath.mockImplementation(async () => {
+        callOrder.push('updatePath')
+      })
+      mockCreatePath.mockImplementation(async () => {
+        callOrder.push('createPath')
+      })
 
       const { pathDrafts, submit } = useJobForm('edit', existingJob)
 

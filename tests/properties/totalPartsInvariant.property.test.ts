@@ -41,7 +41,7 @@ const workQueueJobArb: fc.Arbitrary<WorkQueueJob> = fc.record({
 /** WorkQueueResponse with totalParts computed as sum of partCounts (well-formed) */
 const wellFormedWorkQueueResponseArb: fc.Arbitrary<WorkQueueResponse> = fc
   .array(workQueueJobArb, { minLength: 0, maxLength: 8 })
-  .map((jobs) => ({
+  .map(jobs => ({
     operatorId: '_all',
     jobs,
     totalParts: jobs.reduce((sum, j) => sum + j.partCount, 0),
@@ -66,7 +66,7 @@ const wellFormedGroupArb: fc.Arbitrary<WorkQueueGroup> = fc
 /** WorkQueueGroupedResponse with totalParts computed correctly at both levels */
 const wellFormedGroupedResponseArb: fc.Arbitrary<WorkQueueGroupedResponse> = fc
   .array(wellFormedGroupArb, { minLength: 0, maxLength: 5 })
-  .map((groups) => ({
+  .map(groups => ({
     groups,
     totalParts: groups.reduce((sum, g) => sum + g.totalParts, 0),
   }))

@@ -32,7 +32,6 @@ const {
   setFilter,
   clearFilters,
   syncFromUrl,
-  syncToUrl,
   init: initFilters,
   fetchGroupedWork,
   savePreset,

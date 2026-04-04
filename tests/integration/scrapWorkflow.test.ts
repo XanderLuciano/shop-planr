@@ -31,7 +31,7 @@ describe('Scrap Workflow Integration', () => {
     // 3. Create 5 parts
     const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 5 },
-      'operator1'
+      'operator1',
     )
     expect(parts).toHaveLength(5)
 
@@ -68,7 +68,7 @@ describe('Scrap Workflow Integration', () => {
       lifecycleService.scrapPart(parts[2].id, {
         reason: 'operator_error',
         userId: 'operator1',
-      })
+      }),
     ).toThrow(/already scrapped/)
 
     // 9. Verify audit entry exists for scrap
@@ -92,7 +92,7 @@ describe('Scrap Workflow Integration', () => {
     })
     const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 2 },
-      'user1'
+      'user1',
     )
 
     // Without explanation → should throw
@@ -100,7 +100,7 @@ describe('Scrap Workflow Integration', () => {
       lifecycleService.scrapPart(parts[0].id, {
         reason: 'other',
         userId: 'user1',
-      })
+      }),
     ).toThrow(/explanation/i)
 
     // With explanation → should succeed
@@ -125,7 +125,7 @@ describe('Scrap Workflow Integration', () => {
     })
     const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
-      'user1'
+      'user1',
     )
 
     // Complete the part
@@ -136,7 +136,7 @@ describe('Scrap Workflow Integration', () => {
       lifecycleService.scrapPart(part.id, {
         reason: 'damaged',
         userId: 'user1',
-      })
+      }),
     ).toThrow(/completed/)
   })
 })

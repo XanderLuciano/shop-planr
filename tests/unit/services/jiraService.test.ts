@@ -42,7 +42,7 @@ function makeMockFetch(responseData: unknown, ok = true, status = 200) {
     status,
     statusText: ok ? 'OK' : 'Internal Server Error',
     json: () => Promise.resolve(responseData),
-    text: () => Promise.resolve(JSON.stringify(responseData))
+    text: () => Promise.resolve(JSON.stringify(responseData)),
   })
 }
 
@@ -60,9 +60,9 @@ function samplePITicket(overrides: Partial<PITicket> = {}): PITicket {
       updated: '2026-03-10T15:30:00.000Z',
       customfield_10908: '7654321-002',
       customfield_10900: 25,
-      customfield_10014: 'EPIC-100'
+      customfield_10014: 'EPIC-100',
     },
-    ...overrides
+    ...overrides,
   }
 }
 
@@ -78,7 +78,7 @@ describe('JiraService', () => {
       jiraBaseUrl: 'https://jira.example.com',
       jiraProjectKey: 'PI',
       jiraUsername: 'testuser',
-      jiraApiToken: 'testtoken'
+      jiraApiToken: 'testtoken',
     })
     const jobsRepo = new SQLiteJobRepository(db)
     const pathsRepo = new SQLitePathRepository(db)
@@ -126,8 +126,8 @@ describe('JiraService', () => {
           reporter: null,
           labels: null,
           created: null,
-          updated: null
-        }
+          updated: null,
+        },
       }
       const normalized = jira.normalizeTicket(ticket)
 
@@ -164,7 +164,7 @@ describe('JiraService', () => {
 
       const result = jira.getPartNumber(
         { customfield_10908: 'PN-FROM-FIELD' },
-        'Summary with 1234567-001 in it'
+        'Summary with 1234567-001 in it',
       )
       expect(result).toBe('PN-FROM-FIELD')
     })
@@ -175,7 +175,7 @@ describe('JiraService', () => {
 
       const result = jira.getPartNumber(
         { customfield_10908: null },
-        'Bracket 1234567-001-02 assembly'
+        'Bracket 1234567-001-02 assembly',
       )
       expect(result).toBe('1234567-001-02')
     })
@@ -186,7 +186,7 @@ describe('JiraService', () => {
 
       const result = jira.getPartNumber(
         { customfield_10908: '' },
-        'Part 123456-789 needs work'
+        'Part 123456-789 needs work',
       )
       expect(result).toBe('123456-789')
     })
@@ -197,7 +197,7 @@ describe('JiraService', () => {
 
       const result = jira.getPartNumber(
         { customfield_10908: null },
-        'No part number here'
+        'No part number here',
       )
       expect(result).toBeNull()
     })
@@ -206,7 +206,7 @@ describe('JiraService', () => {
   describe('fetchOpenTickets', () => {
     it('fetches and normalizes open tickets', async () => {
       const mockFetch = makeMockFetch({
-        issues: [samplePITicket(), samplePITicket({ key: 'PI-8000' })]
+        issues: [samplePITicket(), samplePITicket({ key: 'PI-8000' })],
       })
       const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, mockFetch)
 
@@ -228,7 +228,7 @@ describe('JiraService', () => {
     it('returns cached tickets on connection failure', async () => {
       // First call succeeds and populates cache
       const successFetch = makeMockFetch({
-        issues: [samplePITicket()]
+        issues: [samplePITicket()],
       })
       const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, successFetch)
 
@@ -344,8 +344,8 @@ describe('JiraService', () => {
           reporter: null,
           labels: [],
           created: '2026-01-01T00:00:00.000Z',
-          updated: '2026-01-01T00:00:00.000Z'
-        }
+          updated: '2026-01-01T00:00:00.000Z',
+        },
       }
       const mockFetch = makeMockFetch(ticket)
       const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, mockFetch)
@@ -359,7 +359,7 @@ describe('JiraService', () => {
     it('uses ticket key as name when summary is empty', async () => {
       const ticket: PITicket = {
         key: 'PI-6000',
-        fields: {}
+        fields: {},
       }
       const mockFetch = makeMockFetch(ticket)
       const jira = createJiraService({ jobs: new SQLiteJobRepository(db) }, settingsService, jobService, {}, mockFetch)
@@ -377,8 +377,8 @@ describe('JiraService', () => {
         jiraFieldMappings: [
           { id: 'fm_1', jiraFieldId: 'customfield_99999', label: 'Custom PN', shopErpField: 'partNumber', isDefault: false },
           { id: 'fm_2', jiraFieldId: 'customfield_88888', label: 'Custom Qty', shopErpField: 'goalQuantity', isDefault: false },
-          { id: 'fm_3', jiraFieldId: 'customfield_77777', label: 'Custom Epic', shopErpField: 'epicLink', isDefault: false }
-        ]
+          { id: 'fm_3', jiraFieldId: 'customfield_77777', label: 'Custom Epic', shopErpField: 'epicLink', isDefault: false },
+        ],
       })
 
       const mockFetch = makeMockFetch({})
@@ -390,8 +390,8 @@ describe('JiraService', () => {
           summary: 'Custom mapped ticket',
           customfield_99999: 'CUSTOM-PN-001',
           customfield_88888: 42,
-          customfield_77777: 'CUSTOM-EPIC'
-        }
+          customfield_77777: 'CUSTOM-EPIC',
+        },
       }
 
       const normalized = jira.normalizeTicket(ticket)
@@ -430,7 +430,7 @@ describe('JiraService', () => {
         },
         setCounter: (v: number) => {
           db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-        }
+        },
       })
       partService = createPartService({ parts: partsRepo, paths: pathsRepo, certs: certsRepo }, auditService, partIdGenerator)
       certService = createCertService({ certs: certsRepo }, auditService)
@@ -439,15 +439,15 @@ describe('JiraService', () => {
 
     function enablePush() {
       settingsService.updateSettings({
-        jiraConnection: { enabled: true, pushEnabled: true }
+        jiraConnection: { enabled: true, pushEnabled: true },
       })
     }
 
-    function createJobWithPath(mockFetch: ReturnType<typeof makeMockFetch>) {
+    function createJobWithPath(_mockFetch: ReturnType<typeof makeMockFetch>) {
       const job = jobService.createJob({ name: 'Test Job', goalQuantity: 10, jiraTicketKey: 'PI-100' })
       const path = pathService.createPath({
         jobId: job.id, name: 'Main Path', goalQuantity: 10,
-        steps: [{ name: 'Machining' }, { name: 'Inspection' }, { name: 'Coating' }]
+        steps: [{ name: 'Machining' }, { name: 'Inspection' }, { name: 'Coating' }],
       })
       return { job, path }
     }
@@ -554,17 +554,17 @@ describe('JiraService', () => {
         const mockFetch = makeMockFetch({ id: '12345' })
         const jira = createJiraService(
           { jobs: jobsRepo }, settingsService, jobService,
-          { pathService, noteService }, mockFetch
+          { pathService, noteService }, mockFetch,
         )
         const { job, path } = createJobWithPath(mockFetch)
 
         // Create parts and a note
         const parts = partService.batchCreateParts(
-          { jobId: job.id, pathId: path.id, quantity: 2 }, 'user1'
+          { jobId: job.id, pathId: path.id, quantity: 2 }, 'user1',
         )
         const note = noteService.createNote({
           jobId: job.id, pathId: path.id, stepId: path.steps[0].id,
-          partIds: parts.map(s => s.id), text: 'threaded feature is missing', userId: 'user1'
+          partIds: parts.map(s => s.id), text: 'threaded feature is missing', userId: 'user1',
         })
 
         const result = await jira.pushNoteAsComment(note.id, job.id)
@@ -582,7 +582,7 @@ describe('JiraService', () => {
         const mockFetch = makeMockFetch({})
         const jira = createJiraService(
           { jobs: jobsRepo }, settingsService, jobService,
-          { pathService, noteService }, mockFetch
+          { pathService, noteService }, mockFetch,
         )
         const job = jobService.createJob({ name: 'Test', goalQuantity: 5, jiraTicketKey: 'PI-1' })
 
@@ -598,7 +598,7 @@ describe('JiraService', () => {
         const mockFetch = makeMockFetch({ id: '12345' })
         const jira = createJiraService(
           { jobs: jobsRepo }, settingsService, jobService,
-          { pathService, partService: partService as any, certService }, mockFetch
+          { pathService, partService: partService as any, certService }, mockFetch,
         )
         const { job, path } = createJobWithPath(mockFetch)
 
@@ -621,13 +621,13 @@ describe('JiraService', () => {
         const mockFetch = makeMockFetch({ id: '12345' })
         const jira = createJiraService(
           { jobs: jobsRepo }, settingsService, jobService,
-          { pathService, partService: partService as any, certService }, mockFetch
+          { pathService, partService: partService as any, certService }, mockFetch,
         )
         const { job, path } = createJobWithPath(mockFetch)
 
         const cert = certService.createCert({ type: 'material', name: 'Steel Cert 304L' })
-        const parts = partService.batchCreateParts(
-          { jobId: job.id, pathId: path.id, quantity: 1, certId: cert.id }, 'user1'
+        partService.batchCreateParts(
+          { jobId: job.id, pathId: path.id, quantity: 1, certId: cert.id }, 'user1',
         )
 
         const result = await jira.pushCompletionDocs(job.id)
@@ -645,7 +645,7 @@ describe('JiraService', () => {
         const mockFetch = makeMockFetch({})
         const jira = createJiraService(
           { jobs: jobsRepo }, settingsService, jobService,
-          { partService: partService as any, certService }, mockFetch
+          { partService: partService as any, certService }, mockFetch,
         )
         const job = jobService.createJob({ name: 'No Jira', goalQuantity: 5 })
 

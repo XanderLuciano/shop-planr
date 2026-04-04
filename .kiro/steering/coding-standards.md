@@ -9,8 +9,20 @@ description: "Coding standards for Shop Planr: import resolution, architecture l
 
 1. Fix root causes, not symptoms. Understand WHY before changing code.
 2. Never use `any`, strip types, or weaken type safety as a shortcut. Make types available properly.
-3. Verify fixes end-to-end: tests pass AND dev server runs clean.
+3. Verify fixes end-to-end: run `npm run lint`, `npx nuxt typecheck`, and `npm run test` before considering work done. All three must pass.
 4. USelect (Reka UI SelectRoot) must NEVER be bound to a ref typed with `undefined` or `null`. Use the sentinel string `'__none__'` for the unselected state, and include it as a disabled item in the items array so the value types align. Setting `v-model` to `undefined` causes runtime errors in Reka UI.
+
+## Writing Code That Passes Lint
+
+`@nuxt/eslint` stylistic preset + custom rules. Quick reference:
+
+- Trailing comma on last item in multiline arrays, objects, params, and template attributes
+- No unused variables/imports — prefix intentionally unused params with `_` (e.g., `_event`)
+- `const` over `let` when not reassigned
+- No `any` in app/server code (`any` is OK in `tests/**` for mocking)
+- Single-word Vue component names are fine (rule disabled)
+- `1tbs` brace style — opening brace on same line, `} else {` not `}\nelse {`
+- Single quotes, 2-space indent, no semicolons, space before function parens
 
 ## Select & Filter Sentinels
 
@@ -76,23 +88,13 @@ if (!id) throw createError({ statusCode: 400, message: 'ID is required' })
 
 ## API Error Handling — Empty vs. Not Found
 
-NEVER throw `NotFoundError` (404) when a resource exists but has zero child items. A 404 means the resource itself doesn't exist in the database — not that it's empty.
+A 404 means the resource itself doesn't exist — not that it has zero children. Empty lists are valid 200 responses.
 
-**Anti-pattern (DO NOT):**
 ```ts
-const serials = await serialService.listByStep(stepId)
-if (serials.length === 0) throw new NotFoundError('No active parts') // WRONG
+// WRONG — empty list is not a 404
+if (serials.length === 0) throw new NotFoundError('No active parts')
+
+// CORRECT — 404 only when the parent resource is missing
+if (!step) throw new NotFoundError('ProcessStep not found')
+return { items: serials, count: serials.length } // empty is fine
 ```
-
-**Correct pattern:**
-```ts
-const step = await pathService.getStepById(stepId)
-if (!step) throw new NotFoundError('ProcessStep not found') // resource truly missing
-
-const serials = await serialService.listByStep(stepId)
-return { items: serials, count: serials.length } // empty is valid, return 200
-```
-
-This applies to all list/collection endpoints. An empty list is a valid response — the parent resource exists, it just has no children right now. Reserve 404 for when the parent resource itself is not found.
-
-**Bug reference:** GitHub #2 — step endpoints returned 404 when serial count was 0, making first steps inaccessible after advancing all serials.

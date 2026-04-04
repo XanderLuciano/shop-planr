@@ -32,7 +32,7 @@ function rowToDomain(row: AuditRow): AuditEntry {
     fromStepId: row.from_step_id ?? undefined,
     toStepId: row.to_step_id ?? undefined,
     batchQuantity: row.batch_quantity ?? undefined,
-    metadata: row.metadata ? JSON.parse(row.metadata) : undefined
+    metadata: row.metadata ? JSON.parse(row.metadata) : undefined,
   }
 }
 
@@ -60,14 +60,14 @@ export class SQLiteAuditRepository implements AuditRepository {
       entry.fromStepId ?? null,
       entry.toStepId ?? null,
       entry.batchQuantity ?? null,
-      entry.metadata ? JSON.stringify(entry.metadata) : null
+      entry.metadata ? JSON.stringify(entry.metadata) : null,
     )
     return entry
   }
 
   listByPartId(partId: string): AuditEntry[] {
     const rows = this.db.prepare(
-      'SELECT * FROM audit_entries WHERE part_id = ? ORDER BY timestamp ASC'
+      'SELECT * FROM audit_entries WHERE part_id = ? ORDER BY timestamp ASC',
     ).all(partId) as AuditRow[]
     return rows.map(rowToDomain)
   }
@@ -79,7 +79,7 @@ export class SQLiteAuditRepository implements AuditRepository {
 
   listByJobId(jobId: string): AuditEntry[] {
     const rows = this.db.prepare(
-      'SELECT * FROM audit_entries WHERE job_id = ? ORDER BY timestamp ASC'
+      'SELECT * FROM audit_entries WHERE job_id = ? ORDER BY timestamp ASC',
     ).all(jobId) as AuditRow[]
     return rows.map(rowToDomain)
   }
@@ -88,7 +88,7 @@ export class SQLiteAuditRepository implements AuditRepository {
     const limit = options?.limit ?? 100
     const offset = options?.offset ?? 0
     const rows = this.db.prepare(
-      'SELECT * FROM audit_entries ORDER BY timestamp DESC LIMIT ? OFFSET ?'
+      'SELECT * FROM audit_entries ORDER BY timestamp DESC LIMIT ? OFFSET ?',
     ).all(limit, offset) as AuditRow[]
     return rows.map(rowToDomain)
   }

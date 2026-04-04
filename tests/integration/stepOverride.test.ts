@@ -34,7 +34,7 @@ describe('Step Override Workflow Integration', () => {
     // 2. Create 4 parts
     const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 4 },
-      'operator1'
+      'operator1',
     )
 
     // 3. Create override on first 2 parts for step 1 (QC Check)
@@ -42,7 +42,7 @@ describe('Step Override Workflow Integration', () => {
       [parts[0].id, parts[1].id],
       path.steps[1].id,
       'Prototype fast-track',
-      'engineer1'
+      'engineer1',
     )
     expect(overrides).toHaveLength(2)
 
@@ -97,7 +97,7 @@ describe('Step Override Workflow Integration', () => {
 
     const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
-      'user1'
+      'user1',
     )
 
     // Advance past step 0 using lifecycleService (updates part_step_statuses)
@@ -105,7 +105,7 @@ describe('Step Override Workflow Integration', () => {
 
     // Try to override step 0 (already completed) → should fail
     expect(() =>
-      lifecycleService.createStepOverride([part.id], path.steps[0].id, 'reason', 'user1')
+      lifecycleService.createStepOverride([part.id], path.steps[0].id, 'reason', 'user1'),
     ).toThrow(/completed/)
   })
 
@@ -123,7 +123,7 @@ describe('Step Override Workflow Integration', () => {
 
     const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
-      'user1'
+      'user1',
     )
 
     // Create override

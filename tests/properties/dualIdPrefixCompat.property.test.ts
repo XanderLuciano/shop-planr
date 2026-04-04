@@ -22,9 +22,6 @@ const arbSnId = () => arbIdSuffix().map(s => `SN-${s}`)
 /** Generate a new part_ prefixed ID */
 const arbPartId = () => arbIdSuffix().map(s => `part_${s}`)
 
-/** Generate either prefix type */
-const arbDualId = () => fc.oneof(arbSnId(), arbPartId())
-
 const arbScrapReason = () =>
   fc.constantFrom(
     'out_of_tolerance' as const,
@@ -36,7 +33,7 @@ const arbScrapReason = () =>
 
 // ---- Helpers ----
 
-function seedJobAndPath(ctx: TestContext): { jobId: string; pathId: string } {
+function seedJobAndPath(ctx: TestContext): { jobId: string, pathId: string } {
   const jobId = 'job_dual_compat'
   const pathId = 'path_dual_compat'
   const now = new Date().toISOString()

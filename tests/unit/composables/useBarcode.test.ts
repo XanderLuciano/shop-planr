@@ -54,8 +54,8 @@ describe('useBarcode – handleScan routing', () => {
       id: 'part_00001',
       jobId: 'job_1',
       pathId: 'path_1',
-      currentStepId: "step_2",
-      certs: [{ id: 'cert_1' }]
+      currentStepId: 'step_2',
+      certs: [{ id: 'cert_1' }],
     })
 
     const handleScan = await getHandleScan()
@@ -65,8 +65,8 @@ describe('useBarcode – handleScan routing', () => {
     expect(mockToastAdd).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Part: part_00001',
-        color: 'success'
-      })
+        color: 'success',
+      }),
     )
   })
 
@@ -80,8 +80,8 @@ describe('useBarcode – handleScan routing', () => {
     expect(mockToastAdd).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Not Found',
-        color: 'error'
-      })
+        color: 'error',
+      }),
     )
   })
 
@@ -89,7 +89,7 @@ describe('useBarcode – handleScan routing', () => {
     fetchMock.mockResolvedValueOnce({
       id: 'cert_abc',
       name: 'Steel Cert',
-      type: 'material'
+      type: 'material',
     })
 
     const handleScan = await getHandleScan()
@@ -99,8 +99,8 @@ describe('useBarcode – handleScan routing', () => {
     expect(mockToastAdd).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Cert: Steel Cert',
-        color: 'success'
-      })
+        color: 'success',
+      }),
     )
   })
 
@@ -114,8 +114,8 @@ describe('useBarcode – handleScan routing', () => {
     expect(mockToastAdd).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Not Found',
-        color: 'error'
-      })
+        color: 'error',
+      }),
     )
   })
 
@@ -124,8 +124,8 @@ describe('useBarcode – handleScan routing', () => {
       id: 'UNKNOWN-1',
       jobId: 'job_1',
       pathId: 'path_1',
-      currentStepId: "step_0",
-      certs: []
+      currentStepId: 'step_0',
+      certs: [],
     })
 
     const handleScan = await getHandleScan()
@@ -135,7 +135,7 @@ describe('useBarcode – handleScan routing', () => {
     // Should NOT try cert since part was found
     expect(fetchMock).toHaveBeenCalledTimes(1)
     expect(mockToastAdd).toHaveBeenCalledWith(
-      expect.objectContaining({ color: 'success' })
+      expect.objectContaining({ color: 'success' }),
     )
   })
 
@@ -152,8 +152,8 @@ describe('useBarcode – handleScan routing', () => {
     expect(mockToastAdd).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Cert: Process Cert',
-        color: 'success'
-      })
+        color: 'success',
+      }),
     )
   })
 
@@ -170,8 +170,8 @@ describe('useBarcode – handleScan routing', () => {
       expect.objectContaining({
         title: 'Not Found',
         description: expect.stringContaining('NOPE'),
-        color: 'error'
-      })
+        color: 'error',
+      }),
     )
   })
 
@@ -181,7 +181,7 @@ describe('useBarcode – handleScan routing', () => {
       jobId: 'job_2',
       pathId: 'path_2',
       currentStepId: null,
-      certs: []
+      certs: [],
     })
 
     const handleScan = await getHandleScan()
@@ -189,8 +189,8 @@ describe('useBarcode – handleScan routing', () => {
 
     expect(mockToastAdd).toHaveBeenCalledWith(
       expect.objectContaining({
-        description: expect.stringContaining('Completed')
-      })
+        description: expect.stringContaining('Completed'),
+      }),
     )
   })
 })

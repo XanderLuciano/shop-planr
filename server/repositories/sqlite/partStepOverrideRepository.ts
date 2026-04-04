@@ -55,21 +55,21 @@ export class SQLitePartStepOverrideRepository implements PartStepOverrideReposit
 
   getByPartAndStep(partId: string, stepId: string): PartStepOverride | null {
     const row = this.db.prepare(
-      'SELECT * FROM part_step_overrides WHERE part_id = ? AND step_id = ?'
+      'SELECT * FROM part_step_overrides WHERE part_id = ? AND step_id = ?',
     ).get(partId, stepId) as PartStepOverrideRow | undefined
     return row ? rowToDomain(row) : null
   }
 
   listByPartId(partId: string): PartStepOverride[] {
     const rows = this.db.prepare(
-      'SELECT * FROM part_step_overrides WHERE part_id = ? ORDER BY created_at ASC'
+      'SELECT * FROM part_step_overrides WHERE part_id = ? ORDER BY created_at ASC',
     ).all(partId) as PartStepOverrideRow[]
     return rows.map(rowToDomain)
   }
 
   listActiveByPartId(partId: string): PartStepOverride[] {
     const rows = this.db.prepare(
-      'SELECT * FROM part_step_overrides WHERE part_id = ? AND active = 1 ORDER BY created_at ASC'
+      'SELECT * FROM part_step_overrides WHERE part_id = ? AND active = 1 ORDER BY created_at ASC',
     ).all(partId) as PartStepOverrideRow[]
     return rows.map(rowToDomain)
   }
@@ -112,7 +112,7 @@ export class SQLitePartStepOverrideRepository implements PartStepOverrideReposit
       const chunk = partIds.slice(i, i + CHUNK_SIZE)
       const placeholders = chunk.map(() => '?').join(',')
       const result = this.db.prepare(
-        `DELETE FROM part_step_overrides WHERE part_id IN (${placeholders})`
+        `DELETE FROM part_step_overrides WHERE part_id IN (${placeholders})`,
       ).run(...chunk)
       totalChanges += result.changes
     }

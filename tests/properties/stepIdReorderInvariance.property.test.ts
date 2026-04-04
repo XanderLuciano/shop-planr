@@ -56,13 +56,13 @@ describe('Feature: step-id-part-tracking, Property 3: Step reorder preserves cur
           }
 
           // Record each part's currentStepId before reorder
-          const beforeReorder = parts.map(p => {
+          const beforeReorder = parts.map((p) => {
             const fresh = ctx.partService.getPart(p.id)
             return { id: fresh.id, currentStepId: fresh.currentStepId }
           })
 
           // Reorder: reverse the steps (keeping same IDs, just different order)
-          const reorderedSteps = [...path.steps].reverse().map((s, i) => ({
+          const reorderedSteps = [...path.steps].reverse().map((s, _i) => ({
             id: s.id,
             name: s.name,
             location: s.location,

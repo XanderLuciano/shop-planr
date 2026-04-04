@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { groupEntriesByDimension } from '~/server/utils/workQueueGrouping'
-import type { WorkQueueJob, GroupByDimension } from '~/server/types/computed'
+import type { WorkQueueJob } from '~/server/types/computed'
 
 /** Helper to build a WorkQueueJob with sensible defaults. Override any field via `overrides`. */
 function makeJob(overrides: Partial<WorkQueueJob> & { jobPriority?: number } = {}): WorkQueueJob & { jobPriority: number } {
@@ -161,9 +161,9 @@ describe('groupEntriesByDimension', () => {
 
   it('sorts jobs within each group by jobPriority descending', () => {
     const entries = [
-      { job: makeJob({ jobId: 'low', stepLocation: 'X', jobPriority: 1 }), },
-      { job: makeJob({ jobId: 'high', stepLocation: 'X', jobPriority: 10 }), },
-      { job: makeJob({ jobId: 'mid', stepLocation: 'X', jobPriority: 5 }), },
+      { job: makeJob({ jobId: 'low', stepLocation: 'X', jobPriority: 1 }) },
+      { job: makeJob({ jobId: 'high', stepLocation: 'X', jobPriority: 10 }) },
+      { job: makeJob({ jobId: 'mid', stepLocation: 'X', jobPriority: 5 }) },
     ]
 
     const groups = groupEntriesByDimension(entries, 'location', new Map())

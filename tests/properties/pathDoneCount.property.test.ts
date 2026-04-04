@@ -25,11 +25,11 @@ describe('Path Done Count Properties', () => {
       advanceOps: fc.array(
         fc.record({
           partIndex: fc.nat(),
-          times: fc.integer({ min: 1, max: 6 })
+          times: fc.integer({ min: 1, max: 6 }),
         }),
-        { minLength: 0, maxLength: 15 }
+        { minLength: 0, maxLength: 15 },
       ),
-      scrapIndices: fc.array(fc.nat(), { minLength: 0, maxLength: 5 })
+      scrapIndices: fc.array(fc.nat(), { minLength: 0, maxLength: 5 }),
     })
   }
 
@@ -41,10 +41,10 @@ describe('Path Done Count Properties', () => {
     params: {
       stepCount: number
       partQuantity: number
-      advanceOps: { partIndex: number; times: number }[]
+      advanceOps: { partIndex: number, times: number }[]
       scrapIndices: number[]
     },
-    fn: (ctx: ReturnType<typeof createTestContext>, pathId: string) => T
+    fn: (ctx: ReturnType<typeof createTestContext>, pathId: string) => T,
   ): T {
     const ctx = createTestContext()
     try {
@@ -52,18 +52,18 @@ describe('Path Done Count Properties', () => {
 
       const job = jobService.createJob({ name: 'Test Job', goalQuantity: 100 })
       const steps = Array.from({ length: params.stepCount }, (_, i) => ({
-        name: `Step ${i}`
+        name: `Step ${i}`,
       }))
       const path = pathService.createPath({
         jobId: job.id,
         name: 'Route',
         goalQuantity: params.partQuantity,
-        steps
+        steps,
       })
 
       const parts = partService.batchCreateParts(
         { jobId: job.id, pathId: path.id, quantity: params.partQuantity },
-        'user_test'
+        'user_test',
       )
 
       // Advance some parts randomly
@@ -86,7 +86,7 @@ describe('Path Done Count Properties', () => {
         try {
           lifecycleService.scrapPart(parts[idx].id, {
             reason: 'process_defect',
-            userId: 'user_test'
+            userId: 'user_test',
           })
           scrappedSet.add(idx)
         } catch {
@@ -120,9 +120,9 @@ describe('Path Done Count Properties', () => {
             const partsCompleted = allParts.filter(p => p.currentStepId === null && p.status === 'completed').length
             expect(completedCount).toBe(partsCompleted)
           })
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -149,9 +149,9 @@ describe('Path Done Count Properties', () => {
               expect(entry.completedCount).toBe(step.completedCount)
             }
           })
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -172,13 +172,13 @@ describe('Path Done Count Properties', () => {
             const distribution = ctx.pathService.getStepDistribution(pathId)
             for (let i = 1; i < distribution.length; i++) {
               expect(distribution[i - 1].completedCount).toBeGreaterThanOrEqual(
-                distribution[i].completedCount
+                distribution[i].completedCount,
               )
             }
           })
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -201,9 +201,9 @@ describe('Path Done Count Properties', () => {
             const pathCompleted = ctx.pathService.getPathCompletedCount(pathId)
             expect(lastEntry.completedCount).toBe(pathCompleted)
           })
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -232,9 +232,9 @@ describe('Path Done Count Properties', () => {
 
             expect(sumPartCounts + pathCompleted).toBe(nonScrappedTotal)
           })
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })

@@ -33,7 +33,7 @@ export function usePartsView() {
     error.value = null
     try {
       response.value = await $fetch<WorkQueueResponse>('/api/operator/queue/_all')
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch active work'
       response.value = null
     } finally {

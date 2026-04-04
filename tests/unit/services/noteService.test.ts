@@ -8,16 +8,19 @@ import type { AuditService } from '../../../server/services/auditService'
 function createMockNoteRepo(): NoteRepository {
   const store = new Map<string, StepNote>()
   return {
-    create: vi.fn((note: StepNote) => { store.set(note.id, note); return note }),
+    create: vi.fn((note: StepNote) => {
+      store.set(note.id, note)
+      return note
+    }),
     listByPartId: vi.fn((partId: string) =>
-      [...store.values()].filter(n => n.partIds.includes(partId))
+      [...store.values()].filter(n => n.partIds.includes(partId)),
     ),
     listByStepId: vi.fn((stepId: string) =>
-      [...store.values()].filter(n => n.stepId === stepId)
+      [...store.values()].filter(n => n.stepId === stepId),
     ),
     listByJobId: vi.fn((jobId: string) =>
-      [...store.values()].filter(n => n.jobId === jobId)
-    )
+      [...store.values()].filter(n => n.jobId === jobId),
+    ),
   }
 }
 
@@ -30,7 +33,7 @@ function createMockAuditService(): AuditService {
     recordNoteCreation: vi.fn(),
     getPartAuditTrail: vi.fn(() => []),
     getJobAuditTrail: vi.fn(() => []),
-    listAuditEntries: vi.fn(() => [])
+    listAuditEntries: vi.fn(() => []),
   } as unknown as AuditService
 }
 
@@ -53,7 +56,7 @@ describe('NoteService', () => {
         stepId: 'step_1',
         partIds: ['part_1', 'part_2'],
         text: 'Threaded feature is missing',
-        userId: 'user_1'
+        userId: 'user_1',
       })
 
       expect(note.id).toMatch(/^note_/)
@@ -74,7 +77,7 @@ describe('NoteService', () => {
         stepId: 'step_1',
         partIds: ['part_1'],
         text: '  some note  ',
-        userId: 'user_1'
+        userId: 'user_1',
       })
       expect(note.text).toBe('some note')
     })
@@ -86,14 +89,14 @@ describe('NoteService', () => {
         stepId: 'step_1',
         partIds: ['part_1'],
         text: 'Defect found',
-        userId: 'user_1'
+        userId: 'user_1',
       })
 
       expect(auditService.recordNoteCreation).toHaveBeenCalledWith({
         userId: 'user_1',
         jobId: 'job_1',
         pathId: 'path_1',
-        stepId: 'step_1'
+        stepId: 'step_1',
       })
     })
 
@@ -104,7 +107,7 @@ describe('NoteService', () => {
         stepId: 'step_1',
         partIds: ['part_1'],
         text: '',
-        userId: 'user_1'
+        userId: 'user_1',
       })).toThrow(ValidationError)
     })
 
@@ -115,7 +118,7 @@ describe('NoteService', () => {
         stepId: 'step_1',
         partIds: ['part_1'],
         text: '   ',
-        userId: 'user_1'
+        userId: 'user_1',
       })).toThrow(ValidationError)
     })
 
@@ -126,7 +129,7 @@ describe('NoteService', () => {
         stepId: 'step_1',
         partIds: [],
         text: 'Some note',
-        userId: 'user_1'
+        userId: 'user_1',
       })).toThrow(ValidationError)
     })
   })
@@ -135,11 +138,11 @@ describe('NoteService', () => {
     it('returns notes containing the part ID', () => {
       service.createNote({
         jobId: 'job_1', pathId: 'path_1', stepId: 'step_1',
-        partIds: ['part_1', 'part_2'], text: 'Note A', userId: 'user_1'
+        partIds: ['part_1', 'part_2'], text: 'Note A', userId: 'user_1',
       })
       service.createNote({
         jobId: 'job_1', pathId: 'path_1', stepId: 'step_2',
-        partIds: ['part_3'], text: 'Note B', userId: 'user_1'
+        partIds: ['part_3'], text: 'Note B', userId: 'user_1',
       })
 
       const notes = service.getNotesForPart('part_1')
@@ -156,7 +159,7 @@ describe('NoteService', () => {
     it('returns notes for the given step', () => {
       service.createNote({
         jobId: 'job_1', pathId: 'path_1', stepId: 'step_1',
-        partIds: ['part_1'], text: 'Step note', userId: 'user_1'
+        partIds: ['part_1'], text: 'Step note', userId: 'user_1',
       })
 
       const notes = service.getNotesForStep('step_1')
@@ -169,7 +172,7 @@ describe('NoteService', () => {
     it('returns notes for the given job', () => {
       service.createNote({
         jobId: 'job_1', pathId: 'path_1', stepId: 'step_1',
-        partIds: ['part_1'], text: 'Job note', userId: 'user_1'
+        partIds: ['part_1'], text: 'Job note', userId: 'user_1',
       })
 
       const notes = service.getNotesForJob('job_1')

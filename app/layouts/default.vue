@@ -12,7 +12,7 @@ const navItems: NavigationMenuItem[] = [
   { label: 'Certs', icon: 'i-lucide-shield-check', to: '/certs' },
   { label: 'Jira', icon: 'i-lucide-ticket', to: '/jira' },
   { label: 'Audit', icon: 'i-lucide-scroll-text', to: '/audit' },
-  { label: 'Settings', icon: 'i-lucide-settings', to: '/settings' }
+  { label: 'Settings', icon: 'i-lucide-settings', to: '/settings' },
 ]
 
 const { settings } = useSettings()
@@ -62,9 +62,15 @@ function onScanned(result: ScanResult) {
             target="_blank"
             class="flex items-center gap-2 px-2 py-1.5 text-sm text-(--ui-text-muted) hover:text-(--ui-text-highlighted) rounded-md hover:bg-(--ui-bg-elevated) transition-colors"
           >
-            <UIcon name="i-lucide-book-open" class="size-4" />
+            <UIcon
+              name="i-lucide-book-open"
+              class="size-4"
+            />
             <span class="truncate group-data-[collapsed]:hidden">API Docs</span>
-            <UIcon name="i-lucide-external-link" class="size-3 ml-auto opacity-50 group-data-[collapsed]:hidden" />
+            <UIcon
+              name="i-lucide-external-link"
+              class="size-3 ml-auto opacity-50 group-data-[collapsed]:hidden"
+            />
           </NuxtLink>
           <div class="flex items-center justify-between">
             <UDashboardSidebarCollapse />

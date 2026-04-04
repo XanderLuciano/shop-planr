@@ -40,7 +40,7 @@ export function useAudit() {
         entries.value = result
       }
       return result
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch audit entries'
       return []
     } finally {

@@ -17,12 +17,12 @@ function makePath(overrides: Partial<Path> & { steps?: ProcessStep[] } = {}): Pa
     steps: [
       { id: 'step_0', name: 'OP1', order: 0, optional: false, dependencyType: 'preferred', completedCount: 0 },
       { id: 'step_1', name: 'OP2', order: 1, optional: false, dependencyType: 'preferred', completedCount: 0 },
-      { id: 'step_2', name: 'Final', order: 2, optional: false, dependencyType: 'preferred', completedCount: 0 }
+      { id: 'step_2', name: 'Final', order: 2, optional: false, dependencyType: 'preferred', completedCount: 0 },
     ],
     advancementMode: 'strict',
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
-    ...overrides
+    ...overrides,
   }
 }
 
@@ -36,14 +36,17 @@ function makePart(overrides: Partial<Part> = {}): Part {
     forceCompleted: false,
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-01T00:00:00.000Z',
-    ...overrides
+    ...overrides,
   }
 }
 
 function createMockPartRepo(): PartRepository {
   const store = new Map<string, Part>()
   return {
-    create: vi.fn((s: Part) => { store.set(s.id, s); return s }),
+    create: vi.fn((s: Part) => {
+      store.set(s.id, s)
+      return s
+    }),
     createBatch: vi.fn((parts: Part[]) => {
       for (const s of parts) store.set(s.id, s)
       return parts
@@ -53,7 +56,7 @@ function createMockPartRepo(): PartRepository {
     listByPathId: vi.fn((pathId: string) => [...store.values()].filter(s => s.pathId === pathId)),
     listByJobId: vi.fn((jobId: string) => [...store.values()].filter(s => s.jobId === jobId)),
     listByCurrentStepId: vi.fn((stepId: string) =>
-      [...store.values()].filter(s => s.currentStepId === stepId && s.status !== 'scrapped')
+      [...store.values()].filter(s => s.currentStepId === stepId && s.status !== 'scrapped'),
     ),
     update: vi.fn((id: string, partial: Partial<Part>) => {
       const existing = store.get(id)!
@@ -63,10 +66,10 @@ function createMockPartRepo(): PartRepository {
     }),
     countByJobId: vi.fn((jobId: string) => [...store.values()].filter(s => s.jobId === jobId).length),
     countCompletedByJobId: vi.fn((jobId: string) =>
-      [...store.values()].filter(s => s.jobId === jobId && s.currentStepId === null && s.status === 'completed').length
+      [...store.values()].filter(s => s.jobId === jobId && s.currentStepId === null && s.status === 'completed').length,
     ),
     countScrappedByJobId: vi.fn(() => 0),
-    listAll: vi.fn(() => [...store.values()])
+    listAll: vi.fn(() => [...store.values()]),
   }
 }
 
@@ -87,13 +90,16 @@ function createMockPathRepo(path: Path | null = makePath()): PathRepository {
 function createMockCertRepo(): CertRepository {
   const certs = new Map<string, Certificate>()
   return {
-    create: vi.fn((c: Certificate) => { certs.set(c.id, c); return c }),
+    create: vi.fn((c: Certificate) => {
+      certs.set(c.id, c)
+      return c
+    }),
     getById: vi.fn((id: string) => certs.get(id) ?? null),
     list: vi.fn(() => [...certs.values()]),
     attachToPart: vi.fn(a => a),
     getAttachmentsForPart: vi.fn(() => []),
     listAttachmentsByCertId: vi.fn(() => []),
-    batchAttach: vi.fn(a => a)
+    batchAttach: vi.fn(a => a),
   }
 }
 
@@ -133,7 +139,7 @@ function createMockPartIdGenerator(startAt = 0): PartIdGenerator {
         ids.push(`part_${String(counter).padStart(5, '0')}`)
       }
       return ids
-    })
+    }),
   }
 }
 
@@ -154,7 +160,7 @@ describe('PartService', () => {
     service = createPartService(
       { parts: partRepo, paths: pathRepo, certs: certRepo },
       auditService,
-      partIdGenerator
+      partIdGenerator,
     )
   })
 
@@ -162,7 +168,7 @@ describe('PartService', () => {
     it('creates parts with sequential IDs at first step', () => {
       const result = service.batchCreateParts(
         { jobId: 'job_1', pathId: 'path_1', quantity: 3 },
-        'user_1'
+        'user_1',
       )
       expect(result).toHaveLength(3)
       expect(result[0].id).toBe('part_00001')
@@ -176,13 +182,13 @@ describe('PartService', () => {
     it('records audit entry for batch creation', () => {
       service.batchCreateParts(
         { jobId: 'job_1', pathId: 'path_1', quantity: 5 },
-        'user_1'
+        'user_1',
       )
       expect(auditService.recordPartCreation).toHaveBeenCalledWith({
         userId: 'user_1',
         jobId: 'job_1',
         pathId: 'path_1',
-        batchQuantity: 5
+        batchQuantity: 5,
       })
     })
 
@@ -192,13 +198,13 @@ describe('PartService', () => {
         id: 'cert_1',
         type: 'material',
         name: 'Steel Cert',
-        createdAt: '2024-01-01T00:00:00.000Z'
+        createdAt: '2024-01-01T00:00:00.000Z',
       }
       certRepo.create(cert)
 
       const result = service.batchCreateParts(
         { jobId: 'job_1', pathId: 'path_1', quantity: 2, certId: 'cert_1' },
-        'user_1'
+        'user_1',
       )
       expect(result).toHaveLength(2)
       expect(certRepo.attachToPart).toHaveBeenCalledTimes(2)
@@ -207,8 +213,8 @@ describe('PartService', () => {
           partId: 'part_00001',
           certId: 'cert_1',
           stepId: 'step_0',
-          attachedBy: 'user_1'
-        })
+          attachedBy: 'user_1',
+        }),
       )
     })
 
@@ -216,8 +222,8 @@ describe('PartService', () => {
       expect(() =>
         service.batchCreateParts(
           { jobId: 'job_1', pathId: 'path_1', quantity: 1, certId: 'nonexistent' },
-          'user_1'
-        )
+          'user_1',
+        ),
       ).toThrow(NotFoundError)
     })
 
@@ -225,8 +231,8 @@ describe('PartService', () => {
       expect(() =>
         service.batchCreateParts(
           { jobId: 'job_1', pathId: 'path_1', quantity: 0 },
-          'user_1'
-        )
+          'user_1',
+        ),
       ).toThrow(ValidationError)
     })
 
@@ -234,8 +240,8 @@ describe('PartService', () => {
       expect(() =>
         service.batchCreateParts(
           { jobId: 'job_1', pathId: 'path_1', quantity: -3 },
-          'user_1'
-        )
+          'user_1',
+        ),
       ).toThrow(ValidationError)
     })
 
@@ -244,13 +250,13 @@ describe('PartService', () => {
       service = createPartService(
         { parts: partRepo, paths: pathRepo, certs: certRepo },
         auditService,
-        partIdGenerator
+        partIdGenerator,
       )
       expect(() =>
         service.batchCreateParts(
           { jobId: 'job_1', pathId: 'missing', quantity: 1 },
-          'user_1'
-        )
+          'user_1',
+        ),
       ).toThrow(NotFoundError)
     })
 
@@ -259,13 +265,13 @@ describe('PartService', () => {
       service = createPartService(
         { parts: partRepo, paths: pathRepo, certs: certRepo },
         auditService,
-        partIdGenerator
+        partIdGenerator,
       )
       expect(() =>
         service.batchCreateParts(
           { jobId: 'job_1', pathId: 'path_1', quantity: 1 },
-          'user_1'
-        )
+          'user_1',
+        ),
       ).toThrow(ValidationError)
     })
   })
@@ -289,7 +295,7 @@ describe('PartService', () => {
         jobId: 'job_1',
         pathId: 'path_1',
         fromStepId: 'step_0',
-        toStepId: 'step_1'
+        toStepId: 'step_1',
       })
     })
 
@@ -310,7 +316,7 @@ describe('PartService', () => {
         partId: 'part_00001',
         jobId: 'job_1',
         pathId: 'path_1',
-        fromStepId: 'step_2'
+        fromStepId: 'step_2',
       })
     })
 
@@ -330,7 +336,7 @@ describe('PartService', () => {
       service = createPartService(
         { parts: partRepo, paths: pathRepo, certs: certRepo },
         auditService,
-        partIdGenerator
+        partIdGenerator,
       )
 
       expect(() => service.advancePart('part_00001', 'user_1')).toThrow(NotFoundError)

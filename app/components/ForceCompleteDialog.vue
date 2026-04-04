@@ -72,7 +72,10 @@ function handleCancel() {
             :key="step.stepId"
             class="px-3 py-2 text-sm flex items-center gap-2"
           >
-            <UIcon name="i-lucide-alert-triangle" class="size-4 text-amber-500 shrink-0" />
+            <UIcon
+              name="i-lucide-alert-triangle"
+              class="size-4 text-amber-500 shrink-0"
+            />
             <span class="text-(--ui-text-highlighted)">{{ step.stepName }}</span>
           </div>
         </div>
@@ -86,15 +89,25 @@ function handleCancel() {
           />
         </div>
 
-        <p v-if="validationError" class="text-sm text-(--ui-error)">
+        <p
+          v-if="validationError"
+          class="text-sm text-(--ui-error)"
+        >
           {{ validationError }}
         </p>
-        <p v-if="error" class="text-sm text-(--ui-error)">
+        <p
+          v-if="error"
+          class="text-sm text-(--ui-error)"
+        >
           {{ error }}
         </p>
 
         <div class="flex justify-end gap-2 pt-2">
-          <UButton variant="ghost" label="Cancel" @click="handleCancel" />
+          <UButton
+            variant="ghost"
+            label="Cancel"
+            @click="handleCancel"
+          />
           <UButton
             color="warning"
             label="Force Complete"

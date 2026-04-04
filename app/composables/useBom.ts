@@ -13,7 +13,7 @@ export function useBom() {
     error.value = null
     try {
       boms.value = await $fetch<BOM[]>('/api/bom')
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch BOMs'
       boms.value = []
     } finally {
@@ -24,7 +24,7 @@ export function useBom() {
   async function createBom(input: CreateBomInput): Promise<BOM> {
     const bom = await $fetch<BOM>('/api/bom', {
       method: 'POST',
-      body: input
+      body: input,
     })
     await fetchBoms()
     return bom
@@ -33,7 +33,7 @@ export function useBom() {
   async function updateBom(id: string, input: Partial<CreateBomInput>): Promise<BOM> {
     const bom = await $fetch<BOM>(`/api/bom/${id}`, {
       method: 'PUT',
-      body: input
+      body: input,
     })
     await fetchBoms()
     return bom
@@ -50,6 +50,6 @@ export function useBom() {
     fetchBoms,
     createBom,
     updateBom,
-    getBomWithSummary
+    getBomWithSummary,
   }
 }

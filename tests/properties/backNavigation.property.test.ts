@@ -44,7 +44,7 @@ describe('Property 2: Preservation — Default Back Navigation to Parts', () => 
   it('returns /parts and "Back to Parts" for any string not starting with /jobs/', () => {
     fc.assert(
       fc.property(
-        fc.string().filter((s) => !s.startsWith('/jobs/')),
+        fc.string().filter(s => !s.startsWith('/jobs/')),
         (input) => {
           const result = resolveBackNavigation(input)
 

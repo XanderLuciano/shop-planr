@@ -12,7 +12,7 @@ export function useTemplates() {
     error.value = null
     try {
       templates.value = await $fetch<TemplateRoute[]>('/api/templates')
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch templates'
       templates.value = []
     } finally {
@@ -23,7 +23,7 @@ export function useTemplates() {
   async function createTemplate(input: CreateTemplateInput): Promise<TemplateRoute> {
     const template = await $fetch<TemplateRoute>('/api/templates', {
       method: 'POST',
-      body: input
+      body: input,
     })
     await fetchTemplates()
     return template
@@ -31,7 +31,7 @@ export function useTemplates() {
 
   async function deleteTemplate(id: string): Promise<void> {
     await $fetch(`/api/templates/${id}`, {
-      method: 'DELETE'
+      method: 'DELETE',
     })
     await fetchTemplates()
   }
@@ -39,7 +39,7 @@ export function useTemplates() {
   async function applyTemplate(templateId: string, input: ApplyTemplateInput): Promise<Path> {
     return await $fetch<Path>(`/api/templates/${templateId}/apply`, {
       method: 'POST',
-      body: input
+      body: input,
     })
   }
 
@@ -50,6 +50,6 @@ export function useTemplates() {
     fetchTemplates,
     createTemplate,
     deleteTemplate,
-    applyTemplate
+    applyTemplate,
   }
 }

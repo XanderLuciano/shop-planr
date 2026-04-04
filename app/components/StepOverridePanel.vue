@@ -87,11 +87,18 @@ async function handleReverse(override: PartStepOverride) {
 
 <template>
   <div class="space-y-4">
-    <h4 class="text-sm font-semibold text-(--ui-text-highlighted)">Step Overrides</h4>
+    <h4 class="text-sm font-semibold text-(--ui-text-highlighted)">
+      Step Overrides
+    </h4>
 
     <!-- Active overrides -->
-    <div v-if="activeOverrides.length" class="space-y-1">
-      <p class="text-xs font-medium text-(--ui-text-muted)">Active Overrides</p>
+    <div
+      v-if="activeOverrides.length"
+      class="space-y-1"
+    >
+      <p class="text-xs font-medium text-(--ui-text-muted)">
+        Active Overrides
+      </p>
       <div class="border border-(--ui-border) rounded-md divide-y divide-(--ui-border)">
         <div
           v-for="ov in activeOverrides"
@@ -104,7 +111,10 @@ async function handleReverse(override: PartStepOverride) {
             <span class="text-(--ui-text-highlighted)">
               {{ steps.find(s => s.id === ov.stepId)?.name ?? ov.stepId }}
             </span>
-            <span v-if="ov.reason" class="text-xs text-(--ui-text-muted) ml-1">({{ ov.reason }})</span>
+            <span
+              v-if="ov.reason"
+              class="text-xs text-(--ui-text-muted) ml-1"
+            >({{ ov.reason }})</span>
           </div>
           <UButton
             size="xs"
@@ -120,7 +130,9 @@ async function handleReverse(override: PartStepOverride) {
 
     <!-- Create override form -->
     <div class="space-y-2 border border-(--ui-border) rounded-md p-3">
-      <p class="text-xs font-medium text-(--ui-text-highlighted)">Create Override</p>
+      <p class="text-xs font-medium text-(--ui-text-highlighted)">
+        Create Override
+      </p>
 
       <div>
         <label class="text-xs text-(--ui-text-muted) block mb-1">Parts</label>
@@ -155,11 +167,26 @@ async function handleReverse(override: PartStepOverride) {
 
       <div>
         <label class="text-xs text-(--ui-text-muted) block mb-1">Reason</label>
-        <UInput v-model="reason" placeholder="Why override this step?" class="w-full" size="sm" />
+        <UInput
+          v-model="reason"
+          placeholder="Why override this step?"
+          class="w-full"
+          size="sm"
+        />
       </div>
 
-      <p v-if="validationError" class="text-xs text-(--ui-error)">{{ validationError }}</p>
-      <p v-if="error" class="text-xs text-(--ui-error)">{{ error }}</p>
+      <p
+        v-if="validationError"
+        class="text-xs text-(--ui-error)"
+      >
+        {{ validationError }}
+      </p>
+      <p
+        v-if="error"
+        class="text-xs text-(--ui-error)"
+      >
+        {{ error }}
+      </p>
 
       <UButton
         size="sm"

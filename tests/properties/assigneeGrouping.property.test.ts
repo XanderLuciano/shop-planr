@@ -15,7 +15,7 @@ import fc from 'fast-check'
 import { createTestContext, type TestContext } from '../integration/helpers'
 import { SQLiteUserRepository } from '../../server/repositories/sqlite/userRepository'
 import { createUserService } from '../../server/services/userService'
-import type { WorkQueueJob, WorkQueueGroup, WorkQueueGroupedResponse } from '../../server/types/computed'
+import type { WorkQueueJob, WorkQueueGroupedResponse } from '../../server/types/computed'
 
 /**
  * Replicate the grouping logic from server/api/operator/work-queue.get.ts
@@ -28,7 +28,7 @@ function aggregateGroupedWork(
   const { jobService, pathService, partService } = ctx
   const jobs = jobService.listJobs()
 
-  const entries: { job: WorkQueueJob; assignedTo: string | undefined }[] = []
+  const entries: { job: WorkQueueJob, assignedTo: string | undefined }[] = []
 
   for (const job of jobs) {
     const paths = pathService.listPathsByJob(job.id)
@@ -102,7 +102,7 @@ function aggregateGroupedWork(
 }
 
 /** Arbitrary for assignment config: which steps get assigned to which user index */
-interface StepAssignment {
+interface _StepAssignment {
   stepIndex: number
   userIndex: number | null // null = unassigned
 }
@@ -169,7 +169,7 @@ describe('Property 6: Assignee Grouping Correctness', () => {
         // Track which steps have active serials
         const activeStepIds = new Set<string>()
         // Track step metadata for verification
-        const stepToJob = new Map<string, { jobId: string; jobName: string; pathId: string; pathName: string }>()
+        const stepToJob = new Map<string, { jobId: string, jobName: string, pathId: string, pathName: string }>()
 
         for (const config of scenario.configs) {
           const job = jobService.createJob({

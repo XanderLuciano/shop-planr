@@ -26,7 +26,7 @@ function rowToDomain(row: NoteRow): StepNote {
     createdBy: row.created_by,
     createdAt: row.created_at,
     pushedToJira: row.pushed_to_jira === 1,
-    jiraCommentId: row.jira_comment_id ?? undefined
+    jiraCommentId: row.jira_comment_id ?? undefined,
   }
 }
 
@@ -51,7 +51,7 @@ export class SQLiteNoteRepository implements NoteRepository {
       note.createdBy,
       note.createdAt,
       note.pushedToJira ? 1 : 0,
-      note.jiraCommentId ?? null
+      note.jiraCommentId ?? null,
     )
     return note
   }
@@ -73,14 +73,14 @@ export class SQLiteNoteRepository implements NoteRepository {
 
   listByStepId(stepId: string): StepNote[] {
     const rows = this.db.prepare(
-      'SELECT * FROM step_notes WHERE step_id = ? ORDER BY created_at ASC'
+      'SELECT * FROM step_notes WHERE step_id = ? ORDER BY created_at ASC',
     ).all(stepId) as NoteRow[]
     return rows.map(rowToDomain)
   }
 
   listByJobId(jobId: string): StepNote[] {
     const rows = this.db.prepare(
-      'SELECT * FROM step_notes WHERE job_id = ? ORDER BY created_at ASC'
+      'SELECT * FROM step_notes WHERE job_id = ? ORDER BY created_at ASC',
     ).all(jobId) as NoteRow[]
     return rows.map(rowToDomain)
   }
@@ -89,7 +89,7 @@ export class SQLiteNoteRepository implements NoteRepository {
     if (stepIds.length === 0) return 0
     const placeholders = stepIds.map(() => '?').join(',')
     const result = this.db.prepare(
-      `DELETE FROM step_notes WHERE step_id IN (${placeholders})`
+      `DELETE FROM step_notes WHERE step_id IN (${placeholders})`,
     ).run(...stepIds)
     return result.changes
   }

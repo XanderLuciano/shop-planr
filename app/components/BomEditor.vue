@@ -23,9 +23,9 @@ const entries = ref<EntryDraft[]>(
     ? props.bom.entries.map(e => ({
         partType: e.partType,
         requiredQuantityPerBuild: e.requiredQuantityPerBuild,
-        contributingJobIds: [...e.contributingJobIds]
+        contributingJobIds: [...e.contributingJobIds],
       }))
-    : [{ partType: '', requiredQuantityPerBuild: null, contributingJobIds: [] }]
+    : [{ partType: '', requiredQuantityPerBuild: null, contributingJobIds: [] }],
 )
 const formError = ref('')
 
@@ -64,8 +64,8 @@ function onSubmit() {
     entries: valid.map(e => ({
       partType: e.partType.trim(),
       requiredQuantityPerBuild: e.requiredQuantityPerBuild!,
-      contributingJobIds: e.contributingJobIds
-    }))
+      contributingJobIds: e.contributingJobIds,
+    })),
   })
 }
 </script>

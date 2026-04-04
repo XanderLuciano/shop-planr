@@ -21,12 +21,12 @@ describe('Note and Defect Integration', () => {
       jobId: job.id,
       name: 'Route',
       goalQuantity: 5,
-      steps: [{ name: 'Cut' }, { name: 'Inspect' }]
+      steps: [{ name: 'Cut' }, { name: 'Inspect' }],
     })
 
     const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 3 },
-      'op1'
+      'op1',
     )
 
     // Create a note on first 2 parts at step 0
@@ -36,7 +36,7 @@ describe('Note and Defect Integration', () => {
       stepId: path.steps[0].id,
       partIds: [parts[0].id, parts[1].id],
       text: 'Burr detected on edge',
-      userId: 'inspector1'
+      userId: 'inspector1',
     })
 
     expect(note.text).toBe('Burr detected on edge')
@@ -71,12 +71,12 @@ describe('Note and Defect Integration', () => {
       jobId: job.id,
       name: 'Route',
       goalQuantity: 3,
-      steps: [{ name: 'Cut' }, { name: 'Weld' }, { name: 'QC' }]
+      steps: [{ name: 'Cut' }, { name: 'Weld' }, { name: 'QC' }],
     })
 
     const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 3 },
-      'op1'
+      'op1',
     )
 
     // Note at step 0 (Cut)
@@ -86,7 +86,7 @@ describe('Note and Defect Integration', () => {
       stepId: path.steps[0].id,
       partIds: [parts[0].id],
       text: 'Material defect',
-      userId: 'op1'
+      userId: 'op1',
     })
 
     // Advance part 0 and 1 to step 1
@@ -100,7 +100,7 @@ describe('Note and Defect Integration', () => {
       stepId: path.steps[1].id,
       partIds: [parts[0].id, parts[1].id],
       text: 'Weld porosity found',
-      userId: 'welder1'
+      userId: 'welder1',
     })
 
     // Step 0 has 1 note, step 1 has 1 note, step 2 has 0 notes
@@ -128,12 +128,12 @@ describe('Note and Defect Integration', () => {
       jobId: job.id,
       name: 'Route',
       goalQuantity: 1,
-      steps: [{ name: 'OP1' }]
+      steps: [{ name: 'OP1' }],
     })
 
     const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
-      'op1'
+      'op1',
     )
 
     noteService.createNote({
@@ -142,7 +142,7 @@ describe('Note and Defect Integration', () => {
       stepId: path.steps[0].id,
       partIds: [part.id],
       text: 'Test note for audit',
-      userId: 'inspector1'
+      userId: 'inspector1',
     })
 
     const allAudits = auditService.listAuditEntries({ limit: 100 })
@@ -162,26 +162,26 @@ describe('Note and Defect Integration', () => {
       jobId: job.id,
       name: 'Route',
       goalQuantity: 1,
-      steps: [{ name: 'OP1' }]
+      steps: [{ name: 'OP1' }],
     })
 
     const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
-      'op1'
+      'op1',
     )
 
     // Create 3 notes in sequence
     noteService.createNote({
       jobId: job.id, pathId: path.id, stepId: path.steps[0].id,
-      partIds: [part.id], text: 'First note', userId: 'user1'
+      partIds: [part.id], text: 'First note', userId: 'user1',
     })
     noteService.createNote({
       jobId: job.id, pathId: path.id, stepId: path.steps[0].id,
-      partIds: [part.id], text: 'Second note', userId: 'user2'
+      partIds: [part.id], text: 'Second note', userId: 'user2',
     })
     noteService.createNote({
       jobId: job.id, pathId: path.id, stepId: path.steps[0].id,
-      partIds: [part.id], text: 'Third note', userId: 'user1'
+      partIds: [part.id], text: 'Third note', userId: 'user1',
     })
 
     const notes = noteService.getNotesForPart(part.id)

@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
 import { createBomService } from '../../server/services/bomService'
 import { createAuditService } from '../../server/services/auditService'
-import type { BOM, BomEntry, BomVersion, AuditEntry } from '../../server/types/domain'
+import type { BOM, BomVersion, AuditEntry } from '../../server/types/domain'
 
 /**
  * In-memory BOM repository for pure property testing.
@@ -19,7 +19,10 @@ import type { BOM, BomEntry, BomVersion, AuditEntry } from '../../server/types/d
 function createInMemoryBomRepo() {
   const boms = new Map<string, BOM>()
   return {
-    create: (bom: BOM) => { boms.set(bom.id, { ...bom }); return bom },
+    create: (bom: BOM) => {
+      boms.set(bom.id, { ...bom })
+      return bom
+    },
     getById: (id: string) => {
       const b = boms.get(id)
       return b ? { ...b, entries: b.entries.map(e => ({ ...e })) } : null
@@ -38,7 +41,10 @@ function createInMemoryBomRepo() {
 function createInMemoryBomVersionRepo() {
   const versions: BomVersion[] = []
   return {
-    create: (v: BomVersion) => { versions.push({ ...v, entriesSnapshot: v.entriesSnapshot.map(e => ({ ...e })) }); return v },
+    create: (v: BomVersion) => {
+      versions.push({ ...v, entriesSnapshot: v.entriesSnapshot.map(e => ({ ...e })) })
+      return v
+    },
     listByBomId: (bomId: string) => versions.filter(v => v.bomId === bomId).map(v => ({ ...v, entriesSnapshot: v.entriesSnapshot.map(e => ({ ...e })) })),
     getLatestByBomId: (bomId: string) => {
       const bomVersions = versions.filter(v => v.bomId === bomId)
@@ -52,7 +58,10 @@ function createInMemoryBomVersionRepo() {
 function createInMemoryAuditRepo() {
   const entries: AuditEntry[] = []
   return {
-    create: (entry: AuditEntry) => { entries.push(entry); return entry },
+    create: (entry: AuditEntry) => {
+      entries.push(entry)
+      return entry
+    },
     list: () => [...entries],
     listByPartId: () => [],
     listByJobId: () => [],

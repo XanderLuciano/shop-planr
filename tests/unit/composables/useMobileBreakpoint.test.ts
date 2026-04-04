@@ -11,7 +11,7 @@ describe('useMobileBreakpoint', () => {
       addEventListener: vi.fn((event: string, handler: (e: MediaQueryListEvent) => void) => {
         if (event === 'change') changeHandler = handler
       }),
-      removeEventListener: vi.fn()
+      removeEventListener: vi.fn(),
     }
   }
 
@@ -24,8 +24,12 @@ describe('useMobileBreakpoint', () => {
 
     // Stub Nuxt auto-imports
     vi.stubGlobal('ref', (val: unknown) => ({ value: val }))
-    vi.stubGlobal('onMounted', (cb: () => void) => { mountedCb = cb })
-    vi.stubGlobal('onUnmounted', (cb: () => void) => { unmountedCb = cb })
+    vi.stubGlobal('onMounted', (cb: () => void) => {
+      mountedCb = cb
+    })
+    vi.stubGlobal('onUnmounted', (cb: () => void) => {
+      unmountedCb = cb
+    })
   })
 
   it('returns false when viewport >= 768px', async () => {

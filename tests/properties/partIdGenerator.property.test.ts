@@ -24,7 +24,7 @@ describe('Property 4: ID Generator Produces part_-Prefixed Sequential IDs', () =
           let counter = startCounter
           const gen = createSequentialPartIdGenerator({
             getCounter: () => counter,
-            setCounter: (v) => { counter = v }
+            setCounter: (v) => { counter = v },
           })
 
           const id = gen.next()
@@ -38,9 +38,9 @@ describe('Property 4: ID Generator Produces part_-Prefixed Sequential IDs', () =
 
           // Counter must have been incremented
           expect(counter).toBe(startCounter + 1)
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -53,7 +53,7 @@ describe('Property 4: ID Generator Produces part_-Prefixed Sequential IDs', () =
           let counter = startCounter
           const gen = createSequentialPartIdGenerator({
             getCounter: () => counter,
-            setCounter: (v) => { counter = v }
+            setCounter: (v) => { counter = v },
           })
 
           const ids = gen.nextBatch(batchSize)
@@ -81,9 +81,9 @@ describe('Property 4: ID Generator Produces part_-Prefixed Sequential IDs', () =
 
           // Counter must reflect the final value
           expect(counter).toBe(startCounter + batchSize)
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })

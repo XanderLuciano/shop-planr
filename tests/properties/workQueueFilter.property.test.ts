@@ -58,14 +58,13 @@ describe('Property 3: Search filter correctness', () => {
         if (!q) {
           // Empty query returns all jobs
           expect(result).toEqual(jobs)
-        }
-        else {
+        } else {
           // Every returned job must match
           for (const job of result) {
             const matches
               = job.jobName.toLowerCase().includes(q)
-              || job.pathName.toLowerCase().includes(q)
-              || job.stepName.toLowerCase().includes(q)
+                || job.pathName.toLowerCase().includes(q)
+                || job.stepName.toLowerCase().includes(q)
             expect(matches).toBe(true)
           }
 
@@ -73,8 +72,8 @@ describe('Property 3: Search filter correctness', () => {
           for (const job of jobs) {
             const matches
               = job.jobName.toLowerCase().includes(q)
-              || job.pathName.toLowerCase().includes(q)
-              || job.stepName.toLowerCase().includes(q)
+                || job.pathName.toLowerCase().includes(q)
+                || job.stepName.toLowerCase().includes(q)
             if (matches) {
               expect(result).toContain(job)
             }

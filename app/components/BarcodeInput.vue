@@ -4,7 +4,7 @@ type ScanResult = { value: string, type: 'part' | 'certificate' | 'unknown' }
 const props = withDefaults(defineProps<{
   placeholder?: string
 }>(), {
-  placeholder: 'Scan or type Part / Cert...'
+  placeholder: 'Scan or type Part / Cert...',
 })
 
 const emit = defineEmits<{
@@ -66,6 +66,7 @@ function handleKeydown(e: KeyboardEvent) {
 }
 
 // Expose the input ref so the composable's global hotkey can focus it
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function setInputRef(el: any) {
   // UInput renders an <input> inside — grab the actual element
   if (el?.$el) {

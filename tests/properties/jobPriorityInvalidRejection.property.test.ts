@@ -54,7 +54,7 @@ describe('Property 4: Invalid priority list rejection', () => {
           const { jobService } = setupServices(db)
 
           // Create N jobs
-          const createdJobs: { id: string; priority: number }[] = []
+          const createdJobs: { id: string, priority: number }[] = []
           for (let i = 0; i < n; i++) {
             const job = jobService.createJob({ name: `Job ${i}`, goalQuantity: 10 })
             createdJobs.push({ id: job.id, priority: job.priority })
@@ -83,9 +83,9 @@ describe('Property 4: Invalid priority list rejection', () => {
 
           db.close()
           db = null as any
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -98,7 +98,7 @@ describe('Property 4: Invalid priority list rejection', () => {
           const { jobService } = setupServices(db)
 
           // Create N jobs
-          const createdJobs: { id: string; priority: number }[] = []
+          const createdJobs: { id: string, priority: number }[] = []
           for (let i = 0; i < n; i++) {
             const job = jobService.createJob({ name: `Job ${i}`, goalQuantity: 10 })
             createdJobs.push({ id: job.id, priority: job.priority })
@@ -127,9 +127,9 @@ describe('Property 4: Invalid priority list rejection', () => {
 
           db.close()
           db = null as any
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -142,7 +142,7 @@ describe('Property 4: Invalid priority list rejection', () => {
           const { jobService } = setupServices(db)
 
           // Create N jobs
-          const createdJobs: { id: string; priority: number }[] = []
+          const createdJobs: { id: string, priority: number }[] = []
           for (let i = 0; i < n; i++) {
             const job = jobService.createJob({ name: `Job ${i}`, goalQuantity: 10 })
             createdJobs.push({ id: job.id, priority: job.priority })
@@ -171,9 +171,9 @@ describe('Property 4: Invalid priority list rejection', () => {
 
           db.close()
           db = null as any
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })

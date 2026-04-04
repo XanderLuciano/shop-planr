@@ -29,7 +29,7 @@ export function createTemplateService(repos: {
         name: input.name.trim(),
         steps,
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       })
     },
 
@@ -76,13 +76,13 @@ export function createTemplateService(repos: {
         steps,
         advancementMode: 'strict',
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       }
 
       return repos.paths.create(path)
     },
 
-    updateTemplate(id: string, input: { name?: string; steps?: { name: string; location?: string; optional?: boolean; dependencyType?: 'physical' | 'preferred' | 'completion_gate' }[] }): TemplateRoute {
+    updateTemplate(id: string, input: { name?: string, steps?: { name: string, location?: string, optional?: boolean, dependencyType?: 'physical' | 'preferred' | 'completion_gate' }[] }): TemplateRoute {
       const existing = repos.templates.getById(id)
       if (!existing) {
         throw new NotFoundError('TemplateRoute', id)

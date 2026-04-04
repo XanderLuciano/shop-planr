@@ -47,11 +47,11 @@ describe('Property 3: Valid priority update persists correctly', () => {
   it('after updatePriorities with a valid permutation, each job has the specified priority and the set is exactly {1..N}', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 1, max: 20 }).chain((n) =>
+        fc.integer({ min: 1, max: 20 }).chain(n =>
           fc.tuple(
             fc.constant(n),
-            fc.shuffledSubarray(Array.from({ length: n }, (_, i) => i + 1), { minLength: n, maxLength: n })
-          )
+            fc.shuffledSubarray(Array.from({ length: n }, (_, i) => i + 1), { minLength: n, maxLength: n }),
+          ),
         ),
         ([n, permutation]) => {
           db = createTestDb()
@@ -99,9 +99,9 @@ describe('Property 3: Valid priority update persists correctly', () => {
 
           db.close()
           db = null as any
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })

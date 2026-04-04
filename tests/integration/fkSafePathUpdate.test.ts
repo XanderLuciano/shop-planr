@@ -122,7 +122,7 @@ describe('FK-Safe Path Update Integration', () => {
     const { job, path } = createJobWithPath(3)
 
     // Create a part — it starts at step 0 (currentStepId = step 0's ID)
-    const [part] = ctx.partService.batchCreateParts(
+    ctx.partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
       'operator1',
     )

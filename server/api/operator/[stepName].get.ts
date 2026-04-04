@@ -43,7 +43,7 @@ export default defineApiHandler(async (event) => {
           pathId: path.id,
           pathName: path.name,
           nextStepName: nextStep?.name,
-          nextStepLocation: nextStep?.location
+          nextStepLocation: nextStep?.location,
         })
       }
 
@@ -57,7 +57,7 @@ export default defineApiHandler(async (event) => {
             jobId: job.id,
             jobName: job.name,
             pathId: path.id,
-            pathName: path.name
+            pathName: path.name,
           })
         }
       }
@@ -72,7 +72,7 @@ export default defineApiHandler(async (event) => {
             jobId: job.id,
             jobName: job.name,
             pathId: path.id,
-            pathName: path.name
+            pathName: path.name,
           })
         }
       }
@@ -91,7 +91,7 @@ export default defineApiHandler(async (event) => {
     comingSoon,
     backlog,
     vendorPartsCount,
-    stepIds: [...stepIdSet]
+    stepIds: [...stepIdSet],
   }
 
   return result

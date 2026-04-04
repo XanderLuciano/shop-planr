@@ -8,7 +8,7 @@ import type { PathRepository } from '../repositories/interfaces/pathRepository'
 import type { CertRepository } from '../repositories/interfaces/certRepository'
 import type { JobRepository } from '../repositories/interfaces/jobRepository'
 import type { PartStepStatusRepository } from '../repositories/interfaces/partStepStatusRepository'
-import type { Part, PartStepStatus } from '../types/domain'
+import type { Part } from '../types/domain'
 import type { BatchCreatePartsInput } from '../types/api'
 import type { EnrichedPart } from '../types/computed'
 import type { AuditService } from '../services/auditService'
@@ -32,7 +32,7 @@ export function createPartService(
   },
   auditService: AuditService,
   partIdGenerator: PartIdGenerator,
-  lifecycleService?: LifecycleService
+  lifecycleService?: LifecycleService,
 ) {
   return {
     batchCreateParts(input: BatchCreatePartsInput, userId: string): Part[] {
@@ -55,7 +55,7 @@ export function createPartService(
         status: 'in_progress' as const,
         forceCompleted: false,
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       }))
 
       const created = repos.parts.createBatch(parts)
@@ -81,7 +81,7 @@ export function createPartService(
             certId: input.certId,
             stepId: firstStep.id,
             attachedAt: now,
-            attachedBy: userId
+            attachedBy: userId,
           })
         }
       }
@@ -90,7 +90,7 @@ export function createPartService(
         userId,
         jobId: input.jobId,
         pathId: input.pathId,
-        batchQuantity: input.quantity
+        batchQuantity: input.quantity,
       })
 
       return created
@@ -160,7 +160,7 @@ export function createPartService(
         const updated = repos.parts.update(partId, {
           currentStepId: null,
           status: 'completed',
-          updatedAt: now
+          updatedAt: now,
         })
 
         auditService.recordPartCompletion({
@@ -168,7 +168,7 @@ export function createPartService(
           partId,
           jobId: part.jobId,
           pathId: part.pathId,
-          fromStepId: currentStep.id
+          fromStepId: currentStep.id,
         })
 
         return updated
@@ -191,7 +191,7 @@ export function createPartService(
       // Advance to next step
       const updated = repos.parts.update(partId, {
         currentStepId: nextStep.id,
-        updatedAt: now
+        updatedAt: now,
       })
 
       auditService.recordPartAdvancement({
@@ -200,7 +200,7 @@ export function createPartService(
         jobId: part.jobId,
         pathId: part.pathId,
         fromStepId: currentStep.id,
-        toStepId: nextStep.id
+        toStepId: nextStep.id,
       })
 
       return updated
@@ -235,7 +235,7 @@ export function createPartService(
 
       // Build lookup maps for jobs and paths
       const jobMap = new Map<string, string>()
-      const pathMap = new Map<string, { name: string; steps: { id: string; name: string; order: number; assignedTo?: string }[] }>()
+      const pathMap = new Map<string, { name: string, steps: { id: string, name: string, order: number, assignedTo?: string }[] }>()
 
       for (const part of parts) {
         if (!jobMap.has(part.jobId) && repos.jobs) {
@@ -294,7 +294,7 @@ export function createPartService(
           createdAt: part.createdAt,
         }
       })
-    }
+    },
   }
 }
 

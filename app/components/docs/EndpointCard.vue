@@ -32,12 +32,18 @@ const colors = computed(() => getMethodColor(props.method))
     </button>
 
     <!-- Description (only if provided) -->
-    <p v-if="description" class="px-4 pt-3 pb-0 text-sm text-(--ui-text-muted)">
+    <p
+      v-if="description"
+      class="px-4 pt-3 pb-0 text-sm text-(--ui-text-muted)"
+    >
       {{ description }}
     </p>
 
     <!-- Collapsible slot content -->
-    <div v-show="expanded" class="px-4 pb-4">
+    <div
+      v-show="expanded"
+      class="px-4 pb-4"
+    >
       <slot />
     </div>
   </div>

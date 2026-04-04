@@ -13,7 +13,7 @@ import type { ExpandedState } from '@tanstack/vue-table'
 // ---------------------------------------------------------------------------
 // Pure-function recreation of jobs/index.vue orchestration state
 // ---------------------------------------------------------------------------
-type PathsExpandedPayload = { jobId: string; hasExpandedPaths: boolean }
+type PathsExpandedPayload = { jobId: string, hasExpandedPaths: boolean }
 
 function createJobViewState() {
   let expanded: ExpandedState = {}
@@ -86,7 +86,7 @@ function createPathExpansionState(pathIds: string[]) {
           const detail = await fetchFn(pathId)
           pathDistributions[pathId] = detail.distribution ?? []
           pathCompletedCounts[pathId] = detail.completedCount ?? 0
-        })
+        }),
       )
       for (let j = 0; j < batch.length; j++) {
         if (results[j]!.status === 'rejected' && !pathDistributions[batch[j]!]) {
@@ -278,7 +278,7 @@ describe('Job View Utilities – integration', () => {
       })
       expect(disabled.expandAllJobs).toBe(false) // jobs exist, can expand
       expect(disabled.collapseAllJobs).toBe(true) // nothing expanded
-      expect(disabled.expandAllPaths).toBe(false)  // jobs exist, can expand paths
+      expect(disabled.expandAllPaths).toBe(false) // jobs exist, can expand paths
       expect(disabled.collapseAllPaths).toBe(true) // no paths expanded
     })
 
@@ -292,8 +292,8 @@ describe('Job View Utilities – integration', () => {
         jobCount: 3,
       })
       expect(disabled.collapseAllJobs).toBe(false) // jobs expanded
-      expect(disabled.expandAllPaths).toBe(false)   // jobs expanded
-      expect(disabled.collapseAllPaths).toBe(true)   // no paths expanded yet
+      expect(disabled.expandAllPaths).toBe(false) // jobs expanded
+      expect(disabled.collapseAllPaths).toBe(true) // no paths expanded yet
     })
 
     it('enables collapse-paths after paths are expanded', () => {

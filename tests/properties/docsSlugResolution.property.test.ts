@@ -76,7 +76,7 @@ function slugToFileCandidates(slug: string): string[] {
 
   return [
     `${stripped}.md`,
-    `${stripped}/index.md`
+    `${stripped}/index.md`,
   ]
 }
 
@@ -96,10 +96,10 @@ describe('Property 5: Slug resolution correctness', () => {
         const slug = filePathToSlug(filePath)
         expect(
           slug.startsWith('/api-docs'),
-          `File "${filePath}" resolves to slug "${slug}" which does not start with /api-docs`
+          `File "${filePath}" resolves to slug "${slug}" which does not start with /api-docs`,
         ).toBe(true)
       }),
-      { numRuns: Math.min(apiDocsFiles.length * 5, 200) }
+      { numRuns: Math.min(apiDocsFiles.length * 5, 200) },
     )
   })
 
@@ -113,23 +113,23 @@ describe('Property 5: Slug resolution correctness', () => {
 
         // At least one candidate must match the original file path
         const matchesOriginal = candidates.some(
-          (candidate) => candidate.replace(/\\/g, '/') === filePath.replace(/\\/g, '/')
+          candidate => candidate.replace(/\\/g, '/') === filePath.replace(/\\/g, '/'),
         )
         expect(
           matchesOriginal,
-          `Slug "${slug}" from file "${filePath}" does not reverse-map to any candidate: [${candidates.join(', ')}]`
+          `Slug "${slug}" from file "${filePath}" does not reverse-map to any candidate: [${candidates.join(', ')}]`,
         ).toBe(true)
 
         // The resolved file must exist on disk
-        const existsOnDisk = candidates.some((candidate) =>
-          existsSync(join(CONTENT_ROOT, candidate))
+        const existsOnDisk = candidates.some(candidate =>
+          existsSync(join(CONTENT_ROOT, candidate)),
         )
         expect(
           existsOnDisk,
-          `Slug "${slug}" does not resolve to any existing file on disk. Candidates: [${candidates.join(', ')}]`
+          `Slug "${slug}" does not resolve to any existing file on disk. Candidates: [${candidates.join(', ')}]`,
         ).toBe(true)
       }),
-      { numRuns: Math.min(apiDocsFiles.length * 5, 200) }
+      { numRuns: Math.min(apiDocsFiles.length * 5, 200) },
     )
   })
 
@@ -141,7 +141,7 @@ describe('Property 5: Slug resolution correctness', () => {
       const existing = slugMap.get(slug)
       expect(
         existing,
-        `Slug collision: "${slug}" is mapped by both "${existing}" and "${filePath}"`
+        `Slug collision: "${slug}" is mapped by both "${existing}" and "${filePath}"`,
       ).toBeUndefined()
       slugMap.set(slug, filePath)
     }
@@ -163,19 +163,19 @@ describe('Property 5: Slug resolution correctness', () => {
           // Slug must be unique within the subset
           expect(
             slugs.has(slug),
-            `Duplicate slug "${slug}" in random subset`
+            `Duplicate slug "${slug}" in random subset`,
           ).toBe(false)
           slugs.add(slug)
 
           // Reverse mapping must resolve to an existing file
           const candidates = slugToFileCandidates(slug)
-          const existsOnDisk = candidates.some((candidate) =>
-            existsSync(join(CONTENT_ROOT, candidate))
+          const existsOnDisk = candidates.some(candidate =>
+            existsSync(join(CONTENT_ROOT, candidate)),
           )
           expect(existsOnDisk).toBe(true)
         }
       }),
-      { numRuns: 50 }
+      { numRuns: 50 },
     )
   })
 })

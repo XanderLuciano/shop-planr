@@ -57,21 +57,21 @@ export class SQLitePartStepStatusRepository implements PartStepStatusRepository 
 
   getByPartAndStep(partId: string, stepId: string): PartStepStatus | null {
     const row = this.db.prepare(
-      'SELECT * FROM part_step_statuses WHERE part_id = ? AND step_id = ?'
+      'SELECT * FROM part_step_statuses WHERE part_id = ? AND step_id = ?',
     ).get(partId, stepId) as PartStepStatusRow | undefined
     return row ? rowToDomain(row) : null
   }
 
   getLatestByPartAndStep(partId: string, stepId: string): PartStepStatus | null {
     const row = this.db.prepare(
-      'SELECT * FROM part_step_statuses WHERE part_id = ? AND step_id = ? ORDER BY sequence_number DESC LIMIT 1'
+      'SELECT * FROM part_step_statuses WHERE part_id = ? AND step_id = ? ORDER BY sequence_number DESC LIMIT 1',
     ).get(partId, stepId) as PartStepStatusRow | undefined
     return row ? rowToDomain(row) : null
   }
 
   listByPartId(partId: string): PartStepStatus[] {
     const rows = this.db.prepare(
-      'SELECT * FROM part_step_statuses WHERE part_id = ? ORDER BY sequence_number ASC'
+      'SELECT * FROM part_step_statuses WHERE part_id = ? ORDER BY sequence_number ASC',
     ).all(partId) as PartStepStatusRow[]
     return rows.map(rowToDomain)
   }
@@ -92,7 +92,7 @@ export class SQLitePartStepStatusRepository implements PartStepStatusRepository 
   updateByPartAndStep(partId: string, stepId: string, partial: Partial<PartStepStatus>): PartStepStatus {
     // Update the latest entry (highest sequence_number) for this part+step
     const row = this.db.prepare(
-      'SELECT * FROM part_step_statuses WHERE part_id = ? AND step_id = ? ORDER BY sequence_number DESC LIMIT 1'
+      'SELECT * FROM part_step_statuses WHERE part_id = ? AND step_id = ? ORDER BY sequence_number DESC LIMIT 1',
     ).get(partId, stepId) as PartStepStatusRow | undefined
     if (!row) throw new NotFoundError('PartStepStatus', `${partId}/${stepId}`)
 
@@ -107,7 +107,7 @@ export class SQLitePartStepStatusRepository implements PartStepStatusRepository 
 
   updateLatestByPartAndStep(partId: string, stepId: string, partial: Partial<PartStepStatus>): PartStepStatus {
     const row = this.db.prepare(
-      'SELECT * FROM part_step_statuses WHERE part_id = ? AND step_id = ? ORDER BY sequence_number DESC LIMIT 1'
+      'SELECT * FROM part_step_statuses WHERE part_id = ? AND step_id = ? ORDER BY sequence_number DESC LIMIT 1',
     ).get(partId, stepId) as PartStepStatusRow | undefined
     if (!row) throw new NotFoundError('PartStepStatus', `${partId}/${stepId}`)
 
@@ -122,7 +122,7 @@ export class SQLitePartStepStatusRepository implements PartStepStatusRepository 
 
   getNextSequenceNumber(partId: string): number {
     const row = this.db.prepare(
-      'SELECT COALESCE(MAX(sequence_number), 0) + 1 as next_seq FROM part_step_statuses WHERE part_id = ?'
+      'SELECT COALESCE(MAX(sequence_number), 0) + 1 as next_seq FROM part_step_statuses WHERE part_id = ?',
     ).get(partId) as { next_seq: number }
     return row.next_seq
   }
@@ -152,7 +152,7 @@ export class SQLitePartStepStatusRepository implements PartStepStatusRepository 
       const chunk = partIds.slice(i, i + CHUNK_SIZE)
       const placeholders = chunk.map(() => '?').join(',')
       const result = this.db.prepare(
-        `DELETE FROM part_step_statuses WHERE part_id IN (${placeholders})`
+        `DELETE FROM part_step_statuses WHERE part_id IN (${placeholders})`,
       ).run(...chunk)
       totalChanges += result.changes
     }

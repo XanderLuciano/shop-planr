@@ -82,7 +82,7 @@ export function getServices(): ServiceSet {
     // BOM service with version support and audit
     const bomService = createBomService(
       { bom: repos.bom, parts: repos.parts, bomVersions: repos.bomVersions },
-      auditService
+      auditService,
     )
 
     // Part ID generator backed by the counters table
@@ -94,7 +94,7 @@ export function getServices(): ServiceSet {
       },
       setCounter: (v: number) => {
         db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-      }
+      },
     })
 
     // Services that depend on auditService (and optionally lifecycleService)
@@ -102,7 +102,7 @@ export function getServices(): ServiceSet {
       { parts: repos.parts, paths: repos.paths, certs: repos.certs, jobs: repos.jobs, partStepStatuses: repos.partStepStatuses },
       auditService,
       partIdGenerator,
-      lifecycleService
+      lifecycleService,
     )
     const certService = createCertService({ certs: repos.certs }, auditService)
     const noteService = createNoteService({ notes: repos.notes }, auditService)
@@ -112,7 +112,7 @@ export function getServices(): ServiceSet {
       jiraBaseUrl: config.jiraBaseUrl,
       jiraProjectKey: config.jiraProjectKey,
       jiraUsername: config.jiraUsername,
-      jiraApiToken: config.jiraApiToken
+      jiraApiToken: config.jiraApiToken,
     })
 
     // Jira service depends on settingsService and jobService
@@ -120,7 +120,7 @@ export function getServices(): ServiceSet {
       pathService,
       noteService,
       certService,
-      partService
+      partService,
     })
 
     services = {

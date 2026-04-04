@@ -54,7 +54,7 @@ const PART_NUMBER_REGEX = /\d{6,7}-\d{3}(-\d{2})?/
 function getPartNumber(
   fields: Record<string, unknown>,
   summary: string,
-  partNumberFieldId: string
+  partNumberFieldId: string,
 ): string | null {
   const primary = fields[partNumberFieldId]
   if (typeof primary === 'string' && primary.trim().length > 0) {
@@ -133,7 +133,7 @@ export function createJiraService(
     certService?: CertService
     partService?: PartService
   },
-  fetchFn?: typeof fetch
+  fetchFn?: typeof fetch,
 ) {
   // Cache for ticket list
   let cachedTickets: JiraTicket[] = []
@@ -167,9 +167,9 @@ export function createJiraService(
         headers: {
           'Authorization': getAuthHeader(),
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
         },
-        signal: controller.signal
+        signal: controller.signal,
       })
 
       if (!response.ok) {
@@ -199,10 +199,10 @@ export function createJiraService(
         headers: {
           'Authorization': getAuthHeader(),
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
         },
         body: JSON.stringify(body),
-        signal: controller.signal
+        signal: controller.signal,
       })
 
       if (!response.ok) {
@@ -234,10 +234,10 @@ export function createJiraService(
         headers: {
           'Authorization': getAuthHeader(),
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
         },
         body: JSON.stringify(body),
-        signal: controller.signal
+        signal: controller.signal,
       })
 
       if (!response.ok) {
@@ -288,7 +288,7 @@ export function createJiraService(
       epicLink: safeString(fields[epicLinkFieldId]) || null,
       createdAt: safeString(fields.created),
       updatedAt: safeString(fields.updated),
-      rawFields: fields
+      rawFields: fields,
     }
   }
 
@@ -316,7 +316,7 @@ export function createJiraService(
         const allFields = customFieldIds ? `${fieldsParam},${customFieldIds}` : fieldsParam
 
         const data = await jiraGet(
-          `search?jql=${encodeURIComponent(jql)}&fields=${encodeURIComponent(allFields)}&maxResults=200`
+          `search?jql=${encodeURIComponent(jql)}&fields=${encodeURIComponent(allFields)}&maxResults=200`,
         ) as { issues?: PITicket[] }
 
         const issues = data.issues ?? []
@@ -358,7 +358,7 @@ export function createJiraService(
         jiraPartNumber: normalized.partNumber ?? undefined,
         jiraPriority: normalized.priority || undefined,
         jiraEpicLink: normalized.epicLink ?? undefined,
-        jiraLabels: normalized.labels.length > 0 ? normalized.labels : undefined
+        jiraLabels: normalized.labels.length > 0 ? normalized.labels : undefined,
       })
     },
 
@@ -420,7 +420,7 @@ export function createJiraService(
 
         // PUT updated description
         await jiraPut(`issue/${encodeURIComponent(job.jiraTicketKey)}`, {
-          fields: { description: updatedDescription }
+          fields: { description: updatedDescription },
         })
 
         return { success: true }
@@ -460,7 +460,7 @@ export function createJiraService(
         }
 
         await jiraPost(`issue/${encodeURIComponent(job.jiraTicketKey)}/comment`, {
-          body: lines.join('\n')
+          body: lines.join('\n'),
         })
 
         return { success: true }
@@ -501,7 +501,7 @@ export function createJiraService(
         const commentBody = `${stepName} - ${partList}: ${note.text}`
 
         await jiraPost(`issue/${encodeURIComponent(job.jiraTicketKey)}/comment`, {
-          body: commentBody
+          body: commentBody,
         })
 
         return { success: true }
@@ -555,7 +555,7 @@ export function createJiraService(
           `Goal: ${progress.goalQuantity}`,
           `Completed: ${progress.completedParts}`,
           `Total Parts: ${progress.totalParts}`,
-          `Progress: ${progress.progressPercent.toFixed(1)}%`
+          `Progress: ${progress.progressPercent.toFixed(1)}%`,
         ]
 
         if (certLines.length > 0) {
@@ -564,7 +564,7 @@ export function createJiraService(
         }
 
         await jiraPost(`issue/${encodeURIComponent(job.jiraTicketKey)}/comment`, {
-          body: lines.join('\n')
+          body: lines.join('\n'),
         })
 
         return { success: true }
@@ -572,7 +572,7 @@ export function createJiraService(
         const message = err instanceof Error ? err.message : 'Unknown Jira push error'
         return { success: false, error: message }
       }
-    }
+    },
   }
 }
 

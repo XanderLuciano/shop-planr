@@ -19,8 +19,8 @@ const menuItems = computed<DropdownMenuItem[][]>(() => {
       icon: user.id === selectedUser.value?.id ? 'i-lucide-check' : 'i-lucide-user',
       onSelect() {
         selectUser(user)
-      }
-    }))
+      },
+    })),
   ]
 })
 </script>

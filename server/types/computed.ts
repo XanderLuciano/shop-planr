@@ -40,8 +40,8 @@ export interface JobProgress {
   completedParts: number
   inProgressParts: number
   scrappedParts: number
-  producedQuantity: number         // total parts created (including scrapped)
-  orderedQuantity: number          // same as goalQuantity
+  producedQuantity: number // total parts created (including scrapped)
+  orderedQuantity: number // same as goalQuantity
   /** completedCount / (goalQuantity - scrappedCount) * 100 */
   progressPercent: number
 }
@@ -168,7 +168,7 @@ export interface StepViewResponse {
 
 export interface AdvancementResult {
   serial: Part
-  bypassed: readonly { stepId: string; stepName: string; classification: 'skipped' | 'deferred' }[]
+  bypassed: readonly { stepId: string, stepName: string, classification: 'skipped' | 'deferred' }[]
 }
 
 // ---- Part Step Status View (formerly SN Step Status View) ----

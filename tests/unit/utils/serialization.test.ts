@@ -8,7 +8,7 @@ const sampleJob = {
   goalQuantity: 20,
   pathIds: ['path_1', 'path_2'],
   createdAt: '2025-01-15T00:00:00.000Z',
-  updatedAt: '2025-01-15T00:00:00.000Z'
+  updatedAt: '2025-01-15T00:00:00.000Z',
 }
 
 const sampleCert = {
@@ -16,7 +16,7 @@ const sampleCert = {
   type: 'material' as const,
   name: '6061-T6 Mill Cert',
   metadata: { vendor: 'Alcoa', lot: 'A123' },
-  createdAt: '2025-01-15T00:00:00.000Z'
+  createdAt: '2025-01-15T00:00:00.000Z',
 }
 
 describe('serialize / deserialize round-trip', () => {
@@ -53,7 +53,7 @@ describe('serialize / deserialize round-trip', () => {
       currentStepId: 'step_2',
       certIds: [],
       createdAt: '2025-01-15T00:00:00.000Z',
-      updatedAt: '2025-01-15T00:00:00.000Z'
+      updatedAt: '2025-01-15T00:00:00.000Z',
     }
     const result = deserialize(serialize(part), 'Part')
     expect(result).toEqual(part)
@@ -65,7 +65,7 @@ describe('serialize / deserialize round-trip', () => {
       name: 'Mike Jones',
       department: 'Machining',
       active: true,
-      createdAt: '2025-01-15T00:00:00.000Z'
+      createdAt: '2025-01-15T00:00:00.000Z',
     }
     const result = deserialize(serialize(user), 'ShopUser')
     expect(result).toEqual(user)
@@ -79,7 +79,7 @@ describe('serialize / deserialize round-trip', () => {
       timestamp: '2025-01-15T00:00:00.000Z',
       jobId: 'job_1',
       pathId: 'path_1',
-      batchQuantity: 10
+      batchQuantity: 10,
     }
     const result = deserialize(serialize(entry), 'AuditEntry')
     expect(result).toEqual(entry)

@@ -23,8 +23,7 @@ function loadPresetsFromStorage(): WorkQueuePreset[] {
     const parsed = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
     return parsed
-  }
-  catch {
+  } catch {
     return []
   }
 }

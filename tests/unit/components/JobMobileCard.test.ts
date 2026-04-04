@@ -75,7 +75,7 @@ const JobMobileCard = defineComponent({
                 h('span', { class: 'text-xs font-medium' }, `${progressResult.displayPercent}%`),
               ])
             : null,
-        ]
+        ],
       )
     }
   },

@@ -237,7 +237,7 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
       } else {
         return await submitEdit()
       }
-    } catch (e: any) {
+    } catch (e) {
       const msg = e?.data?.message ?? e?.message ?? 'An unexpected error occurred'
       submitError.value = msg
       throw e

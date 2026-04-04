@@ -12,7 +12,7 @@ const emit = defineEmits<{
 const statusOptions = [
   { label: 'All', value: 'all' },
   { label: 'Active', value: 'active' },
-  { label: 'Completed', value: 'completed' }
+  { label: 'Completed', value: 'completed' },
 ]
 
 function update<K extends keyof FilterState>(key: K, value: FilterState[K]) {

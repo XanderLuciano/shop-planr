@@ -24,10 +24,10 @@ interface PartState {
 }
 
 // Rendering element types emitted by the model function
-type RenderElement =
-  | { type: 'scrap-banner' }
-  | { type: 'force-complete-banner' }
-  | { type: 'section-card'; name: string }
+type RenderElement
+  = | { type: 'scrap-banner' }
+    | { type: 'force-complete-banner' }
+    | { type: 'section-card', name: string }
 
 // --- Pure rendering model ---
 

@@ -13,7 +13,7 @@ export function useJobs() {
     error.value = null
     try {
       jobs.value = await $fetch<Job[]>('/api/jobs')
-    } catch (e: any) {
+    } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch jobs'
       jobs.value = []
     } finally {
@@ -24,7 +24,7 @@ export function useJobs() {
   async function createJob(input: CreateJobInput): Promise<Job> {
     const job = await $fetch<Job>('/api/jobs', {
       method: 'POST',
-      body: input
+      body: input,
     })
     await fetchJobs()
     return job
@@ -33,7 +33,7 @@ export function useJobs() {
   async function updateJob(id: string, input: UpdateJobInput): Promise<Job> {
     const job = await $fetch<Job>(`/api/jobs/${id}`, {
       method: 'PUT',
-      body: input
+      body: input,
     })
     await fetchJobs()
     return job
@@ -62,6 +62,6 @@ export function useJobs() {
     updateJob,
     getJob,
     fetchJobProgress,
-    deleteJob
+    deleteJob,
   }
 }

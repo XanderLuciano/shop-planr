@@ -86,7 +86,10 @@ async function handleAdvance() {
     </div>
 
     <!-- Bypass preview -->
-    <div v-if="bypassedSteps.length" class="text-xs space-y-1">
+    <div
+      v-if="bypassedSteps.length"
+      class="text-xs space-y-1"
+    >
       <p class="font-medium text-amber-600 dark:text-amber-400">
         {{ bypassedSteps.length }} step{{ bypassedSteps.length !== 1 ? 's' : '' }} will be bypassed:
       </p>
@@ -106,13 +109,26 @@ async function handleAdvance() {
           </UBadge>
         </div>
       </div>
-      <p v-if="bypassedSteps.some(b => b.classification === 'deferred')" class="text-amber-600 dark:text-amber-400">
+      <p
+        v-if="bypassedSteps.some(b => b.classification === 'deferred')"
+        class="text-amber-600 dark:text-amber-400"
+      >
         ⚠ Required steps will be deferred and must be completed before final sign-off.
       </p>
     </div>
 
-    <p v-if="validationError" class="text-xs text-(--ui-error)">{{ validationError }}</p>
-    <p v-if="error" class="text-xs text-(--ui-error)">{{ error }}</p>
+    <p
+      v-if="validationError"
+      class="text-xs text-(--ui-error)"
+    >
+      {{ validationError }}
+    </p>
+    <p
+      v-if="error"
+      class="text-xs text-(--ui-error)"
+    >
+      {{ error }}
+    </p>
 
     <UButton
       color="primary"

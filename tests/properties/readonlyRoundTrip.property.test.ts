@@ -13,10 +13,9 @@
 
 import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
-import type { Job, Path, ProcessStep, BOM, BomEntry, TemplateRoute, TemplateStep, StepNote, BomVersion } from '../../server/types/domain'
+import type { Job, Path, ProcessStep, BOM, BomEntry, TemplateRoute, TemplateStep, StepNote, BomVersion, Part } from '../../server/types/domain'
 import type { OperatorStepView, OperatorPartInfo, WorkQueueJob, BomSummary, BomEntrySummary, AdvancementResult } from '../../server/types/computed'
 import type { JiraTicket, FetchTicketsResult } from '../../server/services/jiraService'
-import type { Part } from '../../server/types/domain'
 
 // ---------------------------------------------------------------------------
 // Shared arbitraries
@@ -57,7 +56,6 @@ const arbJob = (): fc.Arbitrary<Job> =>
     createdAt: arbIsoDate(),
     updatedAt: arbIsoDate(),
   })
-
 
 const arbPath = (): fc.Arbitrary<Path> =>
   fc.record({
@@ -177,7 +175,6 @@ const arbWorkQueueJob = (): fc.Arbitrary<WorkQueueJob> =>
     jobPriority: fc.integer({ min: 0, max: 100 }),
   })
 
-
 const arbBomEntrySummary = (): fc.Arbitrary<BomEntrySummary> =>
   fc.record({
     partType: arbName(),
@@ -267,7 +264,7 @@ function stripUndefined(obj: unknown): unknown {
 // ---------------------------------------------------------------------------
 
 describe('Feature: readonly-domain-types, Property 2: Serialization round-trip preservation under readonly arrays', () => {
-  const cases: { typeName: string; arb: () => fc.Arbitrary<unknown> }[] = [
+  const cases: { typeName: string, arb: () => fc.Arbitrary<unknown> }[] = [
     { typeName: 'Job', arb: arbJob },
     { typeName: 'Path', arb: arbPath },
     { typeName: 'BOM', arb: arbBom },

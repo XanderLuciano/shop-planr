@@ -69,8 +69,8 @@ describe('Property 3: Search Filter Correctness', () => {
         for (const job of result) {
           const matches
             = job.jobName.toLowerCase().includes(q)
-            || job.pathName.toLowerCase().includes(q)
-            || job.stepName.toLowerCase().includes(q)
+              || job.pathName.toLowerCase().includes(q)
+              || job.stepName.toLowerCase().includes(q)
           expect(matches).toBe(true)
         }
 
@@ -78,8 +78,8 @@ describe('Property 3: Search Filter Correctness', () => {
         for (const job of jobs) {
           const matches
             = job.jobName.toLowerCase().includes(q)
-            || job.pathName.toLowerCase().includes(q)
-            || job.stepName.toLowerCase().includes(q)
+              || job.pathName.toLowerCase().includes(q)
+              || job.stepName.toLowerCase().includes(q)
           if (matches) {
             expect(result).toContain(job)
           }

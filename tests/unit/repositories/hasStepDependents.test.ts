@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import Database from 'better-sqlite3'
+import type Database from 'better-sqlite3'
 import { createTestDb } from '../../integration/helpers'
 import { SQLitePathRepository } from '~/server/repositories/sqlite/pathRepository'
 import { generateId } from '~/server/utils/idGenerator'
@@ -29,7 +29,7 @@ describe('hasStepDependents', () => {
     db.prepare('INSERT INTO paths (id, job_id, name, goal_quantity, advancement_mode, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(pathId, jobId, 'Test Path', 10, 'strict', now, now)
     db.prepare('INSERT INTO process_steps (id, path_id, name, step_order, optional, dependency_type, completed_count) VALUES (?, ?, ?, ?, ?, ?, 0)').run(stepId, pathId, 'Step 1', 0, 0, 'preferred')
     db.prepare('INSERT INTO parts (id, job_id, path_id, current_step_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(partId, jobId, pathId, stepId, 'in_progress', now, now)
-    db.prepare("INSERT INTO certs (id, type, name, created_at) VALUES (?, ?, ?, ?)").run(certId, 'material', 'Test Cert', now)
+    db.prepare('INSERT INTO certs (id, type, name, created_at) VALUES (?, ?, ?, ?)').run(certId, 'material', 'Test Cert', now)
   })
 
   afterEach(() => {

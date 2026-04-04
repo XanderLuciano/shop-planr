@@ -25,7 +25,7 @@ function jobArb(count: number): fc.Arbitrary<Job[]> {
       priority: i + 1,
       createdAt: new Date(2024, 0, 1 + i).toISOString(),
       updatedAt: new Date(2024, 0, 1 + i).toISOString(),
-    }))
+    })),
   )
 }
 
@@ -33,25 +33,25 @@ describe('Property 7: Reorder conservation and correctness', () => {
   it('reorder preserves the same set of job IDs and total count', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 2, max: 20 }).chain((n) =>
+        fc.integer({ min: 2, max: 20 }).chain(n =>
           fc.tuple(
             jobArb(n),
             fc.integer({ min: 0, max: n - 1 }),
-            fc.integer({ min: 0, max: n - 1 })
-          )
+            fc.integer({ min: 0, max: n - 1 }),
+          ),
         ),
         ([jobs, fromIndex, toIndex]) => {
           const { enterEditMode, reorder, cancelEdit, orderedJobs } = useJobPriority()
 
           try {
-            const originalIds = jobs.map((j) => j.id)
+            const originalIds = jobs.map(j => j.id)
             const originalCount = jobs.length
 
             enterEditMode(jobs)
 
             reorder(fromIndex, toIndex)
 
-            const reorderedIds = orderedJobs.value.map((j) => j.id)
+            const reorderedIds = orderedJobs.value.map(j => j.id)
 
             // 1. Total count is unchanged
             expect(reorderedIds.length).toBe(originalCount)
@@ -64,9 +64,9 @@ describe('Property 7: Reorder conservation and correctness', () => {
           } finally {
             cancelEdit()
           }
-        }
+        },
       ),
-      { numRuns: 200 }
+      { numRuns: 200 },
     )
   })
 })

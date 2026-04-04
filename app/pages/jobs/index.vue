@@ -2,12 +2,12 @@
 import { h, resolveComponent } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
 import type { Row, ExpandedState } from '@tanstack/vue-table'
-import type { Job, FilterState } from '~/types/domain'
+import type { Job } from '~/types/domain'
 import type { JobProgress } from '~/types/computed'
 
 const { jobs, loading, fetchJobs } = useJobs()
 const { isAdmin } = useUsers()
-const { filters, updateFilter, clearFilters, applyFilters } = useViewFilters()
+const { filters, updateFilter, applyFilters } = useViewFilters()
 const {
   isEditingPriority,
   orderedJobs,
@@ -15,7 +15,7 @@ const {
   enterEditMode,
   cancelEdit,
   reorder,
-  savePriorities
+  savePriorities,
 } = useJobPriority()
 
 const toast = useToast()
@@ -31,7 +31,7 @@ const dragIndex = ref<number | null>(null)
 const dropTargetIndex = ref<number | null>(null)
 
 const hasExpandedJobs = computed(() =>
-  expanded.value === true || Object.keys(expanded.value).length > 0
+  expanded.value === true || Object.keys(expanded.value).length > 0,
 )
 
 function expandAllJobs() {
@@ -73,13 +73,13 @@ const filteredJobs = computed(() =>
       const p = progressFor(j.id)
       if (!p) return 'active'
       return p.completedParts >= p.goalQuantity && p.goalQuantity > 0 ? 'completed' : 'active'
-    }
-  })
+    },
+  }),
 )
 
 /** The rows to display in the table: orderedJobs in edit mode, filteredJobs otherwise */
 const displayedJobs = computed(() =>
-  isEditingPriority.value ? [...orderedJobs.value] : filteredJobs.value
+  isEditingPriority.value ? [...orderedJobs.value] : filteredJobs.value,
 )
 
 // Prune jobsWithExpandedPaths when filtered jobs change (removes stale entries for jobs no longer visible)
@@ -108,8 +108,8 @@ async function loadAllProgress() {
   const results = await Promise.allSettled(
     jobs.value.map(job =>
       $fetch<{ progress: JobProgress }>(`/api/jobs/${job.id}`)
-        .then(detail => ({ id: job.id, progress: detail.progress }))
-    )
+        .then(detail => ({ id: job.id, progress: detail.progress })),
+    ),
   )
   const map: Record<string, JobProgress> = {}
   for (const r of results) {
@@ -132,7 +132,7 @@ const activeJobs = computed(() =>
     const p = progressFor(j.id)
     if (!p) return true
     return !(p.completedParts >= p.goalQuantity && p.goalQuantity > 0)
-  })
+  }),
 )
 
 async function onEditPriority() {
@@ -151,7 +151,7 @@ async function onSavePriorities() {
     toast.add({
       title: 'Failed to save priorities',
       description: 'Please try again or cancel.',
-      color: 'error'
+      color: 'error',
     })
     return
   }
@@ -162,7 +162,7 @@ async function onSavePriorities() {
     toast.add({
       title: 'Priorities saved, but failed to refresh jobs',
       description: 'Your changes were saved. Please refresh the page.',
-      color: 'warning'
+      color: 'warning',
     })
   }
 }
@@ -241,7 +241,7 @@ function onTouchEnd() {
   dropTargetIndex.value = null
 }
 
-function onRowSelect(_e: any, row: any) {
+function onRowSelect(_e: Event, row: { original: Job }) {
   if (isEditingPriority.value) return
   navigateTo(`/jobs/${encodeURIComponent(row.original.id)}`)
 }
@@ -261,28 +261,28 @@ const columns: TableColumn<Job>[] = [
         onClick: (e: Event) => {
           e.stopPropagation()
           row.toggleExpanded()
-        }
+        },
       })
-    }
+    },
   },
   {
     accessorKey: 'priority',
     header: '#',
     size: 50,
-    cell: ({ row }: { row: Row<Job> }) => row.original.priority
+    cell: ({ row }: { row: Row<Job> }) => row.original.priority,
   },
   {
     accessorKey: 'name',
-    header: 'Job Name'
+    header: 'Job Name',
   },
   {
     accessorKey: 'jiraPartNumber',
     header: 'Part #',
-    cell: ({ row }: { row: Row<Job> }) => row.original.jiraPartNumber || '—'
+    cell: ({ row }: { row: Row<Job> }) => row.original.jiraPartNumber || '—',
   },
   {
     accessorKey: 'goalQuantity',
-    header: 'Goal Qty'
+    header: 'Goal Qty',
   },
   {
     accessorKey: 'progress',
@@ -294,10 +294,10 @@ const columns: TableColumn<Job>[] = [
       return h(resolveComponent('ProgressBar'), {
         completed: p.completedParts,
         goal: p.goalQuantity,
-        inProgress: p.inProgressParts
+        inProgress: p.inProgressParts,
       })
-    }
-  }
+    },
+  },
 ]
 
 onMounted(() => {
@@ -420,7 +420,7 @@ onMounted(() => {
             class="border-b border-(--ui-border)/50 transition-colors"
             :class="{
               'opacity-50': dragIndex === index,
-              'border-t-2 border-t-(--ui-primary)': dropTargetIndex === index && dragIndex !== null && dragIndex !== index
+              'border-t-2 border-t-(--ui-primary)': dropTargetIndex === index && dragIndex !== null && dragIndex !== index,
             }"
             @dragstart="onDragStart($event, index)"
             @dragover="onDragOver($event, index)"
@@ -453,7 +453,10 @@ onMounted(() => {
                 :goal="progressFor(job.id)!.goalQuantity"
                 :in-progress="progressFor(job.id)!.inProgressParts"
               />
-              <span v-else class="text-(--ui-text-muted)">—</span>
+              <span
+                v-else
+                class="text-(--ui-text-muted)"
+              >—</span>
             </td>
           </tr>
         </tbody>
@@ -463,14 +466,14 @@ onMounted(() => {
     <!-- Desktop: Normal mode UTable -->
     <UTable
       v-if="!loading && displayedJobs.length && !isEditingPriority"
-      class="hidden md:block"
       v-model:expanded="expanded"
+      class="hidden md:block"
       :data="displayedJobs"
       :columns="columns"
       :ui="{
         th: 'text-xs py-1.5',
         td: 'text-xs py-1',
-        tr: 'cursor-pointer hover:bg-(--ui-bg-elevated)/50'
+        tr: 'cursor-pointer hover:bg-(--ui-bg-elevated)/50',
       }"
       @select="onRowSelect"
     >
@@ -485,7 +488,11 @@ onMounted(() => {
     </UTable>
 
     <!-- Mobile: Edit mode with drag-and-drop cards -->
-    <div v-if="!loading && displayedJobs.length && isEditingPriority" class="md:hidden space-y-2" data-priority-mobile-list>
+    <div
+      v-if="!loading && displayedJobs.length && isEditingPriority"
+      class="md:hidden space-y-2"
+      data-priority-mobile-list
+    >
       <JobMobileCard
         v-for="(job, index) in orderedJobs"
         :key="job.id"
@@ -495,7 +502,7 @@ onMounted(() => {
         :index="index"
         :class="{
           'opacity-50': dragIndex === index,
-          'border-t-2 border-t-(--ui-primary)': dropTargetIndex === index && dragIndex !== null && dragIndex !== index
+          'border-t-2 border-t-(--ui-primary)': dropTargetIndex === index && dragIndex !== null && dragIndex !== index,
         }"
         @dragstart="onDragStart($event, index)"
         @dragover="onDragOver($event, index)"
@@ -509,7 +516,10 @@ onMounted(() => {
     </div>
 
     <!-- Mobile: Normal mode cards -->
-    <div v-if="!loading && filteredJobs.length && !isEditingPriority" class="md:hidden space-y-2">
+    <div
+      v-if="!loading && filteredJobs.length && !isEditingPriority"
+      class="md:hidden space-y-2"
+    >
       <JobMobileCard
         v-for="job in filteredJobs"
         :key="job.id"

@@ -37,7 +37,7 @@ function setupServices(db: Database.default.Database) {
     paths: new SQLitePathRepository(db),
     parts: new SQLitePartRepository(db),
     certs: new SQLiteCertRepository(db),
-    audit: new SQLiteAuditRepository(db)
+    audit: new SQLiteAuditRepository(db),
   }
 
   const partIdGenerator = createSequentialPartIdGenerator({
@@ -47,7 +47,7 @@ function setupServices(db: Database.default.Database) {
     },
     setCounter: (v: number) => {
       db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-    }
+    },
   })
 
   const auditService = createAuditService({ audit: repos.audit })
@@ -56,7 +56,7 @@ function setupServices(db: Database.default.Database) {
   const partService = createPartService(
     { parts: repos.parts, paths: repos.paths, certs: repos.certs },
     auditService,
-    partIdGenerator
+    partIdGenerator,
   )
 
   return { jobService, pathService, partService }
@@ -79,10 +79,10 @@ describe('Property 4: Process Step Count Conservation', () => {
           advanceOps: fc.array(
             fc.record({
               partIndex: fc.nat(),
-              times: fc.integer({ min: 1, max: 6 })
+              times: fc.integer({ min: 1, max: 6 }),
             }),
-            { minLength: 0, maxLength: 15 }
-          )
+            { minLength: 0, maxLength: 15 },
+          ),
         }),
         ({ stepCount, partQuantity, advanceOps }) => {
           db = createTestDb()
@@ -90,18 +90,18 @@ describe('Property 4: Process Step Count Conservation', () => {
 
           const job = jobService.createJob({ name: 'Test Job', goalQuantity: 100 })
           const steps = Array.from({ length: stepCount }, (_, i) => ({
-            name: `Step ${i}`
+            name: `Step ${i}`,
           }))
           const path = pathService.createPath({
             jobId: job.id,
             name: 'Route',
             goalQuantity: partQuantity,
-            steps
+            steps,
           })
 
           const parts = partService.batchCreateParts(
             { jobId: job.id, pathId: path.id, quantity: partQuantity },
-            'user_test'
+            'user_test',
           )
           const totalCreated = parts.length
 
@@ -132,9 +132,9 @@ describe('Property 4: Process Step Count Conservation', () => {
 
           db.close()
           db = null as any
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })
