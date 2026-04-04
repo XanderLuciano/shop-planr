@@ -8,7 +8,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  'scrapped': []
+  scrapped: []
 }>()
 
 const { scrapPart, loading, error } = useLifecycle()

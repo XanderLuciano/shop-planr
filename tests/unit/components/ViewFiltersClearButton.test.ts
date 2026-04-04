@@ -45,7 +45,7 @@ const ViewFilters = defineComponent({
 
     return () =>
       h('div', { class: 'flex flex-wrap items-center gap-2' }, [
-        ...clearableFields.map((field) =>
+        ...clearableFields.map(field =>
           h('div', { 'data-field': field.key }, [
             h('input', {
               value: props.filters[field.key] ?? '',

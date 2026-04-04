@@ -165,9 +165,9 @@ export function createJiraService(
       const response = await doFetch(url, {
         method: 'GET',
         headers: {
-          'Authorization': getAuthHeader(),
+          Authorization: getAuthHeader(),
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          Accept: 'application/json',
         },
         signal: controller.signal,
       })
@@ -197,9 +197,9 @@ export function createJiraService(
       const response = await doFetch(url, {
         method: 'PUT',
         headers: {
-          'Authorization': getAuthHeader(),
+          Authorization: getAuthHeader(),
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          Accept: 'application/json',
         },
         body: JSON.stringify(body),
         signal: controller.signal,
@@ -232,9 +232,9 @@ export function createJiraService(
       const response = await doFetch(url, {
         method: 'POST',
         headers: {
-          'Authorization': getAuthHeader(),
+          Authorization: getAuthHeader(),
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          Accept: 'application/json',
         },
         body: JSON.stringify(body),
         signal: controller.signal,

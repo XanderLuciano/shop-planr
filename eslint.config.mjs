@@ -7,6 +7,9 @@ import withNuxt from './.nuxt/eslint.config.mjs'
 
 export default withNuxt({
   rules: {
+    // Only quote object keys when syntax requires it (e.g. hyphenated keys)
+    '@stylistic/quote-props': ['error', 'as-needed'],
+
     // Align Vue comma-dangle with stylistic preset
     'vue/comma-dangle': ['error', 'always-multiline'],
 
