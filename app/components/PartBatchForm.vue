@@ -59,7 +59,7 @@ async function onSubmit() {
       pathId: props.pathId,
       quantity: quantity.value,
       certId: selectedOrUndefined(selectedCertId.value),
-      userId
+      userId,
     })
     quantity.value = 1
     selectedCertId.value = SELECT_NONE

@@ -11,16 +11,16 @@ function createMockAuditRepo(): AuditRepository {
       return entry
     }),
     listByPartId: vi.fn((partId: string) =>
-      store.filter(e => e.partId === partId).sort((a, b) => a.timestamp.localeCompare(b.timestamp))
+      store.filter(e => e.partId === partId).sort((a, b) => a.timestamp.localeCompare(b.timestamp)),
     ),
     listByJobId: vi.fn((jobId: string) =>
-      store.filter(e => e.jobId === jobId)
+      store.filter(e => e.jobId === jobId),
     ),
     list: vi.fn((options?: { limit?: number, offset?: number }) => {
       const offset = options?.offset ?? 0
       const limit = options?.limit ?? store.length
       return store.slice(offset, offset + limit)
-    })
+    }),
   }
 }
 
@@ -40,7 +40,7 @@ describe('AuditService', () => {
       certId: 'cert_1',
       stepId: 'step_1',
       jobId: 'job_1',
-      pathId: 'path_1'
+      pathId: 'path_1',
     })
     expect(entry.action).toBe('cert_attached')
     expect(entry.userId).toBe('user_1')
@@ -56,7 +56,7 @@ describe('AuditService', () => {
       userId: 'user_1',
       jobId: 'job_1',
       pathId: 'path_1',
-      batchQuantity: 10
+      batchQuantity: 10,
     })
     expect(entry.action).toBe('part_created')
     expect(entry.batchQuantity).toBe(10)
@@ -68,7 +68,7 @@ describe('AuditService', () => {
       userId: 'user_1',
       partId: 'part_1',
       fromStepId: 'step_1',
-      toStepId: 'step_2'
+      toStepId: 'step_2',
     })
     expect(entry.action).toBe('part_advanced')
     expect(entry.fromStepId).toBe('step_1')
@@ -79,7 +79,7 @@ describe('AuditService', () => {
     const entry = service.recordPartCompletion({
       userId: 'user_1',
       partId: 'part_1',
-      fromStepId: 'step_3'
+      fromStepId: 'step_3',
     })
     expect(entry.action).toBe('part_completed')
     expect(entry.fromStepId).toBe('step_3')
@@ -91,7 +91,7 @@ describe('AuditService', () => {
       jobId: 'job_1',
       pathId: 'path_1',
       stepId: 'step_1',
-      partId: 'part_1'
+      partId: 'part_1',
     })
     expect(entry.action).toBe('note_created')
     expect(entry.stepId).toBe('step_1')

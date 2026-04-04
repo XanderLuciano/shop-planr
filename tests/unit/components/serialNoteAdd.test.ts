@@ -17,22 +17,22 @@ export function toggleFormOpen(): boolean {
 }
 
 /** Toggles form visibility. Returns new showNoteForm state and cleared text after clicking "Cancel". */
-export function cancelForm(): { showNoteForm: boolean; noteText: string } {
+export function cancelForm(): { showNoteForm: boolean, noteText: string } {
   return { showNoteForm: false, noteText: '' }
 }
 
 /** Returns the Add Note button configuration. */
-export function getAddNoteButtonConfig(): { icon: string; label: string } {
+export function getAddNoteButtonConfig(): { icon: string, label: string } {
   return { icon: 'i-lucide-plus', label: 'Add Note' }
 }
 
 /** Returns the success toast object after a note is created. */
-export function buildSuccessToast(): { title: string; color: string } {
+export function buildSuccessToast(): { title: string, color: string } {
   return { title: 'Note created', color: 'success' }
 }
 
 /** Returns the error toast object when createNote fails. */
-export function buildErrorToast(e: any): { title: string; description: string; color: string } {
+export function buildErrorToast(e: any): { title: string, description: string, color: string } {
   return {
     title: 'Failed to create note',
     description: e?.data?.message ?? e?.message ?? 'Failed to create note',

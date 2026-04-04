@@ -67,7 +67,7 @@ function parseFrontmatter(content: string): Record<string, unknown> {
 /** Get all subdirectories in content/api-docs/ */
 function getCategories(): string[] {
   if (!existsSync(CONTENT_DIR)) return []
-  return readdirSync(CONTENT_DIR).filter(entry => {
+  return readdirSync(CONTENT_DIR).filter((entry) => {
     const fullPath = join(CONTENT_DIR, entry)
     return statSync(fullPath).isDirectory()
   })
@@ -87,7 +87,7 @@ function getEndpointFiles(category: string): string[] {
   const dir = join(CONTENT_DIR, category)
   if (!existsSync(dir)) return []
   return readdirSync(dir).filter(
-    f => f.endsWith('.md') && f !== 'index.md'
+    f => f.endsWith('.md') && f !== 'index.md',
   )
 }
 
@@ -106,14 +106,14 @@ describe('Property 6: Navigation tree ordering', () => {
     const uniqueOrders = new Set(orders)
     expect(
       uniqueOrders.size,
-      `Category navigation.order values must be unique, got: [${orders.join(', ')}]`
+      `Category navigation.order values must be unique, got: [${orders.join(', ')}]`,
     ).toBe(orders.length)
   })
 
   it('category index files are sorted ascending by navigation.order', () => {
     const categoryOrders = categories.map(cat => ({
       category: cat,
-      order: getNavOrder(join(CONTENT_DIR, cat, 'index.md'))!
+      order: getNavOrder(join(CONTENT_DIR, cat, 'index.md'))!,
     })).filter(c => c.order !== undefined)
 
     const sorted = [...categoryOrders].sort((a, b) => a.order - b.order)
@@ -122,7 +122,7 @@ describe('Property 6: Navigation tree ordering', () => {
     for (let i = 1; i < sorted.length; i++) {
       expect(
         sorted[i].order,
-        `Category "${sorted[i].category}" (order ${sorted[i].order}) must be > "${sorted[i - 1].category}" (order ${sorted[i - 1].order})`
+        `Category "${sorted[i].category}" (order ${sorted[i].order}) must be > "${sorted[i - 1].category}" (order ${sorted[i - 1].order})`,
       ).toBeGreaterThan(sorted[i - 1].order)
     }
   })
@@ -138,14 +138,14 @@ describe('Property 6: Navigation tree ordering', () => {
 
         const endpointOrders = endpointFiles.map(file => ({
           file,
-          order: getNavOrder(join(CONTENT_DIR, category, file))
+          order: getNavOrder(join(CONTENT_DIR, category, file)),
         }))
 
         // Every endpoint must have a navigation.order
         for (const ep of endpointOrders) {
           expect(
             ep.order,
-            `${category}/${ep.file} must have a navigation.order`
+            `${category}/${ep.file} must have a navigation.order`,
           ).toBeDefined()
         }
 
@@ -156,17 +156,17 @@ describe('Property 6: Navigation tree ordering', () => {
 
         expect(
           uniqueOrders.size,
-          `${category}: endpoint navigation.order values must be unique, got: [${orders.join(', ')}]`
+          `${category}: endpoint navigation.order values must be unique, got: [${orders.join(', ')}]`,
         ).toBe(orders.length)
 
         for (let i = 1; i < sorted.length; i++) {
           expect(
             sorted[i].order!,
-            `${category}/${sorted[i].file} (order ${sorted[i].order}) must be > ${category}/${sorted[i - 1].file} (order ${sorted[i - 1].order})`
+            `${category}/${sorted[i].file} (order ${sorted[i].order}) must be > ${category}/${sorted[i - 1].file} (order ${sorted[i - 1].order})`,
           ).toBeGreaterThan(sorted[i - 1].order!)
         }
       }),
-      { numRuns: categories.length * 3 }
+      { numRuns: categories.length * 3 },
     )
   })
 })

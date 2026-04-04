@@ -65,12 +65,11 @@ export function buildAdvancePayload(
   partIds: string[],
   selectedSet: Set<string>,
   note: string,
-): { partIds: string[]; note?: string } {
+): { partIds: string[], note?: string } {
   const ids = partIds.filter(id => selectedSet.has(id))
   const trimmedNote = note.trim()
   return { partIds: ids, note: trimmedNote || undefined }
 }
-
 
 // ---- Test helpers ----
 
@@ -247,7 +246,7 @@ describe('PartCreationPanel — pure logic', () => {
   describe('Create & Advance partial failure', () => {
     it('creation succeeds but advance throws — error is captured', async () => {
       const mockBatchCreate = vi.fn().mockResolvedValue([
-        { id: 'part_00200', jobId: 'j-1', pathId: 'p-1', currentStepId: "step_0", status: 'in_progress' },
+        { id: 'part_00200', jobId: 'j-1', pathId: 'p-1', currentStepId: 'step_0', status: 'in_progress' },
       ])
       const mockAdvance = vi.fn().mockRejectedValue(new Error('Advance failed for part_00200'))
 

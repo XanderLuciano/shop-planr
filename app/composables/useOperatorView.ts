@@ -29,6 +29,6 @@ export function useOperatorView() {
     loading: readonly(loading),
     error: readonly(error),
     fetchOperatorView,
-    clear
+    clear,
   }
 }

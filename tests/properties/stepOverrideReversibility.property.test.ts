@@ -28,7 +28,7 @@ function canComplete(
   steps: StepConfig[],
   stepStatuses: StepStatusRecord[],
   overriddenStepIds: Set<string>,
-): { canComplete: boolean; blockers: string[] } {
+): { canComplete: boolean, blockers: string[] } {
   const blockers: string[] = []
   for (const step of steps) {
     if (step.optional) continue

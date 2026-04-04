@@ -80,7 +80,7 @@ describe('Property 10: Audit Trail Completeness for Lifecycle Actions', () => {
         const auditService = createAuditService({ audit: repo })
 
         // Perform each lifecycle operation
-        const operations: { fn: () => void; expectedAction: AuditAction }[] = [
+        const operations: { fn: () => void, expectedAction: AuditAction }[] = [
           {
             fn: () => auditService.recordScrap({ userId, partId, jobId, pathId, stepId, metadata: { reason: 'damaged' } }),
             expectedAction: 'part_scrapped',

@@ -10,8 +10,6 @@
 import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
 import { reconcileSteps } from '~/server/services/pathService'
-import type { ProcessStep } from '~/server/types/domain'
-import type { StepInput } from '~/server/services/pathService'
 
 // Arbitrary for generating existing ProcessStep arrays
 const arbExistingSteps = (maxLen: number) =>
@@ -21,7 +19,7 @@ const arbExistingSteps = (maxLen: number) =>
         id: fc.string({ minLength: 1, maxLength: 20 }),
         name: fc.string({ minLength: 1, maxLength: 30 }),
       }),
-      { minLength: n, maxLength: n }
+      { minLength: n, maxLength: n },
     ).map(items =>
       items.map((item, i) => ({
         id: item.id,
@@ -29,8 +27,8 @@ const arbExistingSteps = (maxLen: number) =>
         order: i,
         optional: false,
         dependencyType: 'preferred' as const,
-      }))
-    )
+      })),
+    ),
   )
 
 // Arbitrary for generating input steps (more than existing to force inserts)
@@ -39,7 +37,7 @@ const arbInputSteps = (minLen: number, maxLen: number) =>
     fc.record({
       name: fc.string({ minLength: 1, maxLength: 30 }),
     }),
-    { minLength: minLen, maxLength: maxLen }
+    { minLength: minLen, maxLength: maxLen },
   )
 
 describe('Property 3: Append-Only Inserts', () => {
@@ -54,9 +52,9 @@ describe('Property 3: Append-Only Inserts', () => {
           for (const step of result.toInsert) {
             expect(step.id).toMatch(/^step_/)
           }
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -72,9 +70,9 @@ describe('Property 3: Append-Only Inserts', () => {
           for (const step of result.toInsert) {
             expect(existingIds.has(step.id)).toBe(false)
           }
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -89,9 +87,9 @@ describe('Property 3: Append-Only Inserts', () => {
           const insertIds = result.toInsert.map(s => s.id)
           const uniqueIds = new Set(insertIds)
           expect(uniqueIds.size).toBe(insertIds.length)
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })

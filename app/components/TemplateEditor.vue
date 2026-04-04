@@ -110,7 +110,11 @@ async function handleSave() {
         />
 
         <label class="flex items-center gap-1 text-xs shrink-0">
-          <input v-model="step.optional" type="checkbox" class="rounded">
+          <input
+            v-model="step.optional"
+            type="checkbox"
+            class="rounded"
+          >
           Opt
         </label>
 
@@ -124,20 +128,59 @@ async function handleSave() {
         />
 
         <div class="flex gap-0.5 shrink-0">
-          <UButton size="xs" variant="ghost" icon="i-lucide-chevron-up" :disabled="i === 0" @click="moveStep(i, -1)" />
-          <UButton size="xs" variant="ghost" icon="i-lucide-chevron-down" :disabled="i === steps.length - 1" @click="moveStep(i, 1)" />
-          <UButton size="xs" variant="ghost" color="error" icon="i-lucide-trash-2" @click="removeStep(i)" />
+          <UButton
+            size="xs"
+            variant="ghost"
+            icon="i-lucide-chevron-up"
+            :disabled="i === 0"
+            @click="moveStep(i, -1)"
+          />
+          <UButton
+            size="xs"
+            variant="ghost"
+            icon="i-lucide-chevron-down"
+            :disabled="i === steps.length - 1"
+            @click="moveStep(i, 1)"
+          />
+          <UButton
+            size="xs"
+            variant="ghost"
+            color="error"
+            icon="i-lucide-trash-2"
+            @click="removeStep(i)"
+          />
         </div>
       </div>
     </div>
 
-    <UButton size="sm" variant="soft" label="Add Step" icon="i-lucide-plus" @click="addStep" />
+    <UButton
+      size="sm"
+      variant="soft"
+      label="Add Step"
+      icon="i-lucide-plus"
+      @click="addStep"
+    />
 
-    <p v-if="error" class="text-xs text-(--ui-error)">{{ error }}</p>
+    <p
+      v-if="error"
+      class="text-xs text-(--ui-error)"
+    >
+      {{ error }}
+    </p>
 
     <div class="flex items-center gap-2">
-      <UButton size="sm" label="Save" :loading="loading" @click="handleSave" />
-      <UButton size="sm" variant="ghost" label="Cancel" @click="emit('cancel')" />
+      <UButton
+        size="sm"
+        label="Save"
+        :loading="loading"
+        @click="handleSave"
+      />
+      <UButton
+        size="sm"
+        variant="ghost"
+        label="Cancel"
+        @click="emit('cancel')"
+      />
     </div>
   </div>
 </template>

@@ -29,7 +29,7 @@ describe('Force-Complete Workflow Integration', () => {
     // 2. Create part and advance to step 1 only (leaving steps 1 and 2 incomplete)
     const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
-      'operator1'
+      'operator1',
     )
 
     // Advance from step 0 to step 1
@@ -56,7 +56,7 @@ describe('Force-Complete Workflow Integration', () => {
     expect(fcEntry!.partId).toBe(part.id)
     expect(fcEntry!.metadata).toBeDefined()
 
-    const metadata = fcEntry!.metadata as { incompleteStepIds: string[]; reason?: string }
+    const metadata = fcEntry!.metadata as { incompleteStepIds: string[], reason?: string }
     expect(metadata.incompleteStepIds).toBeDefined()
     // Steps at index 1 (Weld) and 2 (Inspect) should be incomplete
     expect(metadata.incompleteStepIds).toContain(path.steps[1].id)
@@ -82,7 +82,7 @@ describe('Force-Complete Workflow Integration', () => {
 
     const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
-      'user1'
+      'user1',
     )
 
     // The part is at step 0 with step 0 in_progress. Step 0 is the only step and it's required.
@@ -106,7 +106,7 @@ describe('Force-Complete Workflow Integration', () => {
 
     const [part] = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 1 },
-      'user1'
+      'user1',
     )
 
     // Scrap it first
@@ -114,7 +114,7 @@ describe('Force-Complete Workflow Integration', () => {
 
     // Force-complete should fail
     expect(() =>
-      lifecycleService.forceComplete(part.id, { userId: 'user1' })
+      lifecycleService.forceComplete(part.id, { userId: 'user1' }),
     ).toThrow(/scrapped/)
   })
 })

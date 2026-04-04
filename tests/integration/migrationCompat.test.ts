@@ -54,7 +54,7 @@ describe('Migration Backwards Compatibility Integration', () => {
       db.transaction(() => {
         db.exec(sql)
         db.prepare(
-          'INSERT INTO _migrations (version, name, applied_at, checksum) VALUES (?, ?, ?, ?)'
+          'INSERT INTO _migrations (version, name, applied_at, checksum) VALUES (?, ?, ?, ?)',
         ).run(version, match[2], new Date().toISOString(), 'test')
       })()
     }
@@ -89,7 +89,7 @@ describe('Migration Backwards Compatibility Integration', () => {
     db.transaction(() => {
       db.exec(migration004Sql)
       db.prepare(
-        'INSERT INTO _migrations (version, name, applied_at, checksum) VALUES (?, ?, ?, ?)'
+        'INSERT INTO _migrations (version, name, applied_at, checksum) VALUES (?, ?, ?, ?)',
       ).run(4, 'lifecycle_management', new Date().toISOString(), 'test')
     })()
 
@@ -102,7 +102,7 @@ describe('Migration Backwards Compatibility Integration', () => {
     expect(ipSerial.status).toBe('in_progress')
 
     // Verify: process steps have optional = 0 (false) and dependency_type = 'preferred'
-    const steps = db.prepare('SELECT optional, dependency_type FROM process_steps WHERE path_id = ?').all('path_old') as { optional: number; dependency_type: string }[]
+    const steps = db.prepare('SELECT optional, dependency_type FROM process_steps WHERE path_id = ?').all('path_old') as { optional: number, dependency_type: string }[]
     for (const step of steps) {
       expect(step.optional).toBe(0)
       expect(step.dependency_type).toBe('preferred')
@@ -114,7 +114,7 @@ describe('Migration Backwards Compatibility Integration', () => {
 
     // Verify: new tables exist
     const tables = db.prepare(
-      "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('sn_step_statuses', 'sn_step_overrides', 'bom_versions', 'process_library', 'location_library')"
+      'SELECT name FROM sqlite_master WHERE type=\'table\' AND name IN (\'sn_step_statuses\', \'sn_step_overrides\', \'bom_versions\', \'process_library\', \'location_library\')',
     ).all() as { name: string }[]
     const tableNames = tables.map(t => t.name)
     expect(tableNames).toContain('sn_step_statuses')

@@ -87,8 +87,7 @@ export function defineApiHandler<T>(
   return defineEventHandler(async (event) => {
     try {
       return await handler(event)
-    }
-    catch (error) {
+    } catch (error) {
       httpError(error)
     }
   })

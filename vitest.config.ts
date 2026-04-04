@@ -16,23 +16,23 @@ function nuxtImportMetaPlugin(): Plugin {
           code: code
             .replace(/import\.meta\.client/g, 'true')
             .replace(/import\.meta\.server/g, 'false'),
-          map: null
+          map: null,
         }
       }
-    }
+    },
   }
 }
 
 export default defineConfig({
   test: {
     environment: 'happy-dom',
-    globals: true
+    globals: true,
   },
   plugins: [nuxtImportMetaPlugin()],
   resolve: {
     alias: {
       '~': resolve(__dirname, '.'),
-      '@': resolve(__dirname, '.')
-    }
-  }
+      '@': resolve(__dirname, '.'),
+    },
+  },
 })

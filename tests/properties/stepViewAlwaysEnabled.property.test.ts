@@ -12,7 +12,7 @@ import { isPageEnabled } from '~/server/utils/pageToggles'
 import { arbPageToggles } from './arbitraries/pageToggles'
 
 /** Arbitrary that produces a random step ID string (any non-empty URL path segment). */
-const arbStepId: fc.Arbitrary<string> = fc.webSegment().filter((s) => s.length > 0)
+const arbStepId: fc.Arbitrary<string> = fc.webSegment().filter(s => s.length > 0)
 
 describe('Property 1: Step view routes are always enabled', () => {
   /**

@@ -70,7 +70,6 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
   return { operatorId: '_all', jobs: queueJobs, totalParts }
 }
 
-
 /** Replicates GET /api/operator/step/[stepId] */
 function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
   const { jobService, pathService, partService, noteService } = ctx
@@ -133,7 +132,7 @@ function aggregateGroupedWork(
 ): WorkQueueGroupedResponse {
   const { jobService, pathService, partService } = ctx
   const jobs = jobService.listJobs()
-  const entries: { job: WorkQueueJob; assignedTo: string | undefined }[] = []
+  const entries: { job: WorkQueueJob, assignedTo: string | undefined }[] = []
 
   for (const job of jobs) {
     const paths = pathService.listPathsByJob(job.id)

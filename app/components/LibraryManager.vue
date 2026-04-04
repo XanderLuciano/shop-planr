@@ -49,11 +49,18 @@ async function handleDeleteLocation(id: string) {
 
 <template>
   <div class="space-y-6">
-    <p v-if="error" class="text-sm text-(--ui-error)">{{ error }}</p>
+    <p
+      v-if="error"
+      class="text-sm text-(--ui-error)"
+    >
+      {{ error }}
+    </p>
 
     <!-- Process Library -->
     <div>
-      <h4 class="text-sm font-semibold text-(--ui-text-highlighted) mb-2">Process Library</h4>
+      <h4 class="text-sm font-semibold text-(--ui-text-highlighted) mb-2">
+        Process Library
+      </h4>
       <div class="border border-(--ui-border) rounded-md divide-y divide-(--ui-border)">
         <div
           v-for="p in processes"
@@ -72,7 +79,10 @@ async function handleDeleteLocation(id: string) {
             @blur="deleteConfirm = null"
           />
         </div>
-        <div v-if="!processes.length" class="px-3 py-2 text-sm text-(--ui-text-muted)">
+        <div
+          v-if="!processes.length"
+          class="px-3 py-2 text-sm text-(--ui-text-muted)"
+        >
           No processes defined
         </div>
       </div>
@@ -84,13 +94,20 @@ async function handleDeleteLocation(id: string) {
           class="flex-1"
           @keyup.enter="handleAddProcess"
         />
-        <UButton size="sm" label="Add" :loading="loading" @click="handleAddProcess" />
+        <UButton
+          size="sm"
+          label="Add"
+          :loading="loading"
+          @click="handleAddProcess"
+        />
       </div>
     </div>
 
     <!-- Location Library -->
     <div>
-      <h4 class="text-sm font-semibold text-(--ui-text-highlighted) mb-2">Location Library</h4>
+      <h4 class="text-sm font-semibold text-(--ui-text-highlighted) mb-2">
+        Location Library
+      </h4>
       <div class="border border-(--ui-border) rounded-md divide-y divide-(--ui-border)">
         <div
           v-for="l in locations"
@@ -109,7 +126,10 @@ async function handleDeleteLocation(id: string) {
             @blur="deleteConfirm = null"
           />
         </div>
-        <div v-if="!locations.length" class="px-3 py-2 text-sm text-(--ui-text-muted)">
+        <div
+          v-if="!locations.length"
+          class="px-3 py-2 text-sm text-(--ui-text-muted)"
+        >
           No locations defined
         </div>
       </div>
@@ -121,7 +141,12 @@ async function handleDeleteLocation(id: string) {
           class="flex-1"
           @keyup.enter="handleAddLocation"
         />
-        <UButton size="sm" label="Add" :loading="loading" @click="handleAddLocation" />
+        <UButton
+          size="sm"
+          label="Add"
+          :loading="loading"
+          @click="handleAddLocation"
+        />
       </div>
     </div>
   </div>

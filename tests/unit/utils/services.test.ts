@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import Database from 'better-sqlite3'
 import { runMigrations } from '../../../server/repositories/sqlite/index'
 import { SQLiteJobRepository } from '../../../server/repositories/sqlite/jobRepository'
@@ -43,7 +43,7 @@ function createTestRepoSet(): RepositorySet {
     settings: new SQLiteSettingsRepository(db),
     notes: new SQLiteNoteRepository(db),
     users: new SQLiteUserRepository(db),
-    _db: db
+    _db: db,
   } as unknown as RepositorySet
 }
 
@@ -73,13 +73,13 @@ describe('Service Factory (getServices pattern)', () => {
       },
       setCounter: (v: number) => {
         repos._db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-      }
+      },
     })
 
     const partService = createPartService(
       { parts: repos.parts, paths: repos.paths, certs: repos.certs },
       auditService,
-      partIdGenerator
+      partIdGenerator,
     )
     const certService = createCertService({ certs: repos.certs }, auditService)
     const noteService = createNoteService({ notes: repos.notes }, auditService)
@@ -87,7 +87,7 @@ describe('Service Factory (getServices pattern)', () => {
       jiraBaseUrl: 'https://jira.example.com',
       jiraProjectKey: 'PI',
       jiraUsername: '',
-      jiraApiToken: ''
+      jiraApiToken: '',
     })
 
     // Verify all services are defined
@@ -115,13 +115,13 @@ describe('Service Factory (getServices pattern)', () => {
       },
       setCounter: (v: number) => {
         repos._db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-      }
+      },
     })
 
     const partService = createPartService(
       { parts: repos.parts, paths: repos.paths, certs: repos.certs },
       auditService,
-      partIdGenerator
+      partIdGenerator,
     )
 
     // Create a job
@@ -135,15 +135,15 @@ describe('Service Factory (getServices pattern)', () => {
       goalQuantity: 5,
       steps: [
         { name: 'Machining', location: 'Shop Floor' },
-        { name: 'Inspection', location: 'QC Lab' }
-      ]
+        { name: 'Inspection', location: 'QC Lab' },
+      ],
     })
     expect(path.steps).toHaveLength(2)
 
     // Batch create parts
     const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 3 },
-      'user_test'
+      'user_test',
     )
     expect(parts).toHaveLength(3)
     expect(parts[0].id).toBe('part_00001')
@@ -173,7 +173,7 @@ describe('Service Factory (getServices pattern)', () => {
       },
       setCounter: (v: number) => {
         repos._db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-      }
+      },
     })
 
     expect(partIdGenerator.next()).toBe('part_00001')

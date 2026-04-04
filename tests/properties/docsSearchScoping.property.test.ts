@@ -76,10 +76,10 @@ describe('Property 7: Search result scoping', () => {
         const slug = filePathToSlug(filePath)
         expect(
           slug.startsWith('/api-docs'),
-          `File "${filePath}" resolves to slug "${slug}" which does not start with /api-docs`
+          `File "${filePath}" resolves to slug "${slug}" which does not start with /api-docs`,
         ).toBe(true)
       }),
-      { numRuns: Math.min(apiDocsFiles.length * 5, 200) }
+      { numRuns: Math.min(apiDocsFiles.length * 5, 200) },
     )
   })
 
@@ -92,11 +92,11 @@ describe('Property 7: Search result scoping', () => {
           const slug = filePathToSlug(filePath)
           expect(
             slug.startsWith('/api-docs'),
-            `File "${filePath}" resolves to slug "${slug}" which is not scoped to /api-docs`
+            `File "${filePath}" resolves to slug "${slug}" which is not scoped to /api-docs`,
           ).toBe(true)
         }
       }),
-      { numRuns: 50 }
+      { numRuns: 50 },
     )
   })
 
@@ -107,11 +107,11 @@ describe('Property 7: Search result scoping', () => {
 
     // No stray .md files at content/ root (they would be in the default collection, not scoped)
     const rootMdFiles = topLevelEntries.filter(entry =>
-      entry.endsWith('.md') && statSync(join(CONTENT_ROOT, entry)).isFile()
+      entry.endsWith('.md') && statSync(join(CONTENT_ROOT, entry)).isFile(),
     )
     expect(
       rootMdFiles,
-      `No .md files should exist at content/ root, found: [${rootMdFiles.join(', ')}]`
+      `No .md files should exist at content/ root, found: [${rootMdFiles.join(', ')}]`,
     ).toEqual([])
   })
 })

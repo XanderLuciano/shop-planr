@@ -7,16 +7,15 @@ import type { CertRepository } from '../repositories/interfaces/certRepository'
 import type { PartStepStatusRepository } from '../repositories/interfaces/partStepStatusRepository'
 import type { AuditService } from './auditService'
 import type { Database } from 'better-sqlite3'
-import type { Path, ProcessStep } from '../types/domain'
-import type { StepInput } from '../types/domain'
+import type { Path, ProcessStep, StepInput } from '../types/domain'
 import type { CreatePathInput, UpdatePathInput } from '../types/api'
 import type { StepDistribution } from '../types/computed'
-
-// Re-export StepInput for backward compatibility with existing tests
-export type { StepInput } from '../types/domain'
 import { generateId } from '../utils/idGenerator'
 import { assertNonEmpty, assertNonEmptyArray, assertPositive } from '../utils/validation'
 import { NotFoundError, ValidationError, ForbiddenError } from '../utils/errors'
+
+// Re-export StepInput for backward compatibility with existing tests
+export type { StepInput } from '../types/domain'
 
 /** Result of reconciling existing steps with incoming step inputs. */
 export interface StepReconciliation {
@@ -118,7 +117,7 @@ export function createPathService(repos: {
         steps,
         advancementMode: input.advancementMode ?? 'strict',
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       })
     },
 
@@ -286,14 +285,14 @@ export function createPathService(repos: {
         }
       }
 
-      const distribution: StepDistribution[] = path.steps.map((step) => ({
+      const distribution: StepDistribution[] = path.steps.map(step => ({
         stepId: step.id,
         stepName: step.name,
         stepOrder: step.order,
         location: step.location,
         partCount: stepCounts.get(step.id) ?? 0,
         completedCount: step.completedCount,
-        isBottleneck: false
+        isBottleneck: false,
       }))
 
       // Determine bottleneck: step with highest partCount

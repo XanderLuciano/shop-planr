@@ -27,7 +27,7 @@ function createMockJobRepo(): JobRepository {
       return updated
     }),
     delete: vi.fn((id: string) => store.delete(id)),
-    bulkUpdatePriority: vi.fn((entries: { id: string; priority: number }[]) => {
+    bulkUpdatePriority: vi.fn((entries: { id: string, priority: number }[]) => {
       for (const entry of entries) {
         const job = store.get(entry.id)
         if (job) {
@@ -44,7 +44,7 @@ function createMockPathRepo(): PathRepository {
     getById: vi.fn(),
     listByJobId: vi.fn(() => []),
     update: vi.fn(),
-    delete: vi.fn()
+    delete: vi.fn(),
   } as unknown as PathRepository
 }
 
@@ -95,7 +95,7 @@ describe('jobService.updatePriorities', () => {
       jobs: jobRepo,
       paths: createMockPathRepo(),
       parts: createMockPartRepo(),
-      bom: createMockBomRepo()
+      bom: createMockBomRepo(),
     })
   })
 
@@ -108,8 +108,8 @@ describe('jobService.updatePriorities', () => {
       priorities: [
         { jobId: c.id, priority: 1 },
         { jobId: b.id, priority: 2 },
-        { jobId: a.id, priority: 3 }
-      ]
+        { jobId: a.id, priority: 3 },
+      ],
     })
 
     expect(result).toHaveLength(3)
@@ -130,12 +130,12 @@ describe('jobService.updatePriorities', () => {
 
   // Requirement 3.3: duplicate job IDs
   it('throws ValidationError for duplicate job IDs', () => {
-    const [a, b] = seedJobs(service, 2)
+    const [a, _b] = seedJobs(service, 2)
     expect(() => service.updatePriorities({
       priorities: [
         { jobId: a.id, priority: 1 },
-        { jobId: a.id, priority: 2 }
-      ]
+        { jobId: a.id, priority: 2 },
+      ],
     })).toThrow(ValidationError)
   })
 
@@ -145,8 +145,8 @@ describe('jobService.updatePriorities', () => {
     expect(() => service.updatePriorities({
       priorities: [
         { jobId: a.id, priority: 1 },
-        { jobId: b.id, priority: 1 }
-      ]
+        { jobId: b.id, priority: 1 },
+      ],
     })).toThrow(ValidationError)
   })
 
@@ -156,29 +156,29 @@ describe('jobService.updatePriorities', () => {
     expect(() => service.updatePriorities({
       priorities: [
         { jobId: a.id, priority: 1 },
-        { jobId: b.id, priority: 3 }
-      ]
+        { jobId: b.id, priority: 3 },
+      ],
     })).toThrow(ValidationError)
   })
 
   // Requirement 3.6: non-existent job ID
   it('throws NotFoundError for non-existent job ID', () => {
-    const [a] = seedJobs(service, 1)
+    const [_a] = seedJobs(service, 1)
     expect(() => service.updatePriorities({
       priorities: [
-        { jobId: 'job_nonexistent', priority: 1 }
-      ]
+        { jobId: 'job_nonexistent', priority: 1 },
+      ],
     })).toThrow(NotFoundError)
   })
 
   // Requirement 3.7: count mismatch — fewer than total jobs
   it('throws ValidationError when fewer jobs than total are provided', () => {
-    const [a, b, c] = seedJobs(service, 3)
+    const [a, b, _c] = seedJobs(service, 3)
     expect(() => service.updatePriorities({
       priorities: [
         { jobId: a.id, priority: 1 },
-        { jobId: b.id, priority: 2 }
-      ]
+        { jobId: b.id, priority: 2 },
+      ],
     })).toThrow(ValidationError)
   })
 
@@ -188,8 +188,8 @@ describe('jobService.updatePriorities', () => {
     expect(() => service.updatePriorities({
       priorities: [
         { jobId: a.id, priority: 1 },
-        { jobId: 'job_extra', priority: 2 }
-      ]
+        { jobId: 'job_extra', priority: 2 },
+      ],
     })).toThrow(ValidationError)
   })
 })

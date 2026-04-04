@@ -13,7 +13,7 @@ function navigateToResult(path: string) {
 
 const showDropdown = computed(() => query.value.trim().length > 0)
 const showNoResults = computed(
-  () => showDropdown.value && !isSearching.value && results.value.length === 0
+  () => showDropdown.value && !isSearching.value && results.value.length === 0,
 )
 </script>
 
@@ -36,19 +36,34 @@ const showNoResults = computed(
       class="absolute z-50 mt-1 w-full rounded-md border border-(--ui-border) bg-(--ui-bg) shadow-lg"
     >
       <!-- Loading state -->
-      <div v-if="isSearching && results.length === 0" class="px-3 py-4 text-center">
+      <div
+        v-if="isSearching && results.length === 0"
+        class="px-3 py-4 text-center"
+      >
         <span class="text-sm text-(--ui-text-muted)">Searching…</span>
       </div>
 
       <!-- No results -->
-      <div v-else-if="showNoResults" class="flex flex-col items-center gap-1 px-3 py-4 text-center">
-        <UIcon name="i-lucide-search-x" class="size-5 text-(--ui-text-dimmed)" />
+      <div
+        v-else-if="showNoResults"
+        class="flex flex-col items-center gap-1 px-3 py-4 text-center"
+      >
+        <UIcon
+          name="i-lucide-search-x"
+          class="size-5 text-(--ui-text-dimmed)"
+        />
         <span class="text-sm text-(--ui-text-muted)">No results found</span>
       </div>
 
       <!-- Results list -->
-      <ul v-else-if="results.length" class="max-h-64 overflow-y-auto py-1">
-        <li v-for="result in results" :key="result.path">
+      <ul
+        v-else-if="results.length"
+        class="max-h-64 overflow-y-auto py-1"
+      >
+        <li
+          v-for="result in results"
+          :key="result.path"
+        >
           <button
             class="flex w-full flex-col gap-0.5 px-3 py-2 text-left transition-colors hover:bg-(--ui-bg-elevated) cursor-pointer"
             @click="navigateToResult(result.path)"

@@ -24,7 +24,7 @@ export function useJobs() {
   async function createJob(input: CreateJobInput): Promise<Job> {
     const job = await $fetch<Job>('/api/jobs', {
       method: 'POST',
-      body: input
+      body: input,
     })
     await fetchJobs()
     return job
@@ -33,7 +33,7 @@ export function useJobs() {
   async function updateJob(id: string, input: UpdateJobInput): Promise<Job> {
     const job = await $fetch<Job>(`/api/jobs/${id}`, {
       method: 'PUT',
-      body: input
+      body: input,
     })
     await fetchJobs()
     return job
@@ -62,6 +62,6 @@ export function useJobs() {
     updateJob,
     getJob,
     fetchJobProgress,
-    deleteJob
+    deleteJob,
   }
 }

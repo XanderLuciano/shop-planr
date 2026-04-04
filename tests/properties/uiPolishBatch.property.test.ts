@@ -11,6 +11,8 @@ import { shouldHighlightStep } from '~/app/utils/stepHighlight'
 import { tabToHash, hashToTab } from '~/app/utils/tabHash'
 import { partDetailLink } from '~/app/utils/eyeIconLink'
 
+import { shouldShowSkip } from '~/app/utils/shouldShowSkip'
+
 /**
  * Property 1: Scrap removes part from list and deselects
  *
@@ -46,14 +48,12 @@ describe('Property 1: Scrap removes part from list and deselects', () => {
           } else {
             expect(newSelected.size).toBe(selected.size)
           }
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })
-
-import { shouldShowSkip } from '~/app/utils/shouldShowSkip'
 
 /**
  * Property 2: Skip button visibility equals stepOptional && !isFinalStep
@@ -71,9 +71,9 @@ describe('Property 2: Skip button visibility equals stepOptional flag', () => {
         (stepOptional, isFinalStep) => {
           const result = shouldShowSkip(stepOptional, isFinalStep)
           expect(result).toBe(stepOptional && !isFinalStep)
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -83,9 +83,9 @@ describe('Property 2: Skip button visibility equals stepOptional flag', () => {
         fc.boolean(),
         (isFinalStep) => {
           expect(shouldShowSkip(undefined, isFinalStep)).toBe(false)
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })
@@ -108,13 +108,12 @@ describe('Property 3: Step highlight classification', () => {
           const result = shouldHighlightStep(partCount, isBottleneck)
           const expected = partCount > 0 && !isBottleneck
           expect(result).toBe(expected)
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })
-
 
 /**
  * Property 4: Eye icon link target correctness
@@ -134,9 +133,9 @@ describe('Property 4: Eye icon link target correctness', () => {
           expect(link).toBe(`/parts-browser/${encodeURIComponent(partId)}`)
           // Link always starts with the correct prefix
           expect(link.startsWith('/parts-browser/')).toBe(true)
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })
@@ -158,9 +157,9 @@ describe('Property 5: Tab-hash round trip', () => {
           const hash = tabToHash(tab)
           const roundTripped = hashToTab(hash)
           expect(roundTripped).toBe(tab)
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -172,9 +171,9 @@ describe('Property 5: Tab-hash round trip', () => {
           const tab = hashToTab(hash)
           const roundTripped = tabToHash(tab)
           expect(roundTripped).toBe(hash)
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })

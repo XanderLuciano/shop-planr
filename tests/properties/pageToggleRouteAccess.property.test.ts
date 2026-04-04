@@ -34,7 +34,7 @@ const BASE_PATHS = Object.keys(ROUTE_TOGGLE_MAP)
 /** Arbitrary that produces a random detail route suffix (e.g., `/123`, `/abc/def`). */
 const arbDetailSuffix: fc.Arbitrary<string> = fc
   .array(fc.stringMatching(/^[a-z0-9]{1,8}$/), { minLength: 1, maxLength: 3 })
-  .map((segments) => '/' + segments.join('/'))
+  .map(segments => '/' + segments.join('/'))
 
 describe('Property 1: Always-visible invariant', () => {
   /**
@@ -108,7 +108,7 @@ describe('Property 3: Route access matches toggle state', () => {
       .filter((route) => {
         // Exclude always-visible routes and any route that starts with a mapped base path
         if (route === '/' || route === '/settings') return false
-        return !BASE_PATHS.some((bp) => route === bp || route.startsWith(bp + '/'))
+        return !BASE_PATHS.some(bp => route === bp || route.startsWith(bp + '/'))
       })
 
     fc.assert(

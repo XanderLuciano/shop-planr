@@ -18,7 +18,7 @@ function rowToDomain(row: SettingsRow): AppSettings {
     jiraConnection: JSON.parse(row.jira_connection),
     jiraFieldMappings: JSON.parse(row.jira_field_mappings),
     pageToggles: mergePageToggles({}, parsedToggles),
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
   }
 }
 
@@ -31,7 +31,7 @@ export class SQLiteSettingsRepository implements SettingsRepository {
 
   get(): AppSettings | null {
     const row = this.db.prepare(
-      'SELECT * FROM settings WHERE id = \'app_settings\''
+      'SELECT * FROM settings WHERE id = \'app_settings\'',
     ).get() as SettingsRow | undefined
     return row ? rowToDomain(row) : null
   }

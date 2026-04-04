@@ -32,7 +32,7 @@ export function createJobService(repos: {
         jiraEpicLink: input.jiraEpicLink,
         jiraLabels: input.jiraLabels,
         createdAt: now,
-        updatedAt: now
+        updatedAt: now,
       })
     },
 
@@ -151,7 +151,7 @@ export function createJobService(repos: {
       // 2. Validate count matches active (non-completed) job count
       if (input.priorities.length !== activeJobs.length) {
         throw new ValidationError(
-          `Priority list must include all ${activeJobs.length} active jobs, got ${input.priorities.length}`
+          `Priority list must include all ${activeJobs.length} active jobs, got ${input.priorities.length}`,
         )
       }
 
@@ -200,7 +200,7 @@ export function createJobService(repos: {
       return repos.jobs.list()
     },
 
-    canDeleteJob(id: string): { canDelete: boolean; reasons: string[] } {
+    canDeleteJob(id: string): { canDelete: boolean, reasons: string[] } {
       const job = repos.jobs.getById(id)
       if (!job) {
         throw new NotFoundError('Job', id)
@@ -226,7 +226,7 @@ export function createJobService(repos: {
       }
 
       return { canDelete: reasons.length === 0, reasons }
-    }
+    },
   }
 }
 

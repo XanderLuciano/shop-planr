@@ -4,7 +4,7 @@ type ScanResult = { value: string, type: 'part' | 'certificate' | 'unknown' }
 const props = withDefaults(defineProps<{
   placeholder?: string
 }>(), {
-  placeholder: 'Scan or type Part / Cert...'
+  placeholder: 'Scan or type Part / Cert...',
 })
 
 const emit = defineEmits<{

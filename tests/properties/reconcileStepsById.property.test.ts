@@ -29,7 +29,7 @@ describe('Feature: step-id-part-tracking, Property 12: Reconcile steps by ID pre
   it('inputs with IDs match existing steps by ID and get new order from position', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 2, max: 8 }).chain(count => {
+        fc.integer({ min: 2, max: 8 }).chain((count) => {
           // Generate existing steps
           const existingSteps = Array.from({ length: count }, (_, i) =>
             makeStep(`step_${i}`, i, `Step ${i}`),
@@ -43,7 +43,7 @@ describe('Feature: step-id-part-tracking, Property 12: Reconcile steps by ID pre
         }),
         ({ existingSteps, shuffledIds }) => {
           // Build inputs with IDs in shuffled order
-          const inputs: StepInput[] = shuffledIds.map(id => {
+          const inputs: StepInput[] = shuffledIds.map((id) => {
             const orig = existingSteps.find(s => s.id === id)!
             return { id, name: orig.name }
           })

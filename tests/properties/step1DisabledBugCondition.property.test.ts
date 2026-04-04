@@ -124,7 +124,6 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
   return { operatorId: '_all', jobs: queueJobs, totalParts }
 }
 
-
 // ---------------------------------------------------------------------------
 // Arbitraries — same pattern as stepEndpoint.property.test.ts
 // ---------------------------------------------------------------------------

@@ -68,7 +68,7 @@ export function createTestContext() {
     },
     setCounter: (v: number) => {
       db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-    }
+    },
   })
 
   const auditService = createAuditService({ audit: repos.audit })
@@ -81,7 +81,7 @@ export function createTestContext() {
       partStepStatuses: repos.partStepStatuses,
       partStepOverrides: repos.partStepOverrides,
     },
-    auditService
+    auditService,
   )
 
   const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts })
@@ -99,13 +99,13 @@ export function createTestContext() {
     { parts: repos.parts, paths: repos.paths, certs: repos.certs, jobs: repos.jobs },
     auditService,
     partIdGenerator,
-    lifecycleService
+    lifecycleService,
   )
   const certService = createCertService({ certs: repos.certs }, auditService)
   const templateService = createTemplateService({ templates: repos.templates, paths: repos.paths })
   const bomService = createBomService(
     { bom: repos.bom, parts: repos.parts, bomVersions: repos.bomVersions },
-    auditService
+    auditService,
   )
   const noteService = createNoteService({ notes: repos.notes }, auditService)
   const libraryService = createLibraryService({ library: repos.library })
@@ -123,7 +123,7 @@ export function createTestContext() {
     noteService,
     lifecycleService,
     libraryService,
-    cleanup: () => db.close()
+    cleanup: () => db.close(),
   }
 }
 

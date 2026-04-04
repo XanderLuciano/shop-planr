@@ -14,7 +14,7 @@ import type { Part, ScrapReason } from '../../server/types/domain'
  * Pure validation logic matching lifecycleService.scrapPart:
  * Rejects if part is already scrapped or completed.
  */
-function validateScrap(part: Part): { valid: boolean; error?: string } {
+function validateScrap(part: Part): { valid: boolean, error?: string } {
   if (part.status === 'scrapped') {
     return { valid: false, error: 'Part is already scrapped' }
   }
@@ -28,7 +28,7 @@ function validateScrap(part: Part): { valid: boolean; error?: string } {
  * Pure validation for advancing a part:
  * Rejects if part is scrapped or completed.
  */
-function validateAdvance(part: Part): { valid: boolean; error?: string } {
+function validateAdvance(part: Part): { valid: boolean, error?: string } {
   if (part.status === 'scrapped') {
     return { valid: false, error: 'Cannot advance a scrapped part' }
   }
@@ -42,7 +42,7 @@ function validateAdvance(part: Part): { valid: boolean; error?: string } {
  * Pure validation for completing a part:
  * Rejects if part is scrapped or already completed.
  */
-function validateComplete(part: Part): { valid: boolean; error?: string } {
+function validateComplete(part: Part): { valid: boolean, error?: string } {
   if (part.status === 'scrapped') {
     return { valid: false, error: 'Cannot complete a scrapped part' }
   }
@@ -56,7 +56,7 @@ function validateComplete(part: Part): { valid: boolean; error?: string } {
  * Pure validation for force-completing a part:
  * Rejects if part is scrapped or already completed.
  */
-function validateForceComplete(part: Part): { valid: boolean; error?: string } {
+function validateForceComplete(part: Part): { valid: boolean, error?: string } {
   if (part.status === 'scrapped') {
     return { valid: false, error: 'Cannot force-complete a scrapped part' }
   }

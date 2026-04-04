@@ -63,7 +63,7 @@ const EndpointCard = defineComponent({
 describe('EndpointCard', () => {
   // Req 8.1: Each HTTP method renders a badge with the correct color class
   describe('method badge colors', () => {
-    const methodColorMap: Record<string, { bgContains: string; textContains: string }> = {
+    const methodColorMap: Record<string, { bgContains: string, textContains: string }> = {
       GET: { bgContains: 'green', textContains: 'green' },
       POST: { bgContains: 'blue', textContains: 'blue' },
       PUT: { bgContains: 'amber', textContains: 'amber' },

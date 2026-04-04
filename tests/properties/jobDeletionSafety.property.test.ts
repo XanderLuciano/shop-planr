@@ -94,7 +94,7 @@ function seedJob(jobRepo: JobRepository, id: string): Job {
 }
 
 /** Build a service with the given dependent counts */
-function buildService(opts: { pathCount: number; partCount: number; bomRefCount: number }) {
+function buildService(opts: { pathCount: number, partCount: number, bomRefCount: number }) {
   const jobRepo = createMockJobRepo()
   const pathRepo = createMockPathRepo(opts.pathCount)
   const partRepo = createMockPartRepo(opts.partCount)
@@ -117,9 +117,9 @@ describe('Property 1: Deletion Safety', () => {
   it('deleteJob succeeds only when all dependent counts are zero', () => {
     fc.assert(
       fc.property(
-        fc.nat({ max: 5 }),  // pathCount
+        fc.nat({ max: 5 }), // pathCount
         fc.nat({ max: 10 }), // partCount
-        fc.nat({ max: 5 }),  // bomRefCount
+        fc.nat({ max: 5 }), // bomRefCount
         (pathCount, partCount, bomRefCount) => {
           const { service, jobRepo } = buildService({ pathCount, partCount, bomRefCount })
           const job = seedJob(jobRepo, `job_${pathCount}_${partCount}_${bomRefCount}`)
@@ -150,9 +150,9 @@ describe('Property 2: Deletion Rejection', () => {
   it('deleteJob throws ValidationError when dependents exist and job survives', () => {
     fc.assert(
       fc.property(
-        fc.nat({ max: 5 }),  // pathCount
+        fc.nat({ max: 5 }), // pathCount
         fc.nat({ max: 10 }), // partCount
-        fc.nat({ max: 5 }),  // bomRefCount
+        fc.nat({ max: 5 }), // bomRefCount
         (pathCount, partCount, bomRefCount) => {
           // Pre-filter: at least one dependent must exist
           fc.pre(pathCount > 0 || partCount > 0 || bomRefCount > 0)
@@ -234,9 +234,9 @@ describe('Property 5: canDeleteJob Consistency', () => {
   it('canDeleteJob result predicts deleteJob outcome for any dependent combination', () => {
     fc.assert(
       fc.property(
-        fc.nat({ max: 5 }),  // pathCount
+        fc.nat({ max: 5 }), // pathCount
         fc.nat({ max: 10 }), // partCount
-        fc.nat({ max: 5 }),  // bomRefCount
+        fc.nat({ max: 5 }), // bomRefCount
         (pathCount, partCount, bomRefCount) => {
           const { service, jobRepo } = buildService({ pathCount, partCount, bomRefCount })
           const job = seedJob(jobRepo, `job_con_${pathCount}_${partCount}_${bomRefCount}`)

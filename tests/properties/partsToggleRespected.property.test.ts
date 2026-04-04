@@ -20,8 +20,8 @@ import { arbPageToggles } from './arbitraries/pageToggles'
  */
 const arbNonStepSuffix: fc.Arbitrary<string> = fc
   .array(fc.stringMatching(/^[a-z0-9]{1,8}$/), { minLength: 1, maxLength: 3 })
-  .map((segments) => segments.join('/'))
-  .filter((suffix) => suffix !== 'step' && !suffix.startsWith('step/'))
+  .map(segments => segments.join('/'))
+  .filter(suffix => suffix !== 'step' && !suffix.startsWith('step/'))
 
 describe('Property 2: Non-step /parts routes respect the parts toggle', () => {
   /**

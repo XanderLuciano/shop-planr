@@ -79,7 +79,6 @@ describe('Property 1: Non-admin users are rejected', () => {
   })
 })
 
-
 // Feature: admin-path-delete, Property 2: Cascade delete completeness
 // **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7**
 describe('Property 2: Cascade delete completeness', () => {
@@ -189,14 +188,14 @@ describe('Property 2: Cascade delete completeness', () => {
 
             // Verify: no parts with that pathId
             const remainingParts = ctx.db.prepare(
-              'SELECT COUNT(*) as count FROM parts WHERE path_id = ?'
+              'SELECT COUNT(*) as count FROM parts WHERE path_id = ?',
             ).get(path.id) as { count: number }
             expect(remainingParts.count).toBe(0)
 
             // Verify: no step_notes for those stepIds
             for (const stepId of stepIds) {
               const remainingNotes = ctx.db.prepare(
-                'SELECT COUNT(*) as count FROM step_notes WHERE step_id = ?'
+                'SELECT COUNT(*) as count FROM step_notes WHERE step_id = ?',
               ).get(stepId) as { count: number }
               expect(remainingNotes.count).toBe(0)
             }
@@ -204,7 +203,7 @@ describe('Property 2: Cascade delete completeness', () => {
             // Verify: no part_step_overrides for those partIds
             for (const partId of partIds) {
               const remainingOverrides = ctx.db.prepare(
-                'SELECT COUNT(*) as count FROM part_step_overrides WHERE part_id = ?'
+                'SELECT COUNT(*) as count FROM part_step_overrides WHERE part_id = ?',
               ).get(partId) as { count: number }
               expect(remainingOverrides.count).toBe(0)
             }
@@ -212,7 +211,7 @@ describe('Property 2: Cascade delete completeness', () => {
             // Verify: no cert_attachments for those partIds
             for (const partId of partIds) {
               const remainingCerts = ctx.db.prepare(
-                'SELECT COUNT(*) as count FROM cert_attachments WHERE part_id = ?'
+                'SELECT COUNT(*) as count FROM cert_attachments WHERE part_id = ?',
               ).get(partId) as { count: number }
               expect(remainingCerts.count).toBe(0)
             }
@@ -220,7 +219,7 @@ describe('Property 2: Cascade delete completeness', () => {
             // Verify: no part_step_statuses for those partIds
             for (const partId of partIds) {
               const remainingStatuses = ctx.db.prepare(
-                'SELECT COUNT(*) as count FROM part_step_statuses WHERE part_id = ?'
+                'SELECT COUNT(*) as count FROM part_step_statuses WHERE part_id = ?',
               ).get(partId) as { count: number }
               expect(remainingStatuses.count).toBe(0)
             }
@@ -308,7 +307,6 @@ describe('Property 3: Audit entry completeness', () => {
     )
   })
 })
-
 
 // Feature: admin-path-delete, Property 4: Scrapped status filter
 // **Validates: Requirements 6.3**

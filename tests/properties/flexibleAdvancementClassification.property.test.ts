@@ -55,7 +55,7 @@ function classifyBypassedSteps(
 }
 
 /** Generate a path with random optional/required steps */
-function stepsArb(count: number): fc.Arbitrary<StepConfig[]> {
+function _stepsArb(count: number): fc.Arbitrary<StepConfig[]> {
   return fc.array(
     fc.boolean(),
     { minLength: count, maxLength: count },

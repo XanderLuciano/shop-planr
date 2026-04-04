@@ -25,17 +25,31 @@ function formatDate(iso: string): string {
 <template>
   <div class="space-y-3">
     <h4 class="text-sm font-semibold text-(--ui-text-highlighted) flex items-center gap-1.5">
-      <UIcon name="i-lucide-history" class="size-4" />
+      <UIcon
+        name="i-lucide-history"
+        class="size-4"
+      />
       Version History
     </h4>
 
-    <div v-if="loading" class="text-sm text-(--ui-text-muted)">Loading...</div>
+    <div
+      v-if="loading"
+      class="text-sm text-(--ui-text-muted)"
+    >
+      Loading...
+    </div>
 
-    <div v-else-if="!sortedVersions.length" class="text-sm text-(--ui-text-muted)">
+    <div
+      v-else-if="!sortedVersions.length"
+      class="text-sm text-(--ui-text-muted)"
+    >
       No version history yet
     </div>
 
-    <div v-else class="space-y-2">
+    <div
+      v-else
+      class="space-y-2"
+    >
       <div
         v-for="version in sortedVersions"
         :key="version.id"
@@ -52,7 +66,10 @@ function formatDate(iso: string): string {
         <p class="text-xs text-(--ui-text-muted)">
           By: {{ version.changedBy }}
         </p>
-        <p v-if="version.changeDescription" class="text-xs text-(--ui-text-highlighted)">
+        <p
+          v-if="version.changeDescription"
+          class="text-xs text-(--ui-text-highlighted)"
+        >
           {{ version.changeDescription }}
         </p>
         <div class="text-xs text-(--ui-text-muted)">

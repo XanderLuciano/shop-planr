@@ -18,7 +18,7 @@ function validateAdvancementDirection(
   currentStepOrder: number,
   targetStepOrder: number,
   totalSteps: number,
-): { valid: boolean; error?: string } {
+): { valid: boolean, error?: string } {
   if (targetStepOrder <= currentStepOrder) {
     return { valid: false, error: 'Cannot advance to a step at or before the current position' }
   }

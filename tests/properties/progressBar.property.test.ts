@@ -38,7 +38,7 @@ function setupServices(db: Database.default.Database) {
     paths: new SQLitePathRepository(db),
     parts: new SQLitePartRepository(db),
     certs: new SQLiteCertRepository(db),
-    audit: new SQLiteAuditRepository(db)
+    audit: new SQLiteAuditRepository(db),
   }
 
   const partIdGenerator = createSequentialPartIdGenerator({
@@ -48,7 +48,7 @@ function setupServices(db: Database.default.Database) {
     },
     setCounter: (v: number) => {
       db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-    }
+    },
   })
 
   const auditService = createAuditService({ audit: repos.audit })
@@ -57,7 +57,7 @@ function setupServices(db: Database.default.Database) {
   const partService = createPartService(
     { parts: repos.parts, paths: repos.paths, certs: repos.certs },
     auditService,
-    partIdGenerator
+    partIdGenerator,
   )
 
   return { jobService, pathService, partService }
@@ -77,7 +77,7 @@ describe('Property 7: Progress Bar Accuracy', () => {
           goalQuantity: fc.integer({ min: 1, max: 100 }),
           partQuantity: fc.integer({ min: 1, max: 50 }),
           // How many parts to advance to completion (single-step path for simplicity)
-          completionCount: fc.integer({ min: 0, max: 50 })
+          completionCount: fc.integer({ min: 0, max: 50 }),
         }),
         ({ goalQuantity, partQuantity, completionCount }) => {
           db = createTestDb()
@@ -90,12 +90,12 @@ describe('Property 7: Progress Bar Accuracy', () => {
             jobId: job.id,
             name: 'Route',
             goalQuantity: partQuantity,
-            steps: [{ name: 'Only Step' }]
+            steps: [{ name: 'Only Step' }],
           })
 
           const parts = partService.batchCreateParts(
             { jobId: job.id, pathId: path.id, quantity: partQuantity },
-            'user_test'
+            'user_test',
           )
 
           // Complete some parts (advance past the single step)
@@ -123,9 +123,9 @@ describe('Property 7: Progress Bar Accuracy', () => {
 
           db.close()
           db = null as any
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -136,7 +136,7 @@ describe('Property 7: Progress Bar Accuracy', () => {
           initialGoal: fc.integer({ min: 1, max: 50 }),
           newGoal: fc.integer({ min: 1, max: 50 }),
           partQuantity: fc.integer({ min: 1, max: 20 }),
-          completionCount: fc.integer({ min: 0, max: 20 })
+          completionCount: fc.integer({ min: 0, max: 20 }),
         }),
         ({ initialGoal, newGoal, partQuantity, completionCount }) => {
           db = createTestDb()
@@ -147,12 +147,12 @@ describe('Property 7: Progress Bar Accuracy', () => {
             jobId: job.id,
             name: 'Route',
             goalQuantity: partQuantity,
-            steps: [{ name: 'Only Step' }]
+            steps: [{ name: 'Only Step' }],
           })
 
           const parts = partService.batchCreateParts(
             { jobId: job.id, pathId: path.id, quantity: partQuantity },
-            'user_test'
+            'user_test',
           )
 
           const toComplete = Math.min(completionCount, parts.length)
@@ -176,9 +176,9 @@ describe('Property 7: Progress Bar Accuracy', () => {
 
           db.close()
           db = null as any
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })

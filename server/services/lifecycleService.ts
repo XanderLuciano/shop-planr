@@ -50,7 +50,7 @@ export function createLifecycleService(repos: {
    * Checks if all required steps are completed or waived.
    * Uses getLatestByPartAndStep to get the most recent routing entry per step.
    */
-  function canComplete(partId: string): { canComplete: boolean; blockers: string[] } {
+  function canComplete(partId: string): { canComplete: boolean, blockers: string[] } {
     const part = repos.parts.getById(partId)
     if (!part) throw new NotFoundError('Part', partId)
 
@@ -217,7 +217,7 @@ export function createLifecycleService(repos: {
 
       const now = new Date().toISOString()
       let nextSeq = repos.partStepStatuses.getNextSequenceNumber(partId)
-      const bypassedResult: { stepId: string; stepName: string; classification: 'skipped' | 'deferred' }[] = []
+      const bypassedResult: { stepId: string, stepName: string, classification: 'skipped' | 'deferred' }[] = []
 
       // 7. Classify and create routing entries for bypassed steps
       for (const { step } of bypassed) {

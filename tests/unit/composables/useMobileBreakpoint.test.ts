@@ -11,7 +11,7 @@ describe('useMobileBreakpoint', () => {
       addEventListener: vi.fn((event: string, handler: (e: MediaQueryListEvent) => void) => {
         if (event === 'change') changeHandler = handler
       }),
-      removeEventListener: vi.fn()
+      removeEventListener: vi.fn(),
     }
   }
 

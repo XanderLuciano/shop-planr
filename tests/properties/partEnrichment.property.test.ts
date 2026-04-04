@@ -19,6 +19,18 @@ import { createPartService } from '../../server/services/partService'
 import { createAuditService } from '../../server/services/auditService'
 import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
 
+/**
+ * Property 12: Part summary counts
+ *
+ * For any list of parts:
+ * - `totalCount === list.length`
+ * - `completedCount === count where currentStepId === null`
+ * - `inProgressCount === count where currentStepId !== null`
+ * - `completedCount + inProgressCount === totalCount`
+ *
+ * **Validates: Requirements 11.6**
+ */
+
 const migrationsDir = resolve(__dirname, '../../server/repositories/sqlite/migrations')
 
 function createTestDb() {
@@ -147,7 +159,6 @@ describe('Property 5: Part status derivation', () => {
   })
 })
 
-
 /**
  * Property 7: Part enrichment completeness
  *
@@ -244,20 +255,6 @@ describe('Property 7: Part enrichment completeness', () => {
     )
   })
 })
-
-
-/**
- * Property 12: Part summary counts
- *
- * For any list of parts:
- * - `totalCount === list.length`
- * - `completedCount === count where currentStepId === null`
- * - `inProgressCount === count where currentStepId !== null`
- * - `completedCount + inProgressCount === totalCount`
- *
- * **Validates: Requirements 11.6**
- */
-import type { EnrichedPart } from '../../server/types/computed'
 
 /** Pure summary count logic matching the Parts tab implementation */
 function computeSummaryCounts(parts: Array<{ currentStepId: string | null }>) {

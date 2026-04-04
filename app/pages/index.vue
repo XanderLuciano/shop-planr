@@ -23,8 +23,8 @@ async function loadJobProgress() {
       jobs.value.map(job =>
         $fetch<{ progress: JobProgress }>(`/api/jobs/${job.id}`)
           .then(detail => detail.progress)
-          .catch(() => null)
-      )
+          .catch(() => null),
+      ),
     )
     jobProgressList.value = results.filter((p): p is JobProgress => p !== null)
   } finally {
@@ -35,7 +35,7 @@ async function loadJobProgress() {
 const activeJobCount = computed(() => jobs.value.length)
 
 const totalInProgress = computed(() =>
-  jobProgressList.value.reduce((sum, p) => sum + p.inProgressParts, 0)
+  jobProgressList.value.reduce((sum, p) => sum + p.inProgressParts, 0),
 )
 
 const summaryCards = computed(() => [
@@ -43,26 +43,26 @@ const summaryCards = computed(() => [
     title: 'Active Jobs',
     value: activeJobCount.value,
     icon: 'i-lucide-briefcase',
-    to: '/jobs'
+    to: '/jobs',
   },
   {
     title: 'Parts In Progress',
     value: totalInProgress.value,
     icon: 'i-lucide-activity',
-    to: '/jobs'
+    to: '/jobs',
   },
   {
     title: 'Completed Today',
     value: '—',
     icon: 'i-lucide-check-circle',
-    to: '/jobs'
+    to: '/jobs',
   },
   {
     title: 'Bottleneck Alerts',
     value: 0,
     icon: 'i-lucide-alert-triangle',
-    to: '/parts'
-  }
+    to: '/parts',
+  },
 ])
 
 onMounted(() => {

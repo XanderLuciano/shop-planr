@@ -48,7 +48,7 @@ function createDbUpToVersion(maxVersion: number): Database.Database {
     db.transaction(() => {
       db.exec(migration.sql)
       db.prepare(
-        'INSERT INTO _migrations (version, name, applied_at, checksum) VALUES (?, ?, ?, ?)'
+        'INSERT INTO _migrations (version, name, applied_at, checksum) VALUES (?, ?, ?, ?)',
       ).run(migration.version, migration.name, new Date().toISOString(), migration.checksum)
     })()
     db.pragma('foreign_keys = ON')
@@ -68,7 +68,7 @@ function runSingleMigration(db: Database.Database, version: number): void {
   db.transaction(() => {
     db.exec(migration.sql)
     db.prepare(
-      'INSERT INTO _migrations (version, name, applied_at, checksum) VALUES (?, ?, ?, ?)'
+      'INSERT INTO _migrations (version, name, applied_at, checksum) VALUES (?, ?, ?, ?)',
     ).run(migration.version, migration.name, new Date().toISOString(), migration.checksum)
   })()
   db.pragma('foreign_keys = ON')
@@ -115,8 +115,8 @@ const arbNameListWithDuplicates = fc.array(arbName, { minLength: 1, maxLength: 5
   .chain(pool =>
     fc.array(
       fc.integer({ min: 0, max: 100 }).map(i => pool[i % pool.length]),
-      { minLength: 1, maxLength: 12 }
-    )
+      { minLength: 1, maxLength: 12 },
+    ),
   )
 
 describe('Properties 7 & 8: Migration Username Deduplication & Data Preservation', () => {
@@ -167,7 +167,7 @@ describe('Properties 7 & 8: Migration Username Deduplication & Data Preservation
 
         db.close()
       }),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -210,7 +210,7 @@ describe('Properties 7 & 8: Migration Username Deduplication & Data Preservation
 
         db.close()
       }),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })

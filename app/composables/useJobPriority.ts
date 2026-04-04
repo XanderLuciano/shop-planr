@@ -31,11 +31,11 @@ export function useJobPriority() {
     try {
       const priorities = orderedJobs.value.map((job, index) => ({
         jobId: job.id,
-        priority: index + 1
+        priority: index + 1,
       }))
       await $fetch('/api/jobs/priorities', {
         method: 'PATCH',
-        body: { priorities }
+        body: { priorities },
       })
       isEditingPriority.value = false
       if (refresh) {
@@ -53,6 +53,6 @@ export function useJobPriority() {
     enterEditMode,
     cancelEdit,
     reorder,
-    savePriorities
+    savePriorities,
   }
 }

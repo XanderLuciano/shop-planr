@@ -19,7 +19,7 @@ const arbJob = () =>
     name: fc.string({ minLength: 1, maxLength: 50 }),
     goalQuantity: fc.integer({ min: 1, max: 10000 }),
     createdAt: fc.constant(new Date().toISOString()),
-    updatedAt: fc.constant(new Date().toISOString())
+    updatedAt: fc.constant(new Date().toISOString()),
   })
 
 /** Generate a valid Certificate object */
@@ -28,7 +28,7 @@ const arbCert = () =>
     id: fc.string({ minLength: 1, maxLength: 20 }).map(s => `cert_${s.replace(/[^a-zA-Z0-9]/g, 'x')}`),
     type: fc.constantFrom('material' as const, 'process' as const),
     name: fc.string({ minLength: 1, maxLength: 50 }),
-    createdAt: fc.constant(new Date().toISOString())
+    createdAt: fc.constant(new Date().toISOString()),
   })
 
 /** Generate a valid ShopUser object */
@@ -37,7 +37,7 @@ const arbUser = () =>
     id: fc.string({ minLength: 1, maxLength: 20 }).map(s => `user_${s.replace(/[^a-zA-Z0-9]/g, 'x')}`),
     name: fc.string({ minLength: 1, maxLength: 50 }),
     active: fc.boolean(),
-    createdAt: fc.constant(new Date().toISOString())
+    createdAt: fc.constant(new Date().toISOString()),
   })
 
 /** Generate a valid Part object */
@@ -50,7 +50,7 @@ const arbPart = () =>
     status: fc.constantFrom('in_progress' as const, 'completed' as const),
     forceCompleted: fc.constant(false),
     createdAt: fc.constant(new Date().toISOString()),
-    updatedAt: fc.constant(new Date().toISOString())
+    updatedAt: fc.constant(new Date().toISOString()),
   })
 
 describe('Property 12: Malformed JSON Error Reporting', () => {
@@ -71,9 +71,9 @@ describe('Property 12: Malformed JSON Error Reporting', () => {
           } catch (e: any) {
             expect(e.message).toContain(fieldToRemove)
           }
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -94,9 +94,9 @@ describe('Property 12: Malformed JSON Error Reporting', () => {
           } catch (e: any) {
             expect(e.message).toContain('goalQuantity')
           }
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -117,9 +117,9 @@ describe('Property 12: Malformed JSON Error Reporting', () => {
           } catch (e: any) {
             expect(e.message).toContain(fieldToRemove)
           }
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -140,9 +140,9 @@ describe('Property 12: Malformed JSON Error Reporting', () => {
           } catch (e: any) {
             expect(e.message).toContain('type')
           }
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -163,9 +163,9 @@ describe('Property 12: Malformed JSON Error Reporting', () => {
           } catch (e: any) {
             expect(e.message).toContain('active')
           }
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -186,9 +186,9 @@ describe('Property 12: Malformed JSON Error Reporting', () => {
           } catch (e: any) {
             expect(e.message).toContain(fieldToRemove)
           }
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -206,9 +206,9 @@ describe('Property 12: Malformed JSON Error Reporting', () => {
           } catch (e: any) {
             expect(e.message).toContain('invalid JSON')
           }
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -225,9 +225,9 @@ describe('Property 12: Malformed JSON Error Reporting', () => {
           } catch (e: any) {
             expect(e.message).toContain('expected an object')
           }
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })

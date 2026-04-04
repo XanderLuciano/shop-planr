@@ -72,7 +72,7 @@ async function onSubmit() {
         location: s.location.trim() || undefined,
         optional: s.optional,
         dependencyType: s.dependencyType,
-      }))
+      })),
     })
     showForm.value = false
     resetForm()
@@ -114,31 +114,71 @@ onMounted(() => {
 <template>
   <div class="p-4 space-y-3 max-w-4xl">
     <div class="flex items-center justify-between">
-      <h1 class="text-lg font-bold text-(--ui-text-highlighted)">Templates</h1>
-      <UButton v-if="!showForm" icon="i-lucide-plus" label="New Template" size="sm" @click="showForm = true" />
+      <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
+        Templates
+      </h1>
+      <UButton
+        v-if="!showForm"
+        icon="i-lucide-plus"
+        label="New Template"
+        size="sm"
+        @click="showForm = true"
+      />
     </div>
 
     <!-- Create form -->
-    <div v-if="showForm" class="space-y-3 p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50">
-      <div class="text-xs font-semibold text-(--ui-text-highlighted)">New Template</div>
+    <div
+      v-if="showForm"
+      class="space-y-3 p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50"
+    >
+      <div class="text-xs font-semibold text-(--ui-text-highlighted)">
+        New Template
+      </div>
 
       <div>
         <label class="block text-xs text-(--ui-text-muted) mb-0.5">Template Name</label>
-        <UInput v-model="templateName" size="sm" placeholder="e.g. Standard Machining Route" class="max-w-sm" />
+        <UInput
+          v-model="templateName"
+          size="sm"
+          placeholder="e.g. Standard Machining Route"
+          class="max-w-sm"
+        />
       </div>
 
       <div>
         <div class="flex items-center justify-between mb-1">
           <label class="text-xs font-medium text-(--ui-text-muted)">Process Steps</label>
-          <UButton icon="i-lucide-plus" size="xs" variant="ghost" label="Add Step" @click="addStep" />
+          <UButton
+            icon="i-lucide-plus"
+            size="xs"
+            variant="ghost"
+            label="Add Step"
+            @click="addStep"
+          />
         </div>
         <div class="space-y-2">
-          <div v-for="(step, i) in steps" :key="i" class="flex flex-wrap items-center gap-2 border border-(--ui-border) rounded-md p-2">
+          <div
+            v-for="(step, i) in steps"
+            :key="i"
+            class="flex flex-wrap items-center gap-2 border border-(--ui-border) rounded-md p-2"
+          >
             <span class="text-xs text-(--ui-text-muted) w-5 shrink-0 text-right">{{ i + 1 }}.</span>
-            <ProcessLocationDropdown v-model="step.name" type="process" class="flex-1" />
-            <ProcessLocationDropdown v-model="step.location" type="location" class="flex-1" />
+            <ProcessLocationDropdown
+              v-model="step.name"
+              type="process"
+              class="flex-1"
+            />
+            <ProcessLocationDropdown
+              v-model="step.location"
+              type="location"
+              class="flex-1"
+            />
             <label class="flex items-center gap-1 text-xs shrink-0">
-              <input v-model="step.optional" type="checkbox" class="rounded">
+              <input
+                v-model="step.optional"
+                type="checkbox"
+                class="rounded"
+              >
               Opt
             </label>
             <USelect
@@ -149,57 +189,125 @@ onMounted(() => {
               size="xs"
               class="w-32 shrink-0"
             />
-            <UButton icon="i-lucide-chevron-up" size="xs" variant="ghost" color="neutral" :disabled="i === 0" @click="moveStep(i, -1)" />
-            <UButton icon="i-lucide-chevron-down" size="xs" variant="ghost" color="neutral" :disabled="i === steps.length - 1" @click="moveStep(i, 1)" />
-            <UButton icon="i-lucide-x" size="xs" variant="ghost" color="error" :disabled="steps.length <= 1" @click="removeStep(i)" />
+            <UButton
+              icon="i-lucide-chevron-up"
+              size="xs"
+              variant="ghost"
+              color="neutral"
+              :disabled="i === 0"
+              @click="moveStep(i, -1)"
+            />
+            <UButton
+              icon="i-lucide-chevron-down"
+              size="xs"
+              variant="ghost"
+              color="neutral"
+              :disabled="i === steps.length - 1"
+              @click="moveStep(i, 1)"
+            />
+            <UButton
+              icon="i-lucide-x"
+              size="xs"
+              variant="ghost"
+              color="error"
+              :disabled="steps.length <= 1"
+              @click="removeStep(i)"
+            />
           </div>
         </div>
       </div>
 
-      <p v-if="formError" class="text-xs text-red-500">{{ formError }}</p>
+      <p
+        v-if="formError"
+        class="text-xs text-red-500"
+      >
+        {{ formError }}
+      </p>
 
       <div class="flex gap-2 justify-end">
-        <UButton variant="ghost" size="xs" label="Cancel" @click="showForm = false; resetForm()" />
-        <UButton size="xs" label="Create Template" :loading="formSaving" @click="onSubmit" />
+        <UButton
+          variant="ghost"
+          size="xs"
+          label="Cancel"
+          @click="showForm = false; resetForm()"
+        />
+        <UButton
+          size="xs"
+          label="Create Template"
+          :loading="formSaving"
+          @click="onSubmit"
+        />
       </div>
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="flex items-center gap-2 text-sm text-(--ui-text-muted)">
-      <UIcon name="i-lucide-loader-2" class="animate-spin size-4" />
+    <div
+      v-if="loading"
+      class="flex items-center gap-2 text-sm text-(--ui-text-muted)"
+    >
+      <UIcon
+        name="i-lucide-loader-2"
+        class="animate-spin size-4"
+      />
       Loading templates...
     </div>
 
     <!-- Empty state -->
-    <div v-else-if="!templates.length && !showForm" class="text-sm text-(--ui-text-muted) py-8 text-center">
+    <div
+      v-else-if="!templates.length && !showForm"
+      class="text-sm text-(--ui-text-muted) py-8 text-center"
+    >
       No templates yet. Create a template to quickly set up common production routes.
     </div>
 
     <!-- Template list -->
-    <div v-else class="space-y-2">
-      <div v-for="t in templates" :key="t.id" class="border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50">
+    <div
+      v-else
+      class="space-y-2"
+    >
+      <div
+        v-for="t in templates"
+        :key="t.id"
+        class="border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50"
+      >
         <div class="flex items-center justify-between px-3 py-2">
           <div class="min-w-0 flex-1">
-            <div class="text-sm font-medium text-(--ui-text-highlighted)">{{ t.name }}</div>
+            <div class="text-sm font-medium text-(--ui-text-highlighted)">
+              {{ t.name }}
+            </div>
             <div class="text-xs text-(--ui-text-muted) mt-0.5 truncate">
               {{ t.steps.length }} steps · {{ stepPreview(t) }}
             </div>
           </div>
           <div class="flex items-center gap-1 shrink-0">
             <UButton
-              icon="i-lucide-pencil" size="xs" variant="ghost" color="neutral"
+              icon="i-lucide-pencil"
+              size="xs"
+              variant="ghost"
+              color="neutral"
               @click="editingTemplateId = editingTemplateId === t.id ? null : t.id"
             />
             <UButton
-              icon="i-lucide-trash-2" size="xs" variant="ghost" color="error"
-              :loading="deleting === t.id" @click="onDelete(t)"
+              icon="i-lucide-trash-2"
+              size="xs"
+              variant="ghost"
+              color="error"
+              :loading="deleting === t.id"
+              @click="onDelete(t)"
             />
           </div>
         </div>
 
         <!-- Edit form -->
-        <div v-if="editingTemplateId === t.id" class="px-3 pb-3 border-t border-(--ui-border)">
-          <TemplateEditor :template="t" @saved="onEditSaved" @cancel="editingTemplateId = null" />
+        <div
+          v-if="editingTemplateId === t.id"
+          class="px-3 pb-3 border-t border-(--ui-border)"
+        >
+          <TemplateEditor
+            :template="t"
+            @saved="onEditSaved"
+            @cancel="editingTemplateId = null"
+          />
         </div>
       </div>
     </div>

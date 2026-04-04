@@ -51,7 +51,7 @@ export function useViewFilters() {
       priority?: (item: T) => string | undefined
       label?: (item: T) => string | undefined
       status?: (item: T) => 'active' | 'completed' | undefined
-    }
+    },
   ): T[] {
     const f = filters.value
     return items.filter((item) => {
@@ -91,6 +91,6 @@ export function useViewFilters() {
     filters,
     updateFilter,
     clearFilters,
-    applyFilters
+    applyFilters,
   }
 }

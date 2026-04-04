@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { Job, Path, ProcessStep } from '~/server/types/domain'
 
+import { useJobForm } from '~/app/composables/useJobForm'
+
 // ---- Mocks ----
 
 const mockCreateJob = vi.fn()
@@ -21,8 +23,6 @@ vi.stubGlobal('usePaths', () => ({
 vi.stubGlobal('useUsers', () => ({
   requireUser: () => ({ id: 'test-user-id', username: 'test', displayName: 'Test', isAdmin: true, active: true, createdAt: '' }),
 }))
-
-import { useJobForm, computePathChanges } from '~/app/composables/useJobForm'
 
 // ---- Helpers ----
 

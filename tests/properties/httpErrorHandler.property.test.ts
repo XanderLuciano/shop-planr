@@ -55,8 +55,7 @@ describe('Property 1: Mapped error classification preserves status and message',
         let caught: unknown
         try {
           httpError(error)
-        }
-        catch (e) {
+        } catch (e) {
           caught = e
         }
 
@@ -94,8 +93,7 @@ describe('Property 2: Unknown errors produce 500 with generic message', () => {
         let caught: unknown
         try {
           httpError(error)
-        }
-        catch (e) {
+        } catch (e) {
           caught = e
         }
 
@@ -138,8 +136,7 @@ describe('Property 3: H3Error passthrough', () => {
         let caught: unknown
         try {
           httpError(original)
-        }
-        catch (e) {
+        } catch (e) {
           caught = e
         }
 
@@ -151,8 +148,7 @@ describe('Property 3: H3Error passthrough', () => {
         const h3Err = caught as ReturnType<typeof createError>
         if (STATUS_MESSAGES[statusCode]) {
           expect(h3Err.statusMessage).toBe(STATUS_MESSAGES[statusCode])
-        }
-        else {
+        } else {
           expect(h3Err.statusMessage).toBe(original.statusMessage)
         }
       }),

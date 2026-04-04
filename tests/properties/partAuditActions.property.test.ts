@@ -46,7 +46,7 @@ const DEPRECATED_SERIAL_ACTIONS = [
   'serial_force_completed',
 ]
 
-const EXPECTED_PART_ACTIONS: Record<string, string> = {
+const _EXPECTED_PART_ACTIONS: Record<string, string> = {
   recordPartCreation: 'part_created',
   recordPartAdvancement: 'part_advanced',
   recordPartCompletion: 'part_completed',

@@ -35,10 +35,10 @@ describe('Property 8: Bonus Part Tracking Consistency', () => {
   it('producedQuantity always equals total part count and orderedQuantity equals goalQuantity', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 1, max: 100 }),  // goalQuantity
-        fc.integer({ min: 0, max: 200 }),  // totalParts (can exceed goal)
-        fc.integer({ min: 0, max: 200 }),  // completedParts
-        fc.integer({ min: 0, max: 200 }),  // scrappedParts
+        fc.integer({ min: 1, max: 100 }), // goalQuantity
+        fc.integer({ min: 0, max: 200 }), // totalParts (can exceed goal)
+        fc.integer({ min: 0, max: 200 }), // completedParts
+        fc.integer({ min: 0, max: 200 }), // scrappedParts
         (goalQuantity, totalParts, completedParts, scrappedParts) => {
           // Ensure counts are consistent: completed + scrapped <= total
           const adjustedCompleted = Math.min(completedParts, totalParts)
@@ -69,11 +69,11 @@ describe('Property 8: Bonus Part Tracking Consistency', () => {
   it('bonus parts (totalSerials > goalQuantity) produce progress > 100% when all completed', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 1, max: 50 }),   // goalQuantity
-        fc.integer({ min: 1, max: 50 }),   // bonusCount (extra beyond goal)
+        fc.integer({ min: 1, max: 50 }), // goalQuantity
+        fc.integer({ min: 1, max: 50 }), // bonusCount (extra beyond goal)
         (goalQuantity, bonusCount) => {
           const totalParts = goalQuantity + bonusCount
-          const completedParts = totalParts  // all completed
+          const completedParts = totalParts // all completed
           const scrappedParts = 0
 
           const progress = computeJobProgress(goalQuantity, totalParts, completedParts, scrappedParts)

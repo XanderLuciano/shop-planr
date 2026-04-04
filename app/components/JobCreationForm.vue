@@ -15,7 +15,7 @@ const emit = defineEmits<{
 const {
   jobDraft,
   pathDrafts,
-  errors,
+  errors: _errors,
   submitting,
   submitError,
   addPath,
@@ -99,7 +99,9 @@ function handleCancel() {
 
     <!-- Job-level fields -->
     <div class="space-y-4">
-      <h3 class="text-lg font-semibold text-(--ui-text-highlighted)">Job Details</h3>
+      <h3 class="text-lg font-semibold text-(--ui-text-highlighted)">
+        Job Details
+      </h3>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-(--ui-text-highlighted) mb-1">Job Name</label>
@@ -109,7 +111,11 @@ function handleCancel() {
             :color="getFieldError('job.name') ? 'error' : undefined"
             @update:model-value="clearFieldError('job.name')"
           />
-          <p v-if="getFieldError('job.name')" data-error class="text-xs text-(--ui-error) mt-1">
+          <p
+            v-if="getFieldError('job.name')"
+            data-error
+            class="text-xs text-(--ui-error) mt-1"
+          >
             {{ getFieldError('job.name') }}
           </p>
         </div>
@@ -123,7 +129,11 @@ function handleCancel() {
             :color="getFieldError('job.goalQuantity') ? 'error' : undefined"
             @update:model-value="clearFieldError('job.goalQuantity')"
           />
-          <p v-if="getFieldError('job.goalQuantity')" data-error class="text-xs text-(--ui-error) mt-1">
+          <p
+            v-if="getFieldError('job.goalQuantity')"
+            data-error
+            class="text-xs text-(--ui-error) mt-1"
+          >
             {{ getFieldError('job.goalQuantity') }}
           </p>
         </div>
@@ -135,12 +145,26 @@ function handleCancel() {
       <div class="flex items-center justify-between">
         <h3 class="text-lg font-semibold text-(--ui-text-highlighted) flex items-center gap-2">
           Paths
-          <UBadge v-if="pathDrafts.length" variant="subtle" size="sm">{{ pathDrafts.length }}</UBadge>
+          <UBadge
+            v-if="pathDrafts.length"
+            variant="subtle"
+            size="sm"
+          >
+            {{ pathDrafts.length }}
+          </UBadge>
         </h3>
-        <UButton icon="i-lucide-plus" label="Add Path" size="sm" @click="addPath" />
+        <UButton
+          icon="i-lucide-plus"
+          label="Add Path"
+          size="sm"
+          @click="addPath"
+        />
       </div>
 
-      <p v-if="!pathDrafts.length" class="text-sm text-(--ui-text-muted)">
+      <p
+        v-if="!pathDrafts.length"
+        class="text-sm text-(--ui-text-muted)"
+      >
         No paths defined yet. Click "Add Path" to add a routing path.
       </p>
 
@@ -162,7 +186,11 @@ function handleCancel() {
                 :color="getFieldError(`paths[${pathIndex}].name`) ? 'error' : undefined"
                 @update:model-value="clearFieldError(`paths[${pathIndex}].name`)"
               />
-              <p v-if="getFieldError(`paths[${pathIndex}].name`)" data-error class="text-xs text-(--ui-error) mt-1">
+              <p
+                v-if="getFieldError(`paths[${pathIndex}].name`)"
+                data-error
+                class="text-xs text-(--ui-error) mt-1"
+              >
                 {{ getFieldError(`paths[${pathIndex}].name`) }}
               </p>
             </div>
@@ -176,7 +204,11 @@ function handleCancel() {
                 :color="getFieldError(`paths[${pathIndex}].goalQuantity`) ? 'error' : undefined"
                 @update:model-value="clearFieldError(`paths[${pathIndex}].goalQuantity`)"
               />
-              <p v-if="getFieldError(`paths[${pathIndex}].goalQuantity`)" data-error class="text-xs text-(--ui-error) mt-1">
+              <p
+                v-if="getFieldError(`paths[${pathIndex}].goalQuantity`)"
+                data-error
+                class="text-xs text-(--ui-error) mt-1"
+              >
                 {{ getFieldError(`paths[${pathIndex}].goalQuantity`) }}
               </p>
             </div>
@@ -184,7 +216,10 @@ function handleCancel() {
               <label class="block text-xs font-medium text-(--ui-text-muted) mb-1 flex items-center gap-1">
                 Advancement Mode
                 <UTooltip :ui="{ content: 'h-auto py-2 px-3', text: 'whitespace-normal' }">
-                  <UIcon name="i-lucide-info" class="size-3.5 text-(--ui-text-dimmed) cursor-help" />
+                  <UIcon
+                    name="i-lucide-info"
+                    class="size-3.5 text-(--ui-text-dimmed) cursor-help"
+                  />
                   <template #content>
                     <div class="text-xs space-y-1 max-w-64">
                       <p><span class="font-semibold">Strict:</span> Parts must follow steps in exact order.</p>
@@ -212,7 +247,10 @@ function handleCancel() {
         </div>
 
         <!-- Apply Template -->
-        <div v-if="templates.length > 0" class="flex items-center gap-2">
+        <div
+          v-if="templates.length > 0"
+          class="flex items-center gap-2"
+        >
           <USelect
             :model-value="templateSelections[path._clientId] || SELECT_NONE"
             :items="[{ label: 'Apply Template...', value: SELECT_NONE, disabled: true }, ...templates.map(t => ({ label: `${t.name} (${t.steps.length} steps)`, value: t.id }))]"
@@ -223,7 +261,11 @@ function handleCancel() {
         </div>
 
         <!-- Steps validation error -->
-        <p v-if="getFieldError(`paths[${pathIndex}].steps`)" data-error class="text-xs text-(--ui-error)">
+        <p
+          v-if="getFieldError(`paths[${pathIndex}].steps`)"
+          data-error
+          class="text-xs text-(--ui-error)"
+        >
           {{ getFieldError(`paths[${pathIndex}].steps`) }}
         </p>
 
@@ -235,14 +277,23 @@ function handleCancel() {
             <span>Location</span>
             <span class="flex items-center gap-0.5">
               Optional
-              <UTooltip text="When checked, this step can be skipped without blocking part completion." :ui="{ content: 'h-auto py-2 px-3', text: 'whitespace-normal' }">
-                <UIcon name="i-lucide-info" class="size-3 text-(--ui-text-dimmed) cursor-help" />
+              <UTooltip
+                text="When checked, this step can be skipped without blocking part completion."
+                :ui="{ content: 'h-auto py-2 px-3', text: 'whitespace-normal' }"
+              >
+                <UIcon
+                  name="i-lucide-info"
+                  class="size-3 text-(--ui-text-dimmed) cursor-help"
+                />
               </UTooltip>
             </span>
             <span class="flex items-center gap-0.5">
               Dependency
               <UTooltip :ui="{ content: 'h-auto py-2 px-3', text: 'whitespace-normal' }">
-                <UIcon name="i-lucide-info" class="size-3 text-(--ui-text-dimmed) cursor-help" />
+                <UIcon
+                  name="i-lucide-info"
+                  class="size-3 text-(--ui-text-dimmed) cursor-help"
+                />
                 <template #content>
                   <div class="text-xs space-y-1 max-w-64">
                     <p><span class="font-semibold">Physical:</span> Previous step must complete first.</p>
@@ -271,7 +322,11 @@ function handleCancel() {
                 type="process"
                 @update:model-value="(v: string) => { step.name = v; clearFieldError(`paths[${pathIndex}].steps[${stepIndex}].name`) }"
               />
-              <p v-if="getFieldError(`paths[${pathIndex}].steps[${stepIndex}].name`)" data-error class="text-xs text-(--ui-error) mt-0.5">
+              <p
+                v-if="getFieldError(`paths[${pathIndex}].steps[${stepIndex}].name`)"
+                data-error
+                class="text-xs text-(--ui-error) mt-0.5"
+              >
                 {{ getFieldError(`paths[${pathIndex}].steps[${stepIndex}].name`) }}
               </p>
             </div>

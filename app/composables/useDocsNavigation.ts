@@ -11,7 +11,7 @@ export function useDocsNavigation() {
 
   const { data: navigation } = useAsyncData(
     'docs-navigation',
-    () => queryCollectionNavigation('docs', ['icon', 'method', 'endpoint'])
+    () => queryCollectionNavigation('docs', ['icon', 'method', 'endpoint']),
   )
 
   const currentCategory = computed<string | null>(() => {
@@ -27,6 +27,6 @@ export function useDocsNavigation() {
   return {
     navigation: navigation as Ref<ContentNavigationItem[] | null>,
     currentCategory,
-    isActive
+    isActive,
   }
 }

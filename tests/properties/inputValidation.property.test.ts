@@ -39,7 +39,7 @@ function setupServices(db: InstanceType<typeof Database>) {
     paths: new SQLitePathRepository(db),
     parts: new SQLitePartRepository(db),
     certs: new SQLiteCertRepository(db),
-    audit: new SQLiteAuditRepository(db)
+    audit: new SQLiteAuditRepository(db),
   }
 
   const partIdGenerator = createSequentialPartIdGenerator({
@@ -49,7 +49,7 @@ function setupServices(db: InstanceType<typeof Database>) {
     },
     setCounter: (v: number) => {
       db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-    }
+    },
   })
 
   const auditService = createAuditService({ audit: repos.audit })
@@ -58,7 +58,7 @@ function setupServices(db: InstanceType<typeof Database>) {
   const partService = createPartService(
     { parts: repos.parts, paths: repos.paths, certs: repos.certs },
     auditService,
-    partIdGenerator
+    partIdGenerator,
   )
   const certService = createCertService({ certs: repos.certs }, auditService)
 
@@ -91,9 +91,9 @@ describe('Property 11: Invalid Input Rejection', () => {
 
           db.close()
           db = null as any
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -113,7 +113,7 @@ describe('Property 11: Invalid Input Rejection', () => {
               jobId: job.id,
               name: 'Empty Path',
               goalQuantity: goalQty,
-              steps: []
+              steps: [],
             })
           }).toThrow(ValidationError)
 
@@ -122,9 +122,9 @@ describe('Property 11: Invalid Input Rejection', () => {
 
           db.close()
           db = null as any
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -139,11 +139,11 @@ describe('Property 11: Invalid Input Rejection', () => {
           const job = jobService.createJob({ name: 'Test Job', goalQuantity: 50 })
 
           // Create a path with steps, then update to remove all steps
-          const path = pathService.createPath({
+          const _path = pathService.createPath({
             jobId: job.id,
             name: 'Will Be Stepless',
             goalQuantity: 50,
-            steps: [{ name: 'Temp Step' }]
+            steps: [{ name: 'Temp Step' }],
           })
 
           // Remove steps by updating with a single step, then directly clear steps in DB
@@ -161,7 +161,7 @@ describe('Property 11: Invalid Input Rejection', () => {
           expect(() => {
             partService.batchCreateParts(
               { jobId: job.id, pathId: 'nonexistent_path', quantity },
-              'user_test'
+              'user_test',
             )
           }).toThrow(NotFoundError)
 
@@ -170,9 +170,9 @@ describe('Property 11: Invalid Input Rejection', () => {
 
           db.close()
           db = null as any
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -189,11 +189,11 @@ describe('Property 11: Invalid Input Rejection', () => {
             jobId: job.id,
             name: 'Main Path',
             goalQuantity: partCount,
-            steps: [{ name: 'OP1' }]
+            steps: [{ name: 'OP1' }],
           })
           const parts = partService.batchCreateParts(
             { jobId: job.id, pathId: path.id, quantity: partCount },
-            'user_test'
+            'user_test',
           )
 
           const auditBefore = repos.audit.list().length
@@ -203,7 +203,7 @@ describe('Property 11: Invalid Input Rejection', () => {
             certService.batchAttachCert({
               certId: 'nonexistent_cert_id',
               partIds: parts.map(s => s.id),
-              userId: 'user_test'
+              userId: 'user_test',
             })
           }).toThrow(NotFoundError)
 
@@ -217,9 +217,9 @@ describe('Property 11: Invalid Input Rejection', () => {
 
           db.close()
           db = null as any
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })

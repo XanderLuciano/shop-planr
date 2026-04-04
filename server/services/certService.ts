@@ -8,7 +8,7 @@ import { generateId } from '../utils/idGenerator'
 
 export function createCertService(
   repos: { certs: CertRepository },
-  auditService: AuditService
+  auditService: AuditService,
 ) {
   return {
     createCert(input: CreateCertInput): Certificate {
@@ -20,7 +20,7 @@ export function createCertService(
         type: input.type,
         name: input.name,
         metadata: input.metadata,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       }
 
       return repos.certs.create(cert)
@@ -57,7 +57,7 @@ export function createCertService(
         certId: params.certId,
         stepId: params.stepId,
         attachedAt: now,
-        attachedBy: params.userId
+        attachedBy: params.userId,
       })
 
       auditService.recordCertAttachment({
@@ -66,7 +66,7 @@ export function createCertService(
         certId: params.certId,
         stepId: params.stepId,
         jobId: params.jobId,
-        pathId: params.pathId
+        pathId: params.pathId,
       })
 
       return attachment
@@ -99,7 +99,7 @@ export function createCertService(
         certId: input.certId,
         stepId: '',
         attachedAt: now,
-        attachedBy: input.userId
+        attachedBy: input.userId,
       }))
 
       const results = repos.certs.batchAttach(attachments)
@@ -110,7 +110,7 @@ export function createCertService(
           userId: input.userId,
           partId: attachment.partId,
           certId: input.certId,
-          stepId: attachment.stepId
+          stepId: attachment.stepId,
         })
       }
 

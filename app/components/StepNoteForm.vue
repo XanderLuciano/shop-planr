@@ -26,7 +26,7 @@ const jiraPushResult = ref('')
 const jiraPushIsError = ref(false)
 
 const canPushToJira = computed(() =>
-  !!props.jiraTicketKey && !!props.jiraPushEnabled
+  !!props.jiraTicketKey && !!props.jiraPushEnabled,
 )
 
 async function onSubmit() {
@@ -44,7 +44,7 @@ async function onSubmit() {
       stepId: props.stepId,
       partIds: props.partIds,
       text: trimmed,
-      userId: user.id
+      userId: user.id,
     })
 
     // Push to Jira if checked

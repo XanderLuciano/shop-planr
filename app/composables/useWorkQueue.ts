@@ -55,9 +55,8 @@ export function useWorkQueue() {
       throw new Error(`Cannot advance ${partIds.length} parts — only ${job.partCount} available`)
     }
 
-    let lastResult: any = null
     for (const partId of partIds) {
-      lastResult = await $fetch(`/api/parts/${encodeURIComponent(partId)}/advance`, {
+      await $fetch(`/api/parts/${encodeURIComponent(partId)}/advance`, {
         method: 'POST',
         body: { userId },
       })

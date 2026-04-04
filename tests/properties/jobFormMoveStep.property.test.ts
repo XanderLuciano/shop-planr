@@ -12,6 +12,8 @@
 import { describe, it, vi } from 'vitest'
 import fc from 'fast-check'
 
+import { useJobForm } from '~/app/composables/useJobForm'
+
 // Stub auto-imported composables
 vi.stubGlobal('useJobs', () => ({
   createJob: vi.fn(),
@@ -25,8 +27,6 @@ vi.stubGlobal('usePaths', () => ({
 vi.stubGlobal('useUsers', () => ({
   requireUser: () => ({ id: 'test-user-id', username: 'test', displayName: 'Test', isAdmin: true, active: true, createdAt: '' }),
 }))
-
-import { useJobForm } from '~/app/composables/useJobForm'
 
 describe('Property 8: moveStep is a valid swap permutation', () => {
   it('swaps correctly for valid moves and is a no-op for invalid moves', () => {
@@ -57,7 +57,7 @@ describe('Property 8: moveStep is a valid swap permutation', () => {
 
           const isInvalidMove
             = (stepIdx === 0 && direction === -1)
-            || (stepIdx === path.steps.length - 1 && direction === 1)
+              || (stepIdx === path.steps.length - 1 && direction === 1)
 
           moveStep(path._clientId, targetClientId, direction)
 
@@ -66,8 +66,7 @@ describe('Property 8: moveStep is a valid swap permutation', () => {
           if (isInvalidMove) {
             // Steps unchanged
             expect(clientIdsAfter).toEqual(clientIdsBefore)
-          }
-          else {
+          } else {
             const targetIdx = stepIdx + direction
 
             // The two swapped positions should have exchanged

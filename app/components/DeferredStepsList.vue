@@ -64,9 +64,15 @@ async function confirmWaive() {
 </script>
 
 <template>
-  <div v-if="deferredSteps.length" class="space-y-2">
+  <div
+    v-if="deferredSteps.length"
+    class="space-y-2"
+  >
     <h4 class="text-sm font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-      <UIcon name="i-lucide-clock" class="size-4" />
+      <UIcon
+        name="i-lucide-clock"
+        class="size-4"
+      />
       Deferred Steps ({{ deferredSteps.length }})
     </h4>
 
@@ -78,20 +84,42 @@ async function confirmWaive() {
       >
         <div class="flex items-center gap-2 min-w-0">
           <span class="text-sm font-medium text-(--ui-text-highlighted) truncate">{{ step.stepName }}</span>
-          <UBadge color="warning" variant="subtle" size="xs">Deferred</UBadge>
+          <UBadge
+            color="warning"
+            variant="subtle"
+            size="xs"
+          >
+            Deferred
+          </UBadge>
         </div>
 
-        <div v-if="waiveStepId === step.stepId" class="flex items-center gap-2">
+        <div
+          v-if="waiveStepId === step.stepId"
+          class="flex items-center gap-2"
+        >
           <UInput
             v-model="waiveReason"
             placeholder="Waive reason..."
             size="xs"
             class="w-40"
           />
-          <UButton size="xs" label="Confirm" :loading="loading" @click="confirmWaive" />
-          <UButton size="xs" variant="ghost" label="Cancel" @click="cancelWaive" />
+          <UButton
+            size="xs"
+            label="Confirm"
+            :loading="loading"
+            @click="confirmWaive"
+          />
+          <UButton
+            size="xs"
+            variant="ghost"
+            label="Cancel"
+            @click="cancelWaive"
+          />
         </div>
-        <div v-else class="flex items-center gap-1 shrink-0">
+        <div
+          v-else
+          class="flex items-center gap-1 shrink-0"
+        >
           <UButton
             size="xs"
             color="primary"
@@ -111,7 +139,10 @@ async function confirmWaive() {
       </div>
     </div>
 
-    <p v-if="actionError" class="text-xs text-(--ui-error)">
+    <p
+      v-if="actionError"
+      class="text-xs text-(--ui-error)"
+    >
       {{ actionError }}
     </p>
   </div>

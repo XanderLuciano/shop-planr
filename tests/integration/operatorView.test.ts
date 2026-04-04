@@ -36,7 +36,7 @@ function getOperatorView(ctx: TestContext, stepName: string) {
           jobName: job.name,
           pathName: path.name,
           nextStepName: nextStep?.name,
-          nextStepLocation: nextStep?.location
+          nextStepLocation: nextStep?.location,
         })
       }
 
@@ -81,12 +81,12 @@ describe('Operator View Integration', () => {
       steps: [
         { name: 'Cut', location: 'Machine Shop' },
         { name: 'Weld', location: 'Weld Bay' },
-        { name: 'Inspect', location: 'QC Lab' }
-      ]
+        { name: 'Inspect', location: 'QC Lab' },
+      ],
     })
     const parts1 = partService.batchCreateParts(
       { jobId: job1.id, pathId: path1.id, quantity: 3 },
-      'op1'
+      'op1',
     )
     // Advance all 3 to "Weld" (step 1)
     for (const part of parts1) {
@@ -102,12 +102,12 @@ describe('Operator View Integration', () => {
       steps: [
         { name: 'Mill', location: 'Machine Shop' },
         { name: 'Weld', location: 'Weld Bay' },
-        { name: 'Coat', location: 'Vendor - Anodize Co.' }
-      ]
+        { name: 'Coat', location: 'Vendor - Anodize Co.' },
+      ],
     })
     const parts2 = partService.batchCreateParts(
       { jobId: job2.id, pathId: path2.id, quantity: 4 },
-      'op1'
+      'op1',
     )
     // Advance 2 to "Weld"
     for (let i = 0; i < 2; i++) {
@@ -133,13 +133,13 @@ describe('Operator View Integration', () => {
         { name: 'Raw', location: 'Receiving' },
         { name: 'Cut', location: 'Machine Shop' },
         { name: 'Weld', location: 'Weld Bay' },
-        { name: 'Inspect', location: 'QC Lab' }
-      ]
+        { name: 'Inspect', location: 'QC Lab' },
+      ],
     })
 
     const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 10 },
-      'op1'
+      'op1',
     )
 
     // Advance parts[0..6] to step 1 (Cut)
@@ -180,13 +180,13 @@ describe('Operator View Integration', () => {
       steps: [
         { name: 'Cut', location: 'Machine Shop' },
         { name: 'Coat', location: 'Vendor - Anodize Co.' },
-        { name: 'Final QC', location: 'QC Lab' }
-      ]
+        { name: 'Final QC', location: 'QC Lab' },
+      ],
     })
 
-    const parts = partService.batchCreateParts(
+    const _parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 2 },
-      'op1'
+      'op1',
     )
 
     const view = getOperatorView(ctx, 'Cut')
@@ -207,12 +207,12 @@ describe('Operator View Integration', () => {
       jobId: job.id,
       name: 'Route',
       goalQuantity: 4,
-      steps: [{ name: 'A' }, { name: 'B' }, { name: 'C' }]
+      steps: [{ name: 'A' }, { name: 'B' }, { name: 'C' }],
     })
 
     const parts = partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 4 },
-      'op1'
+      'op1',
     )
 
     // 2 at A, 1 at B, 1 at C

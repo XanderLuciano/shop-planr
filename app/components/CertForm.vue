@@ -14,12 +14,12 @@ const certName = ref(props.cert?.name ?? '')
 const metadataEntries = ref<{ key: string, value: string }[]>(
   props.cert?.metadata
     ? Object.entries(props.cert.metadata).map(([key, value]) => ({ key, value: String(value) }))
-    : []
+    : [],
 )
 
 const typeOptions = [
   { label: 'Material', value: 'material' },
-  { label: 'Process', value: 'process' }
+  { label: 'Process', value: 'process' },
 ]
 
 function addMetadataEntry() {
@@ -42,7 +42,7 @@ function onSubmit() {
   emit('submit', {
     type: certType.value,
     name: certName.value.trim(),
-    metadata: validEntries.length ? metadata : undefined
+    metadata: validEntries.length ? metadata : undefined,
   })
 }
 </script>

@@ -25,7 +25,7 @@ function certRowToDomain(row: CertRow): Certificate {
     type: row.type as Certificate['type'],
     name: row.name,
     metadata: row.metadata ? JSON.parse(row.metadata) : undefined,
-    createdAt: row.created_at
+    createdAt: row.created_at,
   }
 }
 
@@ -36,7 +36,7 @@ function attachmentRowToDomain(row: AttachmentRow): CertAttachment {
     certId: row.cert_id,
     stepId: row.step_id,
     attachedAt: row.attached_at,
-    attachedBy: row.attached_by
+    attachedBy: row.attached_by,
   }
 }
 
@@ -75,14 +75,14 @@ export class SQLiteCertRepository implements CertRepository {
 
   getAttachmentsForPart(partId: string): CertAttachment[] {
     const rows = this.db.prepare(
-      'SELECT * FROM cert_attachments WHERE part_id = ? ORDER BY attached_at ASC'
+      'SELECT * FROM cert_attachments WHERE part_id = ? ORDER BY attached_at ASC',
     ).all(partId) as AttachmentRow[]
     return rows.map(attachmentRowToDomain)
   }
 
   listAttachmentsByCertId(certId: string): CertAttachment[] {
     const rows = this.db.prepare(
-      'SELECT * FROM cert_attachments WHERE cert_id = ? ORDER BY attached_at ASC'
+      'SELECT * FROM cert_attachments WHERE cert_id = ? ORDER BY attached_at ASC',
     ).all(certId) as AttachmentRow[]
     return rows.map(attachmentRowToDomain)
   }
@@ -111,7 +111,7 @@ export class SQLiteCertRepository implements CertRepository {
         } else {
           // Already existed (UNIQUE constraint), fetch existing
           const existing = this.db.prepare(
-            'SELECT * FROM cert_attachments WHERE part_id = ? AND cert_id = ? AND step_id = ?'
+            'SELECT * FROM cert_attachments WHERE part_id = ? AND cert_id = ? AND step_id = ?',
           ).get(attachment.partId, attachment.certId, attachment.stepId) as AttachmentRow
           results.push(attachmentRowToDomain(existing))
         }
@@ -128,7 +128,7 @@ export class SQLiteCertRepository implements CertRepository {
       const chunk = partIds.slice(i, i + CHUNK_SIZE)
       const placeholders = chunk.map(() => '?').join(',')
       const result = this.db.prepare(
-        `DELETE FROM cert_attachments WHERE part_id IN (${placeholders})`
+        `DELETE FROM cert_attachments WHERE part_id IN (${placeholders})`,
       ).run(...chunk)
       totalChanges += result.changes
     }

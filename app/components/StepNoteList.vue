@@ -19,7 +19,7 @@ function formatTime(ts: string): string {
   return d.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
-    year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+    year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
   })
 }
 </script>

@@ -14,7 +14,7 @@ describe('SQLite migration system', () => {
     tempDir = mkdtempSync(join(tmpdir(), 'shop-erp-test-'))
     dbPath = join(tempDir, 'test.db')
     migrationsDir = join(tempDir, 'migrations')
-    require('fs').mkdirSync(migrationsDir)
+    require('fs').mkdirSync(migrationsDir) // eslint-disable-line @typescript-eslint/no-require-imports
   })
 
   afterEach(() => {
@@ -66,7 +66,7 @@ describe('SQLite migration system', () => {
       runMigrations(db, migrationsDir)
 
       const tables = db.prepare(
-        'SELECT name FROM sqlite_master WHERE type=\'table\' AND name=\'_migrations\''
+        'SELECT name FROM sqlite_master WHERE type=\'table\' AND name=\'_migrations\'',
       ).all()
       expect(tables).toHaveLength(1)
 
@@ -81,7 +81,7 @@ describe('SQLite migration system', () => {
 
       // Table should exist
       const tables = db.prepare(
-        'SELECT name FROM sqlite_master WHERE type=\'table\' AND name=\'foo\''
+        'SELECT name FROM sqlite_master WHERE type=\'table\' AND name=\'foo\'',
       ).all()
       expect(tables).toHaveLength(1)
 
@@ -122,7 +122,7 @@ describe('SQLite migration system', () => {
       expect(applied).toHaveLength(2)
 
       const barTable = db.prepare(
-        'SELECT name FROM sqlite_master WHERE type=\'table\' AND name=\'bar\''
+        'SELECT name FROM sqlite_master WHERE type=\'table\' AND name=\'bar\'',
       ).all()
       expect(barTable).toHaveLength(1)
 
@@ -151,7 +151,7 @@ describe('SQLite migration system', () => {
       const db = initDatabase(dbPath, migrationsDir)
 
       const tables = db.prepare(
-        'SELECT name FROM sqlite_master WHERE type=\'table\' AND name=\'items\''
+        'SELECT name FROM sqlite_master WHERE type=\'table\' AND name=\'items\'',
       ).all()
       expect(tables).toHaveLength(1)
 
@@ -165,7 +165,7 @@ describe('SQLite migration system', () => {
 
       // Verify key tables exist
       const tableNames = db.prepare(
-        'SELECT name FROM sqlite_master WHERE type=\'table\' ORDER BY name'
+        'SELECT name FROM sqlite_master WHERE type=\'table\' ORDER BY name',
       ).all() as { name: string }[]
 
       const names = tableNames.map(t => t.name)
@@ -192,7 +192,7 @@ describe('SQLite migration system', () => {
       const db = initDatabase(dbPath)
 
       const tableNames = db.prepare(
-        'SELECT name FROM sqlite_master WHERE type=\'table\' AND name=\'counters\''
+        'SELECT name FROM sqlite_master WHERE type=\'table\' AND name=\'counters\'',
       ).all()
       expect(tableNames).toHaveLength(1)
 
@@ -213,14 +213,14 @@ describe('SQLite migration system', () => {
       const db = initDatabase(dbPath)
 
       const columns = db.prepare('PRAGMA table_info(settings)').all() as {
-        name: string; type: string; notnull: number; dflt_value: string | null
+        name: string, type: string, notnull: number, dflt_value: string | null
       }[]
       const col = columns.find(c => c.name === 'page_toggles')
 
       expect(col).toBeDefined()
       expect(col!.type).toBe('TEXT')
       expect(col!.notnull).toBe(1)
-      expect(col!.dflt_value).toBe("'{}'")
+      expect(col!.dflt_value).toBe('\'{}\'')
 
       db.close()
     })
@@ -229,7 +229,7 @@ describe('SQLite migration system', () => {
       const db = initDatabase(dbPath)
 
       const indexes = db.prepare(
-        'SELECT name FROM sqlite_master WHERE type=\'index\' AND name LIKE \'idx_%\' ORDER BY name'
+        'SELECT name FROM sqlite_master WHERE type=\'index\' AND name LIKE \'idx_%\' ORDER BY name',
       ).all() as { name: string }[]
 
       const indexNames = indexes.map(i => i.name)
@@ -256,7 +256,7 @@ describe('SQLite migration system', () => {
 
       expect(() => {
         db.prepare(
-          'INSERT INTO jobs (id, name, goal_quantity, created_at, updated_at) VALUES (?, ?, ?, ?, ?)'
+          'INSERT INTO jobs (id, name, goal_quantity, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
         ).run('j1', 'Test', 0, new Date().toISOString(), new Date().toISOString())
       }).toThrow()
 
@@ -268,7 +268,7 @@ describe('SQLite migration system', () => {
 
       expect(() => {
         db.prepare(
-          'INSERT INTO certs (id, type, name, created_at) VALUES (?, ?, ?, ?)'
+          'INSERT INTO certs (id, type, name, created_at) VALUES (?, ?, ?, ?)',
         ).run('c1', 'invalid', 'Test Cert', new Date().toISOString())
       }).toThrow()
 
@@ -280,12 +280,12 @@ describe('SQLite migration system', () => {
       db.pragma('foreign_keys = OFF') // Disable FK for this isolated test
 
       db.prepare(
-        'INSERT INTO process_steps (id, path_id, name, step_order) VALUES (?, ?, ?, ?)'
+        'INSERT INTO process_steps (id, path_id, name, step_order) VALUES (?, ?, ?, ?)',
       ).run('s1', 'p1', 'Step 1', 0)
 
       expect(() => {
         db.prepare(
-          'INSERT INTO process_steps (id, path_id, name, step_order) VALUES (?, ?, ?, ?)'
+          'INSERT INTO process_steps (id, path_id, name, step_order) VALUES (?, ?, ?, ?)',
         ).run('s2', 'p1', 'Step 2', 0) // same path_id + step_order
       }).toThrow()
 

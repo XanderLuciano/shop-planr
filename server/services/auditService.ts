@@ -3,20 +3,20 @@ import type { AuditAction, AuditEntry } from '../types/domain'
 import { generateId } from '../utils/idGenerator'
 
 /** Helper: resolve partId from params that may use either partId or deprecated serialId */
-function resolvePartId(params: { partId?: string; serialId?: string }): string | undefined {
+function resolvePartId(params: { partId?: string, serialId?: string }): string | undefined {
   return params.partId ?? params.serialId
 }
 
 export function createAuditService(repos: { audit: AuditRepository }) {
   function createEntry(
     action: AuditAction,
-    fields: Omit<AuditEntry, 'id' | 'action' | 'timestamp'>
+    fields: Omit<AuditEntry, 'id' | 'action' | 'timestamp'>,
   ): AuditEntry {
     return repos.audit.create({
       id: generateId('aud'),
       action,
       timestamp: new Date().toISOString(),
-      ...fields
+      ...fields,
     })
   }
 
@@ -37,7 +37,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
         certId: params.certId,
         stepId: params.stepId,
         jobId: params.jobId,
-        pathId: params.pathId
+        pathId: params.pathId,
       })
     },
 
@@ -51,7 +51,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
         userId: params.userId,
         jobId: params.jobId,
         pathId: params.pathId,
-        batchQuantity: params.batchQuantity
+        batchQuantity: params.batchQuantity,
       })
     },
 
@@ -71,7 +71,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
         jobId: params.jobId,
         pathId: params.pathId,
         fromStepId: params.fromStepId,
-        toStepId: params.toStepId
+        toStepId: params.toStepId,
       })
     },
 
@@ -89,7 +89,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
         partId: resolvePartId(params),
         jobId: params.jobId,
         pathId: params.pathId,
-        fromStepId: params.fromStepId
+        fromStepId: params.fromStepId,
       })
     },
 
@@ -107,7 +107,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
         jobId: params.jobId,
         pathId: params.pathId,
         stepId: params.stepId,
-        partId: resolvePartId(params)
+        partId: resolvePartId(params),
       })
     },
 
@@ -155,7 +155,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
       jobId: string
       pathId: string
       stepId: string
-      metadata: { reason: string; explanation?: string }
+      metadata: { reason: string, explanation?: string }
     }): AuditEntry {
       return createEntry('part_scrapped', {
         userId: params.userId,
@@ -163,7 +163,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
         jobId: params.jobId,
         pathId: params.pathId,
         stepId: params.stepId,
-        metadata: params.metadata
+        metadata: params.metadata,
       })
     },
 
@@ -174,14 +174,14 @@ export function createAuditService(repos: { audit: AuditRepository }) {
       serialId?: string
       jobId: string
       pathId: string
-      metadata: { reason?: string; incompleteStepIds: string[] }
+      metadata: { reason?: string, incompleteStepIds: string[] }
     }): AuditEntry {
       return createEntry('part_force_completed', {
         userId: params.userId,
         partId: resolvePartId(params),
         jobId: params.jobId,
         pathId: params.pathId,
-        metadata: params.metadata
+        metadata: params.metadata,
       })
     },
 
@@ -211,7 +211,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
       jobId?: string
       pathId?: string
       stepId: string
-      metadata: { reason: string; approverId: string }
+      metadata: { reason: string, approverId: string }
     }): AuditEntry {
       return createEntry('step_waived', {
         userId: params.userId,
@@ -265,7 +265,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
       userId: string
       pathId: string
       jobId: string
-      metadata: { pathName: string; deletedPartIds: string[]; deletedPartCount: number }
+      metadata: { pathName: string, deletedPartIds: string[], deletedPartCount: number }
     }): AuditEntry {
       return createEntry('path_deleted', {
         userId: params.userId,
@@ -277,7 +277,7 @@ export function createAuditService(repos: { audit: AuditRepository }) {
 
     recordBomEdited(params: {
       userId: string
-      metadata: { bomId: string; changeDescription: string; versionNumber: number }
+      metadata: { bomId: string, changeDescription: string, versionNumber: number }
     }): AuditEntry {
       return createEntry('bom_edited', {
         userId: params.userId,

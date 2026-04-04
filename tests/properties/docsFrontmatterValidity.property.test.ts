@@ -74,7 +74,7 @@ function parseFrontmatter(content: string): Record<string, unknown> {
 function getEndpointFiles(): string[] {
   const files: string[] = []
 
-  const subdirs = readdirSync(CONTENT_DIR).filter(entry => {
+  const subdirs = readdirSync(CONTENT_DIR).filter((entry) => {
     const fullPath = join(CONTENT_DIR, entry)
     return statSync(fullPath).isDirectory()
   })
@@ -82,7 +82,7 @@ function getEndpointFiles(): string[] {
   for (const subdir of subdirs) {
     const dirPath = join(CONTENT_DIR, subdir)
     const mdFiles = readdirSync(dirPath).filter(
-      f => f.endsWith('.md') && f !== 'index.md'
+      f => f.endsWith('.md') && f !== 'index.md',
     )
     for (const file of mdFiles) {
       files.push(join(subdir, file))
@@ -117,7 +117,7 @@ describe('Property 3: Endpoint frontmatter validity', () => {
         expect(typeof fm.method, `${relPath}: method must be a string`).toBe('string')
         expect(
           VALID_METHODS,
-          `${relPath}: method "${fm.method}" must be one of ${VALID_METHODS.join(', ')}`
+          `${relPath}: method "${fm.method}" must be one of ${VALID_METHODS.join(', ')}`,
         ).toContain(fm.method)
 
         // endpoint: non-empty string starting with /api/
@@ -125,7 +125,7 @@ describe('Property 3: Endpoint frontmatter validity', () => {
         expect((fm.endpoint as string).length, `${relPath}: endpoint must be non-empty`).toBeGreaterThan(0)
         expect(
           (fm.endpoint as string).startsWith('/api/'),
-          `${relPath}: endpoint "${fm.endpoint}" must start with /api/`
+          `${relPath}: endpoint "${fm.endpoint}" must start with /api/`,
         ).toBe(true)
 
         // service: non-empty string
@@ -136,7 +136,7 @@ describe('Property 3: Endpoint frontmatter validity', () => {
         expect(typeof fm.category, `${relPath}: category must be a string`).toBe('string')
         expect((fm.category as string).length, `${relPath}: category must be non-empty`).toBeGreaterThan(0)
       }),
-      { numRuns: endpointFiles.length * 3 }
+      { numRuns: endpointFiles.length * 3 },
     )
   })
 })

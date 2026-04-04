@@ -2,7 +2,7 @@
 import type { OperatorStepView } from '~/types/computed'
 import type { StepNote } from '~/types/domain'
 
-const props = defineProps<{
+defineProps<{
   data: OperatorStepView
   notes?: StepNote[]
 }>()
@@ -17,13 +17,13 @@ const currentColumns = [
   { key: 'partId', label: 'Part' },
   { key: 'jobName', label: 'Job' },
   { key: 'pathName', label: 'Path' },
-  { key: 'nextStep', label: 'Next Step → Location' }
+  { key: 'nextStep', label: 'Next Step → Location' },
 ]
 
 const upstreamColumns = [
   { key: 'partId', label: 'Part' },
   { key: 'jobName', label: 'Job' },
-  { key: 'pathName', label: 'Path' }
+  { key: 'pathName', label: 'Path' },
 ]
 
 function formatNextStep(row: { nextStepName?: string, nextStepLocation?: string }): string {

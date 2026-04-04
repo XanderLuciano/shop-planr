@@ -32,7 +32,7 @@ interface FilterBarProps {
   filters: WorkQueueFilterState
   availableLocations: string[]
   availableSteps: string[]
-  availableUsers: { id: string; displayName: string }[]
+  availableUsers: { id: string, displayName: string }[]
   presets: WorkQueuePreset[]
   activePresetId: string | null
   searchQuery: string
@@ -52,7 +52,7 @@ const WorkQueueFilterBar = defineComponent({
     filters: { type: Object as () => WorkQueueFilterState, required: true },
     availableLocations: { type: Array as () => string[], required: true },
     availableSteps: { type: Array as () => string[], required: true },
-    availableUsers: { type: Array as () => { id: string; displayName: string }[], required: true },
+    availableUsers: { type: Array as () => { id: string, displayName: string }[], required: true },
     presets: { type: Array as () => WorkQueuePreset[], required: true },
     activePresetId: { type: String as () => string | null, default: null },
     searchQuery: { type: String, default: '' },
@@ -161,18 +161,18 @@ const WorkQueueFilterBar = defineComponent({
         // Preset load buttons
         ...props.presets.map(preset =>
           h('button', {
-            class: 'preset-load',
+            'class': 'preset-load',
             'data-preset-id': preset.id,
-            onClick: () => emit('loadPreset', preset.id),
+            'onClick': () => emit('loadPreset', preset.id),
           }, preset.name),
         ),
 
         // Preset delete buttons
         ...props.presets.map(preset =>
           h('button', {
-            class: 'preset-delete',
+            'class': 'preset-delete',
             'data-preset-id': preset.id,
-            onClick: () => emit('deletePreset', preset.id),
+            'onClick': () => emit('deletePreset', preset.id),
           }, `Delete "${preset.name}"`),
         ),
 

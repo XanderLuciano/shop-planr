@@ -123,7 +123,7 @@ describe('USelect safety guard', () => {
         const typeUnion = match[1]!
         if (/\bundefined\b/.test(typeUnion) || /\bnull\b/.test(typeUnion)) {
           violations.push(
-            `${rel(filePath)}: USelect v-model="${binding}" ref type includes undefined/null: ref<${typeUnion}>`
+            `${rel(filePath)}: USelect v-model="${binding}" ref type includes undefined/null: ref<${typeUnion}>`,
           )
         }
       }
@@ -148,32 +148,32 @@ describe('USelect safety guard', () => {
         // Check for ref(undefined), ref(null)
         const unsafeInit = new RegExp(
           `const\\s+${escaped}\\s*=\\s*ref(?:<[^>]*>)?\\((undefined|null)\\)`,
-          'm'
+          'm',
         )
         const match = unsafeInit.exec(script)
         if (match) {
           violations.push(
-            `${rel(filePath)}: USelect v-model="${binding}" initialized with ${match[1]}`
+            `${rel(filePath)}: USelect v-model="${binding}" initialized with ${match[1]}`,
           )
         }
 
         // Check for ref('') or ref("") — empty string is reserved by Reka UI
-        const emptyStringInit = new RegExp(
+        const _emptyStringInit = new RegExp(
           `const\\s+${escaped}\\s*=\\s*ref(?:<[^>]*>)?\\((['"]){2}\\)`,
-          'm'
+          'm',
         )
         // Simpler: match ref('') or ref("")
         const emptyInit2 = new RegExp(
           `const\\s+${escaped}\\s*=\\s*ref(?:<[^>]*>)?\\(''\\)`,
-          'm'
+          'm',
         )
         const emptyInit3 = new RegExp(
           `const\\s+${escaped}\\s*=\\s*ref(?:<[^>]*>)?\\(""\\)`,
-          'm'
+          'm',
         )
         if (emptyInit2.test(script) || emptyInit3.test(script)) {
           violations.push(
-            `${rel(filePath)}: USelect v-model="${binding}" initialized with empty string '' — use SELECT_NONE instead`
+            `${rel(filePath)}: USelect v-model="${binding}" initialized with empty string '' — use SELECT_NONE instead`,
           )
         }
       }
@@ -198,7 +198,7 @@ describe('USelect safety guard', () => {
         let match
         while ((match = assignPattern.exec(script)) !== null) {
           violations.push(
-            `${rel(filePath)}: USelect v-model="${binding}" assigned ${match[1]}`
+            `${rel(filePath)}: USelect v-model="${binding}" assigned ${match[1]}`,
           )
         }
       }
@@ -223,18 +223,18 @@ describe('USelect safety guard', () => {
 
       // Check for raw '__none__' string literals in script (should use SELECT_NONE)
       const rawLiteralPattern = /['"]__none__['"]/g
-      let match
-      while ((match = rawLiteralPattern.exec(script)) !== null) {
+      let _match
+      while ((_match = rawLiteralPattern.exec(script)) !== null) {
         violations.push(
-          `${rel(filePath)}: raw '__none__' literal in script — use SELECT_NONE constant instead`
+          `${rel(filePath)}: raw '__none__' literal in script — use SELECT_NONE constant instead`,
         )
       }
 
       // Also check template for raw '__none__' (except in :items arrays where SELECT_NONE is used)
       const templateRawPattern = /['"]__none__['"]/g
-      while ((match = templateRawPattern.exec(template)) !== null) {
+      while ((_match = templateRawPattern.exec(template)) !== null) {
         violations.push(
-          `${rel(filePath)}: raw '__none__' literal in template — use SELECT_NONE constant instead`
+          `${rel(filePath)}: raw '__none__' literal in template — use SELECT_NONE constant instead`,
         )
       }
     }
@@ -245,9 +245,9 @@ describe('USelect safety guard', () => {
 
 function formatMessage(check: string, violations: string[]): string {
   return (
-    `USelect ${check} violations found. ` +
-    `Reka UI's SelectRoot does not support undefined/null/empty-string model values. ` +
-    `Use SELECT_NONE from app/utils/selectSentinel.ts.\n\n` +
-    violations.join('\n')
+    `USelect ${check} violations found. `
+    + `Reka UI's SelectRoot does not support undefined/null/empty-string model values. `
+    + `Use SELECT_NONE from app/utils/selectSentinel.ts.\n\n`
+    + violations.join('\n')
   )
 }

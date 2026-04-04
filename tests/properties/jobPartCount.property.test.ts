@@ -37,7 +37,7 @@ function setupServices(db: Database.default.Database) {
     paths: new SQLitePathRepository(db),
     parts: new SQLitePartRepository(db),
     certs: new SQLiteCertRepository(db),
-    audit: new SQLiteAuditRepository(db)
+    audit: new SQLiteAuditRepository(db),
   }
 
   const partIdGenerator = createSequentialPartIdGenerator({
@@ -47,7 +47,7 @@ function setupServices(db: Database.default.Database) {
     },
     setCounter: (v: number) => {
       db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-    }
+    },
   })
 
   const auditService = createAuditService({ audit: repos.audit })
@@ -56,7 +56,7 @@ function setupServices(db: Database.default.Database) {
   const partService = createPartService(
     { parts: repos.parts, paths: repos.paths, certs: repos.certs },
     auditService,
-    partIdGenerator
+    partIdGenerator,
   )
 
   return { jobService, pathService, partService, repos }
@@ -77,9 +77,9 @@ describe('Property 1: Job Part Count Invariant', () => {
           fc.record({
             stepCount: fc.integer({ min: 1, max: 5 }),
             partQuantity: fc.integer({ min: 1, max: 20 }),
-            advanceCount: fc.integer({ min: 0, max: 10 })
+            advanceCount: fc.integer({ min: 0, max: 10 }),
           }),
-          { minLength: 1, maxLength: 3 }
+          { minLength: 1, maxLength: 3 },
         ),
         (pathConfigs) => {
           db = createTestDb()
@@ -92,21 +92,21 @@ describe('Property 1: Job Part Count Invariant', () => {
           for (const config of pathConfigs) {
             // Create steps for this path
             const steps = Array.from({ length: config.stepCount }, (_, i) => ({
-              name: `Step ${i}`
+              name: `Step ${i}`,
             }))
 
             const path = pathService.createPath({
               jobId: job.id,
               name: `Path ${pathIds.length}`,
               goalQuantity: config.partQuantity,
-              steps
+              steps,
             })
             pathIds.push(path.id)
 
             // Create parts on this path
             const parts = partService.batchCreateParts(
               { jobId: job.id, pathId: path.id, quantity: config.partQuantity },
-              'user_test'
+              'user_test',
             )
 
             // Advance some parts randomly
@@ -132,9 +132,9 @@ describe('Property 1: Job Part Count Invariant', () => {
 
           db.close()
           db = null as any
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })

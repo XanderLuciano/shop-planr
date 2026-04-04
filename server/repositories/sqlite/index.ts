@@ -1,8 +1,7 @@
 import Database from 'better-sqlite3'
 import { createHash } from 'crypto'
 import { readdirSync, readFileSync } from 'fs'
-import { join, resolve, dirname } from 'path'
-import { fileURLToPath } from 'url'
+import { join, resolve } from 'path'
 import { SQLiteJobRepository } from './jobRepository'
 import { SQLitePathRepository } from './pathRepository'
 import { SQLitePartRepository } from './partRepository'
@@ -121,7 +120,7 @@ export function runMigrations(db: Database.Database, migrationsDir?: string): vo
       console.warn(
         `WARNING: Migration ${migration.version} (${migration.name}) has been modified after being applied. `
         + `Expected checksum ${existingChecksum}, got ${migration.checksum}. `
-        + `Do not edit migrations that have already been applied.`
+        + `Do not edit migrations that have already been applied.`,
       )
     }
   }
@@ -135,7 +134,7 @@ export function runMigrations(db: Database.Database, migrationsDir?: string): vo
     db.transaction(() => {
       db.exec(migration.sql)
       db.prepare(
-        'INSERT INTO _migrations (version, name, applied_at, checksum) VALUES (?, ?, ?, ?)'
+        'INSERT INTO _migrations (version, name, applied_at, checksum) VALUES (?, ?, ?, ?)',
       ).run(migration.version, migration.name, new Date().toISOString(), migration.checksum)
     })()
     db.pragma('foreign_keys = ON')

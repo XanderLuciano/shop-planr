@@ -16,7 +16,7 @@ async function startCamera() {
   errorMessage.value = null
   try {
     const mediaStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment' }
+      video: { facingMode: 'environment' },
     })
     stream.value = mediaStream
     if (videoRef.value) {

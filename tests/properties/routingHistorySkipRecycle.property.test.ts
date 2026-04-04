@@ -122,7 +122,7 @@ describe('Feature: step-id-part-tracking, Property 10: Multiple visits produce d
           )
 
           const stepAId = path.steps[0]!.id
-          const stepBId = path.steps[1]!.id
+          const _stepBId = path.steps[1]!.id
 
           // Advance A → B (first visit to B)
           ctx.partService.advancePart(part!.id, 'user1')

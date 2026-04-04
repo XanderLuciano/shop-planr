@@ -11,7 +11,6 @@
 import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
 import { reconcileSteps } from '~/server/services/pathService'
-import type { ProcessStep, StepInput } from '~/server/types/domain'
 
 // Arbitrary for generating existing ProcessStep arrays with unique IDs
 const arbExistingSteps = (maxLen: number) =>
@@ -21,8 +20,8 @@ const arbExistingSteps = (maxLen: number) =>
         id: fc.string({ minLength: 1, maxLength: 20 }),
         name: fc.string({ minLength: 1, maxLength: 30 }),
       }),
-      { minLength: n, maxLength: n }
-    ).filter(items => {
+      { minLength: n, maxLength: n },
+    ).filter((items) => {
       // Ensure unique IDs
       const ids = items.map(i => i.id)
       return new Set(ids).size === ids.length
@@ -34,15 +33,15 @@ const arbExistingSteps = (maxLen: number) =>
         optional: false,
         dependencyType: 'preferred' as const,
         completedCount: 0,
-      }))
-    )
+      })),
+    ),
   )
 
 describe('Property 1: Step ID Preservation (ID-based reconciliation)', () => {
   it('inputs with existing IDs are matched by ID and placed in toUpdate', () => {
     fc.assert(
       fc.property(
-        arbExistingSteps(8).chain(existingSteps => {
+        arbExistingSteps(8).chain((existingSteps) => {
           if (existingSteps.length === 0) return fc.constant({ existingSteps, shuffledIds: [] as string[] })
           return fc.shuffledSubarray(
             existingSteps.map(s => s.id),
@@ -52,7 +51,7 @@ describe('Property 1: Step ID Preservation (ID-based reconciliation)', () => {
         ({ existingSteps, shuffledIds }) => {
           if (existingSteps.length === 0) return
 
-          const inputSteps: StepInput[] = shuffledIds.map(id => {
+          const inputSteps: StepInput[] = shuffledIds.map((id) => {
             const orig = existingSteps.find(s => s.id === id)!
             return { id, name: `Updated ${orig.name}` }
           })
@@ -76,9 +75,9 @@ describe('Property 1: Step ID Preservation (ID-based reconciliation)', () => {
             expect(updated).toBeDefined()
             expect(updated!.order).toBe(i)
           }
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -88,7 +87,7 @@ describe('Property 1: Step ID Preservation (ID-based reconciliation)', () => {
         arbExistingSteps(5),
         fc.array(
           fc.record({ name: fc.string({ minLength: 1, maxLength: 30 }) }),
-          { minLength: 1, maxLength: 5 }
+          { minLength: 1, maxLength: 5 },
         ),
         (existingSteps, newInputs) => {
           // Build inputs: keep all existing (with IDs) + add new ones (without IDs)
@@ -107,9 +106,9 @@ describe('Property 1: Step ID Preservation (ID-based reconciliation)', () => {
           for (const inserted of result.toInsert) {
             expect(inserted.id).toMatch(/^step_/)
           }
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -135,9 +134,9 @@ describe('Property 1: Step ID Preservation (ID-based reconciliation)', () => {
             expect(keptIds.has(deletedId)).toBe(false)
             expect(existingSteps.some(s => s.id === deletedId)).toBe(true)
           }
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })

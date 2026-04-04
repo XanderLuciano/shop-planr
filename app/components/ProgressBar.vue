@@ -6,13 +6,13 @@ const props = withDefaults(defineProps<{
   goal: number
   inProgress?: number
 }>(), {
-  inProgress: 0
+  inProgress: 0,
 })
 
 const progress = computed(() => computeProgressBar({
   completed: props.completed,
   goal: props.goal,
-  inProgress: props.inProgress
+  inProgress: props.inProgress,
 }))
 </script>
 

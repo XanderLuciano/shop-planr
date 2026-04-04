@@ -37,7 +37,7 @@ function setupServices(db: Database.default.Database) {
     paths: new SQLitePathRepository(db),
     parts: new SQLitePartRepository(db),
     certs: new SQLiteCertRepository(db),
-    audit: new SQLiteAuditRepository(db)
+    audit: new SQLiteAuditRepository(db),
   }
 
   const partIdGenerator = createSequentialPartIdGenerator({
@@ -47,7 +47,7 @@ function setupServices(db: Database.default.Database) {
     },
     setCounter: (v: number) => {
       db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-    }
+    },
   })
 
   const auditService = createAuditService({ audit: repos.audit })
@@ -56,7 +56,7 @@ function setupServices(db: Database.default.Database) {
   const partService = createPartService(
     { parts: repos.parts, paths: repos.paths, certs: repos.certs },
     auditService,
-    partIdGenerator
+    partIdGenerator,
   )
 
   return { jobService, pathService, partService }
@@ -74,7 +74,7 @@ describe('Property 3: Sequential Step Advancement', () => {
       fc.property(
         fc.record({
           stepCount: fc.integer({ min: 1, max: 5 }),
-          advanceTimes: fc.integer({ min: 0, max: 6 })
+          advanceTimes: fc.integer({ min: 0, max: 6 }),
         }),
         ({ stepCount, advanceTimes }) => {
           db = createTestDb()
@@ -82,18 +82,18 @@ describe('Property 3: Sequential Step Advancement', () => {
 
           const job = jobService.createJob({ name: 'Test Job', goalQuantity: 10 })
           const steps = Array.from({ length: stepCount }, (_, i) => ({
-            name: `Step ${i}`
+            name: `Step ${i}`,
           }))
           const path = pathService.createPath({
             jobId: job.id,
             name: 'Route',
             goalQuantity: 10,
-            steps
+            steps,
           })
 
           const parts = partService.batchCreateParts(
             { jobId: job.id, pathId: path.id, quantity: 1 },
-            'user_test'
+            'user_test',
           )
           const partId = parts[0].id
 
@@ -120,9 +120,9 @@ describe('Property 3: Sequential Step Advancement', () => {
 
           db.close()
           db = null as any
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })

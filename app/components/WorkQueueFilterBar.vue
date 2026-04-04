@@ -11,7 +11,7 @@ interface Props {
   filters: WorkQueueFilterState
   availableLocations: string[]
   availableSteps: string[]
-  availableUsers: readonly { id: string; displayName: string }[]
+  availableUsers: readonly { id: string, displayName: string }[]
   presets: WorkQueuePreset[]
   activePresetId: string | null
   searchQuery?: string
@@ -32,7 +32,7 @@ const emit = defineEmits<{
 }>()
 
 // --- Group-by items ---
-const groupByItems: { label: string; value: GroupByDimension }[] = [
+const groupByItems: { label: string, value: GroupByDimension }[] = [
   { label: 'By Location', value: 'location' },
   { label: 'By User', value: 'user' },
   { label: 'By Step', value: 'step' },

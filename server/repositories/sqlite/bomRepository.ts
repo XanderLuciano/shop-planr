@@ -1,5 +1,5 @@
 import type Database from 'better-sqlite3'
-import type { BOM, BomEntry } from '../../types/domain'
+import type { BOM } from '../../types/domain'
 import type { BomRepository } from '../interfaces/bomRepository'
 import { NotFoundError } from '../../utils/errors'
 
@@ -38,10 +38,10 @@ function buildBomDomain(row: BomRow, entryRows: BomEntryRow[], contribRows: Cont
       bomId: e.bom_id,
       partType: e.part_type,
       requiredQuantityPerBuild: e.required_quantity_per_build,
-      contributingJobIds: contribMap.get(e.id) ?? []
+      contributingJobIds: contribMap.get(e.id) ?? [],
     })),
     createdAt: row.created_at,
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
   }
 }
 
@@ -82,7 +82,7 @@ export class SQLiteBomRepository implements BomRepository {
     if (!row) return null
 
     const entryRows = this.db.prepare(
-      'SELECT * FROM bom_entries WHERE bom_id = ?'
+      'SELECT * FROM bom_entries WHERE bom_id = ?',
     ).all(id) as BomEntryRow[]
 
     const entryIds = entryRows.map(e => e.id)
@@ -90,7 +90,7 @@ export class SQLiteBomRepository implements BomRepository {
     if (entryIds.length > 0) {
       const placeholders = entryIds.map(() => '?').join(',')
       contribRows = this.db.prepare(
-        `SELECT * FROM bom_contributing_jobs WHERE bom_entry_id IN (${placeholders})`
+        `SELECT * FROM bom_contributing_jobs WHERE bom_entry_id IN (${placeholders})`,
       ).all(...entryIds) as ContribJobRow[]
     }
 
@@ -110,7 +110,7 @@ export class SQLiteBomRepository implements BomRepository {
       ...existing,
       ...partial,
       id,
-      updatedAt: partial.updatedAt ?? new Date().toISOString()
+      updatedAt: partial.updatedAt ?? new Date().toISOString(),
     }
 
     const updateBom = this.db.prepare('UPDATE boms SET name = ?, updated_at = ? WHERE id = ?')
@@ -146,7 +146,7 @@ export class SQLiteBomRepository implements BomRepository {
 
   countContributingJobRefs(jobId: string): number {
     const row = this.db.prepare(
-      'SELECT COUNT(*) AS cnt FROM bom_contributing_jobs WHERE job_id = ?'
+      'SELECT COUNT(*) AS cnt FROM bom_contributing_jobs WHERE job_id = ?',
     ).get(jobId) as { cnt: number } | undefined
     return row?.cnt ?? 0
   }

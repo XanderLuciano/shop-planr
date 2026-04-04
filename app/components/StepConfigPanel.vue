@@ -61,7 +61,10 @@ const hasChanges = computed(() =>
   <div class="space-y-3 p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/30">
     <div class="flex items-center justify-between">
       <h4 class="text-sm font-semibold text-(--ui-text-highlighted) flex items-center gap-1.5">
-        <UIcon :name="depIcon" class="size-4" />
+        <UIcon
+          :name="depIcon"
+          class="size-4"
+        />
         Step Configuration
       </h4>
     </div>
@@ -89,7 +92,12 @@ const hasChanges = computed(() =>
       />
     </div>
 
-    <p v-if="error" class="text-xs text-(--ui-error)">{{ error }}</p>
+    <p
+      v-if="error"
+      class="text-xs text-(--ui-error)"
+    >
+      {{ error }}
+    </p>
 
     <UButton
       v-if="hasChanges"

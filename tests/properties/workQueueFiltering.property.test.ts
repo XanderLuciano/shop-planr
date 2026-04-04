@@ -59,7 +59,7 @@ const arbWorkQueueJob = (): fc.Arbitrary<WorkQueueJob> =>
     isFinalStep: fc.boolean(),
     assignedTo: arbOptionalUserId(),
     jobPriority: fc.integer({ min: 0, max: 100 }),
-  }).map((r) => ({
+  }).map(r => ({
     ...r,
     partIds: r.partIds as readonly string[],
   })) as fc.Arbitrary<WorkQueueJob>
@@ -83,7 +83,7 @@ const arbWorkQueueGroup = (): fc.Arbitrary<WorkQueueGroup> =>
     groupLabel: fc.stringMatching(/^[A-Za-z ]{1,15}$/),
     groupType: arbGroupByDimension(),
     jobs: fc.array(arbWorkQueueJob(), { minLength: 1, maxLength: 8 }),
-  }).map((r) => ({
+  }).map(r => ({
     ...r,
     totalParts: r.jobs.reduce((sum: number, j: WorkQueueJob) => sum + j.partCount, 0),
   }))
@@ -127,12 +127,12 @@ describe('Property 1: Grouping Completeness (CP-WQF-1)', () => {
           const groups = groupEntriesByDimension(entries, dimension, userNameMap)
 
           // 1. Every entry appears in exactly one group
-          const allGroupedJobs = groups.flatMap((g) => g.jobs)
+          const allGroupedJobs = groups.flatMap(g => g.jobs)
           expect(allGroupedJobs).toHaveLength(entries.length)
 
           // Verify each entry's job is present (by reference identity)
           for (const entry of entries) {
-            const count = allGroupedJobs.filter((j) => j === entry.job).length
+            const count = allGroupedJobs.filter(j => j === entry.job).length
             expect(count).toBe(1)
           }
 
@@ -173,8 +173,8 @@ describe('Property 2: Filter Subset (CP-WQF-2)', () => {
           const result = applyFilters(groups, filters, searchQuery)
 
           // Collect all input jobs in order (groupIndex, jobIndex)
-          const inputJobOrder: WorkQueueJob[] = groups.flatMap((g) => g.jobs)
-          const resultJobs: WorkQueueJob[] = result.flatMap((g) => g.jobs)
+          const inputJobOrder: WorkQueueJob[] = groups.flatMap(g => g.jobs)
+          const resultJobs: WorkQueueJob[] = result.flatMap(g => g.jobs)
 
           // 1. Every result job exists in input (subset)
           for (const job of resultJobs) {

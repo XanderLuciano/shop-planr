@@ -123,7 +123,7 @@ onMounted(() => {
             { label: 'All', value: SELECT_ALL },
             { label: 'In Progress', value: 'in-progress' },
             { label: 'Completed', value: 'completed' },
-            { label: 'Scrapped', value: 'scrapped' },
+            { label: 'Scrapped', value: 'scrapped' }
           ]"
           value-key="value"
           label-key="label"
@@ -144,41 +144,74 @@ onMounted(() => {
       </div>
       <div>
         <label class="text-xs font-medium text-(--ui-text-muted) block mb-0.5">Step</label>
-        <UInput v-model="filterStep" placeholder="Filter step..." size="xs" class="w-full md:w-32" />
+        <UInput
+          v-model="filterStep"
+          placeholder="Filter step..."
+          size="xs"
+          class="w-full md:w-32"
+        />
       </div>
       <span class="text-xs text-(--ui-text-muted)">{{ filteredParts.length }} of {{ parts.length }} parts</span>
     </div>
 
     <!-- Loading -->
-    <div v-if="loading" class="flex items-center gap-2 text-sm text-(--ui-text-muted)">
-      <UIcon name="i-lucide-loader-2" class="animate-spin size-4" />
+    <div
+      v-if="loading"
+      class="flex items-center gap-2 text-sm text-(--ui-text-muted)"
+    >
+      <UIcon
+        name="i-lucide-loader-2"
+        class="animate-spin size-4"
+      />
       Loading parts...
     </div>
 
     <!-- Empty -->
-    <div v-else-if="!parts.length" class="text-sm text-(--ui-text-muted) py-6 text-center">
+    <div
+      v-else-if="!parts.length"
+      class="text-sm text-(--ui-text-muted) py-6 text-center"
+    >
       No parts created yet.
     </div>
 
     <!-- Table — desktop -->
-    <div v-if="!loading && parts.length" class="hidden md:block border border-(--ui-border) rounded-md overflow-x-auto">
+    <div
+      v-if="!loading && parts.length"
+      class="hidden md:block border border-(--ui-border) rounded-md overflow-x-auto"
+    >
       <table class="w-full text-sm">
         <thead>
           <tr class="bg-(--ui-bg-elevated)/50 text-xs text-(--ui-text-muted)">
-            <th class="px-3 py-2 text-left cursor-pointer select-none hover:text-(--ui-text-highlighted)" @click="toggleSort('id')">
+            <th
+              class="px-3 py-2 text-left cursor-pointer select-none hover:text-(--ui-text-highlighted)"
+              @click="toggleSort('id')"
+            >
               Part{{ sortIndicator('id') }}
             </th>
-            <th class="px-3 py-2 text-left">Path</th>
-            <th class="px-3 py-2 text-left cursor-pointer select-none hover:text-(--ui-text-highlighted)" @click="toggleSort('currentStepName')">
+            <th class="px-3 py-2 text-left">
+              Path
+            </th>
+            <th
+              class="px-3 py-2 text-left cursor-pointer select-none hover:text-(--ui-text-highlighted)"
+              @click="toggleSort('currentStepName')"
+            >
               Current Step{{ sortIndicator('currentStepName') }}
             </th>
-            <th class="px-3 py-2 text-left cursor-pointer select-none hover:text-(--ui-text-highlighted)" @click="toggleSort('status')">
+            <th
+              class="px-3 py-2 text-left cursor-pointer select-none hover:text-(--ui-text-highlighted)"
+              @click="toggleSort('status')"
+            >
               Status{{ sortIndicator('status') }}
             </th>
-            <th class="px-3 py-2 text-left cursor-pointer select-none hover:text-(--ui-text-highlighted)" @click="toggleSort('createdAt')">
+            <th
+              class="px-3 py-2 text-left cursor-pointer select-none hover:text-(--ui-text-highlighted)"
+              @click="toggleSort('createdAt')"
+            >
               Created{{ sortIndicator('createdAt') }}
             </th>
-            <th class="px-3 py-2 text-right">Actions</th>
+            <th class="px-3 py-2 text-right">
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody class="divide-y divide-(--ui-border)">
@@ -193,20 +226,56 @@ onMounted(() => {
               <span :class="s.status === 'scrapped' ? 'line-through' : ''">{{ s.id }}</span>
               <BonusBadge :show="isBonus(idx)" />
             </td>
-            <td class="px-3 py-2 text-(--ui-text-muted)">{{ s.pathName }}</td>
-            <td class="px-3 py-2">{{ s.currentStepName }}</td>
+            <td class="px-3 py-2 text-(--ui-text-muted)">
+              {{ s.pathName }}
+            </td>
             <td class="px-3 py-2">
-              <UBadge :color="statusColor(s.status)" variant="subtle" size="xs">
+              {{ s.currentStepName }}
+            </td>
+            <td class="px-3 py-2">
+              <UBadge
+                :color="statusColor(s.status)"
+                variant="subtle"
+                size="xs"
+              >
                 {{ statusLabel(s) }}
               </UBadge>
             </td>
-            <td class="px-3 py-2 text-(--ui-text-muted)">{{ new Date(s.createdAt).toLocaleDateString() }}</td>
-            <td class="px-3 py-2 text-right" @click.stop>
-              <div v-if="s.status === 'in-progress'" class="flex items-center gap-1 justify-end">
-                <UButton size="xs" variant="ghost" icon="i-lucide-arrow-right" title="Advance" @click="handleQuickAdvance(s.id)" />
-                <UButton size="xs" variant="ghost" color="error" icon="i-lucide-trash-2" title="Scrap" @click="openScrap(s.id)" />
+            <td class="px-3 py-2 text-(--ui-text-muted)">
+              {{ new Date(s.createdAt).toLocaleDateString() }}
+            </td>
+            <td
+              class="px-3 py-2 text-right"
+              @click.stop
+            >
+              <div
+                v-if="s.status === 'in-progress'"
+                class="flex items-center gap-1 justify-end"
+              >
+                <UButton
+                  size="xs"
+                  variant="ghost"
+                  icon="i-lucide-arrow-right"
+                  title="Advance"
+                  @click="handleQuickAdvance(s.id)"
+                />
+                <UButton
+                  size="xs"
+                  variant="ghost"
+                  color="error"
+                  icon="i-lucide-trash-2"
+                  title="Scrap"
+                  @click="openScrap(s.id)"
+                />
               </div>
-              <UButton v-else size="xs" variant="ghost" icon="i-lucide-eye" title="View" @click="navigateTo(`/parts-browser/${encodeURIComponent(s.id)}`)" />
+              <UButton
+                v-else
+                size="xs"
+                variant="ghost"
+                icon="i-lucide-eye"
+                title="View"
+                @click="navigateTo(`/parts-browser/${encodeURIComponent(s.id)}`)"
+              />
             </td>
           </tr>
         </tbody>
@@ -214,7 +283,10 @@ onMounted(() => {
     </div>
 
     <!-- Cards — mobile -->
-    <div v-if="!loading && parts.length" class="md:hidden space-y-2">
+    <div
+      v-if="!loading && parts.length"
+      class="md:hidden space-y-2"
+    >
       <div
         v-for="(s, idx) in filteredParts"
         :key="s.id"
@@ -228,10 +300,17 @@ onMounted(() => {
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-1.5">
-            <span class="font-mono text-sm font-medium text-(--ui-text-highlighted)" :class="s.status === 'scrapped' ? 'line-through' : ''">{{ s.id }}</span>
+            <span
+              class="font-mono text-sm font-medium text-(--ui-text-highlighted)"
+              :class="s.status === 'scrapped' ? 'line-through' : ''"
+            >{{ s.id }}</span>
             <BonusBadge :show="isBonus(idx)" />
           </div>
-          <UBadge :color="statusColor(s.status)" variant="subtle" size="xs">
+          <UBadge
+            :color="statusColor(s.status)"
+            variant="subtle"
+            size="xs"
+          >
             {{ statusLabel(s) }}
           </UBadge>
         </div>
@@ -239,12 +318,32 @@ onMounted(() => {
           <span class="text-(--ui-text-muted)">{{ s.pathName }}</span>
           <span>{{ s.currentStepName }}</span>
         </div>
-        <div v-if="s.status === 'in-progress'" class="flex items-center gap-1 pt-0.5" @click.stop>
-          <UButton size="xs" variant="ghost" icon="i-lucide-arrow-right" label="Advance" @click="handleQuickAdvance(s.id)" />
-          <UButton size="xs" variant="ghost" color="error" icon="i-lucide-trash-2" label="Scrap" @click="openScrap(s.id)" />
+        <div
+          v-if="s.status === 'in-progress'"
+          class="flex items-center gap-1 pt-0.5"
+          @click.stop
+        >
+          <UButton
+            size="xs"
+            variant="ghost"
+            icon="i-lucide-arrow-right"
+            label="Advance"
+            @click="handleQuickAdvance(s.id)"
+          />
+          <UButton
+            size="xs"
+            variant="ghost"
+            color="error"
+            icon="i-lucide-trash-2"
+            label="Scrap"
+            @click="openScrap(s.id)"
+          />
         </div>
       </div>
-      <div v-if="filteredParts.length === 0" class="text-sm text-(--ui-text-muted) py-6 text-center">
+      <div
+        v-if="filteredParts.length === 0"
+        class="text-sm text-(--ui-text-muted) py-6 text-center"
+      >
         No parts match filters.
       </div>
     </div>

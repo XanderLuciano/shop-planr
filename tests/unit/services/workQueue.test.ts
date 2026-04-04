@@ -101,7 +101,7 @@ function aggregateGroupedWork(
 ): WorkQueueGroupedResponse {
   const { jobService, pathService, partService } = ctx
   const jobs = jobService.listJobs()
-  const entries: { job: WorkQueueJob; assignedTo: string | undefined }[] = []
+  const entries: { job: WorkQueueJob, assignedTo: string | undefined }[] = []
 
   for (const job of jobs) {
     const paths = pathService.listPathsByJob(job.id)
@@ -167,7 +167,7 @@ describe('Work Queue API Endpoint Unit Tests', () => {
 
       // Create a job with a path but no parts
       const job = ctx.jobService.createJob({ name: 'Empty Job', goalQuantity: 5 })
-      const path = ctx.pathService.createPath({
+      const _path = ctx.pathService.createPath({
         jobId: job.id,
         name: 'Main Route',
         goalQuantity: 5,

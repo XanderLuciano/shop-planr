@@ -56,7 +56,7 @@ const JobMobileCard = defineComponent({
           progressResult
             ? h('div', { class: 'progress-bar' }, `${progressResult.displayPercent}%`)
             : null,
-        ]
+        ],
       )
     }
   },
@@ -76,14 +76,14 @@ const arbJob = fc.record({
   jiraPartNumber: fc.option(arbVisibleString(30), { nil: undefined }),
   jiraPriority: fc.option(
     fc.constantFrom('Highest', 'High', 'Medium', 'Low', 'Lowest'),
-    { nil: undefined }
+    { nil: undefined },
   ),
   jiraTicketKey: fc.option(arbVisibleString(20), { nil: undefined }),
   jiraTicketSummary: fc.option(arbVisibleString(100), { nil: undefined }),
   jiraEpicLink: fc.option(arbVisibleString(30), { nil: undefined }),
   jiraLabels: fc.option(fc.array(arbVisibleString(20), { maxLength: 5 }), { nil: undefined }),
-  createdAt: fc.integer({ min: 946684800000, max: 1893456000000 }).map((ts) => new Date(ts).toISOString()),
-  updatedAt: fc.integer({ min: 946684800000, max: 1893456000000 }).map((ts) => new Date(ts).toISOString()),
+  createdAt: fc.integer({ min: 946684800000, max: 1893456000000 }).map(ts => new Date(ts).toISOString()),
+  updatedAt: fc.integer({ min: 946684800000, max: 1893456000000 }).map(ts => new Date(ts).toISOString()),
 })
 
 /** Arbitrary for a JobProgress object */
@@ -116,7 +116,7 @@ describe('Property 1: JobMobileCard Field Rendering', () => {
         expect(nameEl.text()).toBe(job.name.trim())
         wrapper.unmount()
       }),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -135,7 +135,7 @@ describe('Property 1: JobMobileCard Field Rendering', () => {
         }
         wrapper.unmount()
       }),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -154,7 +154,7 @@ describe('Property 1: JobMobileCard Field Rendering', () => {
         }
         wrapper.unmount()
       }),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
@@ -169,19 +169,19 @@ describe('Property 1: JobMobileCard Field Rendering', () => {
         expect(qtyEl.text()).toBe(`Qty: ${job.goalQuantity}`)
         wrapper.unmount()
       }),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
   it('renders progress bar when progress is provided, hides when null', () => {
     fc.assert(
       fc.property(
-        arbJob.chain((job) =>
+        arbJob.chain(job =>
           fc.record({
             job: fc.constant(job),
             hasProgress: fc.boolean(),
             progress: arbJobProgress(job.id, job.goalQuantity),
-          })
+          }),
         ),
         ({ job, hasProgress, progress }) => {
           const wrapper = mount(JobMobileCard, {
@@ -194,9 +194,9 @@ describe('Property 1: JobMobileCard Field Rendering', () => {
             expect(progressEl.exists()).toBe(false)
           }
           wrapper.unmount()
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })

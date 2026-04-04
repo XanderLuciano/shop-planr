@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { Certificate } from '~/types/domain'
-
 const props = defineProps<{
   partId: string
   stepId: string
@@ -10,7 +8,7 @@ const emit = defineEmits<{
   attached: []
 }>()
 
-const { certs, fetchCerts, loading } = useCerts()
+const { certs, fetchCerts } = useCerts()
 const { operatorId } = useOperatorIdentity()
 
 const searchQuery = ref('')
@@ -73,7 +71,10 @@ async function handleAttach() {
       />
     </div>
 
-    <div v-if="filteredCerts.length" class="border border-(--ui-border) rounded-md max-h-32 overflow-y-auto divide-y divide-(--ui-border)">
+    <div
+      v-if="filteredCerts.length"
+      class="border border-(--ui-border) rounded-md max-h-32 overflow-y-auto divide-y divide-(--ui-border)"
+    >
       <button
         v-for="cert in filteredCerts"
         :key="cert.id"
@@ -83,13 +84,22 @@ async function handleAttach() {
         @click="selectedCertId = cert.id"
       >
         <span class="text-(--ui-text-highlighted)">{{ cert.name }}</span>
-        <UBadge :color="cert.type === 'material' ? 'primary' : 'neutral'" variant="subtle" size="xs">
+        <UBadge
+          :color="cert.type === 'material' ? 'primary' : 'neutral'"
+          variant="subtle"
+          size="xs"
+        >
           {{ cert.type }}
         </UBadge>
       </button>
     </div>
 
-    <p v-if="attachError" class="text-xs text-(--ui-error)">{{ attachError }}</p>
+    <p
+      v-if="attachError"
+      class="text-xs text-(--ui-error)"
+    >
+      {{ attachError }}
+    </p>
 
     <UButton
       size="sm"

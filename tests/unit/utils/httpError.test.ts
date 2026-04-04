@@ -57,8 +57,7 @@ describe('unmapped status code fallback', () => {
       let caught: unknown
       try {
         httpError(error)
-      }
-      catch (e) {
+      } catch (e) {
         caught = e
       }
 
@@ -67,8 +66,7 @@ describe('unmapped status code fallback', () => {
       expect(h3Err.statusCode).toBe(418)
       expect(h3Err.statusMessage).toBe('Unknown Error')
       expect(h3Err.message).toBe('teapot')
-    }
-    finally {
+    } finally {
       // Clean up — remove the temporary entry
       const idx = ERROR_STATUS_MAP.indexOf(tempEntry)
       if (idx !== -1) ERROR_STATUS_MAP.splice(idx, 1)
@@ -97,8 +95,7 @@ describe('ValidationError mapping', () => {
     let caught: unknown
     try {
       httpError(error)
-    }
-    catch (e) {
+    } catch (e) {
       caught = e
     }
 
@@ -121,8 +118,7 @@ describe('ForbiddenError mapping', () => {
     let caught: unknown
     try {
       httpError(error)
-    }
-    catch (e) {
+    } catch (e) {
       caught = e
     }
 
@@ -145,8 +141,7 @@ describe('NotFoundError mapping', () => {
     let caught: unknown
     try {
       httpError(error)
-    }
-    catch (e) {
+    } catch (e) {
       caught = e
     }
 

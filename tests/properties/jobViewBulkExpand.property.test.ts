@@ -76,7 +76,7 @@ describe('Property: Bulk Expand Populates All Distributions (PBT-JV3)', () => {
     await fc.assert(
       fc.asyncProperty(
         fc.array(pathEntryArb, { minLength: 1, maxLength: 20 })
-          .map(entries => {
+          .map((entries) => {
             // Deduplicate by ID to avoid collisions
             const seen = new Set<string>()
             return entries.filter((e) => {

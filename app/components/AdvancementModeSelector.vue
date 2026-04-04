@@ -56,6 +56,11 @@ async function handleChange(value: string) {
       class="w-36"
       @update:model-value="handleChange"
     />
-    <p v-if="error" class="text-xs text-(--ui-error)">{{ error }}</p>
+    <p
+      v-if="error"
+      class="text-xs text-(--ui-error)"
+    >
+      {{ error }}
+    </p>
   </div>
 </template>

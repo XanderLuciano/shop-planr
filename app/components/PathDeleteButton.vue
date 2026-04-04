@@ -87,17 +87,33 @@ function cancelModal() {
         title="Delete path"
         @click="handleDelete"
       />
-      <UBadge v-if="partCount > 0" color="error" size="xs">
+      <UBadge
+        v-if="partCount > 0"
+        color="error"
+        size="xs"
+      >
         {{ partCount }} {{ partCount === 1 ? 'part' : 'parts' }}
       </UBadge>
     </template>
-    <p v-if="error" class="text-xs text-(--ui-error)">{{ error }}</p>
+    <p
+      v-if="error"
+      class="text-xs text-(--ui-error)"
+    >
+      {{ error }}
+    </p>
 
-    <UModal v-model:open="showModal" title="Delete Path" :close="false">
+    <UModal
+      v-model:open="showModal"
+      title="Delete Path"
+      :close="false"
+    >
       <template #body>
         <div class="flex flex-col gap-3">
           <div class="flex items-center gap-2 text-(--ui-error)">
-            <UIcon name="i-lucide-alert-triangle" class="size-5 shrink-0" />
+            <UIcon
+              name="i-lucide-alert-triangle"
+              class="size-5 shrink-0"
+            />
             <span class="font-medium">Warning</span>
           </div>
           <p class="text-sm text-(--ui-text-muted)">

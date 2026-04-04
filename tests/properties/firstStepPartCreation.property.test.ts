@@ -18,12 +18,12 @@ export function selectPanelType(stepOrder: number): 'part-creation' | 'process-a
 }
 
 /** Extracts display context strings from a WorkQueueJob. */
-export function extractDisplayContext(job: WorkQueueJob): { jobName: string; pathName: string; stepName: string } {
+export function extractDisplayContext(job: WorkQueueJob): { jobName: string, pathName: string, stepName: string } {
   return { jobName: job.jobName, pathName: job.pathName, stepName: job.stepName }
 }
 
 /** Returns accumulated parts info: count, empty state, and IDs. */
-export function getAccumulatedPartsInfo(partIds: string[]): { count: number; isEmpty: boolean; ids: string[] } {
+export function getAccumulatedPartsInfo(partIds: string[]): { count: number, isEmpty: boolean, ids: string[] } {
   return { count: partIds.length, isEmpty: partIds.length === 0, ids: partIds }
 }
 
@@ -38,7 +38,7 @@ export function buildAdvancePayload(
   partIds: string[],
   selectedSet: Set<string>,
   note: string,
-): { partIds: string[]; note?: string } {
+): { partIds: string[], note?: string } {
   const ids = partIds.filter(id => selectedSet.has(id))
   const trimmedNote = note.trim()
   return { partIds: ids, note: trimmedNote || undefined }
@@ -54,7 +54,7 @@ export function formatDestination(job: WorkQueueJob): string {
 }
 
 /** Returns note info: length and whether it's within the 1000-char limit. */
-export function getNoteInfo(note: string): { length: number; isWithinLimit: boolean } {
+export function getNoteInfo(note: string): { length: number, isWithinLimit: boolean } {
   return { length: note.length, isWithinLimit: note.length <= 1000 }
 }
 
@@ -64,7 +64,7 @@ export function getControlStates(
   loading: boolean,
   hasValidationError: boolean,
   selectedCount: number,
-): { createDisabled: boolean; advanceDisabled: boolean } {
+): { createDisabled: boolean, advanceDisabled: boolean } {
   return {
     createDisabled: creating || hasValidationError,
     advanceDisabled: loading || selectedCount === 0,
@@ -288,7 +288,7 @@ describe('Property 5: Selection state drives advance payload and button state', 
   it('advance payload contains exactly the selected part IDs', () => {
     fc.assert(
       fc.property(
-        arbPartIds(0, 20).chain(ids => {
+        arbPartIds(0, 20).chain((ids) => {
           // Generate a random subset of the IDs
           const uniqueIds = [...new Set(ids)]
           return fc.tuple(
@@ -297,7 +297,7 @@ describe('Property 5: Selection state drives advance payload and button state', 
             fc.string({ minLength: 0, maxLength: 50 }),
           )
         }),
-        ([allIds, selectedSubset, note]) => {
+        ([_allIds, selectedSubset, note]) => {
           const selectedSet = new Set(selectedSubset)
           const payload = buildAdvancePayload(allIds, selectedSet, note)
 
@@ -331,14 +331,14 @@ describe('Property 5: Selection state drives advance payload and button state', 
   it('advance button is enabled when at least one part is selected', () => {
     fc.assert(
       fc.property(
-        arbPartIds(1, 20).chain(ids => {
+        arbPartIds(1, 20).chain((ids) => {
           const uniqueIds = [...new Set(ids)]
           return fc.tuple(
             fc.constant(uniqueIds),
             fc.shuffledSubarray(uniqueIds, { minLength: 1 }),
           )
         }),
-        ([allIds, selectedSubset]) => {
+        ([_allIds, selectedSubset]) => {
           const selectedSet = new Set(selectedSubset)
           const buttonDisabled = selectedSet.size === 0
           expect(buttonDisabled).toBe(false)

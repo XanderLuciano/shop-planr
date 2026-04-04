@@ -8,7 +8,7 @@ export function getRepositories(): RepositorySet {
     const config = useRuntimeConfig()
     repositories = createRepositories({
       type: config.dbType,
-      dbPath: config.dbPath
+      dbPath: config.dbPath,
     })
   }
   return repositories

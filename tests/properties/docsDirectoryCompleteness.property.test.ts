@@ -17,7 +17,7 @@ const CONTENT_DIR = resolve(__dirname, '../../content/api-docs')
 const EXPECTED_DOMAINS = [
   'jobs', 'paths', 'serials', 'certs', 'templates', 'bom',
   'audit', 'jira', 'settings', 'users', 'notes', 'operator',
-  'steps', 'library'
+  'steps', 'library',
 ] as const
 
 /**
@@ -74,7 +74,7 @@ function parseFrontmatter(content: string): Record<string, unknown> {
 /** Get all subdirectories in content/api-docs/ */
 function getSubdirectories(): string[] {
   if (!existsSync(CONTENT_DIR)) return []
-  return readdirSync(CONTENT_DIR).filter(entry => {
+  return readdirSync(CONTENT_DIR).filter((entry) => {
     const fullPath = join(CONTENT_DIR, entry)
     return statSync(fullPath).isDirectory()
   })
@@ -90,7 +90,7 @@ describe('Property 2: Content directory structure completeness', () => {
     for (const domain of EXPECTED_DOMAINS) {
       expect(
         subdirectories,
-        `Missing subdirectory for service domain: ${domain}`
+        `Missing subdirectory for service domain: ${domain}`,
       ).toContain(domain)
     }
   })
@@ -123,7 +123,7 @@ describe('Property 2: Content directory structure completeness', () => {
         expect(nav, `${subdir}/index.md: navigation must exist`).toBeDefined()
         expect(typeof nav!.order, `${subdir}/index.md: navigation.order must be a number`).toBe('number')
       }),
-      { numRuns: subdirectories.length * 3 }
+      { numRuns: subdirectories.length * 3 },
     )
   })
 })

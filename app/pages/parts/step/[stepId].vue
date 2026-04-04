@@ -151,7 +151,10 @@ onMounted(async () => {
       :to="backNav.to"
       class="inline-flex items-center gap-1 text-sm text-(--ui-text-muted) hover:text-(--ui-text-highlighted) transition-colors"
     >
-      <UIcon name="i-lucide-arrow-left" class="size-4" />
+      <UIcon
+        name="i-lucide-arrow-left"
+        class="size-4"
+      />
       {{ backNav.label }}
     </NuxtLink>
 
@@ -160,7 +163,10 @@ onMounted(async () => {
       v-if="loading"
       class="flex items-center gap-2 text-sm text-(--ui-text-muted) py-12 justify-center"
     >
-      <UIcon name="i-lucide-loader-2" class="animate-spin size-4" />
+      <UIcon
+        name="i-lucide-loader-2"
+        class="animate-spin size-4"
+      />
       Loading step data...
     </div>
 
@@ -169,8 +175,13 @@ onMounted(async () => {
       v-else-if="notFound"
       class="text-center py-12"
     >
-      <UIcon name="i-lucide-alert-triangle" class="size-8 mx-auto mb-2 text-(--ui-warning)" />
-      <p class="text-sm text-(--ui-text-highlighted) font-medium mb-1">Step not found</p>
+      <UIcon
+        name="i-lucide-alert-triangle"
+        class="size-8 mx-auto mb-2 text-(--ui-warning)"
+      />
+      <p class="text-sm text-(--ui-text-highlighted) font-medium mb-1">
+        Step not found
+      </p>
       <p class="text-xs text-(--ui-text-muted) mb-4">
         This step doesn't exist or has no active parts.
       </p>
@@ -205,7 +216,9 @@ onMounted(async () => {
         <div class="flex items-center justify-between">
           <div>
             <div class="flex items-center gap-2">
-              <h1 class="text-lg font-bold text-(--ui-text-highlighted)">{{ job.stepName }}</h1>
+              <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
+                {{ job.stepName }}
+              </h1>
               <span class="text-xs text-(--ui-text-muted) bg-(--ui-bg-elevated) px-1.5 py-0.5 rounded">
                 Step {{ job.stepOrder + 1 }} of {{ job.totalSteps }}
               </span>
@@ -270,7 +283,10 @@ onMounted(async () => {
         v-if="!operatorId"
         class="text-sm text-(--ui-text-muted) py-8 text-center"
       >
-        <UIcon name="i-lucide-hard-hat" class="size-8 mb-2 opacity-50" />
+        <UIcon
+          name="i-lucide-hard-hat"
+          class="size-8 mb-2 opacity-50"
+        />
         <p>Select an operator to advance parts or create new parts.</p>
       </div>
 
@@ -289,8 +305,13 @@ onMounted(async () => {
         v-else-if="job.partCount === 0"
         class="text-center py-12"
       >
-        <UIcon name="i-lucide-clock" class="size-8 mx-auto mb-2 text-(--ui-text-muted)" />
-        <p class="text-sm text-(--ui-text-highlighted) font-medium mb-1">Waiting for the previous step</p>
+        <UIcon
+          name="i-lucide-clock"
+          class="size-8 mx-auto mb-2 text-(--ui-text-muted)"
+        />
+        <p class="text-sm text-(--ui-text-highlighted) font-medium mb-1">
+          Waiting for the previous step
+        </p>
         <p class="text-xs text-(--ui-text-muted) mb-4">
           The prior step "{{ job.previousStepName }}" currently has
           {{ previousStepWipCount ?? 0 }} part{{ (previousStepWipCount ?? 0) !== 1 ? 's' : '' }} in progress.

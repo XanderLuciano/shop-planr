@@ -150,16 +150,27 @@ function handleAdvance() {
           @click="handleCreateAndAdvance"
         />
       </div>
-      <p v-if="validationError" class="text-xs text-(--ui-error) mt-1">{{ validationError }}</p>
+      <p
+        v-if="validationError"
+        class="text-xs text-(--ui-error) mt-1"
+      >
+        {{ validationError }}
+      </p>
     </div>
 
     <!-- Success message -->
-    <div v-if="successMessage" class="text-xs text-(--ui-success) bg-(--ui-success)/10 px-2 py-1.5 rounded-md">
+    <div
+      v-if="successMessage"
+      class="text-xs text-(--ui-success) bg-(--ui-success)/10 px-2 py-1.5 rounded-md"
+    >
       {{ successMessage }}
     </div>
 
     <!-- Error message -->
-    <div v-if="errorMessage" class="text-xs text-(--ui-error) bg-(--ui-error)/10 px-2 py-1.5 rounded-md">
+    <div
+      v-if="errorMessage"
+      class="text-xs text-(--ui-error) bg-(--ui-error)/10 px-2 py-1.5 rounded-md"
+    >
       {{ errorMessage }}
     </div>
 
@@ -170,8 +181,18 @@ function handleAdvance() {
           Accumulated Parts ({{ selectedParts.size }}/{{ job.partIds.length }})
         </span>
         <div class="flex gap-1">
-          <UButton size="xs" variant="ghost" label="All" @click="selectAll" />
-          <UButton size="xs" variant="ghost" label="None" @click="selectNone" />
+          <UButton
+            size="xs"
+            variant="ghost"
+            label="All"
+            @click="selectAll"
+          />
+          <UButton
+            size="xs"
+            variant="ghost"
+            label="None"
+            @click="selectNone"
+          />
         </div>
       </div>
       <div class="max-h-40 overflow-y-auto border border-(--ui-border) rounded-md divide-y divide-(--ui-border)">
@@ -180,22 +201,38 @@ function handleAdvance() {
           :key="partId"
           class="flex items-center gap-2 px-2 py-1.5 cursor-pointer hover:bg-(--ui-bg-elevated)/30 text-xs"
         >
-          <input type="checkbox" :checked="selectedParts.has(partId)" class="rounded" @change="togglePart(partId)">
+          <input
+            type="checkbox"
+            :checked="selectedParts.has(partId)"
+            class="rounded"
+            @change="togglePart(partId)"
+          >
           <span class="font-mono">{{ partId }}</span>
         </label>
       </div>
     </div>
 
     <!-- Empty state -->
-    <div v-else class="text-xs text-(--ui-text-muted) text-center py-4 border border-(--ui-border) rounded-md">
+    <div
+      v-else
+      class="text-xs text-(--ui-text-muted) text-center py-4 border border-(--ui-border) rounded-md"
+    >
       No parts created yet. Use the form above to create parts.
     </div>
 
     <!-- Optional note -->
     <div>
       <label class="text-xs font-semibold text-(--ui-text-highlighted) block mb-1">Note (optional)</label>
-      <UTextarea v-model="note" placeholder="Add observations or issues..." :maxlength="1000" :rows="2" size="sm" />
-      <div class="text-xs text-(--ui-text-muted) text-right mt-0.5">{{ note.length }}/1000</div>
+      <UTextarea
+        v-model="note"
+        placeholder="Add observations or issues..."
+        :maxlength="1000"
+        :rows="2"
+        size="sm"
+      />
+      <div class="text-xs text-(--ui-text-muted) text-right mt-0.5">
+        {{ note.length }}/1000
+      </div>
     </div>
 
     <!-- Advance action -->
@@ -209,7 +246,12 @@ function handleAdvance() {
         icon="i-lucide-arrow-right"
         @click="handleAdvance"
       />
-      <UButton size="sm" variant="ghost" label="Cancel" @click="emit('cancel')" />
+      <UButton
+        size="sm"
+        variant="ghost"
+        label="Cancel"
+        @click="emit('cancel')"
+      />
     </div>
   </div>
 </template>

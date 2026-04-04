@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
+import { useWorkQueueFilters } from '~/app/composables/useWorkQueueFilters'
+
 /**
  * Unit tests for preset management in useWorkQueueFilters composable.
  *
@@ -48,8 +50,6 @@ let uuidCounter = 0
 vi.stubGlobal('crypto', {
   randomUUID: () => `test-uuid-${++uuidCounter}`,
 })
-
-import { useWorkQueueFilters } from '~/app/composables/useWorkQueueFilters'
 
 describe('useWorkQueueFilters — preset management', () => {
   beforeEach(() => {

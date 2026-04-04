@@ -10,6 +10,8 @@
 import { describe, it, vi } from 'vitest'
 import fc from 'fast-check'
 
+import { useJobForm } from '~/app/composables/useJobForm'
+
 // Stub auto-imported composables
 vi.stubGlobal('useJobs', () => ({
   createJob: vi.fn(),
@@ -23,8 +25,6 @@ vi.stubGlobal('usePaths', () => ({
 vi.stubGlobal('useUsers', () => ({
   requireUser: () => ({ id: 'test-user-id', username: 'test', displayName: 'Test', isAdmin: true, active: true, createdAt: '' }),
 }))
-
-import { useJobForm, type PathDraft, type StepDraft } from '~/app/composables/useJobForm'
 
 describe('Property 6: Validation rejects paths with zero steps', () => {
   it('validate returns valid:false with error on paths[i].steps when a path has zero steps', () => {

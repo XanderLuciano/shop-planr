@@ -66,20 +66,20 @@ describe('Property 2: List sorted by priority', () => {
 
           db.close()
           db = null as any
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 
   it('list() returns jobs sorted by priority ascending after a random reorder via updatePriorities', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 2, max: 20 }).chain((n) =>
+        fc.integer({ min: 2, max: 20 }).chain(n =>
           fc.tuple(
             fc.constant(n),
-            fc.shuffledSubarray(Array.from({ length: n }, (_, i) => i), { minLength: n, maxLength: n })
-          )
+            fc.shuffledSubarray(Array.from({ length: n }, (_, i) => i), { minLength: n, maxLength: n }),
+          ),
         ),
         ([n, indices]) => {
           db = createTestDb()
@@ -115,9 +115,9 @@ describe('Property 2: List sorted by priority', () => {
 
           db.close()
           db = null as any
-        }
+        },
       ),
-      { numRuns: 100 }
+      { numRuns: 100 },
     )
   })
 })

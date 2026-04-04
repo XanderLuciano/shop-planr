@@ -24,7 +24,7 @@ function jobArb(count: number): fc.Arbitrary<Job[]> {
       priority: i + 1,
       createdAt: new Date(2024, 0, 1 + i).toISOString(),
       updatedAt: new Date(2024, 0, 1 + i).toISOString(),
-    }))
+    })),
   )
 }
 
@@ -37,9 +37,9 @@ function reorderOpsArb(listSize: number): fc.Arbitrary<[number, number][]> {
   return fc.array(
     fc.tuple(
       fc.integer({ min: 0, max: listSize - 1 }),
-      fc.integer({ min: 0, max: listSize - 1 })
+      fc.integer({ min: 0, max: listSize - 1 }),
     ),
-    { minLength: 0, maxLength: 20 }
+    { minLength: 0, maxLength: 20 },
   )
 }
 
@@ -47,14 +47,14 @@ describe('Property 6: Cancel restores snapshot', () => {
   it('cancelEdit restores the exact original order after any sequence of reorders', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 1, max: 20 }).chain((n) =>
-          fc.tuple(jobArb(n), reorderOpsArb(n))
+        fc.integer({ min: 1, max: 20 }).chain(n =>
+          fc.tuple(jobArb(n), reorderOpsArb(n)),
         ),
         ([jobs, ops]) => {
           const { enterEditMode, reorder, cancelEdit, orderedJobs, isEditingPriority } = useJobPriority()
 
           // Snapshot the original order
-          const originalIds = jobs.map((j) => j.id)
+          const originalIds = jobs.map(j => j.id)
 
           // Enter edit mode
           enterEditMode(jobs)
@@ -69,11 +69,11 @@ describe('Property 6: Cancel restores snapshot', () => {
           cancelEdit()
 
           expect(isEditingPriority.value).toBe(false)
-          const restoredIds = orderedJobs.value.map((j) => j.id)
+          const restoredIds = orderedJobs.value.map(j => j.id)
           expect(restoredIds).toEqual(originalIds)
-        }
+        },
       ),
-      { numRuns: 200 }
+      { numRuns: 200 },
     )
   })
 })

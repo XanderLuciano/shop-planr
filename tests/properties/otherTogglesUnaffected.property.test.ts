@@ -22,7 +22,7 @@ const NON_PARTS_ENTRIES = Object.entries(ROUTE_TOGGLE_MAP).filter(
 /** Arbitrary that produces a random detail route suffix (e.g., `/abc123`, `/foo/bar`). */
 const arbDetailSuffix: fc.Arbitrary<string> = fc
   .array(fc.stringMatching(/^[a-z0-9]{1,8}$/), { minLength: 1, maxLength: 3 })
-  .map((segments) => '/' + segments.join('/'))
+  .map(segments => '/' + segments.join('/'))
 
 describe('Property 3: All other toggle-mapped routes are unaffected', () => {
   /**

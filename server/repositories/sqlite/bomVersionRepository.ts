@@ -49,14 +49,14 @@ export class SQLiteBomVersionRepository implements BomVersionRepository {
 
   listByBomId(bomId: string): BomVersion[] {
     const rows = this.db.prepare(
-      'SELECT * FROM bom_versions WHERE bom_id = ? ORDER BY version_number DESC'
+      'SELECT * FROM bom_versions WHERE bom_id = ? ORDER BY version_number DESC',
     ).all(bomId) as BomVersionRow[]
     return rows.map(rowToDomain)
   }
 
   getLatestByBomId(bomId: string): BomVersion | null {
     const row = this.db.prepare(
-      'SELECT * FROM bom_versions WHERE bom_id = ? ORDER BY version_number DESC LIMIT 1'
+      'SELECT * FROM bom_versions WHERE bom_id = ? ORDER BY version_number DESC LIMIT 1',
     ).get(bomId) as BomVersionRow | undefined
     return row ? rowToDomain(row) : null
   }

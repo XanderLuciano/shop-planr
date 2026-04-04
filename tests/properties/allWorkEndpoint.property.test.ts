@@ -205,7 +205,7 @@ describe('Property 1: All-Work Endpoint Completeness', () => {
         }
 
         // 1. Every step with active parts has a corresponding WorkQueueJob
-        for (const [key, partIds] of expectedGroups) {
+        for (const [key, _partIds] of expectedGroups) {
           const entry = response.jobs.find((j) => {
             const entryKey = `${j.jobId}|${j.pathId}|${j.stepOrder}`
             return entryKey === key

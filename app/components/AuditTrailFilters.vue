@@ -71,29 +71,59 @@ watch([selectedAction, userId, partId, jobId, startDate, endDate], emitFilters)
 
     <div>
       <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">User</label>
-      <UInput v-model="userId" placeholder="User ID..." size="xs" class="w-32" />
+      <UInput
+        v-model="userId"
+        placeholder="User ID..."
+        size="xs"
+        class="w-32"
+      />
     </div>
 
     <div>
       <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Part</label>
-      <UInput v-model="partId" placeholder="Part ID..." size="xs" class="w-32" />
+      <UInput
+        v-model="partId"
+        placeholder="Part ID..."
+        size="xs"
+        class="w-32"
+      />
     </div>
 
     <div>
       <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Job</label>
-      <UInput v-model="jobId" placeholder="Job ID..." size="xs" class="w-32" />
+      <UInput
+        v-model="jobId"
+        placeholder="Job ID..."
+        size="xs"
+        class="w-32"
+      />
     </div>
 
     <div>
       <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Start Date</label>
-      <UInput v-model="startDate" type="date" size="xs" class="w-36" />
+      <UInput
+        v-model="startDate"
+        type="date"
+        size="xs"
+        class="w-36"
+      />
     </div>
 
     <div>
       <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">End Date</label>
-      <UInput v-model="endDate" type="date" size="xs" class="w-36" />
+      <UInput
+        v-model="endDate"
+        type="date"
+        size="xs"
+        class="w-36"
+      />
     </div>
 
-    <UButton size="xs" variant="ghost" label="Clear" @click="clearFilters" />
+    <UButton
+      size="xs"
+      variant="ghost"
+      label="Clear"
+      @click="clearFilters"
+    />
   </div>
 </template>

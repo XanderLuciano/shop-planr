@@ -59,37 +59,37 @@ const DocsSidebar = defineComponent({
         isEmpty.value
           ? h('div', { class: 'empty-state' }, 'No documentation available.')
           : h('ul', { class: 'nav-tree' },
-            sortedNavigation.value.map(category =>
-              h('li', { key: category.path, class: 'category' }, [
-                h('button', {
-                  class: `category-header ${isActive(category.path) ? 'active' : ''}`,
-                  onClick: () => toggleCategory(category.path),
-                }, [
-                  category.icon ? h('span', { class: 'icon' }, category.icon) : null,
-                  h('span', { class: 'title' }, category.title),
+              sortedNavigation.value.map(category =>
+                h('li', { key: category.path, class: 'category' }, [
+                  h('button', {
+                    class: `category-header ${isActive(category.path) ? 'active' : ''}`,
+                    onClick: () => toggleCategory(category.path),
+                  }, [
+                    category.icon ? h('span', { class: 'icon' }, category.icon) : null,
+                    h('span', { class: 'title' }, category.title),
+                  ]),
+                  category.children?.length && isExpanded(category.path)
+                    ? h('ul', { class: 'children' },
+                        sortByOrder(category.children).map(child =>
+                          h('li', { key: child.path }, [
+                            h('a', {
+                              href: child.path,
+                              class: `child-link ${isActive(child.path) ? 'active' : ''}`,
+                            }, [
+                              child.method
+                                ? h('span', {
+                                    class: `method-badge ${getMethodColor(child.method).bg} ${getMethodColor(child.method).text}`,
+                                  }, child.method)
+                                : null,
+                              h('span', { class: 'child-title' }, child.title),
+                            ]),
+                          ]),
+                        ),
+                      )
+                    : null,
                 ]),
-                category.children?.length && isExpanded(category.path)
-                  ? h('ul', { class: 'children' },
-                    sortByOrder(category.children).map(child =>
-                      h('li', { key: child.path }, [
-                        h('a', {
-                          href: child.path,
-                          class: `child-link ${isActive(child.path) ? 'active' : ''}`,
-                        }, [
-                          child.method
-                            ? h('span', {
-                              class: `method-badge ${getMethodColor(child.method).bg} ${getMethodColor(child.method).text}`,
-                            }, child.method)
-                            : null,
-                          h('span', { class: 'child-title' }, child.title),
-                        ]),
-                      ]),
-                    ),
-                  )
-                  : null,
-              ]),
+              ),
             ),
-          ),
       ])
   },
 })

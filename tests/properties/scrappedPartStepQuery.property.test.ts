@@ -29,9 +29,9 @@ describe('Property 1: Bug Condition — Scrapped Parts Excluded from Step Query'
             // Pick at least 1 index to scrap, up to all of them
             fc.shuffledSubarray(
               Array.from({ length: totalCount }, (_, i) => i),
-              { minLength: 1 }
-            )
-          )
+              { minLength: 1 },
+            ),
+          ),
         ),
         ([totalCount, scrapIndices]) => {
           // Fresh isolated DB per run
@@ -50,7 +50,7 @@ describe('Property 1: Bug Condition — Scrapped Parts Excluded from Step Query'
           // Create parts (all start at first step, status in_progress)
           const parts = partService.batchCreateParts(
             { jobId: job.id, pathId: path.id, quantity: totalCount },
-            'test-user'
+            'test-user',
           )
 
           // Scrap the selected parts
@@ -69,13 +69,12 @@ describe('Property 1: Bug Condition — Scrapped Parts Excluded from Step Query'
           for (const part of result) {
             expect(part.status).not.toBe('scrapped')
           }
-        }
+        },
       ),
-      { numRuns: 50 }
+      { numRuns: 50 },
     )
   })
 })
-
 
 /**
  * Property 2: Preservation — Non-Scrapped Parts Unchanged

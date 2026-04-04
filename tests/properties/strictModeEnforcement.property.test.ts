@@ -19,7 +19,7 @@ function validateStrictAdvancement(
   targetStepOrder: number,
   totalSteps: number,
   advancementMode: 'strict' | 'flexible' | 'per_step',
-): { valid: boolean; error?: string } {
+): { valid: boolean, error?: string } {
   // Forward-only check
   if (targetStepOrder <= currentStepOrder) {
     return { valid: false, error: 'Cannot advance to a step at or before the current position' }

@@ -113,7 +113,7 @@ export class SQLitePartRepository implements PartRepository {
 
   listByCurrentStepId(stepId: string): Part[] {
     const rows = this.db.prepare(
-      "SELECT * FROM parts WHERE current_step_id = ? AND status != 'scrapped' ORDER BY created_at ASC"
+      'SELECT * FROM parts WHERE current_step_id = ? AND status != \'scrapped\' ORDER BY created_at ASC',
     ).all(stepId) as PartRow[]
     return rows.map(rowToDomain)
   }
@@ -148,13 +148,13 @@ export class SQLitePartRepository implements PartRepository {
 
   countCompletedByJobId(jobId: string): number {
     const row = this.db.prepare(
-      "SELECT COUNT(*) as count FROM parts WHERE job_id = ? AND current_step_id IS NULL AND status = 'completed'"
+      'SELECT COUNT(*) as count FROM parts WHERE job_id = ? AND current_step_id IS NULL AND status = \'completed\'',
     ).get(jobId) as { count: number }
     return row.count
   }
 
   countScrappedByJobId(jobId: string): number {
-    const row = this.db.prepare("SELECT COUNT(*) as count FROM parts WHERE job_id = ? AND status = 'scrapped'").get(jobId) as { count: number }
+    const row = this.db.prepare('SELECT COUNT(*) as count FROM parts WHERE job_id = ? AND status = \'scrapped\'').get(jobId) as { count: number }
     return row.count
   }
 

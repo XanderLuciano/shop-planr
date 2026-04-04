@@ -35,7 +35,7 @@ const JobViewToolbar = defineComponent({
 
     return () =>
       h('div', { class: 'flex items-center' },
-        buttons.map((btn) =>
+        buttons.map(btn =>
           h('div', { 'data-tooltip': btn.tooltip }, [
             h('button', {
               disabled: btn.disabled() || undefined,
@@ -47,7 +47,7 @@ const JobViewToolbar = defineComponent({
   },
 })
 
-function mountToolbar(props: { hasExpandedJobs: boolean; hasExpandedPaths: boolean; jobCount: number }) {
+function mountToolbar(props: { hasExpandedJobs: boolean, hasExpandedPaths: boolean, jobCount: number }) {
   return mount(JobViewToolbar, { props })
 }
 

@@ -61,7 +61,10 @@ async function handleAddNew() {
       @update:model-value="(v: string | number) => { searchQuery = String(v); emit('update:modelValue', String(v)) }"
     />
 
-    <div v-if="searchQuery && items.length" class="border border-(--ui-border) rounded-md max-h-32 overflow-y-auto">
+    <div
+      v-if="searchQuery && items.length"
+      class="border border-(--ui-border) rounded-md max-h-32 overflow-y-auto"
+    >
       <button
         v-for="item in items"
         :key="item.value"
@@ -82,7 +85,10 @@ async function handleAddNew() {
         + New {{ type }}
       </button>
     </div>
-    <div v-else class="flex items-center gap-1">
+    <div
+      v-else
+      class="flex items-center gap-1"
+    >
       <UInput
         v-model="newName"
         :placeholder="`New ${type} name`"
@@ -90,8 +96,18 @@ async function handleAddNew() {
         class="flex-1"
         @keyup.enter="handleAddNew"
       />
-      <UButton size="xs" label="Add" :loading="adding" @click="handleAddNew" />
-      <UButton size="xs" variant="ghost" label="Cancel" @click="showNewInput = false" />
+      <UButton
+        size="xs"
+        label="Add"
+        :loading="adding"
+        @click="handleAddNew"
+      />
+      <UButton
+        size="xs"
+        variant="ghost"
+        label="Cancel"
+        @click="showNewInput = false"
+      />
     </div>
   </div>
 </template>

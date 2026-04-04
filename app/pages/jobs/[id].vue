@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Job, Path, TemplateRoute, ShopUser, StepNote, ProcessStep } from '~/types/domain'
+import type { Job, Path, ShopUser, StepNote, ProcessStep } from '~/types/domain'
 import type { JobProgress, StepDistribution } from '~/types/computed'
 
 const route = useRoute()
@@ -10,7 +10,6 @@ const { isAdmin } = useUsers()
 const toast = useToast()
 const { getPath: fetchPathDetail } = usePaths()
 const { templates, fetchTemplates, applyTemplate } = useTemplates()
-const { fetchNotesForStep } = useNotes()
 const { settings } = useSettings()
 const { pushDescriptionTable, pushCommentSummary } = useJira()
 
@@ -74,7 +73,7 @@ const jiraPushError = ref(false)
 const jiraPushAvailable = computed(() =>
   !!job.value?.jiraTicketKey
   && !!settings.value?.jiraConnection?.enabled
-  && !!settings.value?.jiraConnection?.pushEnabled
+  && !!settings.value?.jiraConnection?.pushEnabled,
 )
 
 // Delete state
@@ -86,14 +85,15 @@ const canDelete = computed(() => {
   return paths.value.length === 0 && progress.value.totalParts === 0
 })
 
-function onStepClick(pathId: string, payload: { stepId: string, stepName: string, stepOrder: number }) {
+function onStepClick(_pathId: string, payload: { stepId: string, stepName: string, stepOrder: number }) {
   // Navigate to step view for this step (advancement), passing referrer context
   navigateTo(`/parts/step/${encodeURIComponent(payload.stepId)}?from=${encodeURIComponent(`/jobs/${jobId}`)}`)
 }
 
-function onStepConfigure(pathId: string, payload: { stepId: string }) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function onStepConfigure(_pathId: string, payload: { stepId: string }) {
   // Find the step to show config panel
-  const p = paths.value.find(pp => pp.id === pathId)
+  const p = paths.value.find(pp => pp.id === _pathId)
   const step = p?.steps.find(s => s.id === payload.stepId)
   if (step) {
     configStepId.value = step.id
@@ -140,8 +140,8 @@ async function loadJob() {
 async function loadAllDistributions() {
   const results = await Promise.allSettled(
     paths.value.map(p =>
-      fetchPathDetail(p.id).then(d => ({ id: p.id, distribution: d.distribution, completedCount: d.completedCount }))
-    )
+      fetchPathDetail(p.id).then(d => ({ id: p.id, distribution: d.distribution, completedCount: d.completedCount })),
+    ),
   )
   const map: Record<string, StepDistribution[]> = {}
   const counts: Record<string, number> = {}
@@ -238,7 +238,7 @@ async function onApplyTemplate() {
   try {
     await applyTemplate(selectedTemplateId.value, {
       jobId,
-      goalQuantity: applyGoalQty.value
+      goalQuantity: applyGoalQty.value,
     })
     showTemplateApply.value = false
     selectedTemplateId.value = ''
@@ -314,25 +314,41 @@ onMounted(() => {
       to="/jobs"
       class="inline-flex items-center gap-1 text-xs text-(--ui-text-muted) hover:text-(--ui-text-highlighted) transition-colors"
     >
-      <UIcon name="i-lucide-arrow-left" class="size-3" />
+      <UIcon
+        name="i-lucide-arrow-left"
+        class="size-3"
+      />
       Back to Jobs
     </NuxtLink>
 
     <!-- Loading -->
-    <div v-if="loading" class="flex items-center gap-2 text-sm text-(--ui-text-muted) py-8">
-      <UIcon name="i-lucide-loader-2" class="animate-spin size-4" />
+    <div
+      v-if="loading"
+      class="flex items-center gap-2 text-sm text-(--ui-text-muted) py-8"
+    >
+      <UIcon
+        name="i-lucide-loader-2"
+        class="animate-spin size-4"
+      />
       Loading job...
     </div>
 
     <!-- Error -->
-    <div v-else-if="error && !job" class="text-sm text-red-500 py-8">{{ error }}</div>
+    <div
+      v-else-if="error && !job"
+      class="text-sm text-red-500 py-8"
+    >
+      {{ error }}
+    </div>
 
     <template v-else-if="job">
       <!-- Job Header -->
       <div class="space-y-2">
         <div class="flex items-start justify-between gap-4">
           <div>
-            <h1 class="text-lg font-bold text-(--ui-text-highlighted)">{{ job.name }}</h1>
+            <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
+              {{ job.name }}
+            </h1>
             <div class="flex items-center gap-3 text-xs text-(--ui-text-muted) mt-0.5">
               <span class="flex items-center gap-1">
                 Goal:
@@ -346,11 +362,25 @@ onMounted(() => {
                     @keyup.enter="saveGoalQty"
                     @keyup.escape="editingGoalQty = false"
                   />
-                  <UButton size="xs" variant="ghost" icon="i-lucide-check" :loading="goalQtySaving" @click="saveGoalQty" />
-                  <UButton size="xs" variant="ghost" icon="i-lucide-x" @click="editingGoalQty = false" />
+                  <UButton
+                    size="xs"
+                    variant="ghost"
+                    icon="i-lucide-check"
+                    :loading="goalQtySaving"
+                    @click="saveGoalQty"
+                  />
+                  <UButton
+                    size="xs"
+                    variant="ghost"
+                    icon="i-lucide-x"
+                    @click="editingGoalQty = false"
+                  />
                 </template>
                 <template v-else>
-                  <strong class="text-(--ui-text-highlighted) cursor-pointer hover:underline" @click="startEditGoalQty">{{ job.goalQuantity }}</strong>
+                  <strong
+                    class="text-(--ui-text-highlighted) cursor-pointer hover:underline"
+                    @click="startEditGoalQty"
+                  >{{ job.goalQuantity }}</strong>
                 </template>
               </span>
               <span v-if="job.jiraTicketKey">Jira: {{ job.jiraTicketKey }}</span>
@@ -358,7 +388,13 @@ onMounted(() => {
             </div>
           </div>
           <div class="flex items-center gap-1.5">
-            <UButton icon="i-lucide-pencil" size="xs" variant="ghost" label="Edit" @click="navigateTo(`/jobs/edit/${encodeURIComponent(jobId)}`)" />
+            <UButton
+              icon="i-lucide-pencil"
+              size="xs"
+              variant="ghost"
+              label="Edit"
+              @click="navigateTo(`/jobs/edit/${encodeURIComponent(jobId)}`)"
+            />
             <UButton
               v-if="isAdmin"
               icon="i-lucide-trash-2"
@@ -373,8 +409,15 @@ onMounted(() => {
         </div>
 
         <!-- Progress -->
-        <div v-if="progress" class="space-y-1">
-          <ProgressBar :completed="totalCompleted" :goal="job.goalQuantity" :in-progress="totalInProgress" />
+        <div
+          v-if="progress"
+          class="space-y-1"
+        >
+          <ProgressBar
+            :completed="totalCompleted"
+            :goal="job.goalQuantity"
+            :in-progress="totalInProgress"
+          />
           <div class="flex gap-3 text-xs text-(--ui-text-muted)">
             <span>{{ totalCompleted }} completed</span>
             <span>{{ totalInProgress }} in progress</span>
@@ -384,20 +427,57 @@ onMounted(() => {
         </div>
       </div>
 
-      <p v-if="error" class="text-xs text-red-500">{{ error }}</p>
+      <p
+        v-if="error"
+        class="text-xs text-red-500"
+      >
+        {{ error }}
+      </p>
 
       <!-- Jira Push Section -->
-      <div v-if="jiraPushAvailable" class="space-y-2 p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50">
+      <div
+        v-if="jiraPushAvailable"
+        class="space-y-2 p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50"
+      >
         <div class="flex items-center gap-2">
-          <UIcon name="i-lucide-upload" class="size-3.5 text-(--ui-text-muted)" />
+          <UIcon
+            name="i-lucide-upload"
+            class="size-3.5 text-(--ui-text-muted)"
+          />
           <span class="text-xs font-semibold text-(--ui-text-highlighted)">Push to Jira</span>
-          <UBadge size="xs" variant="subtle" color="neutral">{{ job.jiraTicketKey }}</UBadge>
+          <UBadge
+            size="xs"
+            variant="subtle"
+            color="neutral"
+          >
+            {{ job.jiraTicketKey }}
+          </UBadge>
         </div>
         <div class="flex items-center gap-2">
-          <UButton size="xs" variant="soft" label="Push Status Table" icon="i-lucide-table" :loading="pushingDescription" @click="onPushDescription" />
-          <UButton size="xs" variant="soft" label="Push Comment Summary" icon="i-lucide-message-square" :loading="pushingComment" @click="onPushComment" />
+          <UButton
+            size="xs"
+            variant="soft"
+            label="Push Status Table"
+            icon="i-lucide-table"
+            :loading="pushingDescription"
+            @click="onPushDescription"
+          />
+          <UButton
+            size="xs"
+            variant="soft"
+            label="Push Comment Summary"
+            icon="i-lucide-message-square"
+            :loading="pushingComment"
+            @click="onPushComment"
+          />
         </div>
-        <p v-if="jiraPushMessage" class="text-xs" :class="jiraPushError ? 'text-red-500' : 'text-green-500'">{{ jiraPushMessage }}</p>
+        <p
+          v-if="jiraPushMessage"
+          class="text-xs"
+          :class="jiraPushError ? 'text-red-500' : 'text-green-500'"
+        >
+          {{ jiraPushMessage }}
+        </p>
       </div>
 
       <!-- Tab bar -->
@@ -411,62 +491,126 @@ onMounted(() => {
             : 'border-transparent text-(--ui-text-muted) hover:text-(--ui-text-highlighted)'"
           @click="activeTab = tab.value"
         >
-          <UIcon :name="tab.icon" class="size-3.5" />
+          <UIcon
+            :name="tab.icon"
+            class="size-3.5"
+          />
           {{ tab.label }}
         </button>
       </div>
 
       <!-- Job Routing Tab -->
-      <div v-if="activeTab === 'routing'" class="space-y-3">
+      <div
+        v-if="activeTab === 'routing'"
+        class="space-y-3"
+      >
         <div class="flex items-center justify-between">
-          <h2 class="text-sm font-semibold text-(--ui-text-highlighted)">Paths</h2>
+          <h2 class="text-sm font-semibold text-(--ui-text-highlighted)">
+            Paths
+          </h2>
           <div class="flex gap-1.5">
             <UButton
               v-if="!showTemplateApply && !showPathEditor && templates.length"
-              icon="i-lucide-copy" size="xs" variant="soft" color="neutral" label="From Template"
+              icon="i-lucide-copy"
+              size="xs"
+              variant="soft"
+              color="neutral"
+              label="From Template"
               @click="showTemplateApply = true; applyGoalQty = job?.goalQuantity ?? 1"
             />
             <UButton
               v-if="!showPathEditor && !showTemplateApply"
-              icon="i-lucide-plus" size="xs" variant="soft" label="Add Path"
+              icon="i-lucide-plus"
+              size="xs"
+              variant="soft"
+              label="Add Path"
               @click="showPathEditor = true"
             />
           </div>
         </div>
 
         <!-- Apply template form -->
-        <div v-if="showTemplateApply" class="space-y-2 p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50">
-          <div class="text-xs font-semibold text-(--ui-text-highlighted)">Apply Template</div>
+        <div
+          v-if="showTemplateApply"
+          class="space-y-2 p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50"
+        >
+          <div class="text-xs font-semibold text-(--ui-text-highlighted)">
+            Apply Template
+          </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
               <label class="block text-xs text-(--ui-text-muted) mb-0.5">Template</label>
-              <USelect v-model="selectedTemplateId" :items="templates.map(t => ({ label: `${t.name} (${t.steps.length} steps)`, value: t.id }))" size="sm" placeholder="Select template" class="w-full" />
+              <USelect
+                v-model="selectedTemplateId"
+                :items="templates.map(t => ({ label: `${t.name} (${t.steps.length} steps)`, value: t.id }))"
+                size="sm"
+                placeholder="Select template"
+                class="w-full"
+              />
             </div>
             <div>
               <label class="block text-xs text-(--ui-text-muted) mb-0.5">Goal Qty</label>
-              <UInput v-model.number="applyGoalQty" type="number" size="sm" :min="1" class="w-full" />
+              <UInput
+                v-model.number="applyGoalQty"
+                type="number"
+                size="sm"
+                :min="1"
+                class="w-full"
+              />
             </div>
           </div>
-          <p v-if="applyError" class="text-xs text-red-500">{{ applyError }}</p>
+          <p
+            v-if="applyError"
+            class="text-xs text-red-500"
+          >
+            {{ applyError }}
+          </p>
           <div class="flex gap-2 justify-end">
-            <UButton variant="ghost" size="xs" label="Cancel" @click="showTemplateApply = false; applyError = ''" />
-            <UButton size="xs" label="Apply" :loading="applyingTemplate" :disabled="!selectedTemplateId" @click="onApplyTemplate" />
+            <UButton
+              variant="ghost"
+              size="xs"
+              label="Cancel"
+              @click="showTemplateApply = false; applyError = ''"
+            />
+            <UButton
+              size="xs"
+              label="Apply"
+              :loading="applyingTemplate"
+              :disabled="!selectedTemplateId"
+              @click="onApplyTemplate"
+            />
           </div>
         </div>
 
         <!-- New path editor -->
-        <PathEditor v-if="showPathEditor" :job-id="jobId" @save="onPathSaved" @cancel="showPathEditor = false" />
+        <PathEditor
+          v-if="showPathEditor"
+          :job-id="jobId"
+          @save="onPathSaved"
+          @cancel="showPathEditor = false"
+        />
 
         <!-- No paths -->
-        <p v-if="!paths.length && !showPathEditor" class="text-xs text-(--ui-text-muted) py-2">
+        <p
+          v-if="!paths.length && !showPathEditor"
+          class="text-xs text-(--ui-text-muted) py-2"
+        >
           No paths defined yet. Add a path to start routing parts.
         </p>
 
         <!-- Step config panel (shown when a step is clicked) -->
-        <div v-if="configStep" class="space-y-2">
+        <div
+          v-if="configStep"
+          class="space-y-2"
+        >
           <div class="flex items-center justify-between">
             <span class="text-xs font-medium text-(--ui-text-highlighted)">Configure: {{ configStep.name }}</span>
-            <UButton size="xs" variant="ghost" icon="i-lucide-x" @click="closeStepConfig" />
+            <UButton
+              size="xs"
+              variant="ghost"
+              icon="i-lucide-x"
+              @click="closeStepConfig"
+            />
           </div>
           <StepConfigPanel
             :step-id="configStep.id"
@@ -477,10 +621,22 @@ onMounted(() => {
         </div>
 
         <!-- Path cards -->
-        <div v-for="p in paths" :key="p.id" class="border border-(--ui-border) rounded-md">
+        <div
+          v-for="p in paths"
+          :key="p.id"
+          class="border border-(--ui-border) rounded-md"
+        >
           <!-- Path editing -->
-          <div v-if="editingPathId === p.id" class="p-2">
-            <PathEditor :job-id="jobId" :path="p" @save="onPathSaved" @cancel="editingPathId = null" />
+          <div
+            v-if="editingPathId === p.id"
+            class="p-2"
+          >
+            <PathEditor
+              :job-id="jobId"
+              :path="p"
+              @save="onPathSaved"
+              @cancel="editingPathId = null"
+            />
           </div>
 
           <template v-else>
@@ -498,7 +654,13 @@ onMounted(() => {
                   :part-count="getPathPartCount(p.id)"
                   @deleted="onPathDeleted"
                 />
-                <UButton icon="i-lucide-pencil" size="xs" variant="ghost" color="neutral" @click="startEditPath(p.id)" />
+                <UButton
+                  icon="i-lucide-pencil"
+                  size="xs"
+                  variant="ghost"
+                  color="neutral"
+                  @click="startEditPath(p.id)"
+                />
               </div>
             </div>
 
@@ -512,7 +674,10 @@ onMounted(() => {
             </div>
 
             <!-- Step tracker -->
-            <div v-if="distributions[p.id]" class="px-3 py-2">
+            <div
+              v-if="distributions[p.id]"
+              class="px-3 py-2"
+            >
               <StepTracker
                 :path="p"
                 :distribution="distributions[p.id]!"
@@ -529,25 +694,55 @@ onMounted(() => {
                 class="flex items-center gap-1.5 text-xs text-(--ui-text-muted) hover:text-(--ui-text-highlighted) transition-colors cursor-pointer"
                 @click="togglePathNotes(p.id)"
               >
-                <UIcon name="i-lucide-message-square" class="size-3" />
+                <UIcon
+                  name="i-lucide-message-square"
+                  class="size-3"
+                />
                 Notes
-                <UBadge v-if="pathNotes[p.id]?.length" size="xs" variant="subtle" color="warning">{{ pathNotes[p.id]!.length }}</UBadge>
-                <UIcon :name="showNotesForPath === p.id ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'" class="size-3" />
+                <UBadge
+                  v-if="pathNotes[p.id]?.length"
+                  size="xs"
+                  variant="subtle"
+                  color="warning"
+                >
+                  {{ pathNotes[p.id]!.length }}
+                </UBadge>
+                <UIcon
+                  :name="showNotesForPath === p.id ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+                  class="size-3"
+                />
               </button>
 
-              <div v-if="showNotesForPath === p.id" class="mt-2 space-y-2">
-                <div v-if="p.steps.length" class="flex items-center gap-2 flex-wrap">
+              <div
+                v-if="showNotesForPath === p.id"
+                class="mt-2 space-y-2"
+              >
+                <div
+                  v-if="p.steps.length"
+                  class="flex items-center gap-2 flex-wrap"
+                >
                   <span class="text-xs text-(--ui-text-muted)">Add note at:</span>
                   <UButton
-                    v-for="step in p.steps" :key="step.id"
-                    size="xs" :variant="showNoteFormStep === step.id ? 'solid' : 'soft'" color="neutral" :label="step.name"
+                    v-for="step in p.steps"
+                    :key="step.id"
+                    size="xs"
+                    :variant="showNoteFormStep === step.id ? 'solid' : 'soft'"
+                    color="neutral"
+                    :label="step.name"
                     @click="showNoteFormStep = showNoteFormStep === step.id ? null : step.id"
                   />
                 </div>
-                <div v-if="showNoteFormStep" class="p-2 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/30">
+                <div
+                  v-if="showNoteFormStep"
+                  class="p-2 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/30"
+                >
                   <StepNoteForm
-                    :job-id="jobId" :path-id="p.id" :step-id="showNoteFormStep" :part-ids="[]"
-                    :jira-ticket-key="job?.jiraTicketKey" :jira-push-enabled="jiraPushAvailable"
+                    :job-id="jobId"
+                    :path-id="p.id"
+                    :step-id="showNoteFormStep"
+                    :part-ids="[]"
+                    :jira-ticket-key="job?.jiraTicketKey"
+                    :jira-push-enabled="jiraPushAvailable"
                     @created="onNoteCreated(p.id)"
                   />
                 </div>
@@ -560,7 +755,11 @@ onMounted(() => {
 
       <!-- Parts Tab -->
       <div v-if="activeTab === 'parts'">
-        <JobPartsTab :job-id="jobId" :paths="paths" :goal-quantity="job.goalQuantity" />
+        <JobPartsTab
+          :job-id="jobId"
+          :paths="paths"
+          :goal-quantity="job.goalQuantity"
+        />
       </div>
     </template>
 
@@ -575,7 +774,11 @@ onMounted(() => {
             Are you sure you want to delete <span class="font-semibold text-(--ui-text-highlighted)">{{ job?.name }}</span>? This action cannot be undone.
           </p>
           <div class="flex justify-end gap-2 pt-2">
-            <UButton variant="ghost" label="Cancel" @click="showDeleteModal = false" />
+            <UButton
+              variant="ghost"
+              label="Cancel"
+              @click="showDeleteModal = false"
+            />
             <UButton
               color="error"
               label="Delete"

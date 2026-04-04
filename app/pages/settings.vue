@@ -2,7 +2,7 @@
 import type { ShopUser, JiraConnectionSettings, JiraFieldMapping, PageToggles } from '~/types/domain'
 
 const { settings, loading, fetchSettings, updateSettings } = useSettings()
-const { users, fetchUsers } = useUsers()
+const { fetchUsers } = useUsers()
 
 // Tab state
 const activeTab = ref('users')
@@ -77,7 +77,7 @@ async function toggleUserActive(user: ShopUser) {
   try {
     await $fetch(`/api/users/${user.id}`, {
       method: 'PUT',
-      body: { active: !user.active }
+      body: { active: !user.active },
     })
     await loadAllUsers()
     await fetchUsers()
@@ -115,7 +115,6 @@ async function onSaveMappings(mappings: JiraFieldMapping[]) {
 }
 
 async function onSaveToggles(toggles: PageToggles) {
-  const previousToggles = settings.value?.pageToggles ?? DEFAULT_PAGE_TOGGLES
   settingsError.value = ''
   settingsSuccess.value = ''
   settingsSaving.value = true
@@ -137,7 +136,7 @@ const defaultConnection: JiraConnectionSettings = {
   username: '',
   apiToken: '',
   enabled: false,
-  pushEnabled: false
+  pushEnabled: false,
 }
 
 onMounted(async () => {

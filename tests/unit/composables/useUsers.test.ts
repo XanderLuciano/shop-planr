@@ -12,7 +12,7 @@ describe('useUsers', () => {
     vi.stubGlobal('localStorage', {
       getItem: vi.fn((key: string) => localStorageMock[key] ?? null),
       setItem: vi.fn((key: string, value: string) => { localStorageMock[key] = value }),
-      removeItem: vi.fn((key: string) => { delete localStorageMock[key] })
+      removeItem: vi.fn((key: string) => { delete localStorageMock[key] }),
     })
   })
 
@@ -36,7 +36,7 @@ describe('useUsers', () => {
   it('fetchUsers populates users from API', async () => {
     const mockUsers = [
       { id: 'u1', name: 'Alice', active: true, createdAt: '2024-01-01' },
-      { id: 'u2', name: 'Bob', active: true, createdAt: '2024-01-02' }
+      { id: 'u2', name: 'Bob', active: true, createdAt: '2024-01-02' },
     ]
     vi.stubGlobal('$fetch', vi.fn().mockResolvedValue(mockUsers))
 
@@ -98,7 +98,7 @@ describe('useUsers', () => {
   it('init restores user from localStorage when valid', async () => {
     const mockUsers = [
       { id: 'u1', name: 'Alice', active: true, createdAt: '2024-01-01' },
-      { id: 'u2', name: 'Bob', active: true, createdAt: '2024-01-02' }
+      { id: 'u2', name: 'Bob', active: true, createdAt: '2024-01-02' },
     ]
     localStorageMock['shop_erp_selected_user'] = 'u1'
     vi.stubGlobal('$fetch', vi.fn().mockResolvedValue(mockUsers))
@@ -111,7 +111,7 @@ describe('useUsers', () => {
 
   it('init clears localStorage when stored user no longer exists', async () => {
     const mockUsers = [
-      { id: 'u2', name: 'Bob', active: true, createdAt: '2024-01-02' }
+      { id: 'u2', name: 'Bob', active: true, createdAt: '2024-01-02' },
     ]
     localStorageMock['shop_erp_selected_user'] = 'u_deleted'
     vi.stubGlobal('$fetch', vi.fn().mockResolvedValue(mockUsers))

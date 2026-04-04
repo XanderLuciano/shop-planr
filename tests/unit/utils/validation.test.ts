@@ -6,7 +6,7 @@ import {
   assertNonEmptyArray,
   assertOneOf,
   assertNonNegativeInteger,
-  assertDefined
+  assertDefined,
 } from '../../../server/utils/validation'
 
 describe('assertPositive', () => {

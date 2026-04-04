@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
 import { createBomService } from '../../server/services/bomService'
 import { createAuditService } from '../../server/services/auditService'
-import type { BOM, BomEntry, BomVersion, AuditEntry } from '../../server/types/domain'
+import type { BOM, BomVersion, AuditEntry } from '../../server/types/domain'
 
 /**
  * In-memory BOM repository for pure property testing.
