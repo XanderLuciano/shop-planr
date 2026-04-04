@@ -1,6 +1,10 @@
 // @ts-check
 import withNuxt from './.nuxt/eslint.config.mjs'
 
+// NOTE: Base stylistic rules (commaDangle, braceStyle) are configured in
+// nuxt.config.ts under `eslint.config.stylistic`. Edit them there, not here.
+// This file only adds project-specific overrides on top of the Nuxt preset.
+
 export default withNuxt({
   rules: {
     // Align Vue comma-dangle with stylistic preset
