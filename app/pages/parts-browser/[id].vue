@@ -399,7 +399,7 @@ onMounted(async () => {
               class="flex items-center gap-3 px-3 py-2 text-sm cursor-pointer transition-colors hover:bg-(--ui-primary)/5"
               :class="{
                 'bg-(--ui-primary)/10 border-l-2 border-l-(--ui-primary)': part.currentStepId === step.id,
-                'bg-(--ui-bg-elevated)/30': part.currentStepId !== step.id
+                'bg-(--ui-bg-elevated)/30': part.currentStepId !== step.id,
               }"
               @click="navigateTo(`/parts/step/${encodeURIComponent(step.id)}`)"
             >

@@ -123,7 +123,7 @@ onMounted(() => {
             { label: 'All', value: SELECT_ALL },
             { label: 'In Progress', value: 'in-progress' },
             { label: 'Completed', value: 'completed' },
-            { label: 'Scrapped', value: 'scrapped' }
+            { label: 'Scrapped', value: 'scrapped' },
           ]"
           value-key="value"
           label-key="label"

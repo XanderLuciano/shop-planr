@@ -420,7 +420,7 @@ onMounted(() => {
             class="border-b border-(--ui-border)/50 transition-colors"
             :class="{
               'opacity-50': dragIndex === index,
-              'border-t-2 border-t-(--ui-primary)': dropTargetIndex === index && dragIndex !== null && dragIndex !== index
+              'border-t-2 border-t-(--ui-primary)': dropTargetIndex === index && dragIndex !== null && dragIndex !== index,
             }"
             @dragstart="onDragStart($event, index)"
             @dragover="onDragOver($event, index)"
@@ -473,7 +473,7 @@ onMounted(() => {
       :ui="{
         th: 'text-xs py-1.5',
         td: 'text-xs py-1',
-        tr: 'cursor-pointer hover:bg-(--ui-bg-elevated)/50'
+        tr: 'cursor-pointer hover:bg-(--ui-bg-elevated)/50',
       }"
       @select="onRowSelect"
     >
@@ -502,7 +502,7 @@ onMounted(() => {
         :index="index"
         :class="{
           'opacity-50': dragIndex === index,
-          'border-t-2 border-t-(--ui-primary)': dropTargetIndex === index && dragIndex !== null && dragIndex !== index
+          'border-t-2 border-t-(--ui-primary)': dropTargetIndex === index && dragIndex !== null && dragIndex !== index,
         }"
         @dragstart="onDragStart($event, index)"
         @dragover="onDragOver($event, index)"

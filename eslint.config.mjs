@@ -3,9 +3,8 @@ import withNuxt from './.nuxt/eslint.config.mjs'
 
 export default withNuxt({
   rules: {
-    // Trailing commas on multiline — cleaner diffs
-    'comma-dangle': ['error', 'always-multiline'],
-    '@stylistic/comma-dangle': ['error', 'always-multiline'],
+    // Align Vue comma-dangle with stylistic preset
+    'vue/comma-dangle': ['error', 'always-multiline'],
 
     // No dead code — keeps AI context clean
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],

@@ -30,7 +30,7 @@ defineEmits<{
     class="p-3 rounded-lg border border-(--ui-border) space-y-2"
     :class="{
       'hover:bg-(--ui-bg-elevated)/50 cursor-pointer': !editing,
-      'cursor-grab active:cursor-grabbing': editing
+      'cursor-grab active:cursor-grabbing': editing,
     }"
     :draggable="editing"
     :role="editing ? undefined : 'button'"
