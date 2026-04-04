@@ -44,6 +44,7 @@ jobs:
 
       - name: Smoke test built output
         run: |
+          mkdir -p data
           node .output/server/index.mjs &
           SERVER_PID=$!
           sleep 5
