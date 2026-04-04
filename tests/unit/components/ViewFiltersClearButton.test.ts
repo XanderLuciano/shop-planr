@@ -10,16 +10,7 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, h, computed } from 'vue'
-
-interface FilterState {
-  jobName?: string
-  jiraTicketKey?: string
-  stepName?: string
-  assignee?: string
-  priority?: string
-  label?: string
-  status?: 'active' | 'completed' | 'all'
-}
+import type { FilterState } from '~/server/types/domain'
 
 /**
  * Minimal reproduction of ViewFilters clear-button logic.

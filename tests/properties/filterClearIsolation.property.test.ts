@@ -16,6 +16,7 @@
  */
 import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
+import type { FilterState } from '~/server/types/domain'
 
 /**
  * Simulates the `update` function from ViewFilters.vue:
@@ -27,16 +28,6 @@ function simulateUpdate<T extends Record<string, unknown>>(
   value: unknown,
 ): T {
   return { ...filters, [key]: value } as T
-}
-
-interface FilterState {
-  jobName?: string
-  jiraTicketKey?: string
-  stepName?: string
-  assignee?: string
-  priority?: string
-  label?: string
-  status?: 'active' | 'completed' | 'all'
 }
 
 /** Arbitrary that produces a full FilterState with all optional fields. */
