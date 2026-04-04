@@ -11,20 +11,9 @@
  */
 import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
+import type { StepNote } from '~/server/types/domain'
 
 // --- Types ---
-
-interface StepNote {
-  id: string
-  jobId: string
-  pathId: string
-  stepId: string
-  partIds: string[]
-  text: string
-  createdBy: string
-  createdAt: string
-  pushedToJira: boolean
-}
 
 interface CreateNoteInput {
   jobId: string
