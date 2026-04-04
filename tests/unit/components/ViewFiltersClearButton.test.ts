@@ -45,7 +45,7 @@ const ViewFilters = defineComponent({
 
     return () =>
       h('div', { class: 'flex flex-wrap items-center gap-2' }, [
-        ...clearableFields.map((field) =>
+        ...clearableFields.map(field =>
           h('div', { 'data-field': field.key }, [
             h('input', {
               value: props.filters[field.key] ?? '',
@@ -58,7 +58,7 @@ const ViewFilters = defineComponent({
               ? h('button', {
                   'aria-label': field.ariaLabel,
                   'data-clear': field.key,
-                  onClick: () => update(field.key, undefined),
+                  'onClick': () => update(field.key, undefined),
                 })
               : null,
           ]),
@@ -66,7 +66,7 @@ const ViewFilters = defineComponent({
         hasActiveFilters.value
           ? h('button', {
               'data-clear-all': '',
-              onClick: () => clearAll(),
+              'onClick': () => clearAll(),
             }, 'Clear')
           : null,
       ])
