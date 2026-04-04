@@ -8,7 +8,10 @@ import type { TemplateRoute, Path } from '../../../server/types/domain'
 function createMockTemplateRepo(): TemplateRepository {
   const store = new Map<string, TemplateRoute>()
   return {
-    create: vi.fn((t: TemplateRoute) => { store.set(t.id, t); return t }),
+    create: vi.fn((t: TemplateRoute) => {
+      store.set(t.id, t)
+      return t
+    }),
     getById: vi.fn((id: string) => store.get(id) ?? null),
     list: vi.fn(() => [...store.values()]),
     update: vi.fn((id: string, partial: Partial<TemplateRoute>) => {
@@ -24,7 +27,10 @@ function createMockTemplateRepo(): TemplateRepository {
 function createMockPathRepo(): PathRepository {
   const store = new Map<string, Path>()
   return {
-    create: vi.fn((p: Path) => { store.set(p.id, p); return p }),
+    create: vi.fn((p: Path) => {
+      store.set(p.id, p)
+      return p
+    }),
     getById: vi.fn((id: string) => store.get(id) ?? null),
     listByJobId: vi.fn((jobId: string) => [...store.values()].filter(p => p.jobId === jobId)),
     update: vi.fn((id: string, partial: Partial<Path>) => {

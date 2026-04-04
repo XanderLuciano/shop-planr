@@ -21,4 +21,11 @@ export default withNuxt({
     // '@typescript-eslint/explicit-function-return-type': ['warn', { allowExpressions: true }],
     // '@typescript-eslint/consistent-type-imports': ['warn', { prefer: 'type-imports' }],
   },
+}, {
+  // Relax strict rules for test files — tests legitimately use any/delete for mocking
+  files: ['tests/**/*.ts', 'tests/**/*.test.ts'],
+  rules: {
+    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/no-dynamic-delete': 'warn',
+  },
 })

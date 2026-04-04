@@ -113,7 +113,9 @@ export function seedDatabase(dbPath: string): void {
       'Laser Engrave', 'Bead Blast',
     ]
     for (const name of processes) {
-      try { svc.libraryService.addProcess(name) } catch { /* already exists */ }
+      try {
+        svc.libraryService.addProcess(name)
+      } catch { /* already exists */ }
     }
     console.log(`  Process library: ${processes.length} entries`)
 
@@ -123,7 +125,9 @@ export function seedDatabase(dbPath: string): void {
       'Vendor - HeatTreat Inc.', 'Vendor - Chemfilm Services', 'Shipping', 'Laser Room',
     ]
     for (const name of locations) {
-      try { svc.libraryService.addLocation(name) } catch { /* already exists */ }
+      try {
+        svc.libraryService.addLocation(name)
+      } catch { /* already exists */ }
     }
     console.log(`  Location library: ${locations.length} entries`)
 

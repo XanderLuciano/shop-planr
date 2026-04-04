@@ -22,9 +22,6 @@ const arbSnId = () => arbIdSuffix().map(s => `SN-${s}`)
 /** Generate a new part_ prefixed ID */
 const arbPartId = () => arbIdSuffix().map(s => `part_${s}`)
 
-/** Generate either prefix type */
-const _arbDualId = () => fc.oneof(arbSnId(), arbPartId())
-
 const arbScrapReason = () =>
   fc.constantFrom(
     'out_of_tolerance' as const,

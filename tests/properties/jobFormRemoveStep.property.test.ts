@@ -69,7 +69,9 @@ describe('Property 7: removeStep enforces minimum-one constraint', () => {
           }
 
           // Name steps for identification
-          path.steps.forEach((s, i) => { s.name = `Step-${i}` })
+          path.steps.forEach((s, i) => {
+            s.name = `Step-${i}`
+          })
 
           const removeIdx = removeIdxSeed % path.steps.length
           const targetClientId = path.steps[removeIdx]._clientId

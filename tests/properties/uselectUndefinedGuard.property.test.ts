@@ -158,11 +158,6 @@ describe('USelect safety guard', () => {
         }
 
         // Check for ref('') or ref("") — empty string is reserved by Reka UI
-        const _emptyStringInit = new RegExp(
-          `const\\s+${escaped}\\s*=\\s*ref(?:<[^>]*>)?\\((['"]){2}\\)`,
-          'm',
-        )
-        // Simpler: match ref('') or ref("")
         const emptyInit2 = new RegExp(
           `const\\s+${escaped}\\s*=\\s*ref(?:<[^>]*>)?\\(''\\)`,
           'm',
@@ -223,8 +218,7 @@ describe('USelect safety guard', () => {
 
       // Check for raw '__none__' string literals in script (should use SELECT_NONE)
       const rawLiteralPattern = /['"]__none__['"]/g
-      let _match
-      while ((_match = rawLiteralPattern.exec(script)) !== null) {
+      while (rawLiteralPattern.exec(script) !== null) {
         violations.push(
           `${rel(filePath)}: raw '__none__' literal in script — use SELECT_NONE constant instead`,
         )
@@ -232,7 +226,7 @@ describe('USelect safety guard', () => {
 
       // Also check template for raw '__none__' (except in :items arrays where SELECT_NONE is used)
       const templateRawPattern = /['"]__none__['"]/g
-      while ((_match = templateRawPattern.exec(template)) !== null) {
+      while (templateRawPattern.exec(template) !== null) {
         violations.push(
           `${rel(filePath)}: raw '__none__' literal in template — use SELECT_NONE constant instead`,
         )

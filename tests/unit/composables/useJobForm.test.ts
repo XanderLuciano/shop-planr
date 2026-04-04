@@ -201,7 +201,9 @@ describe('useJobForm', () => {
 
     it('sets submitting=true during execution and false after', async () => {
       let resolveCreate: (v: any) => void
-      mockCreateJob.mockImplementation(() => new Promise((r) => { resolveCreate = r }))
+      mockCreateJob.mockImplementation(() => new Promise((r) => {
+        resolveCreate = r
+      }))
 
       const { jobDraft, submitting, submit } = useJobForm('create')
       jobDraft.value.name = 'Job'
@@ -234,9 +236,15 @@ describe('useJobForm', () => {
       mockCreatePath.mockResolvedValue({})
 
       const callOrder: string[] = []
-      mockDeletePath.mockImplementation(async () => { callOrder.push('deletePath') })
-      mockUpdatePath.mockImplementation(async () => { callOrder.push('updatePath') })
-      mockCreatePath.mockImplementation(async () => { callOrder.push('createPath') })
+      mockDeletePath.mockImplementation(async () => {
+        callOrder.push('deletePath')
+      })
+      mockUpdatePath.mockImplementation(async () => {
+        callOrder.push('updatePath')
+      })
+      mockCreatePath.mockImplementation(async () => {
+        callOrder.push('createPath')
+      })
 
       const { pathDrafts, submit } = useJobForm('edit', existingJob)
 

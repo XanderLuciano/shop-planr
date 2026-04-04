@@ -56,12 +56,6 @@ function seedWithSteps(
 
 // ---- Arbitraries ----
 
-const _arbIsoDate = () =>
-  fc.integer({ min: new Date('2020-01-01').getTime(), max: new Date('2030-01-01').getTime() })
-    .map(ts => new Date(ts).toISOString())
-
-const _SCRAP_REASONS: ScrapReason[] = ['out_of_tolerance', 'process_defect', 'damaged', 'operator_error', 'other']
-
 /**
  * Generates a list of part assignments: each part gets a step index (or null for completed)
  * and a status. This lets us create parts distributed across steps with various statuses.

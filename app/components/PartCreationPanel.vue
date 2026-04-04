@@ -23,7 +23,9 @@ const validationError = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 const errorMessage = ref<string | null>(null)
 
-watch(quantity, () => { validateQuantity() })
+watch(quantity, () => {
+  validateQuantity()
+})
 
 function validateQuantity() {
   if (quantity.value < 1) {

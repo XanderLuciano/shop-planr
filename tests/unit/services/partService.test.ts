@@ -43,7 +43,10 @@ function makePart(overrides: Partial<Part> = {}): Part {
 function createMockPartRepo(): PartRepository {
   const store = new Map<string, Part>()
   return {
-    create: vi.fn((s: Part) => { store.set(s.id, s); return s }),
+    create: vi.fn((s: Part) => {
+      store.set(s.id, s)
+      return s
+    }),
     createBatch: vi.fn((parts: Part[]) => {
       for (const s of parts) store.set(s.id, s)
       return parts
@@ -87,7 +90,10 @@ function createMockPathRepo(path: Path | null = makePath()): PathRepository {
 function createMockCertRepo(): CertRepository {
   const certs = new Map<string, Certificate>()
   return {
-    create: vi.fn((c: Certificate) => { certs.set(c.id, c); return c }),
+    create: vi.fn((c: Certificate) => {
+      certs.set(c.id, c)
+      return c
+    }),
     getById: vi.fn((id: string) => certs.get(id) ?? null),
     list: vi.fn(() => [...certs.values()]),
     attachToPart: vi.fn(a => a),

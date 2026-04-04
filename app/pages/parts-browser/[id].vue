@@ -230,7 +230,10 @@ async function handleAdvance(payload: { partIds: string[], note?: string }) {
 }
 
 async function loadStepNotes() {
-  if (!currentStep.value) { stepNotes.value = []; return }
+  if (!currentStep.value) {
+    stepNotes.value = []
+    return
+  }
   try {
     stepNotes.value = await fetchNotesForStep(currentStep.value.id)
   } catch { stepNotes.value = [] }

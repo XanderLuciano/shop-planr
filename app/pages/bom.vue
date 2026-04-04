@@ -64,7 +64,8 @@ async function onEditSave(bomId: string, payload: { name: string, entries: { par
     })
     editingBomId.value = null
     // Refresh summaries
-    delete summaries.value[bomId]
+    const { [bomId]: _, ...rest } = summaries.value
+    summaries.value = rest
     await fetchBoms()
   } catch (e: any) {
     editError.value = e?.data?.message ?? e?.message ?? 'Failed to edit BOM'

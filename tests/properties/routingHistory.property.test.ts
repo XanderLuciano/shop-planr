@@ -95,7 +95,6 @@ describe('Feature: step-id-part-tracking, Property 6: Routing history is ordered
           }
 
           // P6b: history contains at least one entry for every step the part visited
-          const _freshPart = ctx.partService.getPart(part!.id)
           const stepsVisited = Math.min(actualAdvances, stepCount - 1)
           const visitedStepIds = new Set<string>()
           for (let i = 0; i <= stepsVisited; i++) {

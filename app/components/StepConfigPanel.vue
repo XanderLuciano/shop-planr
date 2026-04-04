@@ -15,8 +15,12 @@ const error = ref<string | null>(null)
 const localOptional = ref(props.optional)
 const localDependencyType = ref(props.dependencyType)
 
-watch(() => props.optional, (v) => { localOptional.value = v })
-watch(() => props.dependencyType, (v) => { localDependencyType.value = v })
+watch(() => props.optional, (v) => {
+  localOptional.value = v
+})
+watch(() => props.dependencyType, (v) => {
+  localDependencyType.value = v
+})
 
 const dependencyOptions = [
   { label: '🔒 Physical', value: 'physical' },

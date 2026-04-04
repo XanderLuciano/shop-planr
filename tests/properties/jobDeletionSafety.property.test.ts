@@ -24,7 +24,10 @@ import type { Job } from '../../server/types/domain'
 function createMockJobRepo(): JobRepository {
   const store = new Map<string, Job>()
   return {
-    create: vi.fn((job: Job) => { store.set(job.id, job); return job }),
+    create: vi.fn((job: Job) => {
+      store.set(job.id, job)
+      return job
+    }),
     getById: vi.fn((id: string) => store.get(id) ?? null),
     list: vi.fn(() => [...store.values()]),
     update: vi.fn((id: string, partial: Partial<Job>) => {

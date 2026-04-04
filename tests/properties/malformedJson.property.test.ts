@@ -196,7 +196,12 @@ describe('Property 12: Malformed JSON Error Reporting', () => {
     fc.assert(
       fc.property(
         fc.string({ minLength: 1, maxLength: 50 }).filter((s) => {
-          try { JSON.parse(s); return false } catch { return true }
+          try {
+            JSON.parse(s)
+            return false
+          } catch {
+            return true
+          }
         }),
         fc.constantFrom('Job', 'Certificate', 'ShopUser', 'Part') as fc.Arbitrary<DomainType>,
         (badJson, domainType) => {

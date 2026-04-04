@@ -139,7 +139,7 @@ describe('Property 11: Invalid Input Rejection', () => {
           const job = jobService.createJob({ name: 'Test Job', goalQuantity: 50 })
 
           // Create a path with steps, then update to remove all steps
-          const _path = pathService.createPath({
+          pathService.createPath({
             jobId: job.id,
             name: 'Will Be Stepless',
             goalQuantity: 50,

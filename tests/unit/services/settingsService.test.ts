@@ -8,7 +8,10 @@ function createMockSettingsRepo(): SettingsRepository {
   let stored: AppSettings | null = null
   return {
     get: vi.fn(() => stored),
-    upsert: vi.fn((settings: AppSettings) => { stored = settings; return settings }),
+    upsert: vi.fn((settings: AppSettings) => {
+      stored = settings
+      return settings
+    }),
   }
 }
 

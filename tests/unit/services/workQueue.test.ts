@@ -167,7 +167,7 @@ describe('Work Queue API Endpoint Unit Tests', () => {
 
       // Create a job with a path but no parts
       const job = ctx.jobService.createJob({ name: 'Empty Job', goalQuantity: 5 })
-      const _path = ctx.pathService.createPath({
+      ctx.pathService.createPath({
         jobId: job.id,
         name: 'Main Route',
         goalQuantity: 5,

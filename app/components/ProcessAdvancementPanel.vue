@@ -38,7 +38,9 @@ watch(selectedParts, (sel) => {
   validateQuantity()
 }, { deep: true })
 
-watch(quantity, () => { validateQuantity() })
+watch(quantity, () => {
+  validateQuantity()
+})
 
 function validateQuantity() {
   const count = localPartIds.value.length
@@ -117,7 +119,9 @@ function handleScrapped() {
   emit('scrapped')
 }
 
-onMounted(() => { selectAll() })
+onMounted(() => {
+  selectAll()
+})
 </script>
 
 <template>

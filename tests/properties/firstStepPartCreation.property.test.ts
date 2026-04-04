@@ -297,7 +297,7 @@ describe('Property 5: Selection state drives advance payload and button state', 
             fc.string({ minLength: 0, maxLength: 50 }),
           )
         }),
-        ([_allIds, selectedSubset, note]) => {
+        ([allIds, selectedSubset, note]) => {
           const selectedSet = new Set(selectedSubset)
           const payload = buildAdvancePayload(allIds, selectedSet, note)
 
@@ -338,7 +338,7 @@ describe('Property 5: Selection state drives advance payload and button state', 
             fc.shuffledSubarray(uniqueIds, { minLength: 1 }),
           )
         }),
-        ([_allIds, selectedSubset]) => {
+        ([_ids, selectedSubset]) => {
           const selectedSet = new Set(selectedSubset)
           const buttonDisabled = selectedSet.size === 0
           expect(buttonDisabled).toBe(false)

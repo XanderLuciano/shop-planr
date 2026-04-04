@@ -9,7 +9,10 @@ import type { Path, Part, ShopUser } from '../../../server/types/domain'
 function createMockPathRepo(): PathRepository {
   const store = new Map<string, Path>()
   return {
-    create: vi.fn((path: Path) => { store.set(path.id, path); return path }),
+    create: vi.fn((path: Path) => {
+      store.set(path.id, path)
+      return path
+    }),
     getById: vi.fn((id: string) => store.get(id) ?? null),
     listByJobId: vi.fn((jobId: string) => [...store.values()].filter(p => p.jobId === jobId)),
     update: vi.fn((id: string, partial: Partial<Path>) => {
@@ -51,7 +54,10 @@ function createMockPartRepo(parts: Part[] = []): PartRepository {
 function createMockUserRepo(users: ShopUser[] = []): UserRepository {
   const store = new Map<string, ShopUser>(users.map(u => [u.id, u]))
   return {
-    create: vi.fn((user: ShopUser) => { store.set(user.id, user); return user }),
+    create: vi.fn((user: ShopUser) => {
+      store.set(user.id, user)
+      return user
+    }),
     getById: vi.fn((id: string) => store.get(id) ?? null),
     getByUsername: vi.fn(() => null),
     list: vi.fn(() => [...store.values()]),

@@ -20,7 +20,10 @@ function createMockCertRepo(): CertRepository {
   const attachments: CertAttachment[] = []
 
   return {
-    create: vi.fn((c: Certificate) => { certs.set(c.id, c); return c }),
+    create: vi.fn((c: Certificate) => {
+      certs.set(c.id, c)
+      return c
+    }),
     getById: vi.fn((id: string) => certs.get(id) ?? null),
     list: vi.fn(() => [...certs.values()]),
     attachToPart: vi.fn((a: CertAttachment) => {

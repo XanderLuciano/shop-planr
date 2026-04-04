@@ -8,7 +8,10 @@ import type { AuditService } from '../../../server/services/auditService'
 function createMockNoteRepo(): NoteRepository {
   const store = new Map<string, StepNote>()
   return {
-    create: vi.fn((note: StepNote) => { store.set(note.id, note); return note }),
+    create: vi.fn((note: StepNote) => {
+      store.set(note.id, note)
+      return note
+    }),
     listByPartId: vi.fn((partId: string) =>
       [...store.values()].filter(n => n.partIds.includes(partId)),
     ),

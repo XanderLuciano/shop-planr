@@ -17,7 +17,10 @@ import type { AuditEntry, AuditAction } from '../../server/types/domain'
 function createInMemoryAuditRepo() {
   const entries: AuditEntry[] = []
   return {
-    create: (entry: AuditEntry) => { entries.push(entry); return entry },
+    create: (entry: AuditEntry) => {
+      entries.push(entry)
+      return entry
+    },
     list: () => [...entries],
     listByPartId: (partId: string) => entries.filter(e => e.partId === partId),
     listByJobId: (jobId: string) => entries.filter(e => e.jobId === jobId),

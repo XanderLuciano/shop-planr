@@ -47,7 +47,9 @@ describe('Property 8: moveStep is a valid swap permutation', () => {
           }
 
           // Name steps for identification
-          path.steps.forEach((s, i) => { s.name = `Step-${i}` })
+          path.steps.forEach((s, i) => {
+            s.name = `Step-${i}`
+          })
 
           const stepIdx = stepIdxSeed % path.steps.length
           const targetClientId = path.steps[stepIdx]._clientId

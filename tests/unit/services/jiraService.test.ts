@@ -626,7 +626,7 @@ describe('JiraService', () => {
         const { job, path } = createJobWithPath(mockFetch)
 
         const cert = certService.createCert({ type: 'material', name: 'Steel Cert 304L' })
-        const _parts = partService.batchCreateParts(
+        partService.batchCreateParts(
           { jobId: job.id, pathId: path.id, quantity: 1, certId: cert.id }, 'user1',
         )
 

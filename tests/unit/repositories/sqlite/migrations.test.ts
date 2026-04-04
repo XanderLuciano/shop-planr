@@ -213,7 +213,10 @@ describe('SQLite migration system', () => {
       const db = initDatabase(dbPath)
 
       const columns = db.prepare('PRAGMA table_info(settings)').all() as {
-        name: string, type: string, notnull: number, dflt_value: string | null
+        name: string
+        type: string
+        notnull: number
+        dflt_value: string | null
       }[]
       const col = columns.find(c => c.name === 'page_toggles')
 

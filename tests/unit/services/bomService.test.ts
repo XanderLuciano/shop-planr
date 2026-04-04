@@ -8,7 +8,10 @@ import type { BOM } from '../../../server/types/domain'
 function createMockBomRepo(): BomRepository {
   const store = new Map<string, BOM>()
   return {
-    create: vi.fn((bom: BOM) => { store.set(bom.id, bom); return bom }),
+    create: vi.fn((bom: BOM) => {
+      store.set(bom.id, bom)
+      return bom
+    }),
     getById: vi.fn((id: string) => store.get(id) ?? null),
     list: vi.fn(() => [...store.values()]),
     update: vi.fn((id: string, partial: Partial<BOM>) => {

@@ -22,17 +22,29 @@ function createInMemoryLibraryRepo() {
 
   return {
     listProcesses: () => [...processes],
-    createProcess: (entry: ProcessLibraryEntry) => { processes.push(entry); return entry },
+    createProcess: (entry: ProcessLibraryEntry) => {
+      processes.push(entry)
+      return entry
+    },
     deleteProcess: (id: string) => {
       const idx = processes.findIndex(p => p.id === id)
-      if (idx >= 0) { processes.splice(idx, 1); return true }
+      if (idx >= 0) {
+        processes.splice(idx, 1)
+        return true
+      }
       return false
     },
     listLocations: () => [...locations],
-    createLocation: (entry: LocationLibraryEntry) => { locations.push(entry); return entry },
+    createLocation: (entry: LocationLibraryEntry) => {
+      locations.push(entry)
+      return entry
+    },
     deleteLocation: (id: string) => {
       const idx = locations.findIndex(l => l.id === id)
-      if (idx >= 0) { locations.splice(idx, 1); return true }
+      if (idx >= 0) {
+        locations.splice(idx, 1)
+        return true
+      }
       return false
     },
   }

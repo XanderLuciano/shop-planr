@@ -184,7 +184,7 @@ describe('Operator View Integration', () => {
       ],
     })
 
-    const _parts = partService.batchCreateParts(
+    partService.batchCreateParts(
       { jobId: job.id, pathId: path.id, quantity: 2 },
       'op1',
     )
