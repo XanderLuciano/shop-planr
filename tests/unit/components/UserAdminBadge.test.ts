@@ -29,7 +29,7 @@ const UserRow = defineComponent({
     return () =>
       h('div', { class: 'user-list' },
         props.users.map(u =>
-          h('div', { 'key': u.id, 'class': 'user-row', 'data-user-id': u.id }, [
+          h('div', { key: u.id, class: 'user-row', 'data-user-id': u.id }, [
             h('span', { class: 'display-name' }, u.displayName),
             u.isAdmin
               ? h('span', { class: 'admin-badge' }, 'Admin')

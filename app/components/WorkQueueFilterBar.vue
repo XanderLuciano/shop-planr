@@ -25,10 +25,10 @@ const emit = defineEmits<{
   'update:groupBy': [value: GroupByDimension]
   'update:filters': [value: WorkQueueFilterState]
   'update:searchQuery': [value: string]
-  'clear': []
-  'savePreset': [name: string]
-  'loadPreset': [presetId: string]
-  'deletePreset': [presetId: string]
+  clear: []
+  savePreset: [name: string]
+  loadPreset: [presetId: string]
+  deletePreset: [presetId: string]
 }>()
 
 // --- Group-by items ---

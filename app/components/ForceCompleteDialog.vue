@@ -7,7 +7,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  'completed': []
+  completed: []
 }>()
 
 const { forceComplete, loading, error } = useLifecycle()

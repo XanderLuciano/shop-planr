@@ -161,18 +161,18 @@ const WorkQueueFilterBar = defineComponent({
         // Preset load buttons
         ...props.presets.map(preset =>
           h('button', {
-            'class': 'preset-load',
+            class: 'preset-load',
             'data-preset-id': preset.id,
-            'onClick': () => emit('loadPreset', preset.id),
+            onClick: () => emit('loadPreset', preset.id),
           }, preset.name),
         ),
 
         // Preset delete buttons
         ...props.presets.map(preset =>
           h('button', {
-            'class': 'preset-delete',
+            class: 'preset-delete',
             'data-preset-id': preset.id,
-            'onClick': () => emit('deletePreset', preset.id),
+            onClick: () => emit('deletePreset', preset.id),
           }, `Delete "${preset.name}"`),
         ),
 

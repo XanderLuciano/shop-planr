@@ -15,7 +15,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'step-click': [payload: { stepId: string, stepName: string, stepOrder: number }]
-  'assigned': [stepId: string, userId: string | null]
+  assigned: [stepId: string, userId: string | null]
 }>()
 
 function handleStepClick(step: StepDistribution) {
