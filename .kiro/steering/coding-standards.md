@@ -96,3 +96,21 @@ return { items: serials, count: serials.length } // empty is valid, return 200
 This applies to all list/collection endpoints. An empty list is a valid response — the parent resource exists, it just has no children right now. Reserve 404 for when the parent resource itself is not found.
 
 **Bug reference:** GitHub #2 — step endpoints returned 404 when serial count was 0, making first steps inaccessible after advancing all serials.
+
+## Quality Gates
+
+Before considering any task complete, run these checks and ensure they all pass:
+
+1. **Lint** — `npx eslint --quiet .` must report zero errors. Use `--quiet` to suppress warnings.
+2. **Typecheck** — `npx nuxi typecheck` must pass with no `error TS` output.
+3. **Tests** — `npx vitest run` must pass. Property test timeouts are known flakes — if the only failures are `Test timed out in 5000ms` on property tests, that's acceptable.
+
+If any check fails due to your changes, fix it before moving on. Do not leave broken lint, types, or tests for the next person.
+
+## Lint Style Notes
+
+- Trailing commas are required on multiline constructs (`always-multiline`). The Nuxt preset enforces this via `@stylistic/comma-dangle`.
+- No semicolons — the codebase follows the Nuxt/Vue convention (ASI).
+- `catch (e)` — do NOT annotate catch variables with `: any`. The tsconfig sets `useUnknownInCatchVariables: false`, so `e` is implicitly `any`. Just write `catch (e)`.
+- `no-explicit-any` is enforced in source code (`app/`, `server/`). In test files it's turned off. If you must use `any` in source, add an inline `// eslint-disable-next-line @typescript-eslint/no-explicit-any` with a comment explaining why.
+- Unused variables must be prefixed with `_` or removed. Prefer removing dead code over prefixing — only use `_` for intentionally ignored params (e.g., `(_event, row) => ...`).
