@@ -193,7 +193,6 @@ describe('Note and Defect Integration', () => {
   })
 })
 
-
 /**
  * Integration: Standalone Note Creation Without Advancement
  *

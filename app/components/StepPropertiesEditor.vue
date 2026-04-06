@@ -57,37 +57,48 @@ async function handleSave() {
   }
 
   saving.value = true
-  try {
-    if (assigneeChanged) {
+  const failed: string[] = []
+
+  if (assigneeChanged) {
+    try {
       await $fetch(`/api/steps/${props.stepId}/assign`, {
         method: 'PATCH',
         body: { userId: newAssignee },
       })
+    } catch {
+      failed.push('assignee')
     }
+  }
 
-    if (locationChanged) {
+  if (locationChanged) {
+    try {
       await $fetch(`/api/steps/${props.stepId}/config`, {
         method: 'PATCH',
         body: { location: newLocation },
       })
+    } catch {
+      failed.push('location')
     }
+  }
 
+  saving.value = false
+
+  if (failed.length) {
+    toast.add({
+      title: 'Partial save',
+      description: `Failed to update ${failed.join(' and ')}. Other changes were saved.`,
+      color: 'error',
+    })
+  } else {
     toast.add({
       title: 'Step updated',
       description: 'Step properties saved successfully.',
       color: 'success',
     })
-    emit('saved')
-  } catch (e: any) {
-    const message = e?.data?.message ?? e?.message ?? 'Save failed'
-    toast.add({
-      title: 'Save failed',
-      description: message,
-      color: 'error',
-    })
-  } finally {
-    saving.value = false
   }
+
+  // Always emit saved so parent re-fetches actual server state
+  emit('saved')
 }
 </script>
 

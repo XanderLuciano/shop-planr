@@ -79,7 +79,7 @@ const StepPropertiesEditor = defineComponent({
       return [unassigned, ...userOptions]
     })
 
-    const locationItems = computed(() =>
+    const _locationItems = computed(() =>
       (locations.value as typeof TEST_LOCATIONS).map(l => ({ label: l.name, value: l.name })),
     )
 
@@ -103,39 +103,48 @@ const StepPropertiesEditor = defineComponent({
       }
 
       saving.value = true
-      try {
-        if (assigneeChanged) {
+      const failed: string[] = []
+
+      if (assigneeChanged) {
+        try {
           await mockFetch(`/api/steps/${props.stepId}/assign`, {
             method: 'PATCH',
             body: { userId: newAssignee },
           })
+        } catch {
+          failed.push('assignee')
         }
+      }
 
-        if (locationChanged) {
+      if (locationChanged) {
+        try {
           await mockFetch(`/api/steps/${props.stepId}/config`, {
             method: 'PATCH',
             body: { location: newLocation },
           })
+        } catch {
+          failed.push('location')
         }
+      }
 
+      saving.value = false
+
+      if (failed.length) {
+        mockToastAdd({
+          title: 'Partial save',
+          description: `Failed to update ${failed.join(' and ')}. Other changes were saved.`,
+          color: 'error',
+        })
+      } else {
         mockToastAdd({
           title: 'Step updated',
           description: 'Step properties saved successfully.',
           color: 'success',
         })
-        emit('saved')
       }
-      catch (e: any) {
-        const message = e?.data?.message ?? e?.message ?? 'Save failed'
-        mockToastAdd({
-          title: 'Save failed',
-          description: message,
-          color: 'error',
-        })
-      }
-      finally {
-        saving.value = false
-      }
+
+      // Always emit saved so parent re-fetches actual server state
+      emit('saved')
     }
 
     return () =>
@@ -143,9 +152,9 @@ const StepPropertiesEditor = defineComponent({
         // Assignee dropdown
         h('select', {
           'data-testid': 'assignee-select',
-          'value': selectedUserId.value,
-          'disabled': saving.value || undefined,
-          'onChange': (e: Event) => {
+          value: selectedUserId.value,
+          disabled: saving.value || undefined,
+          onChange: (e: Event) => {
             selectedUserId.value = (e.target as HTMLSelectElement).value
           },
         }, assigneeItems.value.map(item =>
@@ -155,10 +164,10 @@ const StepPropertiesEditor = defineComponent({
         // Location input
         h('input', {
           'data-testid': 'location-input',
-          'value': selectedLocation.value,
-          'disabled': saving.value || undefined,
-          'placeholder': 'Location...',
-          'onInput': (e: Event) => {
+          value: selectedLocation.value,
+          disabled: saving.value || undefined,
+          placeholder: 'Location...',
+          onInput: (e: Event) => {
             selectedLocation.value = (e.target as HTMLInputElement).value
           },
         }),
@@ -166,15 +175,15 @@ const StepPropertiesEditor = defineComponent({
         // Save button
         h('button', {
           'data-testid': 'save-btn',
-          'disabled': saving.value || undefined,
-          'onClick': handleSave,
+          disabled: saving.value || undefined,
+          onClick: handleSave,
         }, 'Save'),
 
         // Cancel button
         h('button', {
           'data-testid': 'cancel-btn',
-          'disabled': saving.value || undefined,
-          'onClick': () => emit('cancel'),
+          disabled: saving.value || undefined,
+          onClick: () => emit('cancel'),
         }, 'Cancel'),
       ])
   },
