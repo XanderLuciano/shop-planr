@@ -477,4 +477,5 @@ No new dependencies. The feature uses:
 - Existing `POST /api/notes` API route
 - Existing `noteService.createNote()` service method
 - Existing `NoteRepository.create()` repository method
-- Nuxt UI `UModal`, `UTextarea`, `UButton`, `UCheckbox` components
+- Nuxt UI `UModal`, `UTextarea`, `UButton` components
+- Native `<input type="checkbox">` for part selection (consistent with ProcessAdvancementPanel pattern)
