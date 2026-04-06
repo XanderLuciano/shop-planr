@@ -17,6 +17,7 @@ interface StepDraft {
   id?: string
   name: string
   location: string
+  assignedTo: string
   optional: boolean
   dependencyType: 'physical' | 'preferred' | 'completion_gate'
 }
@@ -28,12 +29,31 @@ const steps = ref<StepDraft[]>(
     id: s.id,
     name: s.name,
     location: s.location ?? '',
+    assignedTo: s.assignedTo ?? '',
     optional: s.optional ?? false,
     dependencyType: s.dependencyType ?? 'preferred',
-  })) ?? [{ name: '', location: '', optional: false, dependencyType: 'preferred' }],
+  })) ?? [{ name: '', location: '', assignedTo: '', optional: false, dependencyType: 'preferred' }],
 )
 const saving = ref(false)
 const error = ref('')
+
+const { users: allUsers } = useUsers()
+
+const assigneeItems = computed(() => {
+  const unassigned = { label: 'Unassigned', value: SELECT_UNASSIGNED }
+  const userOptions = allUsers.value
+    .filter(u => u.active)
+    .map(u => ({ label: u.displayName, value: u.id }))
+  return [unassigned, ...userOptions]
+})
+
+function assigneeToSelect(assignedTo: string): string {
+  return assignedTo || SELECT_UNASSIGNED
+}
+
+function selectToAssignee(value: string): string {
+  return value === SELECT_UNASSIGNED ? '' : value
+}
 
 const dependencyOptions = [
   { label: 'Physical', value: 'physical' },
@@ -42,7 +62,7 @@ const dependencyOptions = [
 ]
 
 function addStep() {
-  steps.value.push({ name: '', location: '', optional: false, dependencyType: 'preferred' })
+  steps.value.push({ name: '', location: '', assignedTo: '', optional: false, dependencyType: 'preferred' })
 }
 
 function removeStep(index: number) {
@@ -80,6 +100,7 @@ async function onSave() {
       id: s.id,
       name: s.name.trim(),
       location: s.location.trim() || undefined,
+      assignedTo: s.assignedTo ? s.assignedTo : (s.id ? null : undefined),
       optional: s.optional,
       dependencyType: s.dependencyType,
     }))
@@ -163,6 +184,13 @@ async function onSave() {
             v-model="step.location"
             type="location"
             class="flex-1"
+          />
+          <USelect
+            :model-value="assigneeToSelect(step.assignedTo)"
+            :items="assigneeItems"
+            size="xs"
+            class="w-32 shrink-0"
+            @update:model-value="(v: string) => { step.assignedTo = selectToAssignee(v) }"
           />
           <label class="flex items-center gap-1 text-xs shrink-0">
             <input

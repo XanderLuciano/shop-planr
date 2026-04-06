@@ -222,3 +222,58 @@ describe('reconcileSteps', () => {
     })
   })
 })
+
+describe('reconcileSteps — assignedTo handling', () => {
+  it('uses input assignedTo when updating an existing step (Req 8.1)', () => {
+    const existing = [makeStep('step_1', 0, 'Machining')]
+    existing[0].assignedTo = 'user_old'
+    const input: StepInput[] = [{ id: 'step_1', name: 'Machining', assignedTo: 'user_new' }]
+
+    const result = reconcileSteps(existing, input)
+
+    expect(result.toUpdate).toHaveLength(1)
+    expect(result.toUpdate[0].assignedTo).toBe('user_new')
+  })
+
+  it('preserves existing assignedTo when input omits it (Req 8.2)', () => {
+    const existing = [makeStep('step_1', 0, 'Machining')]
+    existing[0].assignedTo = 'user_existing'
+    const input: StepInput[] = [{ id: 'step_1', name: 'Machining' }]
+
+    const result = reconcileSteps(existing, input)
+
+    expect(result.toUpdate).toHaveLength(1)
+    expect(result.toUpdate[0].assignedTo).toBe('user_existing')
+  })
+
+  it('clears assignedTo when input explicitly sets null (Req 8.1 — unassign)', () => {
+    const existing = [makeStep('step_1', 0, 'Machining')]
+    existing[0].assignedTo = 'user_old'
+    const input: StepInput[] = [{ id: 'step_1', name: 'Machining', assignedTo: null }]
+
+    const result = reconcileSteps(existing, input)
+
+    expect(result.toUpdate).toHaveLength(1)
+    expect(result.toUpdate[0].assignedTo).toBeUndefined()
+  })
+
+  it('includes assignedTo on newly inserted step (Req 8.3)', () => {
+    const existing: ProcessStep[] = []
+    const input: StepInput[] = [{ name: 'New Step', assignedTo: 'user_abc' }]
+
+    const result = reconcileSteps(existing, input)
+
+    expect(result.toInsert).toHaveLength(1)
+    expect(result.toInsert[0].assignedTo).toBe('user_abc')
+  })
+
+  it('omits assignedTo on new step when input has no assignedTo (Req 8.4)', () => {
+    const existing: ProcessStep[] = []
+    const input: StepInput[] = [{ name: 'New Step' }]
+
+    const result = reconcileSteps(existing, input)
+
+    expect(result.toInsert).toHaveLength(1)
+    expect(result.toInsert[0].assignedTo).toBeUndefined()
+  })
+})

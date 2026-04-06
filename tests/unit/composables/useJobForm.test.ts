@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import type { Job, Path, ProcessStep } from '~/server/types/domain'
 
-import { useJobForm } from '~/app/composables/useJobForm'
+import { useJobForm, computePathChanges } from '~/app/composables/useJobForm'
+import type { PathDraft } from '~/app/composables/useJobForm'
 
 // ---- Mocks ----
 
@@ -32,6 +33,7 @@ function makeStep(overrides?: Partial<ProcessStep>): ProcessStep {
     name: overrides?.name ?? 'Cutting',
     order: overrides?.order ?? 0,
     location: overrides?.location,
+    assignedTo: overrides?.assignedTo,
     optional: overrides?.optional ?? false,
     dependencyType: overrides?.dependencyType ?? 'preferred',
   }
@@ -261,7 +263,7 @@ describe('useJobForm', () => {
         name: 'New Path',
         goalQuantity: 10,
         advancementMode: 'flexible',
-        steps: [{ _clientId: 'new-step-id', name: 'New Step', location: '', optional: false, dependencyType: 'preferred' }],
+        steps: [{ _clientId: 'new-step-id', name: 'New Step', location: '', assignedTo: '', optional: false, dependencyType: 'preferred' }],
       })
 
       const jobId = await submit()
@@ -319,6 +321,175 @@ describe('useJobForm', () => {
 
       await expect(submit()).rejects.toThrow('Validation failed')
       expect(mockCreateJob).not.toHaveBeenCalled()
+    })
+  })
+
+  // ---- Test 7: hasPathChanges detects assignedTo differences (Req 9.1, 9.2) ----
+
+  describe('hasPathChanges assignee change detection', () => {
+    it('returns true when assignedTo differs between draft and original', () => {
+      const originalPath = makePath('job-1', {
+        id: 'path-1',
+        name: 'Route A',
+        goalQuantity: 10,
+        advancementMode: 'strict',
+        steps: [makeStep({ id: 's1', name: 'Step 1', assignedTo: 'user-1' })],
+      })
+
+      const draft: PathDraft = {
+        _clientId: 'c1',
+        _existingId: 'path-1',
+        name: 'Route A',
+        goalQuantity: 10,
+        advancementMode: 'strict',
+        steps: [{
+          _clientId: 'cs1',
+          _existingStepId: 's1',
+          name: 'Step 1',
+          location: '',
+          assignedTo: 'user-2', // different from original 'user-1'
+          optional: false,
+          dependencyType: 'preferred',
+        }],
+      }
+
+      const { toUpdate } = computePathChanges([originalPath], [draft])
+      expect(toUpdate).toHaveLength(1)
+      expect(toUpdate[0]._existingId).toBe('path-1')
+    })
+
+    it('returns false when assignedTo matches between draft and original', () => {
+      const originalPath = makePath('job-1', {
+        id: 'path-1',
+        name: 'Route A',
+        goalQuantity: 10,
+        advancementMode: 'strict',
+        steps: [makeStep({ id: 's1', name: 'Step 1', assignedTo: 'user-1' })],
+      })
+
+      const draft: PathDraft = {
+        _clientId: 'c1',
+        _existingId: 'path-1',
+        name: 'Route A',
+        goalQuantity: 10,
+        advancementMode: 'strict',
+        steps: [{
+          _clientId: 'cs1',
+          _existingStepId: 's1',
+          name: 'Step 1',
+          location: '',
+          assignedTo: 'user-1', // same as original
+          optional: false,
+          dependencyType: 'preferred',
+        }],
+      }
+
+      const { toUpdate } = computePathChanges([originalPath], [draft])
+      expect(toUpdate).toHaveLength(0)
+    })
+
+    it('treats empty string assignedTo as matching undefined original', () => {
+      const originalPath = makePath('job-1', {
+        id: 'path-1',
+        name: 'Route A',
+        goalQuantity: 10,
+        advancementMode: 'strict',
+        steps: [makeStep({ id: 's1', name: 'Step 1' })], // no assignedTo (undefined)
+      })
+
+      const draft: PathDraft = {
+        _clientId: 'c1',
+        _existingId: 'path-1',
+        name: 'Route A',
+        goalQuantity: 10,
+        advancementMode: 'strict',
+        steps: [{
+          _clientId: 'cs1',
+          _existingStepId: 's1',
+          name: 'Step 1',
+          location: '',
+          assignedTo: '', // empty string should match undefined
+          optional: false,
+          dependencyType: 'preferred',
+        }],
+      }
+
+      const { toUpdate } = computePathChanges([originalPath], [draft])
+      expect(toUpdate).toHaveLength(0)
+    })
+  })
+
+  // ---- Test 8: createStepDraft defaults assignedTo to '' (Req 6.4) ----
+
+  describe('createStepDraft defaults', () => {
+    it('defaults assignedTo to empty string when adding a new step', () => {
+      const { addPath, pathDrafts } = useJobForm('create')
+      addPath()
+
+      const step = pathDrafts.value[0].steps[0]
+      expect(step.assignedTo).toBe('')
+    })
+
+    it('defaults assignedTo to empty string when adding a step to an existing path', () => {
+      const { addPath, addStep, pathDrafts } = useJobForm('create')
+      addPath()
+      const pathClientId = pathDrafts.value[0]._clientId
+      addStep(pathClientId)
+
+      const newStep = pathDrafts.value[0].steps[1]
+      expect(newStep.assignedTo).toBe('')
+    })
+  })
+
+  // ---- Test 9: Edit mode hydration populates assignedTo from existing step (Req 10.1, 10.2) ----
+
+  describe('edit mode hydration for assignedTo', () => {
+    it('populates assignedTo from existing step', () => {
+      const existingJob = makeExistingJob(
+        { id: 'job-1', name: 'Test Job', goalQuantity: 100 },
+        [makePath('job-1', {
+          id: 'path-1',
+          steps: [makeStep({ id: 's1', name: 'Step 1', assignedTo: 'user-42' })],
+        })],
+      )
+
+      const { pathDrafts } = useJobForm('edit', existingJob)
+
+      expect(pathDrafts.value[0].steps[0].assignedTo).toBe('user-42')
+    })
+
+    it('sets assignedTo to empty string when existing step has no assignedTo', () => {
+      const existingJob = makeExistingJob(
+        { id: 'job-1', name: 'Test Job', goalQuantity: 100 },
+        [makePath('job-1', {
+          id: 'path-1',
+          steps: [makeStep({ id: 's1', name: 'Step 1' })], // no assignedTo
+        })],
+      )
+
+      const { pathDrafts } = useJobForm('edit', existingJob)
+
+      expect(pathDrafts.value[0].steps[0].assignedTo).toBe('')
+    })
+
+    it('hydrates multiple steps with their respective assignedTo values', () => {
+      const existingJob = makeExistingJob(
+        { id: 'job-1', name: 'Test Job', goalQuantity: 100 },
+        [makePath('job-1', {
+          id: 'path-1',
+          steps: [
+            makeStep({ id: 's1', name: 'Step 1', order: 0, assignedTo: 'user-a' }),
+            makeStep({ id: 's2', name: 'Step 2', order: 1, assignedTo: undefined }),
+            makeStep({ id: 's3', name: 'Step 3', order: 2, assignedTo: 'user-b' }),
+          ],
+        })],
+      )
+
+      const { pathDrafts } = useJobForm('edit', existingJob)
+
+      expect(pathDrafts.value[0].steps[0].assignedTo).toBe('user-a')
+      expect(pathDrafts.value[0].steps[1].assignedTo).toBe('')
+      expect(pathDrafts.value[0].steps[2].assignedTo).toBe('user-b')
     })
   })
 })

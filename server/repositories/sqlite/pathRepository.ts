@@ -53,14 +53,14 @@ export class SQLitePathRepository implements PathRepository {
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `)
     const insertStep = this.db.prepare(`
-      INSERT INTO process_steps (id, path_id, name, step_order, location, optional, dependency_type)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO process_steps (id, path_id, name, step_order, location, assigned_to, optional, dependency_type)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `)
 
     this.db.transaction(() => {
       insertPath.run(path.id, path.jobId, path.name, path.goalQuantity, path.advancementMode ?? 'strict', path.createdAt, path.updatedAt)
       for (const step of path.steps) {
-        insertStep.run(step.id, path.id, step.name, step.order, step.location ?? null, step.optional ? 1 : 0, step.dependencyType ?? 'preferred')
+        insertStep.run(step.id, path.id, step.name, step.order, step.location ?? null, step.assignedTo ?? null, step.optional ? 1 : 0, step.dependencyType ?? 'preferred')
       }
     })()
 
@@ -128,11 +128,11 @@ export class SQLitePathRepository implements PathRepository {
       'UPDATE process_steps SET step_order = ? WHERE id = ?',
     )
     const updateStepStmt = this.db.prepare(`
-      UPDATE process_steps SET name = ?, step_order = ?, location = ?, optional = ?, dependency_type = ? WHERE id = ?
+      UPDATE process_steps SET name = ?, step_order = ?, location = ?, assigned_to = ?, optional = ?, dependency_type = ? WHERE id = ?
     `)
     const insertStepStmt = this.db.prepare(`
-      INSERT INTO process_steps (id, path_id, name, step_order, location, optional, dependency_type)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO process_steps (id, path_id, name, step_order, location, assigned_to, optional, dependency_type)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `)
     const deleteStepStmt = this.db.prepare(
       'DELETE FROM process_steps WHERE id = ?',
@@ -171,12 +171,12 @@ export class SQLitePathRepository implements PathRepository {
 
         // Phase 5: Update existing steps in place with new field values and correct order
         for (const step of stepsToUpdate) {
-          updateStepStmt.run(step.name, step.order, step.location ?? null, step.optional ? 1 : 0, step.dependencyType ?? 'preferred', step.id)
+          updateStepStmt.run(step.name, step.order, step.location ?? null, step.assignedTo ?? null, step.optional ? 1 : 0, step.dependencyType ?? 'preferred', step.id)
         }
 
         // Phase 6: Insert new steps
         for (const step of stepsToInsert) {
-          insertStepStmt.run(step.id, id, step.name, step.order, step.location ?? null, step.optional ? 1 : 0, step.dependencyType ?? 'preferred')
+          insertStepStmt.run(step.id, id, step.name, step.order, step.location ?? null, step.assignedTo ?? null, step.optional ? 1 : 0, step.dependencyType ?? 'preferred')
         }
       }
     })()

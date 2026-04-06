@@ -27,10 +27,28 @@ const {
 } = useOperatorIdentity()
 
 const { advanceBatch } = useWorkQueue()
+const { users } = useUsers()
 
 const advanceLoading = ref(false)
 const skipLoading = ref(false)
+const editing = ref(false)
 const toast = useToast()
+
+// Resolve assignee user ID to display name
+const assigneeName = computed(() => {
+  if (!job.value?.assignedTo) return null
+  const user = users.value.find(u => u.id === job.value!.assignedTo)
+  return user?.displayName ?? null
+})
+
+async function handleSaved() {
+  editing.value = false
+  await fetchStep()
+}
+
+function handleEditCancel() {
+  editing.value = false
+}
 
 // Operator dropdown items
 const operatorMenuItems = computed<DropdownMenuItem[][]>(() => {
@@ -222,11 +240,31 @@ onMounted(async () => {
               <span class="text-xs text-(--ui-text-muted) bg-(--ui-bg-elevated) px-1.5 py-0.5 rounded">
                 Step {{ job.stepOrder + 1 }} of {{ job.totalSteps }}
               </span>
+              <UButton
+                v-if="!editing"
+                size="xs"
+                variant="ghost"
+                icon="i-lucide-pencil"
+                aria-label="Edit step properties"
+                @click="editing = true"
+              />
             </div>
-            <p class="text-sm text-(--ui-text-muted)">
+            <p
+              v-if="!editing"
+              class="text-sm text-(--ui-text-muted)"
+            >
               {{ job.jobName }} · {{ job.pathName }}
               <span v-if="job.stepLocation"> · 📍 {{ job.stepLocation }}</span>
+              <span v-if="assigneeName"> · 👤 {{ assigneeName }}</span>
             </p>
+            <StepPropertiesEditor
+              v-if="editing"
+              :step-id="job.stepId"
+              :current-assigned-to="job.assignedTo"
+              :current-location="job.stepLocation"
+              @saved="handleSaved"
+              @cancel="handleEditCancel"
+            />
           </div>
 
           <!-- Operator selector -->

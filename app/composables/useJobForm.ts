@@ -9,6 +9,7 @@ export interface StepDraft {
   _existingStepId?: string
   name: string
   location: string
+  assignedTo: string
   optional: boolean
   dependencyType: 'physical' | 'preferred' | 'completion_gate'
 }
@@ -45,6 +46,7 @@ function createStepDraft(overrides?: Partial<Omit<StepDraft, '_clientId'>>): Ste
     _existingStepId: overrides?._existingStepId,
     name: overrides?.name ?? '',
     location: overrides?.location ?? '',
+    assignedTo: overrides?.assignedTo ?? '',
     optional: overrides?.optional ?? false,
     dependencyType: overrides?.dependencyType ?? 'preferred',
   }
@@ -71,6 +73,7 @@ function hasPathChanges(draft: PathDraft, original: Path): boolean {
     const o = original.steps[i]!
     if (s.name.trim() !== o.name) return true
     if ((s.location.trim() || '') !== (o.location || '')) return true
+    if ((s.assignedTo?.trim() || '') !== (o.assignedTo || '')) return true
     if (s.optional !== o.optional) return true
     if (s.dependencyType !== o.dependencyType) return true
   }
@@ -121,6 +124,7 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
               _existingStepId: s.id,
               name: s.name,
               location: s.location ?? '',
+              assignedTo: s.assignedTo ?? '',
               optional: s.optional,
               dependencyType: s.dependencyType,
             })),
@@ -261,6 +265,7 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
         steps: draft.steps.map(s => ({
           name: s.name.trim(),
           location: s.location.trim() || undefined,
+          assignedTo: s.assignedTo || undefined,
           optional: s.optional,
           dependencyType: s.dependencyType,
         })),
@@ -297,6 +302,7 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
           id: s._existingStepId,
           name: s.name.trim(),
           location: s.location.trim() || undefined,
+          assignedTo: s.assignedTo ? s.assignedTo : (s._existingStepId ? null : undefined),
           optional: s.optional,
           dependencyType: s.dependencyType,
         })),
@@ -313,6 +319,7 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
         steps: draft.steps.map(s => ({
           name: s.name.trim(),
           location: s.location.trim() || undefined,
+          assignedTo: s.assignedTo || undefined,
           optional: s.optional,
           dependencyType: s.dependencyType,
         })),
