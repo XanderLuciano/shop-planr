@@ -2,13 +2,15 @@
 
 ## Introduction
 
-This document defines the requirements for the Edit Step Properties feature (GitHub Issue #93). The feature enables users to edit step assignee and location from two surfaces: the Step View page (inline edit mode) and the Job create/edit form (Assignee column in the step grid). Backend changes extend `StepInput`, `reconcileSteps()`, and the config endpoint to support these editing flows.
+This document defines the requirements for the Edit Step Properties feature (GitHub Issue #93). The feature enables users to edit step assignee and location from three surfaces: the Step View page (inline edit mode), the Job create/edit form (Assignee column in the step grid), and the Job Detail inline path editor (Assignee dropdown). The step tracker cards on the Job Detail page display the assignee as static text. Backend changes extend `StepInput`, `reconcileSteps()`, `createPath()`, the config endpoint, and the SQLite repository to support these editing flows.
 
 ## Glossary
 
 - **Step_View_Page**: The dedicated step detail page at `/parts/step/[stepId]` where operators interact with individual process steps.
 - **StepPropertiesEditor**: A new inline edit component rendered in the Step View page header, providing assignee and location dropdowns with save/cancel actions.
 - **JobCreationForm**: The existing form component used on the job create (`/jobs/new`) and job edit (`/jobs/edit/[id]`) pages for defining paths and steps.
+- **PathEditor**: The inline path editor component on the Job Detail page (`/jobs/[id]`) for editing individual paths.
+- **StepTracker**: The step card visualization component on the Job Detail page that displays step progress; now shows assignee as static text instead of an interactive dropdown.
 - **StepDraft**: The client-side draft object representing a step in the JobCreationForm, extended with an `assignedTo` field.
 - **StepInput**: The server-side input type consumed by `reconcileSteps()` during path create/update operations.
 - **reconcileSteps**: A pure function that reconciles incoming step inputs against existing steps, producing update, insert, and soft-delete lists.
@@ -90,9 +92,9 @@ This document defines the requirements for the Edit Step Properties feature (Git
 
 #### Acceptance Criteria
 
-1. THE StepInput type SHALL include an optional `assignedTo` field of type string.
+1. THE StepInput type SHALL include an optional `assignedTo` field of type `string | null`, where `undefined` means "no change/preserve existing", `null` means "clear assignment", and a string value means "set to this user ID".
 2. WHEN the JobCreationForm submits step data with a non-empty `assignedTo` value, THE submit function SHALL include the `assignedTo` field in the StepInput payload.
-3. WHEN the JobCreationForm submits step data with an empty string `assignedTo` value, THE submit function SHALL map the empty string to undefined in the StepInput payload.
+3. WHEN the JobCreationForm submits step data with an empty string `assignedTo` value for an existing step, THE submit function SHALL map the empty string to `null` in the StepInput payload to clear the assignment. For new steps, THE submit function SHALL map the empty string to `undefined` to omit the field.
 
 ### Requirement 8: reconcileSteps Assignee Handling
 
@@ -100,10 +102,11 @@ This document defines the requirements for the Edit Step Properties feature (Git
 
 #### Acceptance Criteria
 
-1. WHEN a StepInput has an `assignedTo` value and matches an existing step by ID, THE reconcileSteps function SHALL use the input's `assignedTo` value in the updated step.
-2. WHEN a StepInput has no `assignedTo` value (undefined) and matches an existing step by ID, THE reconcileSteps function SHALL preserve the existing step's `assignedTo` value.
-3. WHEN a StepInput has an `assignedTo` value and does not match any existing step, THE reconcileSteps function SHALL include the `assignedTo` value in the newly inserted step.
-4. WHEN a StepInput has no `assignedTo` value and does not match any existing step, THE reconcileSteps function SHALL create the new step without an `assignedTo` value.
+1. WHEN a StepInput has an `assignedTo` string value and matches an existing step by ID, THE reconcileSteps function SHALL use the input's `assignedTo` value in the updated step.
+2. WHEN a StepInput has `assignedTo` as `undefined` and matches an existing step by ID, THE reconcileSteps function SHALL preserve the existing step's `assignedTo` value.
+3. WHEN a StepInput has `assignedTo` as `null` and matches an existing step by ID, THE reconcileSteps function SHALL clear the step's `assignedTo` value (set to undefined).
+4. WHEN a StepInput has an `assignedTo` value and does not match any existing step, THE reconcileSteps function SHALL include the `assignedTo` value in the newly inserted step.
+5. WHEN a StepInput has no `assignedTo` value and does not match any existing step, THE reconcileSteps function SHALL create the new step without an `assignedTo` value.
 
 ### Requirement 9: Change Detection for Assignee in Job Form
 
@@ -152,3 +155,35 @@ This document defines the requirements for the Edit Step Properties feature (Git
 
 1. WHEN the Assign_Endpoint updates a step's assignee, THE pathService SHALL not modify the step's name, order, location, optional flag, dependencyType, or completedCount.
 2. WHEN the Config_Endpoint updates a step's location, THE pathService SHALL not modify the step's name, order, assignedTo, optional flag, dependencyType, or completedCount.
+
+### Requirement 14: Assignee Column in Job Detail Path Editor
+
+**User Story:** As a job planner, I want to assign operators to steps when editing a path from the Job Detail page, so that I can update assignments without navigating to the full job edit form.
+
+#### Acceptance Criteria
+
+1. THE PathEditor SHALL display an Assignee dropdown for each step row between the Location and Opt columns.
+2. WHEN the Assignee dropdown is displayed, THE PathEditor SHALL render a dropdown populated with all active users and an unassigned option using the `SELECT_UNASSIGNED` sentinel.
+3. WHEN a user selects an assignee for a step in the PathEditor, THE local StepDraft SHALL store the selected user ID in its `assignedTo` field.
+4. WHEN the PathEditor loads in edit mode, THE PathEditor SHALL populate each step's `assignedTo` from the corresponding ProcessStep's `assignedTo` value.
+5. WHEN the PathEditor saves, THE step payload SHALL include `assignedTo` with proper null/undefined semantics for clearing vs preserving.
+
+### Requirement 15: Static Assignee Display on Step Tracker Cards
+
+**User Story:** As a user viewing the Job Detail page, I want to see which operator is assigned to each step at a glance, without interactive dropdowns cluttering the step cards.
+
+#### Acceptance Criteria
+
+1. THE StepTracker step cards SHALL display the assigned user's display name as static text, or "Unassigned" if no user is assigned.
+2. THE StepTracker step cards SHALL NOT render interactive assignment dropdowns (StepAssignmentDropdown removed).
+3. THE StepTracker SHALL resolve user IDs to display names using the `users` prop.
+
+### Requirement 16: Backend Persistence for Assignee in Path Create/Update
+
+**User Story:** As a developer, I want assignee data to be persisted end-to-end through path create and update operations, so that assignees set in any form surface are stored in the database.
+
+#### Acceptance Criteria
+
+1. WHEN `createPath()` builds ProcessStep objects from StepInput, THE function SHALL include the `assignedTo` field from the input.
+2. THE SQLite path repository's step INSERT statements (in both `create()` and `update()`) SHALL include the `assigned_to` column.
+3. THE SQLite path repository's step UPDATE statement (in `update()`) SHALL include the `assigned_to` column.

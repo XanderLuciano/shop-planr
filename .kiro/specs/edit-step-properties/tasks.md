@@ -2,13 +2,13 @@
 
 ## Overview
 
-Implement editing of step properties (assignee and location) from two surfaces: inline edit mode on the Step View page, and an Assignee column in the Job create/edit form's step grid. Backend changes extend `StepInput`, `reconcileSteps()`, and the config endpoint to support these flows.
+Implement editing of step properties (assignee and location) from three surfaces: inline edit mode on the Step View page, an Assignee column in the Job create/edit form's step grid, and an Assignee dropdown in the Job Detail inline path editor. Step tracker cards display assignee as static text. Backend changes extend `StepInput` (with `string | null` for clearing), `reconcileSteps()`, `createPath()`, the config endpoint, and the SQLite repository to support these flows.
 
 ## Tasks
 
 - [x] 1. Extend backend types and services
   - [x] 1.1 Add `assignedTo` field to `StepInput` in `server/types/domain.ts`
-    - Add `assignedTo?: string` to the `StepInput` interface
+    - Add `assignedTo?: string | null` to the `StepInput` interface (undefined = preserve, null = clear, string = set)
     - _Requirements: 7.1_
 
   - [x] 1.2 Update `reconcileSteps()` in `server/services/pathService.ts` to accept `assignedTo` from input
@@ -101,6 +101,43 @@ Implement editing of step properties (assignee and location) from two surfaces: 
 
 - [x] 8. Final checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
+
+- [x] 9. Post-review fixes
+  - [x] 9.1 Widen `StepInput.assignedTo` to `string | null` for explicit clearing
+    - `undefined` = preserve existing, `null` = clear assignment, `string` = set
+    - Updated `reconcileSteps()` to use `input.assignedTo !== undefined` check
+    - _Requirements: 7.1, 8.2, 8.3_
+
+  - [x] 9.2 Fix `createPath()` to include `assignedTo` in step mapping
+    - Added `assignedTo: s.assignedTo ?? undefined` to the step builder in `createPath()`
+    - _Requirements: 16.1_
+
+  - [x] 9.3 Fix SQLite repository to persist `assigned_to` in step INSERT/UPDATE
+    - Updated both `create()` and `update()` step INSERT statements to include `assigned_to`
+    - Updated `update()` step UPDATE statement to include `assigned_to`
+    - _Requirements: 16.2, 16.3_
+
+  - [x] 9.4 Fix `useJobForm` edit payload to send `null` for clearing
+    - Existing steps with empty assignee send `null` (clear), new steps send `undefined` (omit)
+    - _Requirements: 7.3_
+
+  - [x] 9.5 Move reconcileSteps assignedTo tests to dedicated test file
+    - Moved from `pathService.test.ts` to `reconcileSteps.test.ts`
+    - Added test for explicit null clearing
+
+- [x] 10. Add Assignee dropdown to `PathEditor.vue`
+  - [x] 10.1 Add `assignedTo` to PathEditor's StepDraft and step grid
+    - Added `assignedTo: string` to local StepDraft, hydration from existing steps
+    - Added `USelect` dropdown with sentinel pattern between Location and Opt
+    - Included `assignedTo` in save payload with null/undefined clearing semantics
+    - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5_
+
+- [x] 11. Replace StepTracker dropdowns with static assignee text
+  - [x] 11.1 Remove `StepAssignmentDropdown` from StepTracker step cards
+    - Replaced with static text showing resolved user name or "Unassigned"
+    - Removed `assigned` emit from StepTracker
+    - Removed `@assigned` listener from Job Detail page
+    - _Requirements: 15.1, 15.2, 15.3_
 
 ## Notes
 
