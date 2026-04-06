@@ -302,7 +302,7 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
           id: s._existingStepId,
           name: s.name.trim(),
           location: s.location.trim() || undefined,
-          assignedTo: s.assignedTo || undefined,
+          assignedTo: s.assignedTo ? s.assignedTo : (s._existingStepId ? null : undefined),
           optional: s.optional,
           dependencyType: s.dependencyType,
         })),
