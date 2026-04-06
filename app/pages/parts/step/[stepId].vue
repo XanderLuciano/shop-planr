@@ -336,6 +336,7 @@ onMounted(async () => {
         @skip="handleSkip"
         @cancel="handleCancel"
         @scrapped="fetchStep"
+        @note-added="fetchStep"
       />
     </template>
   </div>
