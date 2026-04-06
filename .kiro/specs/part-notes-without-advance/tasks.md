@@ -100,3 +100,5 @@ Add an "Add Note" action to the Step View page that lets operators attach notes 
 - No schema migration required
 - Each task references specific requirements for traceability
 - Property tests validate the 5 correctness properties from the design document
+- Two pre-existing test failures fixed during this spec: localStorage mock added to `userAdminComputed.property.test.ts` and `userAdminJobGating.property.test.ts`
+- Pre-existing typecheck failure fixed: `H3Event` type reference in `server/utils/httpError.ts` replaced with inferred parameter type
