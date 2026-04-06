@@ -314,7 +314,9 @@ describe('Standalone Note Creation Without Advancement', () => {
     const noteAuditsAfter = auditsAfter.filter(a => a.action === 'note_created')
     expect(noteAuditsAfter).toHaveLength(noteAuditsBefore.length + 1)
 
-    const newAudit = noteAuditsAfter[noteAuditsAfter.length - 1]
+    const beforeIds = new Set(noteAuditsBefore.map(a => a.id))
+    const newAudit = noteAuditsAfter.find(a => !beforeIds.has(a.id))!
+    expect(newAudit).toBeDefined()
     expect(newAudit.userId).toBe('welder1')
     expect(newAudit.jobId).toBe(job.id)
     expect(newAudit.pathId).toBe(path.id)

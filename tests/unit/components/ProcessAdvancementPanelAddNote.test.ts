@@ -8,7 +8,7 @@
  * Feature: part-notes-without-advance
  * Requirements: 6.1, 6.2, 6.3
  */
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import type { WorkQueueJob } from '~/server/types/computed'
 import type { StepNote } from '~/server/types/domain'
 
