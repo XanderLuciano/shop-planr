@@ -12,9 +12,21 @@
  *
  * **Validates: Requirements 6.3, 6.4, 6.5**
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import fc from 'fast-check'
 import { useUsers } from '../../app/composables/useUsers'
+
+// happy-dom provides window but localStorage may not be fully functional.
+// Stub it with a simple in-memory implementation.
+let store: Record<string, string> = {}
+vi.stubGlobal('localStorage', {
+  getItem: (key: string) => store[key] ?? null,
+  setItem: (key: string, value: string) => { store[key] = value },
+  removeItem: (key: string) => { delete store[key] },
+  clear: () => { store = {} },
+})
+
+beforeEach(() => { store = {} })
 
 /**
  * Arbitrary: a ShopUser with random isAdmin flag.

@@ -13,6 +13,7 @@ const emit = defineEmits<{
   cancel: []
   scrapped: []
   skip: [payload: { partIds: string[] }]
+  noteAdded: [note: StepNote]
 }>()
 
 const localPartIds = ref<string[]>([...props.job.partIds])
@@ -26,6 +27,9 @@ const successMessage = ref<string | null>(null)
 watch(() => props.job.partIds, (newIds) => {
   localPartIds.value = [...newIds]
 })
+
+// Add Note dialog state
+const showAddNoteDialog = ref(false)
 
 // Scrap / force-complete dialog state
 const showScrapDialog = ref(false)
@@ -267,6 +271,13 @@ onMounted(() => {
       />
       <UButton
         size="sm"
+        variant="outline"
+        label="Add Note"
+        icon="i-lucide-message-square-plus"
+        @click="showAddNoteDialog = true"
+      />
+      <UButton
+        size="sm"
         variant="ghost"
         label="Cancel"
         @click="emit('cancel')"
@@ -298,6 +309,18 @@ onMounted(() => {
       :model-value="showForceCompleteDialog"
       @update:model-value="showForceCompleteDialog = $event"
       @completed="forceCompleteTargetId = null"
+    />
+
+    <!-- Add Note dialog -->
+    <AddNoteDialog
+      v-model="showAddNoteDialog"
+      :part-ids="localPartIds"
+      :job-id="job.jobId"
+      :path-id="job.pathId"
+      :step-id="job.stepId"
+      :step-name="job.stepName"
+      :pre-selected-part-ids="[...selectedParts]"
+      @saved="emit('noteAdded', $event)"
     />
   </div>
 </template>
