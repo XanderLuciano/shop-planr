@@ -90,7 +90,7 @@ Add an "Add Note" action to the Step View page that lets operators attach notes 
     - File: `tests/integration/noteAndDefect.test.ts` (add new describe block to existing file)
     - _Requirements: 1.4, 2.4, 3.1, 3.3, 4.2_
 
-- [x] 7. Final checkpoint — Ensure all tests pass
+- [ ] 7. Final checkpoint — Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
