@@ -15,7 +15,6 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'step-click': [payload: { stepId: string, stepName: string, stepOrder: number }]
-  assigned: [stepId: string, userId: string | null]
 }>()
 
 function handleStepClick(step: StepDistribution) {
@@ -115,15 +114,9 @@ function depIcon(depType?: string) {
         </div>
         <div
           v-if="users.length"
-          class="mt-1.5"
-          @click.stop
+          class="mt-1.5 text-xs text-(--ui-text-muted)"
         >
-          <StepAssignmentDropdown
-            :step-id="step.stepId"
-            :current-assignee="getProcessStep(step.stepId)?.assignedTo"
-            :users="users"
-            @assigned="(stepId: string, userId: string | null) => emit('assigned', stepId, userId)"
-          />
+          👤 {{ getProcessStep(step.stepId)?.assignedTo ? users.find(u => u.id === getProcessStep(step.stepId)?.assignedTo)?.displayName ?? 'Assigned' : 'Unassigned' }}
         </div>
       </div>
 
@@ -165,19 +158,14 @@ function depIcon(depType?: string) {
           :is-bottleneck="true"
           class="mt-1"
         />
-        <!-- Step assignment dropdown -->
-        <div
+        <!-- Step assignee display -->
+        <span
           v-if="users.length"
-          class="mt-1.5"
-          @click.stop
+          class="mt-1 text-[10px] text-(--ui-text-muted) truncate max-w-[100px]"
+          :title="getProcessStep(step.stepId)?.assignedTo ? users.find(u => u.id === getProcessStep(step.stepId)?.assignedTo)?.displayName ?? 'Assigned' : 'Unassigned'"
         >
-          <StepAssignmentDropdown
-            :step-id="step.stepId"
-            :current-assignee="getProcessStep(step.stepId)?.assignedTo"
-            :users="users"
-            @assigned="(stepId: string, userId: string | null) => emit('assigned', stepId, userId)"
-          />
-        </div>
+          👤 {{ getProcessStep(step.stepId)?.assignedTo ? users.find(u => u.id === getProcessStep(step.stepId)?.assignedTo)?.displayName ?? 'Assigned' : 'Unassigned' }}
+        </span>
       </div>
     </template>
 

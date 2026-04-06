@@ -684,7 +684,6 @@ onMounted(() => {
                 :completed-count="pathCompletedCounts[p.id] ?? 0"
                 :users="activeUsers"
                 @step-click="onStepClick(p.id, $event)"
-                @assigned="onStepAssigned"
               />
             </div>
 
