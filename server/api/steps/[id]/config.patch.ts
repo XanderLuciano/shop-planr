@@ -7,6 +7,7 @@ export default defineApiHandler(async (event) => {
 
   const update: Record<string, unknown> = {}
   if (typeof body.optional === 'boolean') update.optional = body.optional
+  if (typeof body.location === 'string') update.location = body.location
   if (body.dependencyType && ['physical', 'preferred', 'completion_gate'].includes(body.dependencyType)) {
     update.dependencyType = body.dependencyType
   }

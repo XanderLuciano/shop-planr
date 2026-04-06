@@ -55,6 +55,7 @@ export interface StepInput {
   id?: string // optional existing step ID for reconciliation
   name: string
   location?: string
+  assignedTo?: string
   optional?: boolean
   dependencyType?: 'physical' | 'preferred' | 'completion_gate'
 }

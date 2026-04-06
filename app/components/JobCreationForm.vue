@@ -31,6 +31,26 @@ const {
 } = useJobForm(props.mode, props.existingJob)
 
 const { templates, fetchTemplates } = useTemplates()
+const { users: allUsers } = useUsers()
+
+// Active users for assignee dropdown
+const assigneeItems = computed(() => {
+  const unassigned = { label: 'Unassigned', value: SELECT_UNASSIGNED }
+  const userOptions = allUsers.value
+    .filter(u => u.active)
+    .map(u => ({ label: u.displayName, value: u.id }))
+  return [unassigned, ...userOptions]
+})
+
+/** Map step.assignedTo ('' = unassigned) to USelect value (SELECT_UNASSIGNED sentinel) */
+function assigneeToSelect(assignedTo: string): string {
+  return assignedTo || SELECT_UNASSIGNED
+}
+
+/** Map USelect value back to step.assignedTo ('' for unassigned) */
+function selectToAssignee(value: string): string {
+  return value === SELECT_UNASSIGNED ? '' : value
+}
 
 // Per-path template selection state
 const templateSelections = ref<Record<string, string>>({})
@@ -271,10 +291,11 @@ function handleCancel() {
 
         <!-- Step rows -->
         <div class="space-y-2">
-          <div class="text-xs font-medium text-(--ui-text-muted) grid grid-cols-[2rem_1fr_1fr_5rem_9rem_4.5rem_2rem] gap-2 px-1">
+          <div class="text-xs font-medium text-(--ui-text-muted) grid grid-cols-[2rem_1fr_1fr_1fr_5rem_9rem_4.5rem_2rem] gap-2 px-1">
             <span>#</span>
             <span>Process</span>
             <span>Location</span>
+            <span>Assignee</span>
             <span class="flex items-center gap-0.5">
               Optional
               <UTooltip
@@ -310,7 +331,7 @@ function handleCancel() {
           <div
             v-for="(step, stepIndex) in path.steps"
             :key="step._clientId"
-            class="grid grid-cols-[2rem_1fr_1fr_5rem_9rem_4.5rem_2rem] gap-2 items-start"
+            class="grid grid-cols-[2rem_1fr_1fr_1fr_5rem_9rem_4.5rem_2rem] gap-2 items-start"
           >
             <!-- Step order number -->
             <span class="text-sm text-(--ui-text-muted) pt-1.5 text-center">{{ stepIndex + 1 }}</span>
@@ -339,6 +360,14 @@ function handleCancel() {
                 @update:model-value="(v: string) => { step.location = v }"
               />
             </div>
+
+            <!-- Assignee -->
+            <USelect
+              :model-value="assigneeToSelect(step.assignedTo)"
+              :items="assigneeItems"
+              size="sm"
+              @update:model-value="(v: string) => { step.assignedTo = selectToAssignee(v) }"
+            />
 
             <!-- Optional checkbox -->
             <div class="flex items-center justify-center pt-1.5">
