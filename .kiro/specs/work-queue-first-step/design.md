@@ -4,7 +4,7 @@
 
 This design addresses **GitHub Issue #123** — "Feature Request: Work Queue Shows First Step."
 
-Currently, the work queue only displays steps that have parts physically present (i.e., `listPartsByCurrentStepId(stepId)` returns a non-empty list). The sole exception is the `_all` queue endpoint, which already includes step 0 even with zero parts. However, the main grouped work queue endpoint (`/api/operator/work-queue`) and the per-user endpoint (`/api/operator/queue/[userId]`) skip steps with zero parts entirely.
+Currently, the work queue only displays steps that have parts physically present (i.e., `listPartsByCurrentStepId(stepId)` returns a non-empty list). The sole exception is the `_all` queue endpoint, which already includes step 0 even with zero parts via `if (parts.length === 0 && step.order !== 0) continue`. However, the main grouped work queue endpoint (`/api/operator/work-queue`) and the per-user endpoint (`/api/operator/queue/[userId]`) skip steps with zero parts entirely via `if (parts.length === 0) continue`.
 
 The problem: when a job/path is created but no parts have been created yet at step 0, the job is invisible in the work queue. Operators have no visibility on jobs that need initial part creation. The feature request asks that the first step (step 0) of every path always appear in the work queue until the number of parts at step 0 meets or exceeds the path's `goalQuantity`. This gives operators a clear signal that work needs to begin.
 
@@ -12,63 +12,63 @@ The problem: when a job/path is created but no parts have been created yet at st
 
 The change is confined to the work queue data assembly layer — the three API routes that build `WorkQueueJob` entries. No new tables, services, or repositories are needed. The `WorkQueueJob` type gains one optional field (`goalQuantity`) so the frontend can display progress context.
 
+The main grouped endpoint (`work-queue.get.ts`) builds an `entries[]` array of `{ job: WorkQueueJob, assignedTo }` objects, then passes them through `groupEntriesByDimension()` to produce `WorkQueueGroupedResponse`. The flat endpoints (`_all.get.ts`, `[userId].get.ts`) build a `Map<string, WorkQueueJob>` keyed by `jobId|pathId|stepOrder` and return `WorkQueueResponse`.
+
 ```mermaid
 graph TD
     subgraph Frontend
         QP[queue.vue Page]
         WQF[WorkQueueFilterBar]
+        UWQF[useWorkQueueFilters]
         UOWQ[useOperatorWorkQueue]
     end
 
     subgraph API Routes
-        WQ[work-queue.get.ts]
-        ALL[queue/_all.get.ts]
-        UID[queue/userId.get.ts]
+        WQ["work-queue.get.ts<br/>(grouped, returns WorkQueueGroupedResponse)"]
+        ALL["queue/_all.get.ts<br/>(flat, returns WorkQueueResponse)"]
+        UID["queue/[userId].get.ts<br/>(flat, returns WorkQueueResponse)"]
+    end
+
+    subgraph Utilities
+        GRP[groupEntriesByDimension]
     end
 
     subgraph Services
         JS[jobService]
         PS[pathService]
         PTS[partService]
-    end
-
-    subgraph Repositories
-        JR[JobRepository]
-        PR[PathRepository]
-        PTR[PartRepository]
+        US[userService]
     end
 
     QP --> WQF
-    QP --> UOWQ
-    UOWQ -->|$fetch| WQ
-    UOWQ -->|$fetch| ALL
-    UOWQ -->|$fetch| UID
+    QP --> UWQF
+    UWQF --> UOWQ
+    UOWQ -->|"$fetch /api/operator/work-queue"| WQ
 
     WQ --> JS
     WQ --> PS
     WQ --> PTS
+    WQ --> US
+    WQ --> GRP
     ALL --> JS
     ALL --> PS
     ALL --> PTS
     UID --> JS
     UID --> PS
     UID --> PTS
-
-    JS --> JR
-    PS --> PR
-    PTS --> PTR
-
 ```
 
 ## Sequence Diagram: Work Queue Entry Assembly
 
 ```mermaid
 sequenceDiagram
-    participant Client as Frontend
+    participant Client as Frontend (useOperatorWorkQueue)
     participant API as work-queue.get.ts
     participant JS as jobService
     participant PS as pathService
     participant PTS as partService
+    participant US as userService
+    participant GRP as groupEntriesByDimension
 
     Client->>API: GET /api/operator/work-queue?groupBy=location
     API->>JS: listJobs()
@@ -95,7 +95,10 @@ sequenceDiagram
         end
     end
 
-    API->>API: groupEntriesByDimension(entries, groupBy, userNameMap)
+    API->>US: listUsers()
+    US-->>API: User[] (for userNameMap)
+    API->>GRP: groupEntriesByDimension(entries, groupBy, userNameMap)
+    GRP-->>API: WorkQueueGroup[]
     API-->>Client: { groups, totalParts }
 ```
 
@@ -103,11 +106,10 @@ sequenceDiagram
 
 ### Modified Type: WorkQueueJob
 
-The `WorkQueueJob` interface in `server/types/computed.ts` gains one new optional field:
+The `WorkQueueJob` interface in `server/types/computed.ts` gains one new optional field. Current actual type:
 
 ```typescript
 export interface WorkQueueJob {
-  // ... existing fields unchanged ...
   jobId: string
   jobName: string
   pathId: string
@@ -134,23 +136,25 @@ export interface WorkQueueJob {
 }
 ```
 
+Note: The type definition includes `previousStepId`, `previousStepName`, `nextStepId`, and `stepOptional` fields, but the current route implementations do not populate all of them. The routes only set `nextStepName`, `nextStepLocation`, `assignedTo`, and `isFinalStep`. This is pre-existing and not affected by this change.
+
 ### Modified API Routes
 
 Three routes need the same logic change:
 
-| Route | File | Current First-Step Behavior | New Behavior |
-|-------|------|-----------------------------|--------------|
-| `GET /api/operator/work-queue` | `server/api/operator/work-queue.get.ts` | Skips steps with 0 parts | Include step 0 if `partCount < goalQuantity` |
-| `GET /api/operator/queue/_all` | `server/api/operator/queue/_all.get.ts` | Includes step 0 with 0 parts (already) | Add `goalQuantity` field; keep existing behavior |
-| `GET /api/operator/queue/[userId]` | `server/api/operator/queue/[userId].get.ts` | Skips steps with 0 parts | Include step 0 if `partCount < goalQuantity` |
+| Route | File | Response Type | Current First-Step Behavior | New Behavior |
+|-------|------|---------------|----------------------------|--------------|
+| `GET /api/operator/work-queue` | `server/api/operator/work-queue.get.ts` | `WorkQueueGroupedResponse` | Skips steps with 0 parts (`if (parts.length === 0) continue`) | Include step 0 if `partCount < goalQuantity` |
+| `GET /api/operator/queue/_all` | `server/api/operator/queue/_all.get.ts` | `WorkQueueResponse` | Includes step 0 with 0 parts already (`if (parts.length === 0 && step.order !== 0) continue`) | Add `goalQuantity` field to entry; tighten condition to also check `< goalQuantity` |
+| `GET /api/operator/queue/[userId]` | `server/api/operator/queue/[userId].get.ts` | `WorkQueueResponse` | Skips steps with 0 parts (`if (parts.length === 0) continue`) | Include step 0 if `partCount < goalQuantity` |
 
 ### Unchanged Components
 
 - `WorkQueueGroup`, `WorkQueueGroupedResponse`, `WorkQueueResponse` — no structural changes
-- `groupEntriesByDimension()` — operates on `WorkQueueJob[]`, transparent to new field
-- `useOperatorWorkQueue` composable — passes data through, no logic changes needed
-- `useWorkQueueFilters` composable — filtering logic is field-agnostic
-- `queue.vue` — minor optional enhancement to show goal context on first-step entries
+- `groupEntriesByDimension()` in `server/utils/workQueueGrouping.ts` — operates on `WorkQueueJob[]`, transparent to new field; sorts by `jobPriority` descending
+- `useOperatorWorkQueue` composable — fetches via `$fetch('/api/operator/work-queue')`, passes data through
+- `useWorkQueueFilters` composable — wraps `useOperatorWorkQueue` with groupBy, client-side filtering, URL sync, and presets; filtering logic is field-agnostic
+- `queue.vue` — minor optional enhancement to show goal context on first-step entries (e.g. "0 / 10 parts" badge)
 
 ## Data Models
 
@@ -158,10 +162,12 @@ No schema changes. The feature uses existing data:
 
 | Entity | Field | Usage |
 |--------|-------|-------|
-| `Path` | `goalQuantity` | Threshold: first step included until `partCount >= goalQuantity` |
-| `Path` | `steps[0]` | The first step (order 0) to always include |
-| `Part` | `currentStepId` | Used by `listPartsByCurrentStepId()` to count parts at step |
-| `ProcessStep` | `order` | Identifies step 0 (first step) |
+| `Path` | `goalQuantity: number` | Threshold: first step included until `partCount >= goalQuantity` |
+| `Path` | `steps: readonly ProcessStep[]` | Steps array; `steps[0]` is the first step (order 0) |
+| `ProcessStep` | `order: number` | 0-based position; identifies step 0 (first step) |
+| `ProcessStep` | `removedAt?: string` | Soft-delete timestamp; must be checked before force-including |
+| `ProcessStep` | `completedCount: number` | Write-time counter (not used for this feature) |
+| `Part` | `currentStepId: string \| null` | Used by `listPartsByCurrentStepId()` to count parts at step |
 
 ## Key Functions with Formal Specifications
 
@@ -176,7 +182,7 @@ function shouldIncludeStep(
 ```
 
 **Preconditions:**
-- `step` is a valid, non-soft-deleted `ProcessStep`
+- `step` is a valid, non-soft-deleted `ProcessStep` (`!step.removedAt`)
 - `partCount >= 0`
 - `pathGoalQuantity > 0` (enforced by `assertPositive` on path creation)
 
@@ -211,12 +217,14 @@ function buildWorkQueueEntry(
 
 ## Algorithmic Pseudocode
 
-### Work Queue Entry Assembly (Updated)
+### Work Queue Entry Assembly — Grouped Endpoint (work-queue.get.ts)
+
+The grouped endpoint builds `{ job: WorkQueueJob, assignedTo }[]` entries, then groups them via `groupEntriesByDimension()`.
 
 ```pascal
-ALGORITHM buildWorkQueueEntries(jobs, pathService, partService)
-INPUT: jobs: Job[], pathService, partService
-OUTPUT: entries: WorkQueueEntry[]
+ALGORITHM buildGroupedWorkQueue(jobs, pathService, partService, userService, groupBy)
+INPUT: jobs: Job[], pathService, partService, userService, groupBy: GroupByDimension
+OUTPUT: { groups: WorkQueueGroup[], totalParts: number }
 
 BEGIN
   entries ← []
@@ -232,20 +240,84 @@ BEGIN
         partCount ← LENGTH(parts)
 
         // CHANGED: First-step inclusion logic
-        IF partCount = 0 THEN
-          IF step.order = 0 AND partCount < path.goalQuantity THEN
-            // Include first step — needs parts created
-            // (partCount is 0, which is < goalQuantity since goalQuantity > 0)
-          ELSE
-            CONTINUE  // Skip non-first steps with no parts
-          END IF
+        isFirstStepBelowGoal ← (step.order = 0 AND partCount < path.goalQuantity)
+        IF partCount = 0 AND NOT isFirstStepBelowGoal THEN
+          CONTINUE
         END IF
 
         isFinalStep ← (step.order = totalSteps - 1)
         nextStep ← path.steps[step.order + 1] IF NOT isFinalStep ELSE NULL
-        prevStep ← path.steps[step.order - 1] IF step.order > 0 ELSE NULL
 
         entry ← {
+          assignedTo: step.assignedTo,
+          job: {
+            jobId: job.id,
+            jobName: job.name,
+            jobPriority: job.priority,
+            pathId: path.id,
+            pathName: path.name,
+            stepId: step.id,
+            stepName: step.name,
+            stepOrder: step.order,
+            stepLocation: step.location,
+            totalSteps: totalSteps,
+            partIds: MAP(parts, p → p.id),
+            partCount: partCount,
+            assignedTo: step.assignedTo,
+            nextStepName: nextStep?.name,
+            nextStepLocation: nextStep?.location,
+            isFinalStep: isFinalStep,
+            goalQuantity: path.goalQuantity IF step.order = 0 ELSE UNDEFINED
+          }
+        }
+
+        APPEND entry TO entries
+      END FOR
+    END FOR
+  END FOR
+
+  users ← userService.listUsers()
+  userNameMap ← MAP(users, u → (u.id, u.displayName))
+  groups ← groupEntriesByDimension(entries, groupBy, userNameMap)
+  totalParts ← SUM(entries, e → e.job.partCount)
+
+  RETURN { groups, totalParts }
+END
+```
+
+### Work Queue Entry Assembly — Flat Endpoints (_all.get.ts, [userId].get.ts)
+
+The flat endpoints build a `Map<string, WorkQueueJob>` and return `WorkQueueResponse`.
+
+```pascal
+ALGORITHM buildFlatWorkQueue(jobs, pathService, partService, operatorId)
+INPUT: jobs: Job[], pathService, partService, operatorId: string
+OUTPUT: WorkQueueResponse
+
+BEGIN
+  groupMap ← new Map()
+
+  FOR EACH job IN jobs DO
+    paths ← pathService.listPathsByJob(job.id)
+
+    FOR EACH path IN paths DO
+      totalSteps ← LENGTH(path.steps)
+
+      FOR EACH step IN path.steps DO
+        parts ← partService.listPartsByCurrentStepId(step.id)
+        partCount ← LENGTH(parts)
+
+        // CHANGED: First-step inclusion logic (same predicate)
+        isFirstStepBelowGoal ← (step.order = 0 AND partCount < path.goalQuantity)
+        IF partCount = 0 AND NOT isFirstStepBelowGoal THEN
+          CONTINUE
+        END IF
+
+        key ← CONCAT(job.id, "|", path.id, "|", step.order)
+        isFinalStep ← (step.order = totalSteps - 1)
+        nextStep ← path.steps[step.order + 1] IF NOT isFinalStep ELSE NULL
+
+        groupMap.SET(key, {
           jobId: job.id,
           jobName: job.name,
           pathId: path.id,
@@ -263,30 +335,17 @@ BEGIN
           isFinalStep: isFinalStep,
           jobPriority: job.priority,
           goalQuantity: path.goalQuantity IF step.order = 0 ELSE UNDEFINED
-        }
-
-        APPEND entry TO entries
+        })
       END FOR
     END FOR
   END FOR
 
-  RETURN entries
+  queueJobs ← VALUES(groupMap)
+  totalParts ← SUM(queueJobs, j → j.partCount)
+
+  RETURN { operatorId, jobs: queueJobs, totalParts }
 END
 ```
-
-**Preconditions:**
-- All jobs are valid with `goalQuantity > 0`
-- All paths have at least one step
-- `pathService` and `partService` are initialized
-
-**Postconditions:**
-- Every step with `partCount > 0` is included (backward compatible)
-- Every first step (order 0) where `partCount < path.goalQuantity` is included (new)
-- No duplicate entries (keyed by `jobId|pathId|stepOrder`)
-
-**Loop Invariants:**
-- `entries` contains only valid `WorkQueueJob` objects
-- Each entry corresponds to exactly one step in one path of one job
 
 ### First-Step Inclusion Predicate
 
@@ -296,12 +355,10 @@ INPUT: step: ProcessStep, partCount: Integer, pathGoalQuantity: Integer
 OUTPUT: include: Boolean
 
 BEGIN
-  // Existing behavior: always include steps with parts
   IF partCount > 0 THEN
     RETURN TRUE
   END IF
 
-  // New behavior: include first step until goal is met
   IF step.order = 0 AND partCount < pathGoalQuantity THEN
     RETURN TRUE
   END IF
@@ -316,36 +373,46 @@ END
 
 **Postconditions:**
 - `TRUE` iff step has parts OR is first step below goal
-- When `partCount >= pathGoalQuantity` and step is first: returns `FALSE` (goal met, no longer needs visibility)
+- When `partCount >= pathGoalQuantity` and step is first: returns `FALSE` (goal met)
 - Backward compatible: non-first steps with 0 parts still excluded
 
 ## Example Usage
 
 ```typescript
-// Before (work-queue.get.ts):
+// ---- work-queue.get.ts (grouped endpoint) ----
+// Before:
 const parts = partService.listPartsByCurrentStepId(step.id)
-if (parts.length === 0) continue  // ← skips ALL empty steps
+if (parts.length === 0) continue
 
 // After:
-const parts = partService.listPartsByCurrentStepId(step.id)
-if (parts.length === 0 && !(step.order === 0 && parts.length < path.goalQuantity)) continue
-
-// Simplified (since parts.length === 0 is already checked):
-const parts = partService.listPartsByCurrentStepId(step.id)
-if (parts.length === 0 && step.order !== 0) continue
-// But we also need to stop showing step 0 once goal is met:
-if (parts.length === 0 && (step.order !== 0 || parts.length >= path.goalQuantity)) continue
-
-// Clearest form:
 const parts = partService.listPartsByCurrentStepId(step.id)
 const isFirstStepBelowGoal = step.order === 0 && parts.length < path.goalQuantity
 if (parts.length === 0 && !isFirstStepBelowGoal) continue
 
 // Add goalQuantity to the entry for first steps:
-const entry: WorkQueueJob = {
-  // ... existing fields ...
-  ...(step.order === 0 && { goalQuantity: path.goalQuantity }),
-}
+entries.push({
+  assignedTo: step.assignedTo,
+  job: {
+    // ... existing fields ...
+    ...(step.order === 0 && { goalQuantity: path.goalQuantity }),
+  },
+})
+
+// ---- _all.get.ts (flat endpoint) ----
+// Before:
+if (parts.length === 0 && step.order !== 0) continue
+
+// After:
+const isFirstStepBelowGoal = step.order === 0 && parts.length < path.goalQuantity
+if (parts.length === 0 && !isFirstStepBelowGoal) continue
+
+// ---- [userId].get.ts (flat endpoint) ----
+// Before:
+if (parts.length === 0) continue
+
+// After:
+const isFirstStepBelowGoal = step.order === 0 && parts.length < path.goalQuantity
+if (parts.length === 0 && !isFirstStepBelowGoal) continue
 ```
 
 ## Correctness Properties
@@ -371,8 +438,8 @@ const entry: WorkQueueJob = {
 ### Edge Case: Soft-Deleted First Step
 
 **Condition:** Step 0 has `removedAt` set (soft-deleted).
-**Response:** The current code iterates `path.steps` which includes soft-deleted steps. The existing behavior already handles this — soft-deleted steps are included in the steps array but may have no parts. The first-step logic should respect soft-deletion: if step 0 is soft-deleted, it should NOT be force-included.
-**Recovery:** Filter on `!step.removedAt` before applying the first-step inclusion rule.
+**Response:** The current code iterates `path.steps` which includes soft-deleted steps. The first-step logic should respect soft-deletion: if step 0 is soft-deleted, it should NOT be force-included.
+**Recovery:** Add `&& !step.removedAt` to the `isFirstStepBelowGoal` predicate.
 
 ### Edge Case: Goal Quantity Already Met at Step 0
 
