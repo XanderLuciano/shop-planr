@@ -13,3 +13,7 @@ export const setupPinSchema = z.object({
 export const resetPinSchema = z.object({
   targetUserId: z.string().min(1, 'targetUserId is required'),
 })
+
+export const refreshTokenSchema = z.object({
+  token: z.string().min(1, 'Bearer token is required'),
+})
