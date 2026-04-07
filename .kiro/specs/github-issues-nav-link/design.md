@@ -118,7 +118,7 @@ OUTPUT: rendered <a> element in sidebar footer
 
 BEGIN
   RENDER NuxtLink with:
-    href = "https://github.com/XanderLuciano/shop-planr/issues"
+    to = "https://github.com/XanderLuciano/shop-planr/issues"
     target = "_blank"
     rel = "noopener noreferrer"
     icon = lucide bug icon

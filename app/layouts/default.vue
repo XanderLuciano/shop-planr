@@ -66,6 +66,7 @@ function onScanned(result: ScanResult) {
           <NuxtLink
             to="/api-docs"
             target="_blank"
+            rel="noopener noreferrer"
             aria-label="API Docs"
             class="flex items-center gap-2 px-2 py-1.5 text-sm text-(--ui-text-muted) hover:text-(--ui-text-highlighted) rounded-md hover:bg-(--ui-bg-elevated) transition-colors"
           >

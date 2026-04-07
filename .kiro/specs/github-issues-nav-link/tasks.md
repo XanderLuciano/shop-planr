@@ -21,11 +21,11 @@ Add a "Report Issue" `NuxtLink` to the sidebar footer in `app/layouts/default.vu
 - [x] 2. Final checkpoint — Verify implementation
   - Ensure no lint or type errors in `app/layouts/default.vue`
   - Confirm the new link uses identical markup pattern as the API Docs link
-  - Confirm no new files were created (no components, composables, API routes, or server changes)
+  - Confirm no new runtime/app files were created (components, composables, pages, API routes, or server files)
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
 
-- This is a single-file change to `app/layouts/default.vue` — no other files are modified
+- Single runtime/app file change to `app/layouts/default.vue` — spec docs also added/updated under `.kiro/specs/`
 - No property-based tests or unit tests are needed (static markup, no logic)
 - The GitHub Issues URL placeholder `<owner>/<repo>` should be replaced with the actual repository owner and name during implementation
