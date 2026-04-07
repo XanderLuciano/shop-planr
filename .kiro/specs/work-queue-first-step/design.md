@@ -154,7 +154,7 @@ Three routes need the same logic change:
 - `groupEntriesByDimension()` in `server/utils/workQueueGrouping.ts` — operates on `WorkQueueJob[]`, transparent to new field; sorts by `jobPriority` descending
 - `useOperatorWorkQueue` composable — uses `const $api = useAuthFetch()` then calls `$api<T>(url)` for authenticated API requests, passes data through
 - `useWorkQueueFilters` composable — wraps `useOperatorWorkQueue` with groupBy, client-side filtering, URL sync, and presets; filtering logic is field-agnostic
-- `queue.vue` — minor optional enhancement to show goal context on first-step entries (e.g. "0 / 10 parts" badge)
+- `queue.vue` — now uses `useAuth()` (JWT-derived `authenticatedUser`) instead of the removed `useOperatorIdentity()` for user context; minor optional enhancement to show goal context on first-step entries (e.g. "0 / 10 parts" badge)
 
 ## Data Models
 
