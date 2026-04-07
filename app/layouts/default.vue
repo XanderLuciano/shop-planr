@@ -72,6 +72,22 @@ function onScanned(result: ScanResult) {
               class="size-3 ml-auto opacity-50 group-data-[collapsed]:hidden"
             />
           </NuxtLink>
+          <NuxtLink
+            to="https://github.com/XanderLuciano/shop-planr/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="flex items-center gap-2 px-2 py-1.5 text-sm text-(--ui-text-muted) hover:text-(--ui-text-highlighted) rounded-md hover:bg-(--ui-bg-elevated) transition-colors"
+          >
+            <UIcon
+              name="i-lucide-bug"
+              class="size-4"
+            />
+            <span class="truncate group-data-[collapsed]:hidden">Report Issue</span>
+            <UIcon
+              name="i-lucide-external-link"
+              class="size-3 ml-auto opacity-50 group-data-[collapsed]:hidden"
+            />
+          </NuxtLink>
           <div class="flex items-center justify-between">
             <UDashboardSidebarCollapse />
             <UColorModeButton size="xs" />
