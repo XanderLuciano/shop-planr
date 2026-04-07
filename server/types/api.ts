@@ -32,7 +32,7 @@ export interface CreatePathInput {
   name: string
   goalQuantity: number
   advancementMode?: 'strict' | 'flexible' | 'per_step'
-  steps: { name: string, location?: string, optional?: boolean, dependencyType?: 'physical' | 'preferred' | 'completion_gate' }[]
+  steps: { name: string, location?: string, assignedTo?: string | null, optional?: boolean, dependencyType?: 'physical' | 'preferred' | 'completion_gate' }[]
 }
 
 export interface UpdatePathInput {
