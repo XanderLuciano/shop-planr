@@ -1,4 +1,5 @@
 import type { Part } from '../../types/domain'
+import type { EnrichedPart } from '../../types/computed'
 
 export interface PartRepository {
   create(part: Part): Part
@@ -14,6 +15,8 @@ export interface PartRepository {
   countCompletedByJobId(jobId: string): number
   countScrappedByJobId(jobId: string): number
   listAll(): Part[]
+  /** Returns all parts enriched with job/path/step names via a single JOIN query. */
+  listAllEnriched(): EnrichedPart[]
   deleteByPathId(pathId: string): number
 }
 

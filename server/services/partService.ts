@@ -231,69 +231,7 @@ export function createPartService(
     },
 
     listAllPartsEnriched(): EnrichedPart[] {
-      const parts = repos.parts.listAll()
-
-      // Build lookup maps for jobs and paths
-      const jobMap = new Map<string, string>()
-      const pathMap = new Map<string, { name: string, steps: { id: string, name: string, order: number, assignedTo?: string }[] }>()
-
-      for (const part of parts) {
-        if (!jobMap.has(part.jobId) && repos.jobs) {
-          const job = repos.jobs.getById(part.jobId)
-          if (job) jobMap.set(part.jobId, job.name)
-        }
-        if (!pathMap.has(part.pathId)) {
-          const path = repos.paths.getById(part.pathId)
-          if (path) {
-            pathMap.set(part.pathId, {
-              name: path.name,
-              steps: path.steps.map(s => ({ id: s.id, name: s.name, order: s.order, assignedTo: s.assignedTo })),
-            })
-          }
-        }
-      }
-
-      return parts.map((part) => {
-        const jobName = jobMap.get(part.jobId) ?? ''
-        const pathData = pathMap.get(part.pathId)
-        const pathName = pathData?.name ?? ''
-        const steps = pathData?.steps ?? []
-
-        let status: 'in-progress' | 'completed' | 'scrapped'
-        if (part.status === 'scrapped') {
-          status = 'scrapped'
-        } else if (part.currentStepId === null || part.status === 'completed') {
-          status = 'completed'
-        } else {
-          status = 'in-progress'
-        }
-
-        let currentStepName = 'Completed'
-        let assignedTo: string | undefined
-        if (part.currentStepId !== null) {
-          const currentStep = steps.find(s => s.id === part.currentStepId)
-          currentStepName = currentStep?.name ?? ''
-          assignedTo = currentStep?.assignedTo
-        }
-        if (part.status === 'scrapped') {
-          currentStepName = 'Scrapped'
-        }
-
-        return {
-          id: part.id,
-          jobId: part.jobId,
-          jobName,
-          pathId: part.pathId,
-          pathName,
-          currentStepId: part.currentStepId,
-          currentStepName,
-          assignedTo,
-          status,
-          scrapReason: part.scrapReason,
-          forceCompleted: part.forceCompleted || undefined,
-          createdAt: part.createdAt,
-        }
-      })
+      return repos.parts.listAllEnriched()
     },
   }
 }
