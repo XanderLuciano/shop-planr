@@ -216,3 +216,83 @@ describe('SQLitePartRepository.listAllEnriched', () => {
     expect(partB.assignedTo).toBeUndefined()
   })
 })
+
+describe('SQLitePartRepository.countsByJob', () => {
+  let db: InstanceType<typeof Database>
+
+  afterEach(() => {
+    if (db) db.close()
+  })
+
+  function setup() {
+    db = createTestDb()
+    const jobs = new SQLiteJobRepository(db)
+    const paths = new SQLitePathRepository(db)
+    const parts = new SQLitePartRepository(db)
+
+    const insertUser = db.prepare(
+      'INSERT INTO users (id, username, display_name, is_admin, active, created_at) VALUES (?, ?, ?, 0, 1, ?)',
+    )
+    insertUser.run('Alice', 'alice', 'Alice', TS)
+
+    return { jobs, paths, parts }
+  }
+
+  it('returns empty map when no parts exist', () => {
+    const { parts } = setup()
+    expect(parts.countsByJob().size).toBe(0)
+  })
+
+  it('returns correct counts for a single job', () => {
+    const { jobs, paths, parts } = setup()
+
+    jobs.createWithAutoIncPriority({ id: 'job_1', name: 'Job', goalQuantity: 10, createdAt: TS, updatedAt: TS })
+    paths.create(makePath({
+      id: 'path_1', jobId: 'job_1', name: 'Route',
+      steps: [makeStep({ id: 'step_1', name: 'Step', order: 0 })],
+    }))
+
+    parts.create({ id: 'p1', jobId: 'job_1', pathId: 'path_1', currentStepId: 'step_1', status: 'in_progress', forceCompleted: false, createdAt: TS, updatedAt: TS })
+    parts.create({ id: 'p2', jobId: 'job_1', pathId: 'path_1', currentStepId: null, status: 'completed', forceCompleted: false, createdAt: TS, updatedAt: TS })
+    parts.create({ id: 'p3', jobId: 'job_1', pathId: 'path_1', currentStepId: 'step_1', status: 'scrapped', forceCompleted: false, createdAt: TS, updatedAt: TS })
+
+    const counts = parts.countsByJob()
+    expect(counts.size).toBe(1)
+    const c = counts.get('job_1')!
+    expect(c.total).toBe(3)
+    expect(c.completed).toBe(1)
+    expect(c.scrapped).toBe(1)
+  })
+
+  it('returns separate counts for multiple jobs', () => {
+    const { jobs, paths, parts } = setup()
+
+    jobs.createWithAutoIncPriority({ id: 'job_a', name: 'A', goalQuantity: 5, createdAt: TS, updatedAt: TS })
+    jobs.createWithAutoIncPriority({ id: 'job_b', name: 'B', goalQuantity: 5, createdAt: TS, updatedAt: TS })
+    paths.create(makePath({
+      id: 'path_a', jobId: 'job_a', name: 'Route A',
+      steps: [makeStep({ id: 'step_a', name: 'Step A', order: 0 })],
+    }))
+    paths.create(makePath({
+      id: 'path_b', jobId: 'job_b', name: 'Route B',
+      steps: [makeStep({ id: 'step_b', name: 'Step B', order: 0 })],
+    }))
+
+    parts.create({ id: 'p1', jobId: 'job_a', pathId: 'path_a', currentStepId: null, status: 'completed', forceCompleted: false, createdAt: TS, updatedAt: TS })
+    parts.create({ id: 'p2', jobId: 'job_a', pathId: 'path_a', currentStepId: null, status: 'completed', forceCompleted: false, createdAt: TS, updatedAt: TS })
+    parts.create({ id: 'p3', jobId: 'job_b', pathId: 'path_b', currentStepId: 'step_b', status: 'in_progress', forceCompleted: false, createdAt: TS, updatedAt: TS })
+
+    const counts = parts.countsByJob()
+    expect(counts.size).toBe(2)
+
+    const a = counts.get('job_a')!
+    expect(a.total).toBe(2)
+    expect(a.completed).toBe(2)
+    expect(a.scrapped).toBe(0)
+
+    const b = counts.get('job_b')!
+    expect(b.total).toBe(1)
+    expect(b.completed).toBe(0)
+    expect(b.scrapped).toBe(0)
+  })
+})

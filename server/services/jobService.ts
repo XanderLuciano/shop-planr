@@ -101,10 +101,13 @@ export function createJobService(repos: {
 
     computeAllJobProgress(): JobProgress[] {
       const jobs = repos.jobs.list()
+      const countsByJob = repos.parts.countsByJob()
+
       return jobs.map((job) => {
-        const totalParts = repos.parts.countByJobId(job.id)
-        const completedParts = repos.parts.countCompletedByJobId(job.id)
-        const scrappedParts = repos.parts.countScrappedByJobId(job.id)
+        const counts = countsByJob.get(job.id) ?? { total: 0, completed: 0, scrapped: 0 }
+        const totalParts = counts.total
+        const completedParts = counts.completed
+        const scrappedParts = counts.scrapped
         const inProgressParts = totalParts - completedParts - scrappedParts
 
         const adjustedGoal = job.goalQuantity - scrappedParts
