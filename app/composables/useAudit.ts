@@ -15,6 +15,8 @@ export interface AuditFilters {
 }
 
 export function useAudit() {
+  const $api = useAuthFetch()
+
   async function fetchEntries(options?: {
     limit?: number
     offset?: number
@@ -33,7 +35,7 @@ export function useAudit() {
       if (options?.filters?.startDate) params.set('startDate', options.filters.startDate)
       if (options?.filters?.endDate) params.set('endDate', options.filters.endDate)
       const qs = params.toString()
-      const result = await $fetch<AuditEntry[]>(`/api/audit${qs ? `?${qs}` : ''}`)
+      const result = await $api<AuditEntry[]>(`/api/audit${qs ? `?${qs}` : ''}`)
       if (options?.offset && options.offset > 0) {
         entries.value = [...entries.value, ...result]
       } else {
@@ -49,7 +51,7 @@ export function useAudit() {
   }
 
   async function fetchPartAudit(partId: string): Promise<AuditEntry[]> {
-    return await $fetch<AuditEntry[]>(`/api/audit/part/${partId}`)
+    return await $api<AuditEntry[]>(`/api/audit/part/${partId}`)
   }
 
   return {

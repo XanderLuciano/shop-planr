@@ -7,9 +7,14 @@
  *
  * **Validates: Requirement 4.4**
  */
-import { describe, it } from 'vitest'
+import { describe, it, vi } from 'vitest'
 import fc from 'fast-check'
 import type { Job } from '~/server/types/domain'
+
+// Stub useAuthFetch — useJobPriority calls it but priority tests only exercise sync logic
+vi.stubGlobal('useAuthFetch', () => vi.fn())
+
+// eslint-disable-next-line import/first
 import { useJobPriority } from '~/app/composables/useJobPriority'
 
 /**

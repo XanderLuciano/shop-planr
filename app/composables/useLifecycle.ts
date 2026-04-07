@@ -3,6 +3,8 @@ import type { Part, PartStepStatus, PartStepOverride } from '~/types/domain'
 import type { AdvancementResult, PartStepStatusView } from '~/types/computed'
 
 export function useLifecycle() {
+  const $api = useAuthFetch()
+
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -14,7 +16,7 @@ export function useLifecycle() {
     loading.value = true
     error.value = null
     try {
-      return await $fetch<Part>(`/api/parts/${encodeURIComponent(partId)}/scrap`, {
+      return await $api<Part>(`/api/parts/${encodeURIComponent(partId)}/scrap`, {
         method: 'POST',
         body: input,
       })
@@ -33,7 +35,7 @@ export function useLifecycle() {
     loading.value = true
     error.value = null
     try {
-      return await $fetch<Part>(`/api/parts/${encodeURIComponent(partId)}/force-complete`, {
+      return await $api<Part>(`/api/parts/${encodeURIComponent(partId)}/force-complete`, {
         method: 'POST',
         body: input,
       })
@@ -52,7 +54,7 @@ export function useLifecycle() {
     loading.value = true
     error.value = null
     try {
-      return await $fetch<AdvancementResult>(`/api/parts/${encodeURIComponent(partId)}/advance-to`, {
+      return await $api<AdvancementResult>(`/api/parts/${encodeURIComponent(partId)}/advance-to`, {
         method: 'POST',
         body: input,
       })
@@ -70,7 +72,7 @@ export function useLifecycle() {
     loading.value = true
     error.value = null
     try {
-      return await $fetch<PartStepStatus>(`/api/parts/${encodeURIComponent(partId)}/complete-deferred/${encodeURIComponent(stepId)}`, {
+      return await $api<PartStepStatus>(`/api/parts/${encodeURIComponent(partId)}/complete-deferred/${encodeURIComponent(stepId)}`, {
         method: 'POST',
         body: input,
       })
@@ -89,7 +91,7 @@ export function useLifecycle() {
     loading.value = true
     error.value = null
     try {
-      return await $fetch<PartStepStatus>(`/api/parts/${encodeURIComponent(partId)}/waive-step/${encodeURIComponent(stepId)}`, {
+      return await $api<PartStepStatus>(`/api/parts/${encodeURIComponent(partId)}/waive-step/${encodeURIComponent(stepId)}`, {
         method: 'POST',
         body: input,
       })
@@ -110,7 +112,7 @@ export function useLifecycle() {
     loading.value = true
     error.value = null
     try {
-      return await $fetch<PartStepOverride[]>(`/api/parts/${encodeURIComponent(partId)}/overrides`, {
+      return await $api<PartStepOverride[]>(`/api/parts/${encodeURIComponent(partId)}/overrides`, {
         method: 'POST',
         body: input,
       })
@@ -126,7 +128,7 @@ export function useLifecycle() {
     loading.value = true
     error.value = null
     try {
-      await $fetch(`/api/parts/${encodeURIComponent(partId)}/overrides/${encodeURIComponent(stepId)}`, {
+      await $api(`/api/parts/${encodeURIComponent(partId)}/overrides/${encodeURIComponent(stepId)}`, {
         method: 'DELETE',
       })
     } catch (e) {
@@ -141,7 +143,7 @@ export function useLifecycle() {
     loading.value = true
     error.value = null
     try {
-      return await $fetch<PartStepStatusView[]>(`/api/parts/${encodeURIComponent(partId)}/step-statuses`)
+      return await $api<PartStepStatusView[]>(`/api/parts/${encodeURIComponent(partId)}/step-statuses`)
     } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch step statuses'
       throw e
@@ -154,7 +156,7 @@ export function useLifecycle() {
     loading.value = true
     error.value = null
     try {
-      return await $fetch<{ canComplete: boolean, blockers: string[] }>(`/api/parts/${encodeURIComponent(partId)}/can-complete`)
+      return await $api<{ canComplete: boolean, blockers: string[] }>(`/api/parts/${encodeURIComponent(partId)}/can-complete`)
     } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to check completion status'
       throw e

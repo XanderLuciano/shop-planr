@@ -7,6 +7,8 @@ const saving = ref(false)
 const snapshot = ref<Job[]>([])
 
 export function useJobPriority() {
+  const $api = useAuthFetch()
+
   function enterEditMode(jobs: Job[]) {
     snapshot.value = [...jobs]
     orderedJobs.value = [...jobs]
@@ -33,7 +35,7 @@ export function useJobPriority() {
         jobId: job.id,
         priority: index + 1,
       }))
-      await $fetch('/api/jobs/priorities', {
+      await $api('/api/jobs/priorities', {
         method: 'PATCH',
         body: { priorities },
       })

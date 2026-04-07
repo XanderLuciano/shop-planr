@@ -15,6 +15,7 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 
 const { authenticatedUser } = useAuth()
+const $api = useAuthFetch()
 
 async function performDelete() {
   if (!authenticatedUser.value) {
@@ -24,7 +25,7 @@ async function performDelete() {
   loading.value = true
   error.value = null
   try {
-    await $fetch(`/api/paths/${encodeURIComponent(props.pathId)}`, {
+    await $api(`/api/paths/${encodeURIComponent(props.pathId)}`, {
       method: 'DELETE',
       body: { userId: authenticatedUser.value.id },
     })

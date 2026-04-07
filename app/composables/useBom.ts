@@ -8,11 +8,13 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 
 export function useBom() {
+  const $api = useAuthFetch()
+
   async function fetchBoms() {
     loading.value = true
     error.value = null
     try {
-      boms.value = await $fetch<BOM[]>('/api/bom')
+      boms.value = await $api<BOM[]>('/api/bom')
     } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch BOMs'
       boms.value = []
@@ -22,7 +24,7 @@ export function useBom() {
   }
 
   async function createBom(input: CreateBomInput): Promise<BOM> {
-    const bom = await $fetch<BOM>('/api/bom', {
+    const bom = await $api<BOM>('/api/bom', {
       method: 'POST',
       body: input,
     })
@@ -31,7 +33,7 @@ export function useBom() {
   }
 
   async function updateBom(id: string, input: Partial<CreateBomInput>): Promise<BOM> {
-    const bom = await $fetch<BOM>(`/api/bom/${id}`, {
+    const bom = await $api<BOM>(`/api/bom/${id}`, {
       method: 'PUT',
       body: input,
     })
@@ -40,7 +42,7 @@ export function useBom() {
   }
 
   async function getBomWithSummary(id: string): Promise<BOM & { summary: BomSummary }> {
-    return await $fetch(`/api/bom/${id}`)
+    return await $api(`/api/bom/${id}`)
   }
 
   return {

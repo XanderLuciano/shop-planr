@@ -6,11 +6,13 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 
 export function useSettings() {
+  const $api = useAuthFetch()
+
   async function fetchSettings() {
     loading.value = true
     error.value = null
     try {
-      settings.value = await $fetch<AppSettings>('/api/settings')
+      settings.value = await $api<AppSettings>('/api/settings')
     } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch settings'
       settings.value = null
@@ -24,7 +26,7 @@ export function useSettings() {
     jiraFieldMappings?: JiraFieldMapping[]
     pageToggles?: Partial<PageToggles>
   }): Promise<AppSettings> {
-    const result = await $fetch<AppSettings>('/api/settings', {
+    const result = await $api<AppSettings>('/api/settings', {
       method: 'PUT',
       body: input,
     })

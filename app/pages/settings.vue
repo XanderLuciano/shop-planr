@@ -3,6 +3,7 @@ import type { PublicUser, JiraConnectionSettings, JiraFieldMapping, PageToggles 
 
 const { settings, loading, fetchSettings, updateSettings } = useSettings()
 const { fetchUsers, isAdmin, authenticatedUser } = useAuth()
+const $api = useAuthFetch()
 
 // Tab state
 const activeTab = ref('users')
@@ -30,7 +31,7 @@ const settingsSuccess = ref('')
 async function loadAllUsers() {
   try {
     // The users composable fetches active users; we need all users for settings
-    const all = await $fetch<PublicUser[]>('/api/users')
+    const all = await $api<PublicUser[]>('/api/users')
     allUsers.value = all
   } catch {
     allUsers.value = []
@@ -42,7 +43,7 @@ async function onCreateUser(data: { username: string, displayName: string, depar
   userSuccess.value = ''
   userSaving.value = true
   try {
-    await $fetch('/api/users', { method: 'POST', body: data })
+    await $api('/api/users', { method: 'POST', body: data })
     showUserForm.value = false
     userSuccess.value = 'User created'
     await loadAllUsers()
@@ -60,7 +61,7 @@ async function onUpdateUser(data: { username?: string, displayName?: string, dep
   userSuccess.value = ''
   userSaving.value = true
   try {
-    await $fetch(`/api/users/${editingUser.value.id}`, { method: 'PUT', body: data })
+    await $api(`/api/users/${editingUser.value.id}`, { method: 'PUT', body: data })
     editingUser.value = null
     userSuccess.value = 'User updated'
     await loadAllUsers()
@@ -75,7 +76,7 @@ async function onUpdateUser(data: { username?: string, displayName?: string, dep
 async function toggleUserActive(user: PublicUser) {
   userError.value = ''
   try {
-    await $fetch(`/api/users/${user.id}`, {
+    await $api(`/api/users/${user.id}`, {
       method: 'PUT',
       body: { active: !user.active },
     })
@@ -90,7 +91,7 @@ async function resetUserPin(user: PublicUser) {
   userError.value = ''
   userSuccess.value = ''
   try {
-    await $fetch('/api/auth/reset-pin', {
+    await $api('/api/auth/reset-pin', {
       method: 'POST',
       body: { targetUserId: user.id },
     })

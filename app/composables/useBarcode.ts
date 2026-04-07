@@ -18,6 +18,8 @@ export function detectScanType(value: string): ScanType {
 }
 
 export function useBarcode() {
+  const $api = useAuthFetch()
+
   const barcodeInputRef = ref<HTMLInputElement | null>(null)
   const toast = useToast()
 
@@ -82,7 +84,7 @@ export function useBarcode() {
    */
   async function lookupPart(id: string, silent = false): Promise<boolean> {
     try {
-      const part = await $fetch<{
+      const part = await $api<{
         id: string
         jobId: string
         pathId: string
@@ -115,7 +117,7 @@ export function useBarcode() {
    */
   async function lookupCert(id: string, silent = false): Promise<boolean> {
     try {
-      const cert = await $fetch<{
+      const cert = await $api<{
         id: string
         name: string
         type: string

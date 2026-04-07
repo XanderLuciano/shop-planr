@@ -13,6 +13,7 @@ const emit = defineEmits<{
 const { activeUsers, fetchActiveUsers } = useOperatorIdentity()
 const { locations, fetchLocations } = useLibrary()
 const toast = useToast()
+const $api = useAuthFetch()
 
 const saving = ref(false)
 
@@ -63,7 +64,7 @@ async function handleSave() {
   if (assigneeChanged) {
     attempted++
     try {
-      await $fetch(`/api/steps/${props.stepId}/assign`, {
+      await $api(`/api/steps/${props.stepId}/assign`, {
         method: 'PATCH',
         body: { userId: newAssignee },
       })
@@ -75,7 +76,7 @@ async function handleSave() {
   if (locationChanged) {
     attempted++
     try {
-      await $fetch(`/api/steps/${props.stepId}/config`, {
+      await $api(`/api/steps/${props.stepId}/config`, {
         method: 'PATCH',
         body: { location: newLocation },
       })

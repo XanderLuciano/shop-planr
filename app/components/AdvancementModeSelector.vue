@@ -10,6 +10,7 @@ const emit = defineEmits<{
 
 const loading = ref(false)
 const error = ref<string | null>(null)
+const $api = useAuthFetch()
 
 const modeOptions = [
   { label: 'Strict', value: 'strict', description: 'Sequential only — N → N+1' },
@@ -28,7 +29,7 @@ async function handleChange(value: string) {
   loading.value = true
   error.value = null
   try {
-    await $fetch(`/api/paths/${encodeURIComponent(props.pathId)}/advancement-mode`, {
+    await $api(`/api/paths/${encodeURIComponent(props.pathId)}/advancement-mode`, {
       method: 'PATCH',
       body: { advancementMode: mode },
     })

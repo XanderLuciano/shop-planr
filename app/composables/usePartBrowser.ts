@@ -66,6 +66,8 @@ export function sortParts(
 // ---- Composable ----
 
 export function usePartBrowser() {
+  const $api = useAuthFetch()
+
   const parts = ref<EnrichedPart[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -89,7 +91,7 @@ export function usePartBrowser() {
     loading.value = true
     error.value = null
     try {
-      parts.value = await $fetch<EnrichedPart[]>('/api/parts')
+      parts.value = await $api<EnrichedPart[]>('/api/parts')
     } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch parts'
       parts.value = []

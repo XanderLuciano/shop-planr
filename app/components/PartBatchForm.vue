@@ -12,6 +12,7 @@ const emit = defineEmits<{
 
 const { batchCreateParts } = useParts()
 const { authenticatedUser } = useAuth()
+const $api = useAuthFetch()
 
 const quantity = ref(1)
 const selectedCertId = ref<string | SelectNone>(SELECT_NONE)
@@ -24,7 +25,7 @@ const certsLoading = ref(false)
 async function loadCerts() {
   certsLoading.value = true
   try {
-    certs.value = await $fetch<Certificate[]>('/api/certs')
+    certs.value = await $api<Certificate[]>('/api/certs')
   } catch {
     certs.value = []
   } finally {

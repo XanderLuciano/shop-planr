@@ -5,6 +5,7 @@ import type { StepNote, CertAttachment, PartStepOverride } from '~/types/domain'
 const route = useRoute()
 const router = useRouter()
 const partId = route.params.id as string
+const $api = useAuthFetch()
 
 const {
   part,
@@ -207,7 +208,7 @@ async function handleAdvance(payload: { partIds: string[], note?: string }) {
       await advancePart(sid, operatorId.value ?? 'system')
     }
     if (payload.note?.trim()) {
-      await $fetch('/api/notes', {
+      await $api('/api/notes', {
         method: 'POST',
         body: {
           jobId: job.value!.id,
@@ -245,11 +246,11 @@ async function loadLifecycleData() {
   } catch { stepStatuses.value = [] }
 
   try {
-    overrides.value = await $fetch<PartStepOverride[]>(`/api/parts/${encodeURIComponent(partId)}/overrides`)
+    overrides.value = await $api<PartStepOverride[]>(`/api/parts/${encodeURIComponent(partId)}/overrides`)
   } catch { overrides.value = [] }
 
   try {
-    certAttachments.value = await $fetch<CertAttachment[]>(`/api/parts/${encodeURIComponent(partId)}/cert-attachments`)
+    certAttachments.value = await $api<CertAttachment[]>(`/api/parts/${encodeURIComponent(partId)}/cert-attachments`)
   } catch { certAttachments.value = [] }
 }
 

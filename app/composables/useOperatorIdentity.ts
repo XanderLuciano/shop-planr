@@ -13,10 +13,12 @@ function isBrowser(): boolean {
 }
 
 export function useOperatorIdentity() {
+  const $api = useAuthFetch()
+
   async function fetchActiveUsers(): Promise<void> {
     loading.value = true
     try {
-      activeUsers.value = await $fetch<ShopUser[]>('/api/users')
+      activeUsers.value = await $api<ShopUser[]>('/api/users')
     } catch {
       activeUsers.value = []
     } finally {

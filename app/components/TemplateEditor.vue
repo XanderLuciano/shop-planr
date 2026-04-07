@@ -12,6 +12,7 @@ const emit = defineEmits<{
 
 const loading = ref(false)
 const error = ref<string | null>(null)
+const $api = useAuthFetch()
 
 interface EditableStep {
   name: string
@@ -61,7 +62,7 @@ async function handleSave() {
 
   loading.value = true
   try {
-    await $fetch(`/api/templates/${encodeURIComponent(props.template.id)}`, {
+    await $api(`/api/templates/${encodeURIComponent(props.template.id)}`, {
       method: 'PUT',
       body: {
         name: props.template.name,

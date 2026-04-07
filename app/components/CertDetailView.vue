@@ -9,13 +9,14 @@ const cert = ref<Certificate | null>(null)
 const attachments = ref<CertAttachment[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
+const $api = useAuthFetch()
 
 onMounted(async () => {
   loading.value = true
   try {
     const [certData, attachData] = await Promise.all([
-      $fetch<Certificate>(`/api/certs/${encodeURIComponent(props.certId)}`),
-      $fetch<CertAttachment[]>(`/api/certs/${encodeURIComponent(props.certId)}/attachments`),
+      $api<Certificate>(`/api/certs/${encodeURIComponent(props.certId)}`),
+      $api<CertAttachment[]>(`/api/certs/${encodeURIComponent(props.certId)}/attachments`),
     ])
     cert.value = certData
     attachments.value = attachData

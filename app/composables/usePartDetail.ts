@@ -3,6 +3,8 @@ import type { Part, Job, Path } from '~/types/domain'
 import type { StepDistribution, EnrichedPart } from '~/types/computed'
 
 export function usePartDetail(partId: string) {
+  const $api = useAuthFetch()
+
   const part = ref<Part | null>(null)
   const job = ref<Job | null>(null)
   const path = ref<(Path & { distribution: StepDistribution[] }) | null>(null)
@@ -16,13 +18,13 @@ export function usePartDetail(partId: string) {
     error.value = null
     try {
       // Fetch part first to get jobId and pathId
-      const partData = await $fetch<Part>(`/api/parts/${encodeURIComponent(partId)}`)
+      const partData = await $api<Part>(`/api/parts/${encodeURIComponent(partId)}`)
       part.value = partData
 
       // Fetch job and path+distribution in parallel
       const [jobData, pathData] = await Promise.all([
-        $fetch<Job>(`/api/jobs/${encodeURIComponent(partData.jobId)}`),
-        $fetch<Path & { distribution: StepDistribution[] }>(`/api/paths/${encodeURIComponent(partData.pathId)}`),
+        $api<Job>(`/api/jobs/${encodeURIComponent(partData.jobId)}`),
+        $api<Path & { distribution: StepDistribution[] }>(`/api/paths/${encodeURIComponent(partData.pathId)}`),
       ])
 
       job.value = jobData
@@ -39,7 +41,7 @@ export function usePartDetail(partId: string) {
     if (!part.value) return
     try {
       // Fetch all enriched parts and filter by pathId client-side
-      const all = await $fetch<EnrichedPart[]>('/api/parts')
+      const all = await $api<EnrichedPart[]>('/api/parts')
       siblingParts.value = all.filter(
         s => s.jobId === part.value!.jobId && s.pathId === part.value!.pathId,
       )
@@ -53,8 +55,8 @@ export function usePartDetail(partId: string) {
     if (!part.value) return
     try {
       const [partData, pathData] = await Promise.all([
-        $fetch<Part>(`/api/parts/${encodeURIComponent(partId)}`),
-        $fetch<Path & { distribution: StepDistribution[] }>(`/api/paths/${encodeURIComponent(part.value.pathId)}`),
+        $api<Part>(`/api/parts/${encodeURIComponent(partId)}`),
+        $api<Path & { distribution: StepDistribution[] }>(`/api/paths/${encodeURIComponent(part.value.pathId)}`),
       ])
       part.value = partData
       path.value = pathData

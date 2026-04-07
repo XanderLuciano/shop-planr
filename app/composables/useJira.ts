@@ -9,12 +9,14 @@ const error = ref<string | null>(null)
 const fromCache = ref(false)
 
 export function useJira() {
+  const $api = useAuthFetch()
+
   async function fetchTickets() {
     loading.value = true
     error.value = null
     fromCache.value = false
     try {
-      const result = await $fetch<FetchTicketsResult>('/api/jira/tickets')
+      const result = await $api<FetchTicketsResult>('/api/jira/tickets')
       tickets.value = result.tickets
       error.value = result.error
       fromCache.value = result.fromCache
@@ -27,7 +29,7 @@ export function useJira() {
   }
 
   async function linkTicket(input: LinkJiraInput): Promise<{ job: Job, path: Path | null }> {
-    const result = await $fetch<{ job: Job, path: Path | null }>('/api/jira/link', {
+    const result = await $api<{ job: Job, path: Path | null }>('/api/jira/link', {
       method: 'POST',
       body: input,
     })
@@ -41,21 +43,21 @@ export function useJira() {
   }
 
   async function pushDescriptionTable(jobId: string): Promise<JiraPushResult> {
-    return await $fetch<JiraPushResult>('/api/jira/push', {
+    return await $api<JiraPushResult>('/api/jira/push', {
       method: 'POST',
       body: { jobId },
     })
   }
 
   async function pushCommentSummary(jobId: string): Promise<JiraPushResult> {
-    return await $fetch<JiraPushResult>('/api/jira/comment', {
+    return await $api<JiraPushResult>('/api/jira/comment', {
       method: 'POST',
       body: { jobId },
     })
   }
 
   async function pushNoteAsComment(jobId: string, noteId: string): Promise<JiraPushResult> {
-    return await $fetch<JiraPushResult>('/api/jira/comment', {
+    return await $api<JiraPushResult>('/api/jira/comment', {
       method: 'POST',
       body: { jobId, noteId },
     })

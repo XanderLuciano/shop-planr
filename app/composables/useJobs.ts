@@ -8,11 +8,13 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 
 export function useJobs() {
+  const $api = useAuthFetch()
+
   async function fetchJobs() {
     loading.value = true
     error.value = null
     try {
-      jobs.value = await $fetch<Job[]>('/api/jobs')
+      jobs.value = await $api<Job[]>('/api/jobs')
     } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch jobs'
       jobs.value = []
@@ -22,7 +24,7 @@ export function useJobs() {
   }
 
   async function createJob(input: CreateJobInput): Promise<Job> {
-    const job = await $fetch<Job>('/api/jobs', {
+    const job = await $api<Job>('/api/jobs', {
       method: 'POST',
       body: input,
     })
@@ -31,7 +33,7 @@ export function useJobs() {
   }
 
   async function updateJob(id: string, input: UpdateJobInput): Promise<Job> {
-    const job = await $fetch<Job>(`/api/jobs/${id}`, {
+    const job = await $api<Job>(`/api/jobs/${id}`, {
       method: 'PUT',
       body: input,
     })
@@ -40,16 +42,16 @@ export function useJobs() {
   }
 
   async function getJob(id: string): Promise<Job & { paths: readonly Path[], progress: JobProgress }> {
-    return await $fetch(`/api/jobs/${id}`)
+    return await $api(`/api/jobs/${id}`)
   }
 
   async function fetchJobProgress(id: string): Promise<JobProgress> {
-    const detail = await $fetch<{ progress: JobProgress }>(`/api/jobs/${id}`)
+    const detail = await $api<{ progress: JobProgress }>(`/api/jobs/${id}`)
     return detail.progress
   }
 
   async function deleteJob(id: string): Promise<void> {
-    await $fetch(`/api/jobs/${id}`, { method: 'DELETE' })
+    await $api(`/api/jobs/${id}`, { method: 'DELETE' })
     await fetchJobs()
   }
 

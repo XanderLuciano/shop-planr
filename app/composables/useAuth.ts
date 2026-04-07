@@ -41,6 +41,10 @@ function payloadToUser(payload: JwtPayload): ShopUser {
 let refreshTimer: ReturnType<typeof setTimeout> | null = null
 
 export function useAuth() {
+  // NOTE: useAuth cannot use useAuthFetch() because the auth plugin depends
+  // on useAuth() — circular dependency. Auth endpoints (login, setup-pin,
+  // refresh) either don't need auth or pass the header explicitly.
+
   // useCookie — SSR-safe, same ref per cookie name within a request/app
   const tokenCookie = useCookie(COOKIE_NAME, {
     maxAge: 60 * 60 * 24,
