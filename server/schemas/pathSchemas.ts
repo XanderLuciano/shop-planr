@@ -35,10 +35,6 @@ export const updatePathSchema = z.object({
   steps: z.array(stepInputSchema).min(1).optional(),
 })
 
-export const deletePathSchema = z.object({
-  userId: z.string().min(1, 'userId is required'),
-})
-
 export const updateAdvancementModeSchema = z.object({
   advancementMode: advancementModeEnum,
 })

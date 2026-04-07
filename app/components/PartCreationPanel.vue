@@ -13,7 +13,6 @@ const emit = defineEmits<{
 }>()
 
 const { batchCreateParts } = useParts()
-const { operatorId } = useOperatorIdentity()
 
 const quantity = ref<number>(1)
 const creating = ref(false)
@@ -64,7 +63,7 @@ function clearMessages() {
 }
 
 async function handleCreate() {
-  if (validationError.value || !operatorId.value) return
+  if (validationError.value) return
   clearMessages()
   creating.value = true
   try {
@@ -72,7 +71,6 @@ async function handleCreate() {
       jobId: props.job.jobId,
       pathId: props.job.pathId,
       quantity: quantity.value,
-      userId: operatorId.value,
     })
     successMessage.value = `${created.length} part${created.length !== 1 ? 's' : ''} created`
     emit('created', created.length)
@@ -84,7 +82,7 @@ async function handleCreate() {
 }
 
 async function handleCreateAndAdvance() {
-  if (validationError.value || !operatorId.value) return
+  if (validationError.value) return
   clearMessages()
   creating.value = true
   try {
@@ -92,7 +90,6 @@ async function handleCreateAndAdvance() {
       jobId: props.job.jobId,
       pathId: props.job.pathId,
       quantity: quantity.value,
-      userId: operatorId.value,
     })
     const createdIds = created.map(s => s.id)
     emit('created', created.length)

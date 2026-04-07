@@ -275,7 +275,7 @@ describe('useJobForm', () => {
       // Order: deletes first, then updates, then creates
       expect(callOrder).toEqual(['deletePath', 'updatePath', 'createPath'])
 
-      expect(mockDeletePath).toHaveBeenCalledWith('path-remove', 'test-user-id')
+      expect(mockDeletePath).toHaveBeenCalledWith('path-remove')
       expect(mockUpdatePath).toHaveBeenCalledWith('path-keep', expect.objectContaining({ name: 'Updated Path' }))
       expect(mockCreatePath).toHaveBeenCalledWith(expect.objectContaining({
         jobId: 'job-1',

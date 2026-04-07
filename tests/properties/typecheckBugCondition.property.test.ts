@@ -35,7 +35,6 @@ const CROSS_LAYER_IMPORT_FILES = [
   'app/composables/useParts.ts',
   'app/composables/useJira.ts',
   'app/composables/useOperatorWorkQueue.ts',
-  'app/composables/useOperatorIdentity.ts',
   'app/composables/useLifecycle.ts',
   'app/composables/usePartBrowser.ts',
   'app/composables/usePartDetail.ts',

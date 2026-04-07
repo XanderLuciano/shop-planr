@@ -14,7 +14,6 @@ export function useNotes() {
     stepId: string
     partIds: string[]
     text: string
-    userId: string
   }): Promise<StepNote> {
     loading.value = true
     error.value = null

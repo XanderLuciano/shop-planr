@@ -22,7 +22,6 @@ const {
 
 const { fetchNotesForStep, createNote } = useNotes()
 const { getStepStatuses } = useLifecycle()
-const { operatorId } = useOperatorIdentity()
 
 const advanceLoading = ref(false)
 const stepNotes = ref<StepNote[]>([])
@@ -185,7 +184,6 @@ async function handleSaveNote() {
       stepId: currentStep.value.id,
       partIds: [partId],
       text: noteText.value.trim(),
-      userId: operatorId.value ?? 'system',
     })
     showNoteForm.value = false
     noteText.value = ''
@@ -200,12 +198,11 @@ async function handleSaveNote() {
 async function handleAdvance(payload: { partIds: string[], note?: string }) {
   if (!part.value || !currentStep.value) return
   const { advancePart } = useParts()
-  const { operatorId } = useOperatorIdentity()
 
   advanceLoading.value = true
   try {
     for (const sid of payload.partIds) {
-      await advancePart(sid, operatorId.value ?? 'system')
+      await advancePart(sid)
     }
     if (payload.note?.trim()) {
       await $api('/api/notes', {
@@ -216,7 +213,6 @@ async function handleAdvance(payload: { partIds: string[], note?: string }) {
           stepId: currentStep.value.id,
           partIds: payload.partIds,
           text: payload.note.trim(),
-          userId: operatorId.value ?? 'system',
         },
       })
     }

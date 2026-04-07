@@ -7,9 +7,8 @@
 
 export interface SkipStepParams {
   partIds: string[]
-  operatorId: string | null
   nextStepId: string | undefined
-  advanceToStep: (partId: string, input: { targetStepId: string, userId: string }) => Promise<unknown>
+  advanceToStep: (partId: string, input: { targetStepId: string }) => Promise<unknown>
 }
 
 export interface SkipStepResult {
@@ -19,11 +18,7 @@ export interface SkipStepResult {
 }
 
 export async function executeSkip(params: SkipStepParams): Promise<SkipStepResult> {
-  const { partIds, operatorId, nextStepId, advanceToStep } = params
-
-  if (!operatorId) {
-    return { skipped: false, count: 0, error: 'Operator required' }
-  }
+  const { partIds, nextStepId, advanceToStep } = params
 
   if (!nextStepId) {
     return { skipped: false, count: 0, error: 'No next step' }
@@ -32,7 +27,6 @@ export async function executeSkip(params: SkipStepParams): Promise<SkipStepResul
   for (const partId of partIds) {
     await advanceToStep(partId, {
       targetStepId: nextStepId,
-      userId: operatorId,
     })
   }
 

@@ -17,7 +17,6 @@ const emit = defineEmits<{
 }>()
 
 const { createNote } = useNotes()
-const { operatorId } = useOperatorIdentity()
 const toast = useToast()
 
 const noteText = ref('')
@@ -33,7 +32,6 @@ const canSave = computed(() => {
   return (
     noteText.value.trim().length > 0
     && selectedPartIds.value.size > 0
-    && !!operatorId.value
     && !saving.value
   )
 })
@@ -66,7 +64,7 @@ function selectNone() {
 
 async function handleSave() {
   const trimmedText = noteText.value.trim()
-  if (!trimmedText || selectedPartIds.value.size === 0 || !operatorId.value) return
+  if (!trimmedText || selectedPartIds.value.size === 0) return
 
   saving.value = true
   try {
@@ -76,7 +74,6 @@ async function handleSave() {
       stepId: props.stepId,
       partIds: Array.from(selectedPartIds.value),
       text: trimmedText,
-      userId: operatorId.value,
     })
 
     emit('saved', note)
@@ -170,14 +167,6 @@ function handleCancel() {
             {{ noteText.length }}/1000
           </div>
         </div>
-
-        <!-- No operator warning -->
-        <p
-          v-if="!operatorId"
-          class="text-xs text-(--ui-error)"
-        >
-          No operator selected — select an operator to save notes.
-        </p>
 
         <!-- Actions -->
         <div class="flex justify-end gap-2 pt-2">

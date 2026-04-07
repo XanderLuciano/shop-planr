@@ -27,7 +27,6 @@ async function performDelete() {
   try {
     await $api(`/api/paths/${encodeURIComponent(props.pathId)}`, {
       method: 'DELETE',
-      body: { userId: authenticatedUser.value.id },
     })
     confirming.value = false
     showModal.value = false

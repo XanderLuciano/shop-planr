@@ -11,7 +11,6 @@ const emit = defineEmits<{
 }>()
 
 const { forceComplete, loading, error } = useLifecycle()
-const { operatorId } = useOperatorIdentity()
 
 const reason = ref('')
 const validationError = ref<string | null>(null)
@@ -29,15 +28,9 @@ function resetForm() {
 async function handleConfirm() {
   validationError.value = null
 
-  if (!operatorId.value) {
-    validationError.value = 'No operator selected'
-    return
-  }
-
   try {
     await forceComplete(props.partId, {
       reason: reason.value.trim() || undefined,
-      userId: operatorId.value,
     })
     resetForm()
     isOpen.value = false

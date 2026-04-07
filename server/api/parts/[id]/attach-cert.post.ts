@@ -1,6 +1,7 @@
 export default defineApiHandler(async (event) => {
   const id = getRouterParam(event, 'id')!
   const body = await readBody(event)
+  const userId = getAuthUserId(event)
   const { partService, certService, pathService } = getServices()
 
   const part = partService.getPart(id)
@@ -14,7 +15,7 @@ export default defineApiHandler(async (event) => {
     certId: body.certId,
     serialId: id,
     stepId: step.id,
-    userId: body.userId,
+    userId,
     jobId: part.jobId,
     pathId: part.pathId,
   })

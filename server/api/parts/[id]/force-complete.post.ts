@@ -1,6 +1,7 @@
 export default defineApiHandler(async (event) => {
   const id = getRouterParam(event, 'id')!
   const body = await readBody(event)
+  const userId = getAuthUserId(event)
   const { lifecycleService } = getServices()
-  return lifecycleService.forceComplete(id, body)
+  return lifecycleService.forceComplete(id, { ...body, userId })
 })

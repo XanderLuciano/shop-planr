@@ -1,19 +1,5 @@
 <script setup lang="ts">
 import type { WorkQueueJob, WorkQueueGroup, WorkQueueFilterState } from '~/types/computed'
-import type { DropdownMenuItem } from '@nuxt/ui'
-
-const route = useRoute()
-const router = useRouter()
-
-const {
-  operatorId,
-  operatorName,
-  activeUsers,
-  loading: identityLoading,
-  selectOperator,
-  clearOperator,
-  init: initIdentity,
-} = useOperatorIdentity()
 
 const {
   groupBy,
@@ -39,6 +25,8 @@ const {
   deletePreset,
 } = useWorkQueueFilters()
 
+const { authenticatedUser, users } = useAuth()
+
 // Debounced search: the filter bar emits immediately, but we debounce
 // before setting it on the composable's searchQuery
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
@@ -59,10 +47,11 @@ watch(searchQuery, (val) => {
   }
 })
 
-// Sorted groups: selected operator first (when groupType is 'user'), then others, unassigned last
+// Sorted groups: authenticated user first (when groupType is 'user'), then others, unassigned last
 const sortedGroups = computed<WorkQueueGroup[]>(() => {
   const groups = filteredGroups.value
-  if (!operatorId.value) return groups
+  const currentUserId = authenticatedUser.value?.id
+  if (!currentUserId) return groups
 
   // Only highlight/sort when grouped by user
   if (groupBy.value !== 'user') return groups
@@ -72,7 +61,7 @@ const sortedGroups = computed<WorkQueueGroup[]>(() => {
   const unassigned: WorkQueueGroup[] = []
 
   for (const g of groups) {
-    if (g.groupKey === operatorId.value) selected.push(g)
+    if (g.groupKey === currentUserId) selected.push(g)
     else if (g.groupKey === null) unassigned.push(g)
     else others.push(g)
   }
@@ -94,33 +83,6 @@ const groupTypeLabel = computed(() => {
     default: return 'group'
   }
 })
-
-// Operator dropdown items
-const operatorMenuItems = computed<DropdownMenuItem[][]>(() => {
-  if (!activeUsers.value.length) {
-    return [[{ label: 'No operators available', disabled: true }]]
-  }
-  return [
-    activeUsers.value.map((user: { id: string, displayName: string }) => ({
-      label: user.displayName,
-      icon: user.id === operatorId.value ? 'i-lucide-check' : 'i-lucide-user',
-      onSelect() {
-        handleSelectOperator(user.id)
-      },
-    })),
-  ]
-})
-
-function handleSelectOperator(userId: string) {
-  selectOperator(userId)
-  router.replace({ query: { ...route.query, operator: userId } })
-}
-
-function handleClearOperator() {
-  clearOperator()
-  const { operator: _, ...rest } = route.query
-  router.replace({ query: rest })
-}
 
 function handleStepClick(job: WorkQueueJob) {
   navigateTo(`/parts/step/${job.stepId}`)
@@ -160,34 +122,16 @@ function groupIcon(group: WorkQueueGroup): string {
   }
 }
 
-// Whether to highlight a group as "selected"
-function isSelectedGroup(group: WorkQueueGroup): boolean {
-  return group.groupType === 'user' && group.groupKey === operatorId.value && !!operatorId.value
+// Whether to highlight a group as the current user's
+function isCurrentUserGroup(group: WorkQueueGroup): boolean {
+  return group.groupType === 'user' && group.groupKey === authenticatedUser.value?.id && !!authenticatedUser.value
 }
 
 // Whether any filters are active (including search)
 const hasActiveFilters = computed(() => activeFilterCount.value > 0 || searchQuery.value.trim().length > 0)
 
 onMounted(async () => {
-  // Check URL query for operator param first
-  const urlOperator = route.query.operator as string | undefined
-
-  // Init identity (fetches users, restores from localStorage)
-  await initIdentity()
-
-  // URL param takes precedence over localStorage
-  if (urlOperator) {
-    const found = activeUsers.value.find((u: { id: string }) => u.id === urlOperator)
-    if (found) {
-      selectOperator(found.id)
-    } else {
-      // Stale operator in URL — clear it
-      const { operator: _, ...rest } = route.query
-      router.replace({ query: rest })
-    }
-  }
-
-  // Restore filter state from URL (after operator identity init)
+  // Restore filter state from URL
   syncFromUrl()
 
   // Fetch with the correct groupBy from URL
@@ -201,33 +145,6 @@ onMounted(async () => {
       <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
         Work Queue
       </h1>
-
-      <!-- Operator selector -->
-      <div class="flex items-center gap-2">
-        <UDropdownMenu
-          :items="operatorMenuItems"
-          size="sm"
-          :content="{ align: 'end' }"
-        >
-          <UButton
-            size="sm"
-            :variant="operatorId ? 'ghost' : 'soft'"
-            :color="operatorId ? 'neutral' : 'warning'"
-            :icon="operatorId ? 'i-lucide-user' : 'i-lucide-hard-hat'"
-            :label="operatorName ?? 'Select Operator'"
-            trailing-icon="i-lucide-chevron-down"
-            :loading="identityLoading"
-          />
-        </UDropdownMenu>
-        <UButton
-          v-if="operatorId"
-          size="xs"
-          variant="ghost"
-          icon="i-lucide-x"
-          aria-label="Clear operator"
-          @click="handleClearOperator"
-        />
-      </div>
     </div>
 
     <!-- Filter bar -->
@@ -236,7 +153,7 @@ onMounted(async () => {
       :filters="filters"
       :available-locations="availableLocations"
       :available-steps="availableSteps"
-      :available-users="activeUsers"
+      :available-users="users"
       :presets="presets"
       :active-preset-id="activePresetId"
       :search-query="debouncedSearch"
@@ -326,7 +243,7 @@ onMounted(async () => {
         v-for="group in sortedGroups"
         :key="group.groupKey ?? '_unassigned'"
         class="border border-(--ui-border) rounded-md overflow-hidden"
-        :class="{ 'ring-2 ring-(--ui-primary)': isSelectedGroup(group) }"
+        :class="{ 'ring-2 ring-(--ui-primary)': isCurrentUserGroup(group) }"
       >
         <!-- Group header -->
         <div class="flex items-center justify-between px-3 py-2 bg-(--ui-bg-elevated)/50">
@@ -339,12 +256,12 @@ onMounted(async () => {
               {{ group.groupLabel }}
             </span>
             <UBadge
-              v-if="isSelectedGroup(group)"
+              v-if="isCurrentUserGroup(group)"
               color="primary"
               variant="subtle"
               size="xs"
             >
-              selected
+              you
             </UBadge>
           </div>
           <UBadge

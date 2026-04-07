@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { DropdownMenuItem } from '@nuxt/ui'
-
 const route = useRoute()
 const stepId = route.params.stepId as string
 const fromQuery = route.query.from as string | undefined
@@ -15,16 +13,6 @@ const {
   previousStepWipCount,
   fetchStep,
 } = useStepView(stepId)
-
-const {
-  operatorId,
-  operatorName,
-  activeUsers,
-  loading: identityLoading,
-  selectOperator,
-  clearOperator,
-  init: initIdentity,
-} = useOperatorIdentity()
 
 const { advanceBatch } = useWorkQueue()
 const { users } = useAuth()
@@ -50,30 +38,13 @@ function handleEditCancel() {
   editing.value = false
 }
 
-// Operator dropdown items
-const operatorMenuItems = computed<DropdownMenuItem[][]>(() => {
-  if (!activeUsers.value.length) {
-    return [[{ label: 'No operators available', disabled: true }]]
-  }
-  return [
-    activeUsers.value.map((user: { id: string, displayName: string }) => ({
-      label: user.displayName,
-      icon: user.id === operatorId.value ? 'i-lucide-check' : 'i-lucide-user',
-      onSelect() {
-        selectOperator(user.id)
-      },
-    })),
-  ]
-})
-
 async function handleAdvance(payload: { partIds: string[], note?: string }) {
-  if (!job.value || !operatorId.value) return
+  if (!job.value) return
 
   advanceLoading.value = true
   try {
     const result = await advanceBatch({
       partIds: payload.partIds,
-      userId: operatorId.value,
       jobId: job.value.jobId,
       pathId: job.value.pathId,
       stepId: job.value.stepId,
@@ -108,17 +79,14 @@ async function handleSkip(payload: { partIds: string[] }) {
     const { advanceToStep } = useLifecycle()
     const result = await executeSkip({
       partIds: payload.partIds,
-      operatorId: operatorId.value,
       nextStepId: job.value.nextStepId,
       advanceToStep,
     })
 
     if (!result.skipped) {
       toast.add({
-        title: result.error === 'Operator required' ? 'Operator required' : 'Skip failed',
-        description: result.error === 'Operator required'
-          ? 'Please select an operator before skipping.'
-          : result.error ?? 'An error occurred',
+        title: 'Skip failed',
+        description: result.error ?? 'An error occurred',
         color: 'warning',
       })
       return
@@ -157,7 +125,6 @@ function handleCancel() {
 }
 
 onMounted(async () => {
-  await initIdentity()
   await fetchStep()
 })
 </script>
@@ -266,33 +233,6 @@ onMounted(async () => {
               @cancel="handleEditCancel"
             />
           </div>
-
-          <!-- Operator selector -->
-          <div class="flex items-center gap-2">
-            <UDropdownMenu
-              :items="operatorMenuItems"
-              size="sm"
-              :content="{ align: 'end' }"
-            >
-              <UButton
-                size="sm"
-                :variant="operatorId ? 'ghost' : 'soft'"
-                :color="operatorId ? 'neutral' : 'warning'"
-                :icon="operatorId ? 'i-lucide-user' : 'i-lucide-hard-hat'"
-                :label="operatorName ?? 'Select Operator'"
-                trailing-icon="i-lucide-chevron-down"
-                :loading="identityLoading"
-              />
-            </UDropdownMenu>
-            <UButton
-              v-if="operatorId"
-              size="xs"
-              variant="ghost"
-              icon="i-lucide-x"
-              aria-label="Clear operator"
-              @click="clearOperator"
-            />
-          </div>
         </div>
 
         <!-- Prev / Next step navigation -->
@@ -316,21 +256,9 @@ onMounted(async () => {
         </div>
       </div>
 
-      <!-- No operator warning -->
-      <div
-        v-if="!operatorId"
-        class="text-sm text-(--ui-text-muted) py-8 text-center"
-      >
-        <UIcon
-          name="i-lucide-hard-hat"
-          class="size-8 mb-2 opacity-50"
-        />
-        <p>Select an operator to advance parts or create new parts.</p>
-      </div>
-
       <!-- First step (always shows PartCreationPanel, even with 0 parts) -->
       <PartCreationPanel
-        v-else-if="job.stepOrder === 0"
+        v-if="job.stepOrder === 0"
         :job="job"
         :loading="advanceLoading"
         @advance="handleAdvance"

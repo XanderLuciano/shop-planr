@@ -25,5 +25,4 @@ export type {
   UpdateAdvancementModeInput,
   CreateLibraryEntryInput,
   UpdatePrioritiesInput,
-  DeletePathInput,
 } from '../../server/types/api'

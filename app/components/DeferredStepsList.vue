@@ -7,7 +7,6 @@ const props = defineProps<{
 }>()
 
 const { completeDeferredStep, waiveStep, loading } = useLifecycle()
-const { operatorId } = useOperatorIdentity()
 
 const waiveReason = ref('')
 const waiveStepId = ref<string | null>(null)
@@ -19,12 +18,8 @@ const deferredSteps = computed(() =>
 
 async function handleComplete(stepId: string) {
   actionError.value = null
-  if (!operatorId.value) {
-    actionError.value = 'No operator selected'
-    return
-  }
   try {
-    await completeDeferredStep(props.partId, stepId, { userId: operatorId.value })
+    await completeDeferredStep(props.partId, stepId)
   } catch (e) {
     actionError.value = e?.data?.message ?? e?.message ?? 'Failed to complete step'
   }
@@ -47,14 +42,9 @@ async function confirmWaive() {
     actionError.value = 'Waive reason is required'
     return
   }
-  if (!operatorId.value) {
-    actionError.value = 'No operator selected'
-    return
-  }
   try {
     await waiveStep(props.partId, waiveStepId.value, {
       reason: waiveReason.value.trim(),
-      approverId: operatorId.value,
     })
     cancelWaive()
   } catch (e) {

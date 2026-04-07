@@ -1,6 +1,6 @@
 export default defineApiHandler(async (event) => {
   const id = getRouterParam(event, 'id')!
-  const body = await readBody(event)
+  const userId = getAuthUserId(event)
   const { partService } = getServices()
-  return partService.advancePart(id, body.userId || 'anonymous')
+  return partService.advancePart(id, userId)
 })

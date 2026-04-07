@@ -9,7 +9,6 @@ const emit = defineEmits<{
 }>()
 
 const { certs, fetchCerts } = useCerts()
-const { operatorId } = useOperatorIdentity()
 const $api = useAuthFetch()
 
 const searchQuery = ref('')
@@ -35,10 +34,6 @@ async function handleAttach() {
     attachError.value = 'Select a certificate'
     return
   }
-  if (!operatorId.value) {
-    attachError.value = 'No operator selected'
-    return
-  }
 
   attaching.value = true
   try {
@@ -47,7 +42,6 @@ async function handleAttach() {
       body: {
         certId: selectedCertId.value,
         partIds: [props.partId],
-        userId: operatorId.value,
       },
     })
     selectedCertId.value = ''
