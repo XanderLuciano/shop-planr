@@ -152,7 +152,7 @@ Three routes need the same logic change:
 
 - `WorkQueueGroup`, `WorkQueueGroupedResponse`, `WorkQueueResponse` — no structural changes
 - `groupEntriesByDimension()` in `server/utils/workQueueGrouping.ts` — operates on `WorkQueueJob[]`, transparent to new field; sorts by `jobPriority` descending
-- `useOperatorWorkQueue` composable — fetches via `useAuthFetch()` (JWT-authenticated `$fetch` instance from `app/plugins/auth.ts`), passes data through
+- `useOperatorWorkQueue` composable — uses `const $api = useAuthFetch()` then calls `$api<T>(url)` for authenticated API requests, passes data through
 - `useWorkQueueFilters` composable — wraps `useOperatorWorkQueue` with groupBy, client-side filtering, URL sync, and presets; filtering logic is field-agnostic
 - `queue.vue` — minor optional enhancement to show goal context on first-step entries (e.g. "0 / 10 parts" badge)
 
@@ -475,7 +475,7 @@ No performance impact. The change adds a single integer comparison (`step.order 
 
 ## Security Considerations
 
-No security implications. The work queue API routes are already protected by JWT auth middleware (`server/middleware/02.auth.ts`) and rate limiting (`server/middleware/01.rateLimit.ts`). The frontend uses `useAuthFetch()` (which injects the JWT Bearer token via `$fetch.create()`) for all API calls. The `goalQuantity` field is not sensitive — it exposes the same path metadata already visible in job/path views.
+No security implications. The work queue API routes are already protected by JWT auth middleware (`server/middleware/02.auth.ts`) and rate limiting (`server/middleware/01.rateLimit.ts`). The frontend uses `const $api = useAuthFetch()` for all API calls, which injects the JWT Bearer token automatically. The `goalQuantity` field is not sensitive — it exposes the same path metadata already visible in job/path views.
 
 ## Dependencies
 
