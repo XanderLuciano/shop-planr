@@ -43,7 +43,7 @@ graph TD
     QP --> WQF
     QP --> UWQF
     UWQF --> UOWQ
-    UOWQ -->|"useAuthFetch() → /api/operator/work-queue"| WQ
+    UOWQ -->|"$api('/api/operator/work-queue')"| WQ
 
     WQ --> JS
     WQ --> PS
