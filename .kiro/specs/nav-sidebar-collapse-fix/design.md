@@ -84,37 +84,92 @@ _For any_ state where the layout is rendered, the top navbar SHALL continue to c
 
 **File**: `app/layouts/default.vue`
 
-**Section**: `<template #footer>` of `UDashboardSidebar`
+**Section**: `UDashboardSidebar` component and its slots
 
 **Specific Changes**:
-1. **Remove `UColorModeButton`**: Delete the `<UColorModeButton size="xs" />` from the sidebar footer
-2. **Remove wrapper div**: Replace the `<div class="flex items-center justify-between">` wrapper with the bare `<UDashboardSidebarCollapse />` component, since it no longer needs to share a row with another element
+
+#### 1. Remove `UColorModeButton` and wrapper div from sidebar footer
+- Delete the `<UColorModeButton size="xs" />` from the sidebar footer
+- Replace the `<div class="flex items-center justify-between">` wrapper with the bare `<UDashboardSidebarCollapse />` component
+
+#### 2. Add `collapsed-size` prop to prevent resize overlap
+- Add `:collapsed-size="4"` to `UDashboardSidebar` so the resizable panel system allocates 4% width when collapsed, preventing the adjacent panel/resize handle from overlapping the sidebar's `min-w-16` visual area
+
+#### 3. Add `group` class and collapsed-aware UI overrides
+- Add `group` class to the sidebar root via `:ui` prop so `group-data-[collapsed=true]` selectors work on child elements
+- Add collapsed-aware padding/centering: body gets `items-center` and `px-2` when collapsed, header gets `justify-center`, footer gets `items-center` and `px-2`
+
+#### 4. Hide header/footer text when collapsed
+- Add `group-data-[collapsed=true]:hidden` to the "Shop Planr" header text span
+- The existing `group-data-[collapsed]:hidden` classes on "API Docs" text and external link icon were updated to `group-data-[collapsed=true]:hidden` (value-specific match required because `data-collapsed` is set to `"true"` or `"false"`, not just present/absent)
+
+#### 5. Pass `collapsed` prop to `UNavigationMenu`
+- Wrap the `UNavigationMenu` in `<template #default="{ collapsed }">` to receive the sidebar's collapsed state
+- Pass `:collapsed="collapsed"` to `UNavigationMenu` so it switches to icon-only mode with correct `px-1.5` link padding and hidden labels
 
 **Before:**
 ```vue
-<template #footer>
-  <div class="flex flex-col gap-2">
-    <NuxtLink to="/api-docs" ...>
-      ...
+<UDashboardSidebar
+  id="default-sidebar"
+  collapsible
+  resizable
+  :min-size="10"
+  :default-size="15"
+  :max-size="20"
+>
+  <template #header>
+    <NuxtLink to="/" class="flex items-center gap-2 px-1">
+      <span class="font-bold text-lg ...">Shop Planr</span>
     </NuxtLink>
-    <div class="flex items-center justify-between">
-      <UDashboardSidebarCollapse />
-      <UColorModeButton size="xs" />
+  </template>
+
+  <UNavigationMenu :items="filteredNavItems" orientation="vertical" />
+
+  <template #footer>
+    <div class="flex flex-col gap-2">
+      <NuxtLink to="/api-docs" ...>...</NuxtLink>
+      <div class="flex items-center justify-between">
+        <UDashboardSidebarCollapse />
+        <UColorModeButton size="xs" />
+      </div>
     </div>
-  </div>
-</template>
+  </template>
+</UDashboardSidebar>
 ```
 
 **After:**
 ```vue
-<template #footer>
-  <div class="flex flex-col gap-2">
-    <NuxtLink to="/api-docs" ...>
-      ...
+<UDashboardSidebar
+  id="default-sidebar"
+  collapsible
+  resizable
+  :min-size="10"
+  :default-size="15"
+  :max-size="20"
+  :collapsed-size="4"
+  :ui="{ root: 'group', body: 'group-data-[collapsed=true]:items-center group-data-[collapsed=true]:px-2', header: 'group-data-[collapsed=true]:justify-center', footer: 'group-data-[collapsed=true]:items-center group-data-[collapsed=true]:px-2' }"
+>
+  <template #header>
+    <NuxtLink to="/" class="flex items-center gap-2 px-1">
+      <span class="font-bold text-lg ... group-data-[collapsed=true]:hidden">Shop Planr</span>
     </NuxtLink>
-    <UDashboardSidebarCollapse />
-  </div>
-</template>
+  </template>
+
+  <template #default="{ collapsed }">
+    <UNavigationMenu :items="filteredNavItems" :collapsed="collapsed" orientation="vertical" />
+  </template>
+
+  <template #footer>
+    <div class="flex flex-col gap-2">
+      <NuxtLink to="/api-docs" ...>
+        <UIcon name="i-lucide-book-open" class="size-4" />
+        <span class="truncate group-data-[collapsed=true]:hidden">API Docs</span>
+        <UIcon name="i-lucide-external-link" class="size-3 ml-auto opacity-50 group-data-[collapsed=true]:hidden" />
+      </NuxtLink>
+      <UDashboardSidebarCollapse />
+    </div>
+  </template>
+</UDashboardSidebar>
 ```
 
 ## Testing Strategy
