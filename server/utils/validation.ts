@@ -3,6 +3,8 @@
  * All helpers throw ValidationError on failure.
  */
 
+import type { H3Event } from 'h3'
+import type { ZodType, ZodError } from 'zod'
 import { ValidationError } from './errors'
 
 /** Assert that a numeric value is positive (> 0). */
@@ -47,11 +49,6 @@ export function assertDefined<T>(value: T | null | undefined, fieldName: string)
   }
 }
 
-// ── Zod-based request body parsing ──
-
-import type { H3Event } from 'h3'
-import type { ZodType, ZodError } from 'zod'
-
 /**
  * Reads and validates the request body against a Zod schema.
  * Throws `ValidationError` (caught by `defineApiHandler` → 400) on failure.
@@ -81,7 +78,7 @@ export async function parseBody<T>(event: H3Event, schema: ZodType<T>): Promise<
  */
 function formatZodError(error: ZodError): string {
   return error.issues
-    .map(issue => {
+    .map((issue) => {
       const path = issue.path.length ? issue.path.join('.') + ': ' : ''
       return path + issue.message
     })
