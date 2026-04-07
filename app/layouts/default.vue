@@ -38,44 +38,48 @@ function onScanned(result: ScanResult) {
       :min-size="10"
       :default-size="15"
       :max-size="20"
+      :collapsed-size="4"
+      :ui="{ root: 'group', body: 'group-data-[collapsed=true]:items-center group-data-[collapsed=true]:px-2', header: 'group-data-[collapsed=true]:justify-center', footer: 'group-data-[collapsed=true]:items-center group-data-[collapsed=true]:px-2' }"
     >
       <template #header>
         <NuxtLink
           to="/"
           class="flex items-center gap-2 px-1"
+          aria-label="Home"
         >
-          <span class="font-bold text-lg bg-gradient-to-r from-violet-500 to-violet-400 bg-clip-text text-transparent tracking-wide">
+          <span class="font-bold text-lg bg-gradient-to-r from-violet-500 to-violet-400 bg-clip-text text-transparent tracking-wide group-data-[collapsed=true]:hidden">
             Shop Planr
           </span>
         </NuxtLink>
       </template>
 
-      <UNavigationMenu
-        :items="filteredNavItems"
-        orientation="vertical"
-      />
+      <template #default="{ collapsed }">
+        <UNavigationMenu
+          :items="filteredNavItems"
+          :collapsed="collapsed"
+          orientation="vertical"
+        />
+      </template>
 
       <template #footer>
         <div class="flex flex-col gap-2">
           <NuxtLink
             to="/api-docs"
             target="_blank"
+            aria-label="API Docs"
             class="flex items-center gap-2 px-2 py-1.5 text-sm text-(--ui-text-muted) hover:text-(--ui-text-highlighted) rounded-md hover:bg-(--ui-bg-elevated) transition-colors"
           >
             <UIcon
               name="i-lucide-book-open"
               class="size-4"
             />
-            <span class="truncate group-data-[collapsed]:hidden">API Docs</span>
+            <span class="truncate group-data-[collapsed=true]:hidden">API Docs</span>
             <UIcon
               name="i-lucide-external-link"
-              class="size-3 ml-auto opacity-50 group-data-[collapsed]:hidden"
+              class="size-3 ml-auto opacity-50 group-data-[collapsed=true]:hidden"
             />
           </NuxtLink>
-          <div class="flex items-center justify-between">
-            <UDashboardSidebarCollapse />
-            <UColorModeButton size="xs" />
-          </div>
+          <UDashboardSidebarCollapse />
         </div>
       </template>
     </UDashboardSidebar>
