@@ -1,4 +1,5 @@
 const EXEMPT_ROUTES: Array<{ method: string, path: string }> = [
+  { method: 'GET', path: '/api/health' },
   { method: 'POST', path: '/api/auth/login' },
   { method: 'POST', path: '/api/auth/setup-pin' },
   { method: 'GET', path: '/api/users' },
