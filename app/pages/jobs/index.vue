@@ -106,19 +106,20 @@ async function loadJobs() {
 }
 
 async function loadAllProgress() {
-  const results = await Promise.allSettled(
-    jobs.value.map(job =>
-      $api<{ progress: JobProgress }>(`/api/jobs/${job.id}`)
-        .then(detail => ({ id: job.id, progress: detail.progress })),
-    ),
-  )
-  const map: Record<string, JobProgress> = {}
-  for (const r of results) {
-    if (r.status === 'fulfilled') {
-      map[r.value.id] = r.value.progress
+  try {
+    const progressList = await $api<JobProgress[]>('/api/jobs/progress')
+    const map: Record<string, JobProgress> = {}
+    for (const p of progressList) {
+      map[p.jobId] = p
     }
+    jobProgressMap.value = map
+  } catch {
+    toast.add({
+      title: 'Could not load progress data',
+      description: 'Job list is still available. Progress bars may be missing or stale.',
+      color: 'warning',
+    })
   }
-  jobProgressMap.value = map
 }
 
 function progressFor(jobId: string): JobProgress | null {
