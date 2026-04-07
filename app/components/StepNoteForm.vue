@@ -16,7 +16,7 @@ const emit = defineEmits<{
 
 const { createNote, loading, error } = useNotes()
 const { pushNoteAsComment } = useJira()
-const { requireUser } = useUsers()
+const { authenticatedUser } = useAuth()
 
 const text = ref('')
 const localError = ref('')
@@ -37,7 +37,7 @@ async function onSubmit() {
   jiraPushResult.value = ''
   jiraPushIsError.value = false
   try {
-    const user = requireUser()
+    const user = authenticatedUser.value!
     const note = await createNote({
       jobId: props.jobId,
       pathId: props.pathId,

@@ -6,7 +6,7 @@ import type { Job } from '~/types/domain'
 import type { JobProgress } from '~/types/computed'
 
 const { jobs, loading, fetchJobs } = useJobs()
-const { isAdmin } = useUsers()
+const { isAdmin } = useAuth()
 const { filters, updateFilter, applyFilters } = useViewFilters()
 const {
   isEditingPriority,

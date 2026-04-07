@@ -11,7 +11,7 @@ const emit = defineEmits<{
 }>()
 
 const { batchCreateParts } = useParts()
-const { requireUser } = useUsers()
+const { authenticatedUser } = useAuth()
 
 const quantity = ref(1)
 const selectedCertId = ref<string | SelectNone>(SELECT_NONE)
@@ -44,13 +44,7 @@ async function onSubmit() {
     return
   }
 
-  let userId: string
-  try {
-    userId = requireUser().id
-  } catch {
-    error.value = 'Please select a user before creating parts'
-    return
-  }
+  const userId = authenticatedUser.value!.id
 
   saving.value = true
   try {

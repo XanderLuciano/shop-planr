@@ -31,7 +31,7 @@ const {
 } = useJobForm(props.mode, props.existingJob)
 
 const { templates, fetchTemplates } = useTemplates()
-const { users: allUsers } = useUsers()
+const { users: allUsers } = useAuth()
 
 // Active users for assignee dropdown
 const assigneeItems = computed(() => {

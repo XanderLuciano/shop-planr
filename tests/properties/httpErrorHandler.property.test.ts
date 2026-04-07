@@ -9,12 +9,13 @@ import { describe, it, expect, vi } from 'vitest'
 import fc from 'fast-check'
 import { createError, isError, defineEventHandler } from 'h3'
 import type { H3Event } from 'h3'
-import { ValidationError, NotFoundError, ForbiddenError } from '~/server/utils/errors'
+import { ValidationError, NotFoundError, ForbiddenError, AuthenticationError } from '~/server/utils/errors'
 
 // Provide Nitro auto-imports as globals so httpError.ts can resolve them
 vi.stubGlobal('ValidationError', ValidationError)
 vi.stubGlobal('NotFoundError', NotFoundError)
 vi.stubGlobal('ForbiddenError', ForbiddenError)
+vi.stubGlobal('AuthenticationError', AuthenticationError)
 vi.stubGlobal('createError', createError)
 vi.stubGlobal('isError', isError)
 vi.stubGlobal('defineEventHandler', defineEventHandler)

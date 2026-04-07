@@ -6,7 +6,7 @@ const route = useRoute()
 const jobId = route.params.id as string
 
 const { getJob, updateJob, deleteJob } = useJobs()
-const { isAdmin } = useUsers()
+const { isAdmin } = useAuth()
 const toast = useToast()
 const { getPath: fetchPathDetail } = usePaths()
 const { templates, fetchTemplates, applyTemplate } = useTemplates()

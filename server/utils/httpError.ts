@@ -35,6 +35,7 @@ export interface ErrorStatusEntry {
  */
 export const ERROR_STATUS_MAP: ErrorStatusEntry[] = [
   { errorClass: ValidationError, statusCode: 400 },
+  { errorClass: AuthenticationError, statusCode: 401 },
   { errorClass: ForbiddenError, statusCode: 403 },
   { errorClass: NotFoundError, statusCode: 404 },
 ]

@@ -37,7 +37,7 @@ const steps = ref<StepDraft[]>(
 const saving = ref(false)
 const error = ref('')
 
-const { users: allUsers } = useUsers()
+const { users: allUsers } = useAuth()
 
 const assigneeItems = computed(() => {
   const unassigned = { label: 'Unassigned', value: SELECT_UNASSIGNED }

@@ -2,7 +2,7 @@
 import type { ShopUser, JiraConnectionSettings, JiraFieldMapping, PageToggles } from '~/types/domain'
 
 const { settings, loading, fetchSettings, updateSettings } = useSettings()
-const { fetchUsers } = useUsers()
+const { fetchUsers, isAdmin, authenticatedUser } = useAuth()
 
 // Tab state
 const activeTab = ref('users')
@@ -83,6 +83,21 @@ async function toggleUserActive(user: ShopUser) {
     await fetchUsers()
   } catch (e) {
     userError.value = e?.data?.message ?? e?.message ?? 'Failed to update user'
+  }
+}
+
+async function resetUserPin(user: ShopUser) {
+  userError.value = ''
+  userSuccess.value = ''
+  try {
+    await $fetch('/api/auth/reset-pin', {
+      method: 'POST',
+      body: { targetUserId: user.id },
+    })
+    userSuccess.value = `PIN reset for ${user.displayName}. They will set a new PIN on next login.`
+    await loadAllUsers()
+  } catch (e: any) {
+    userError.value = e?.data?.message ?? e?.message ?? 'Failed to reset PIN'
   }
 }
 
@@ -279,6 +294,15 @@ onMounted(async () => {
               </UBadge>
             </div>
             <div class="flex items-center gap-1 shrink-0">
+              <UButton
+                v-if="isAdmin && u.pinHash && u.id !== authenticatedUser?.id"
+                icon="i-lucide-key-round"
+                size="xs"
+                variant="ghost"
+                color="warning"
+                title="Reset PIN"
+                @click="resetUserPin(u)"
+              />
               <UButton
                 icon="i-lucide-pencil"
                 size="xs"

@@ -187,6 +187,17 @@ export interface ShopUser {
   isAdmin: boolean
   department?: string
   active: boolean
+  pinHash?: string | null
+  createdAt: string
+}
+
+// ---- Crypto Key (ES256 JWT signing) ----
+
+export interface CryptoKey {
+  id: string
+  algorithm: string
+  publicKey: string
+  privateKey: string
   createdAt: string
 }
 

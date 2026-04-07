@@ -20,6 +20,7 @@ import { SQLitePartStepOverrideRepository } from '../../server/repositories/sqli
 import { SQLiteBomVersionRepository } from '../../server/repositories/sqlite/bomVersionRepository'
 import { SQLiteLibraryRepository } from '../../server/repositories/sqlite/libraryRepository'
 import { SQLiteUserRepository } from '../../server/repositories/sqlite/userRepository'
+import { SQLiteCryptoKeyRepository } from '../../server/repositories/sqlite/cryptoKeyRepository'
 import { createJobService } from '../../server/services/jobService'
 import { createPathService } from '../../server/services/pathService'
 import { createPartService } from '../../server/services/partService'
@@ -30,6 +31,7 @@ import { createBomService } from '../../server/services/bomService'
 import { createNoteService } from '../../server/services/noteService'
 import { createLifecycleService } from '../../server/services/lifecycleService'
 import { createLibraryService } from '../../server/services/libraryService'
+import { createAuthService } from '../../server/services/authService'
 import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
 
 const MIGRATIONS_DIR = resolve(__dirname, '../../server/repositories/sqlite/migrations')
@@ -59,6 +61,7 @@ export function createTestContext() {
     bomVersions: new SQLiteBomVersionRepository(db),
     library: new SQLiteLibraryRepository(db),
     users: new SQLiteUserRepository(db),
+    cryptoKeys: new SQLiteCryptoKeyRepository(db),
   }
 
   const partIdGenerator = createSequentialPartIdGenerator({
@@ -109,6 +112,7 @@ export function createTestContext() {
   )
   const noteService = createNoteService({ notes: repos.notes }, auditService)
   const libraryService = createLibraryService({ library: repos.library })
+  const authService = createAuthService({ users: repos.users, cryptoKeys: repos.cryptoKeys })
 
   return {
     db,
@@ -123,6 +127,7 @@ export function createTestContext() {
     noteService,
     lifecycleService,
     libraryService,
+    authService,
     cleanup: () => db.close(),
   }
 }

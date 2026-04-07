@@ -4,30 +4,32 @@
  *
  * For any ShopUser, the "New Job" button on the jobs list page should be
  * visible if and only if that user's `isAdmin` is `true`. When no user is
- * selected, the button should not be visible.
+ * authenticated, the button should not be visible.
  *
  * The jobs page gates the button with `v-if="isAdmin"`, where `isAdmin` is
- * the computed from `useUsers()`. This test validates the composable logic
+ * the computed from `useAuth()`. This test validates the composable logic
  * that drives that visibility.
  *
  * **Validates: Requirements 6.3, 6.4, 6.5**
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { ref } from 'vue'
 import fc from 'fast-check'
-import { useUsers } from '../../app/composables/useUsers'
 
-// happy-dom provides window but localStorage may not be fully functional.
-// Stub it with a simple in-memory implementation.
-let store: Record<string, string> = {}
-vi.stubGlobal('localStorage', {
-  getItem: (key: string) => store[key] ?? null,
-  setItem: (key: string, value: string) => { store[key] = value },
-  removeItem: (key: string) => { delete store[key] },
-  clear: () => { store = {} },
-})
+// Module-level ref that the useAuth stub will return
+const mockAuthenticatedUser = ref<any>(null)
+
+// Stub useCookie so the real useAuth module doesn't crash if loaded in the same worker
+vi.stubGlobal('useCookie', (_name: string, _opts?: any) => ref(null))
+vi.stubGlobal('useState', (_key: string, init?: () => any) => ref(init ? init() : undefined))
+
+vi.stubGlobal('useAuth', () => ({
+  authenticatedUser: mockAuthenticatedUser,
+  isAdmin: { get value() { return mockAuthenticatedUser.value?.isAdmin === true } },
+}))
 
 beforeEach(() => {
-  store = {}
+  mockAuthenticatedUser.value = null
 })
 
 /**
@@ -40,44 +42,44 @@ const arbShopUser = fc.record({
   isAdmin: fc.boolean(),
   department: fc.option(fc.string({ minLength: 1, maxLength: 20 }), { nil: undefined }),
   active: fc.boolean(),
-  createdAt: fc.date().map(d => d.toISOString()),
+  createdAt: fc.date({ min: new Date('2020-01-01'), max: new Date('2030-01-01') }).map(d => d.toISOString()),
 })
 
 describe('Property 5: Admin-Gated New Job Button Visibility', () => {
-  it('New Job button visible (isAdmin === true) iff selected user isAdmin is true', () => {
+  it('New Job button visible (isAdmin === true) iff authenticated user isAdmin is true', () => {
     fc.assert(
       fc.property(
         arbShopUser,
         (user) => {
-          const { isAdmin, selectUser, clearUser } = useUsers()
+          const auth = useAuth()
 
-          selectUser(user)
+          mockAuthenticatedUser.value = user
 
           // The button uses v-if="isAdmin", so visibility === isAdmin.value
           if (user.isAdmin) {
-            expect(isAdmin.value).toBe(true)
+            expect(auth.isAdmin.value).toBe(true)
           } else {
-            expect(isAdmin.value).toBe(false)
+            expect(auth.isAdmin.value).toBe(false)
           }
 
           // Cleanup
-          clearUser()
+          mockAuthenticatedUser.value = null
         },
       ),
       { numRuns: 100 },
     )
   })
 
-  it('New Job button not visible when no user is selected', () => {
+  it('New Job button not visible when no user is authenticated', () => {
     fc.assert(
       fc.property(
         fc.constant(null),
         () => {
-          const { isAdmin, clearUser } = useUsers()
+          const auth = useAuth()
 
-          clearUser()
-          // No user selected → isAdmin false → button hidden
-          expect(isAdmin.value).toBe(false)
+          mockAuthenticatedUser.value = null
+          // No user authenticated → isAdmin false → button hidden
+          expect(auth.isAdmin.value).toBe(false)
         },
       ),
       { numRuns: 100 },

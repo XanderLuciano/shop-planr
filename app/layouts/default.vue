@@ -30,6 +30,7 @@ function onScanned(result: ScanResult) {
 </script>
 
 <template>
+  <AuthOverlay />
   <UDashboardGroup>
     <UDashboardSidebar
       id="default-sidebar"
@@ -113,7 +114,7 @@ function onScanned(result: ScanResult) {
 
           <template #right>
             <UColorModeButton size="xs" />
-            <UserSelector />
+            <UserMenu />
           </template>
         </UDashboardNavbar>
       </template>

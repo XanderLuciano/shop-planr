@@ -14,7 +14,7 @@ const showModal = ref(false)
 const loading = ref(false)
 const error = ref<string | null>(null)
 
-const { requireUser } = useUsers()
+const { authenticatedUser } = useAuth()
 
 async function performDelete() {
   loading.value = true
@@ -22,7 +22,7 @@ async function performDelete() {
   try {
     await $fetch(`/api/paths/${encodeURIComponent(props.pathId)}`, {
       method: 'DELETE',
-      body: { userId: requireUser().id },
+      body: { userId: authenticatedUser.value!.id },
     })
     confirming.value = false
     showModal.value = false
