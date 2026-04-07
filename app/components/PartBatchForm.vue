@@ -11,7 +11,8 @@ const emit = defineEmits<{
 }>()
 
 const { batchCreateParts } = useParts()
-const { requireUser } = useUsers()
+const { authenticatedUser } = useAuth()
+const $api = useAuthFetch()
 
 const quantity = ref(1)
 const selectedCertId = ref<string | SelectNone>(SELECT_NONE)
@@ -24,7 +25,7 @@ const certsLoading = ref(false)
 async function loadCerts() {
   certsLoading.value = true
   try {
-    certs.value = await $fetch<Certificate[]>('/api/certs')
+    certs.value = await $api<Certificate[]>('/api/certs')
   } catch {
     certs.value = []
   } finally {
@@ -39,18 +40,16 @@ const certOptions = computed(() => [
 
 async function onSubmit() {
   error.value = ''
+  if (!authenticatedUser.value) {
+    error.value = 'Authentication required — please sign in again'
+    return
+  }
   if (quantity.value < 1) {
     error.value = 'Quantity must be at least 1'
     return
   }
 
-  let userId: string
-  try {
-    userId = requireUser().id
-  } catch {
-    error.value = 'Please select a user before creating parts'
-    return
-  }
+  const userId = authenticatedUser.value.id
 
   saving.value = true
   try {

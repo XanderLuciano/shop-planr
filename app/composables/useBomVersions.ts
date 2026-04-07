@@ -3,6 +3,8 @@ import type { BomVersion } from '~/types/domain'
 import type { EditBomInput } from '~/types/api'
 
 export function useBomVersions() {
+  const $api = useAuthFetch()
+
   const versions = ref<BomVersion[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -11,7 +13,7 @@ export function useBomVersions() {
     loading.value = true
     error.value = null
     try {
-      versions.value = await $fetch<BomVersion[]>(`/api/bom/${encodeURIComponent(bomId)}/versions`)
+      versions.value = await $api<BomVersion[]>(`/api/bom/${encodeURIComponent(bomId)}/versions`)
     } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch BOM versions'
     } finally {
@@ -23,7 +25,7 @@ export function useBomVersions() {
     loading.value = true
     error.value = null
     try {
-      await $fetch(`/api/bom/${encodeURIComponent(bomId)}/edit`, {
+      await $api(`/api/bom/${encodeURIComponent(bomId)}/edit`, {
         method: 'POST',
         body: input,
       })

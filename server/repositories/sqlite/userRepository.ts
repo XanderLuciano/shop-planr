@@ -10,6 +10,7 @@ interface UserRow {
   department: string | null
   is_admin: number
   active: number
+  pin_hash: string | null
   created_at: string
 }
 
@@ -21,6 +22,7 @@ function rowToDomain(row: UserRow): ShopUser {
     department: row.department ?? undefined,
     isAdmin: row.is_admin === 1,
     active: row.active === 1,
+    pinHash: row.pin_hash ?? undefined,
     createdAt: row.created_at,
   }
 }
@@ -34,9 +36,9 @@ export class SQLiteUserRepository implements UserRepository {
 
   create(user: ShopUser): ShopUser {
     this.db.prepare(`
-      INSERT INTO users (id, username, display_name, is_admin, department, active, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(user.id, user.username, user.displayName, user.isAdmin ? 1 : 0, user.department ?? null, user.active ? 1 : 0, user.createdAt)
+      INSERT INTO users (id, username, display_name, is_admin, department, active, pin_hash, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(user.id, user.username, user.displayName, user.isAdmin ? 1 : 0, user.department ?? null, user.active ? 1 : 0, user.pinHash ?? null, user.createdAt)
     return user
   }
 
@@ -67,9 +69,9 @@ export class SQLiteUserRepository implements UserRepository {
     const updated: ShopUser = { ...existing, ...partial, id }
 
     this.db.prepare(`
-      UPDATE users SET username = ?, display_name = ?, is_admin = ?, department = ?, active = ?
+      UPDATE users SET username = ?, display_name = ?, is_admin = ?, department = ?, active = ?, pin_hash = ?
       WHERE id = ?
-    `).run(updated.username, updated.displayName, updated.isAdmin ? 1 : 0, updated.department ?? null, updated.active ? 1 : 0, id)
+    `).run(updated.username, updated.displayName, updated.isAdmin ? 1 : 0, updated.department ?? null, updated.active ? 1 : 0, updated.pinHash ?? null, id)
     return updated
   }
 }

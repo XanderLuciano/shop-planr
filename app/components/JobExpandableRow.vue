@@ -40,12 +40,13 @@ const pathCompletedCounts = ref<Record<string, number>>({})
 const loadingPathIds = ref<Set<string>>(new Set())
 const failedPathIds = ref<Set<string>>(new Set())
 const fetchPathsPromise = ref<Promise<void> | null>(null)
+const $api = useAuthFetch()
 let bulkExpandPromise: Promise<void> | null = null
 
 async function fetchPaths() {
   loading.value = true
   try {
-    const detail = await $fetch<{ paths: PathInfo[] }>(`/api/jobs/${props.jobId}`)
+    const detail = await $api<{ paths: PathInfo[] }>(`/api/jobs/${props.jobId}`)
     paths.value = detail.paths ?? []
   } catch {
     paths.value = []
@@ -70,7 +71,7 @@ async function togglePath(pathId: string) {
     loadingPathIds.value.add(pathId)
     loadingPathIds.value = new Set(loadingPathIds.value)
     try {
-      const detail = await $fetch<{ distribution: StepDist[], completedCount?: number }>(`/api/paths/${pathId}`)
+      const detail = await $api<{ distribution: StepDist[], completedCount?: number }>(`/api/paths/${pathId}`)
       pathDistributions.value[pathId] = detail.distribution ?? []
       pathCompletedCounts.value[pathId] = detail.completedCount ?? 0
     } catch {
@@ -108,7 +109,7 @@ async function onExpandAllPaths() {
         batch.map(async (pathId) => {
           loadingPathIds.value.add(pathId)
           loadingPathIds.value = new Set(loadingPathIds.value)
-          const detail = await $fetch<{ distribution: StepDist[], completedCount?: number }>(`/api/paths/${pathId}`)
+          const detail = await $api<{ distribution: StepDist[], completedCount?: number }>(`/api/paths/${pathId}`)
           pathDistributions.value[pathId] = detail.distribution ?? []
           pathCompletedCounts.value[pathId] = detail.completedCount ?? 0
         }),

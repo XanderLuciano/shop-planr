@@ -2,6 +2,8 @@ import { ref, readonly } from 'vue'
 import type { FullRouteResponse, FullRouteEntry } from '~/types/computed'
 
 export function useFullRoute(partId: string) {
+  const $api = useAuthFetch()
+
   const entries = ref<FullRouteEntry[]>([])
   const isCompleted = ref(false)
   const loading = ref(false)
@@ -11,7 +13,7 @@ export function useFullRoute(partId: string) {
     loading.value = true
     error.value = null
     try {
-      const data = await $fetch<FullRouteResponse>(`/api/parts/${encodeURIComponent(partId)}/full-route`)
+      const data = await $api<FullRouteResponse>(`/api/parts/${encodeURIComponent(partId)}/full-route`)
       entries.value = data.entries
       isCompleted.value = data.isCompleted
     } catch (e) {

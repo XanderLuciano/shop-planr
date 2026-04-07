@@ -6,12 +6,14 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 
 export function useOperatorView() {
+  const $api = useAuthFetch()
+
   async function fetchOperatorView(stepName: string) {
     loading.value = true
     error.value = null
     data.value = null
     try {
-      data.value = await $fetch<OperatorStepView>(`/api/operator/${encodeURIComponent(stepName)}`)
+      data.value = await $api<OperatorStepView>(`/api/operator/${encodeURIComponent(stepName)}`)
     } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch operator view'
     } finally {

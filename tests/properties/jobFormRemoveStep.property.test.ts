@@ -9,6 +9,7 @@
  * **Validates: Requirements 4.5**
  */
 import { describe, it, vi } from 'vitest'
+import { ref } from 'vue'
 import fc from 'fast-check'
 
 import { useJobForm } from '~/app/composables/useJobForm'
@@ -23,8 +24,8 @@ vi.stubGlobal('usePaths', () => ({
   updatePath: vi.fn(),
   deletePath: vi.fn(),
 }))
-vi.stubGlobal('useUsers', () => ({
-  requireUser: () => ({ id: 'test-user-id', username: 'test', displayName: 'Test', isAdmin: true, active: true, createdAt: '' }),
+vi.stubGlobal('useAuth', () => ({
+  authenticatedUser: ref({ id: 'test-user-id', username: 'test', displayName: 'Test User', isAdmin: true, active: true, createdAt: '2024-01-01' }),
 }))
 
 describe('Property 7: removeStep enforces minimum-one constraint', () => {

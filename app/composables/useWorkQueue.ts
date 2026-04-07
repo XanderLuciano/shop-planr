@@ -7,6 +7,8 @@ const error = ref<string | null>(null)
 const searchQuery = ref('')
 
 export function useWorkQueue() {
+  const $api = useAuthFetch()
+
   const filteredJobs = computed<WorkQueueJob[]>(() => {
     const jobs = queue.value?.jobs ?? []
     const q = searchQuery.value.trim().toLowerCase()
@@ -28,7 +30,7 @@ export function useWorkQueue() {
     loading.value = true
     error.value = null
     try {
-      queue.value = await $fetch<WorkQueueResponse>(`/api/operator/queue/${encodeURIComponent(userId)}`)
+      queue.value = await $api<WorkQueueResponse>(`/api/operator/queue/${encodeURIComponent(userId)}`)
     } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch work queue'
       queue.value = null
@@ -56,7 +58,7 @@ export function useWorkQueue() {
     }
 
     for (const partId of partIds) {
-      await $fetch(`/api/parts/${encodeURIComponent(partId)}/advance`, {
+      await $api(`/api/parts/${encodeURIComponent(partId)}/advance`, {
         method: 'POST',
         body: { userId },
       })
@@ -68,7 +70,7 @@ export function useWorkQueue() {
       if (trimmedNote.length > 1000) {
         throw new Error('Note must be 1000 characters or fewer')
       }
-      await $fetch('/api/notes', {
+      await $api('/api/notes', {
         method: 'POST',
         body: {
           jobId,

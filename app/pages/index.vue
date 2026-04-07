@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { JobProgress } from '~/types/computed'
 
+const $api = useAuthFetch()
 const { jobs, loading, fetchJobs } = useJobs()
 
 const jobProgressList = ref<JobProgress[]>([])
@@ -21,7 +22,7 @@ async function loadJobProgress() {
   try {
     const results = await Promise.all(
       jobs.value.map(job =>
-        $fetch<{ progress: JobProgress }>(`/api/jobs/${job.id}`)
+        $api<{ progress: JobProgress }>(`/api/jobs/${job.id}`)
           .then(detail => detail.progress)
           .catch(() => null),
       ),

@@ -3,6 +3,8 @@ import type { WorkQueueJob, StepViewResponse } from '~/types/computed'
 import type { StepNote } from '~/types/domain'
 
 export function useStepView(stepId: string) {
+  const $api = useAuthFetch()
+
   const job = ref<WorkQueueJob | null>(null)
   const notes = ref<StepNote[]>([])
   const loading = ref(false)
@@ -15,7 +17,7 @@ export function useStepView(stepId: string) {
     error.value = null
     notFound.value = false
     try {
-      const data = await $fetch<StepViewResponse>(`/api/operator/step/${stepId}`)
+      const data = await $api<StepViewResponse>(`/api/operator/step/${stepId}`)
       job.value = data.job
       notes.value = data.notes
       previousStepWipCount.value = data.previousStepWipCount

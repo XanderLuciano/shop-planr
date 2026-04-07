@@ -47,7 +47,6 @@ const CROSS_LAYER_IMPORT_FILES = [
   'app/composables/useSettings.ts',
   'app/composables/useNotes.ts',
   'app/composables/useLibrary.ts',
-  'app/composables/useUsers.ts',
   'app/composables/useBom.ts',
   'app/composables/useAudit.ts',
   'app/composables/useTemplates.ts',

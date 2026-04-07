@@ -10,8 +10,7 @@ const props = defineProps<{
 
 const loading = ref(false)
 const parts = ref<EnrichedPart[]>([])
-
-// Filters
+const $api = useAuthFetch()
 const filterStatus = ref<string>(SELECT_ALL)
 const filterPath = ref<string>(SELECT_ALL)
 const filterStep = ref('')
@@ -27,7 +26,7 @@ const showScrapDialog = ref(false)
 async function loadParts() {
   loading.value = true
   try {
-    const all = await $fetch<EnrichedPart[]>('/api/parts')
+    const all = await $api<EnrichedPart[]>('/api/parts')
     parts.value = all.filter(s => s.jobId === props.jobId)
   } catch {
     parts.value = []

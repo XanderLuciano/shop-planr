@@ -16,7 +16,7 @@ const emit = defineEmits<{
 
 const { createNote, loading, error } = useNotes()
 const { pushNoteAsComment } = useJira()
-const { requireUser } = useUsers()
+const { authenticatedUser } = useAuth()
 
 const text = ref('')
 const localError = ref('')
@@ -36,8 +36,12 @@ async function onSubmit() {
   localError.value = ''
   jiraPushResult.value = ''
   jiraPushIsError.value = false
+  if (!authenticatedUser.value) {
+    localError.value = 'Authentication required — please sign in again'
+    return
+  }
   try {
-    const user = requireUser()
+    const user = authenticatedUser.value
     const note = await createNote({
       jobId: props.jobId,
       pathId: props.pathId,

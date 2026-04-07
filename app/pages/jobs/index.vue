@@ -6,7 +6,8 @@ import type { Job } from '~/types/domain'
 import type { JobProgress } from '~/types/computed'
 
 const { jobs, loading, fetchJobs } = useJobs()
-const { isAdmin } = useUsers()
+const $api = useAuthFetch()
+const { isAdmin } = useAuth()
 const { filters, updateFilter, applyFilters } = useViewFilters()
 const {
   isEditingPriority,
@@ -107,7 +108,7 @@ async function loadJobs() {
 async function loadAllProgress() {
   const results = await Promise.allSettled(
     jobs.value.map(job =>
-      $fetch<{ progress: JobProgress }>(`/api/jobs/${job.id}`)
+      $api<{ progress: JobProgress }>(`/api/jobs/${job.id}`)
         .then(detail => ({ id: job.id, progress: detail.progress })),
     ),
   )

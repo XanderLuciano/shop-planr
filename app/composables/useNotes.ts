@@ -6,6 +6,8 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 
 export function useNotes() {
+  const $api = useAuthFetch()
+
   async function createNote(input: {
     jobId: string
     pathId: string
@@ -17,7 +19,7 @@ export function useNotes() {
     loading.value = true
     error.value = null
     try {
-      const note = await $fetch<StepNote>('/api/notes', {
+      const note = await $api<StepNote>('/api/notes', {
         method: 'POST',
         body: input,
       })
@@ -35,7 +37,7 @@ export function useNotes() {
     loading.value = true
     error.value = null
     try {
-      const result = await $fetch<StepNote[]>(`/api/notes/part/${partId}`)
+      const result = await $api<StepNote[]>(`/api/notes/part/${partId}`)
       notes.value = result
       return result
     } catch (e) {
@@ -50,7 +52,7 @@ export function useNotes() {
     loading.value = true
     error.value = null
     try {
-      const result = await $fetch<StepNote[]>(`/api/notes/step/${stepId}`)
+      const result = await $api<StepNote[]>(`/api/notes/step/${stepId}`)
       notes.value = result
       return result
     } catch (e) {

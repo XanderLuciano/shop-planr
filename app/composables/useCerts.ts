@@ -7,11 +7,13 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 
 export function useCerts() {
+  const $api = useAuthFetch()
+
   async function fetchCerts() {
     loading.value = true
     error.value = null
     try {
-      certs.value = await $fetch<Certificate[]>('/api/certs')
+      certs.value = await $api<Certificate[]>('/api/certs')
     } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch certificates'
       certs.value = []
@@ -21,7 +23,7 @@ export function useCerts() {
   }
 
   async function createCert(input: CreateCertInput): Promise<Certificate> {
-    const cert = await $fetch<Certificate>('/api/certs', {
+    const cert = await $api<Certificate>('/api/certs', {
       method: 'POST',
       body: input,
     })
@@ -30,11 +32,11 @@ export function useCerts() {
   }
 
   async function getCert(id: string): Promise<Certificate> {
-    return await $fetch<Certificate>(`/api/certs/${id}`)
+    return await $api<Certificate>(`/api/certs/${id}`)
   }
 
   async function batchAttachCert(input: BatchAttachCertInput): Promise<void> {
-    await $fetch('/api/certs/batch-attach', {
+    await $api('/api/certs/batch-attach', {
       method: 'POST',
       body: input,
     })

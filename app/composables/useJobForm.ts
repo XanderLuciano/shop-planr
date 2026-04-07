@@ -101,7 +101,7 @@ export function computePathChanges(originalPaths: Path[], currentDrafts: PathDra
 export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths: Path[] }) {
   const { createJob, updateJob } = useJobs()
   const { createPath, updatePath, deletePath } = usePaths()
-  const { requireUser } = useUsers()
+  const { authenticatedUser } = useAuth()
 
   // ---- State ----
   const jobDraft = ref<JobDraft>(
@@ -287,9 +287,13 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
 
     const changes = computePathChanges(originalPaths, pathDrafts.value)
 
+    if (!authenticatedUser.value) {
+      throw new Error('Authentication required — please sign in again')
+    }
+
     // Deletes first
     for (const path of changes.toDelete) {
-      await deletePath(path.id, requireUser().id)
+      await deletePath(path.id, authenticatedUser.value.id)
     }
 
     // Then updates

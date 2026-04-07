@@ -1,8 +1,7 @@
 <script setup lang="ts">
-const { isAdmin, init } = useUsers()
+const { isAdmin } = useAuth()
 
-onMounted(async () => {
-  await init()
+onMounted(() => {
   if (!isAdmin.value) {
     navigateTo('/jobs')
   }

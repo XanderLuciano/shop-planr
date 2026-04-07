@@ -27,7 +27,7 @@ const {
 } = useOperatorIdentity()
 
 const { advanceBatch } = useWorkQueue()
-const { users } = useUsers()
+const { users } = useAuth()
 
 const advanceLoading = ref(false)
 const skipLoading = ref(false)

@@ -8,7 +8,7 @@ description: "Coding standards for Shop Planr: import resolution, architecture l
 ## Quality Rules
 
 1. Fix root causes, not symptoms. Understand WHY before changing code.
-2. Never use `any`, strip types, or weaken type safety as a shortcut. Make types available properly.
+2. Never use `any`, `as any`, or unnecessary type assertions (`as SomeType`) to silence the compiler. If a type doesn't fit, fix the type — don't cast around it. `as` casts are acceptable only at trust boundaries (e.g., parsing external JSON, library interop) where you've validated the shape. `any` is OK in `tests/**` for mocking.
 3. Verify fixes end-to-end: run `npm run lint`, `npx nuxt typecheck`, and `npm run test` before considering work done. All three must pass.
 4. USelect (Reka UI SelectRoot) must NEVER be bound to a ref typed with `undefined` or `null`. Use the sentinel string `'__none__'` for the unselected state, and include it as a disabled item in the items array so the value types align. Setting `v-model` to `undefined` causes runtime errors in Reka UI.
 
@@ -19,7 +19,7 @@ description: "Coding standards for Shop Planr: import resolution, architecture l
 - Trailing comma on last item in multiline arrays, objects, params, and template attributes
 - No unused variables/imports — prefix intentionally unused params with `_` (e.g., `_event`)
 - `const` over `let` when not reassigned
-- No `any` in app/server code (`any` is OK in `tests/**` for mocking)
+- No `any` or `as any` in app/server code (OK in `tests/**` for mocking)
 - Single-word Vue component names are fine (rule disabled)
 - `1tbs` brace style — opening brace on same line, `} else {` not `}\nelse {`
 - Single quotes, 2-space indent, no semicolons, space before function parens
@@ -52,7 +52,8 @@ When adding a new sentinel, add it to `selectSentinel.ts` with a typed constant,
 
 ```
 Components → Composables → API Routes → Services → Repositories → SQLite
-   UI only    $fetch calls   thin handlers  business logic  data access    storage
+   UI only    API client     HTTP glue   Business    Data access    Storage
+              (useAuthFetch)              logic
 ```
 
 Dependencies flow left-to-right only. No skipping layers.
@@ -88,7 +89,7 @@ if (!id) throw createError({ statusCode: 400, message: 'ID is required' })
 
 ## Request Body Validation (Zod Schemas)
 
-API routes that accept request bodies should validate them with Zod schemas using `parseBody()` (auto-imported from `server/utils/validation.ts`). This ensures invalid input returns a 400 instead of a 500.
+API routes that accept request bodies MUST validate them with Zod schemas using `parseBody()` (auto-imported from `server/utils/validation.ts`). This ensures invalid input returns a 400 instead of a 500.
 
 Schemas live in `server/schemas/` and are colocated by domain (e.g., `pathSchemas.ts`, `jobSchemas.ts`). Each route imports its schema and calls `parseBody(event, schema)` instead of raw `readBody(event)`.
 
@@ -110,7 +111,7 @@ export default defineApiHandler(async (event) => {
 })
 ```
 
-When adding a new route with a request body, define a Zod schema in the appropriate `server/schemas/*.ts` file and use `parseBody`. Existing routes are being migrated incrementally — when touching an existing route, convert it to use `parseBody` if it doesn't already.
+When adding a new route with a request body, define a Zod schema in the appropriate `server/schemas/*.ts` file and use `parseBody`. Existing routes without Zod validation are tech debt — when touching an existing route for any reason, convert it to use `parseBody` if it doesn't already. Do not leave unvalidated `readBody()` calls in files you modify.
 
 ## API Error Handling — Empty vs. Not Found
 
@@ -124,3 +125,20 @@ if (serials.length === 0) throw new NotFoundError('No active parts')
 if (!step) throw new NotFoundError('ProcessStep not found')
 return { items: serials, count: serials.length } // empty is fine
 ```
+
+## Authenticated Fetch (`useAuthFetch`)
+
+All composables that call `/api/` routes MUST use `useAuthFetch()` instead of bare `$fetch`. It returns a per-app `$fetch.create()` instance that auto-injects the `Authorization` header.
+
+```ts
+// CORRECT
+const $api = useAuthFetch()
+const jobs = await $api<Job[]>('/api/jobs')
+
+// WRONG — bare $fetch skips auth header
+const jobs = await $fetch<Job[]>('/api/jobs')
+```
+
+Exception: `useAuth()` uses bare `$fetch` (circular dependency with the auth plugin). Its endpoints are auth-exempt or pass the header manually.
+
+Never mutate `globalThis.$fetch`. Access the authenticated user anywhere via `useAuth().authenticatedUser` (decoded from JWT cookie, no network call).

@@ -11,6 +11,7 @@ import { createBomService } from '../services/bomService'
 import { createJiraService } from '../services/jiraService'
 import { createLifecycleService } from '../services/lifecycleService'
 import { createLibraryService } from '../services/libraryService'
+import { createAuthService } from '../services/authService'
 import { createSequentialPartIdGenerator } from '../utils/idGenerator'
 import type { AuditService } from '../services/auditService'
 import type { UserService } from '../services/userService'
@@ -25,6 +26,7 @@ import type { BomService } from '../services/bomService'
 import type { JiraService } from '../services/jiraService'
 import type { LifecycleService } from '../services/lifecycleService'
 import type { LibraryService } from '../services/libraryService'
+import type { AuthService } from '../services/authService'
 
 export interface ServiceSet {
   auditService: AuditService
@@ -40,6 +42,7 @@ export interface ServiceSet {
   jiraService: JiraService
   lifecycleService: LifecycleService
   libraryService: LibraryService
+  authService: AuthService
   /** @deprecated Use `partService` instead. Backward-compatible alias. */
   serialService: PartService
 }
@@ -54,6 +57,7 @@ export function getServices(): ServiceSet {
     // Services with no service dependencies
     const auditService = createAuditService({ audit: repos.audit })
     const userService = createUserService({ users: repos.users })
+    const authService = createAuthService({ users: repos.users, cryptoKeys: repos.cryptoKeys })
     const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts, bom: repos.bom })
     const pathService = createPathService({
       paths: repos.paths,
@@ -126,6 +130,7 @@ export function getServices(): ServiceSet {
     services = {
       auditService,
       userService,
+      authService,
       jobService,
       pathService,
       partService,
@@ -142,4 +147,10 @@ export function getServices(): ServiceSet {
     }
   }
   return services
+}
+
+export async function initServices(): Promise<void> {
+  const { authService } = getServices()
+  await authService.ensureKeyPair()
+  authService.ensureDefaultAdmin()
 }

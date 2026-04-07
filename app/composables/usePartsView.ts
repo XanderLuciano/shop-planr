@@ -7,6 +7,8 @@ const error = ref<string | null>(null)
 const searchQuery = ref('')
 
 export function usePartsView() {
+  const $api = useAuthFetch()
+
   const jobs = computed<WorkQueueJob[]>(() => response.value?.jobs ?? [])
 
   const filteredJobs = computed<WorkQueueJob[]>(() => {
@@ -32,7 +34,7 @@ export function usePartsView() {
     loading.value = true
     error.value = null
     try {
-      response.value = await $fetch<WorkQueueResponse>('/api/operator/queue/_all')
+      response.value = await $api<WorkQueueResponse>('/api/operator/queue/_all')
     } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch active work'
       response.value = null

@@ -7,6 +7,8 @@ const error = ref<string | null>(null)
 const searchQuery = ref('')
 
 export function useOperatorWorkQueue() {
+  const $api = useAuthFetch()
+
   const groups = computed<WorkQueueGroup[]>(() => response.value?.groups ?? [])
 
   const totalParts = computed<number>(() => response.value?.totalParts ?? 0)
@@ -39,7 +41,7 @@ export function useOperatorWorkQueue() {
     loading.value = true
     error.value = null
     try {
-      response.value = await $fetch<WorkQueueGroupedResponse>('/api/operator/work-queue', {
+      response.value = await $api<WorkQueueGroupedResponse>('/api/operator/work-queue', {
         query: params?.groupBy ? { groupBy: params.groupBy } : undefined,
       })
     } catch (e) {

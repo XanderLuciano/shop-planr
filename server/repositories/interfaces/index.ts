@@ -12,3 +12,4 @@ export type { PartStepStatusRepository, SnStepStatusRepository } from './partSte
 export type { PartStepOverrideRepository, SnStepOverrideRepository } from './partStepOverrideRepository'
 export type { BomVersionRepository } from './bomVersionRepository'
 export type { LibraryRepository } from './libraryRepository'
+export type { CryptoKeyRepository } from './cryptoKeyRepository'

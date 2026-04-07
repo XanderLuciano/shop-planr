@@ -10,6 +10,7 @@ const emit = defineEmits<{
 
 const { certs, fetchCerts } = useCerts()
 const { operatorId } = useOperatorIdentity()
+const $api = useAuthFetch()
 
 const searchQuery = ref('')
 const selectedCertId = ref('')
@@ -41,7 +42,7 @@ async function handleAttach() {
 
   attaching.value = true
   try {
-    await $fetch('/api/certs/batch-attach', {
+    await $api('/api/certs/batch-attach', {
       method: 'POST',
       body: {
         certId: selectedCertId.value,

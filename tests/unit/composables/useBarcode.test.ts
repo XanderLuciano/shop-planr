@@ -41,6 +41,7 @@ describe('useBarcode – handleScan routing', () => {
 
     fetchMock = vi.fn()
     vi.stubGlobal('$fetch', fetchMock)
+    vi.stubGlobal('useAuthFetch', () => fetchMock)
   })
 
   async function getHandleScan() {

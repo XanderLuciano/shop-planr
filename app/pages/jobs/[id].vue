@@ -5,8 +5,9 @@ import type { JobProgress, StepDistribution } from '~/types/computed'
 const route = useRoute()
 const jobId = route.params.id as string
 
+const $api = useAuthFetch()
 const { getJob, updateJob, deleteJob } = useJobs()
-const { isAdmin } = useUsers()
+const { isAdmin } = useAuth()
 const toast = useToast()
 const { getPath: fetchPathDetail } = usePaths()
 const { templates, fetchTemplates, applyTemplate } = useTemplates()
@@ -18,7 +19,7 @@ const activeUsers = ref<ShopUser[]>([])
 
 async function loadActiveUsers() {
   try {
-    activeUsers.value = await $fetch<ShopUser[]>('/api/users')
+    activeUsers.value = await $api<ShopUser[]>('/api/users')
   } catch {
     activeUsers.value = []
   }
@@ -151,7 +152,7 @@ async function loadPathNotes(pathId: string) {
   const allNotes: StepNote[] = []
   for (const step of path.steps) {
     try {
-      const notes = await $fetch<StepNote[]>(`/api/notes/step/${step.id}`)
+      const notes = await $api<StepNote[]>(`/api/notes/step/${step.id}`)
       allNotes.push(...notes)
     } catch { /* skip */ }
   }

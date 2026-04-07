@@ -11,6 +11,7 @@ const emit = defineEmits<{
 
 const loading = ref(false)
 const error = ref<string | null>(null)
+const $api = useAuthFetch()
 
 const localOptional = ref(props.optional)
 const localDependencyType = ref(props.dependencyType)
@@ -41,7 +42,7 @@ async function saveChanges() {
   loading.value = true
   error.value = null
   try {
-    await $fetch(`/api/steps/${encodeURIComponent(props.stepId)}/config`, {
+    await $api(`/api/steps/${encodeURIComponent(props.stepId)}/config`, {
       method: 'PATCH',
       body: {
         optional: localOptional.value,

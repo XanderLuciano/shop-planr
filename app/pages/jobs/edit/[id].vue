@@ -5,6 +5,7 @@ import type { JobProgress } from '~/types/computed'
 const route = useRoute()
 const jobId = route.params.id as string
 
+const $api = useAuthFetch()
 const loading = ref(true)
 const error = ref('')
 const jobWithPaths = ref<(Job & { paths: Path[] }) | null>(null)
@@ -13,7 +14,7 @@ async function loadJob() {
   loading.value = true
   error.value = ''
   try {
-    const data = await $fetch<Job & { paths: Path[], progress: JobProgress }>(`/api/jobs/${jobId}`)
+    const data = await $api<Job & { paths: Path[], progress: JobProgress }>(`/api/jobs/${jobId}`)
     const { paths, ...job } = data
     jobWithPaths.value = { ...job, paths }
   } catch (e) {

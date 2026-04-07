@@ -7,11 +7,13 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 
 export function useLibrary() {
+  const $api = useAuthFetch()
+
   async function fetchProcesses(): Promise<void> {
     loading.value = true
     error.value = null
     try {
-      processes.value = await $fetch<ProcessLibraryEntry[]>('/api/library/processes')
+      processes.value = await $api<ProcessLibraryEntry[]>('/api/library/processes')
     } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch processes'
     } finally {
@@ -23,7 +25,7 @@ export function useLibrary() {
     loading.value = true
     error.value = null
     try {
-      locations.value = await $fetch<LocationLibraryEntry[]>('/api/library/locations')
+      locations.value = await $api<LocationLibraryEntry[]>('/api/library/locations')
     } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch locations'
     } finally {
@@ -35,7 +37,7 @@ export function useLibrary() {
     loading.value = true
     error.value = null
     try {
-      const entry = await $fetch<ProcessLibraryEntry>('/api/library/processes', {
+      const entry = await $api<ProcessLibraryEntry>('/api/library/processes', {
         method: 'POST',
         body: { name },
       })
@@ -53,7 +55,7 @@ export function useLibrary() {
     loading.value = true
     error.value = null
     try {
-      await $fetch(`/api/library/processes/${encodeURIComponent(id)}`, { method: 'DELETE' })
+      await $api(`/api/library/processes/${encodeURIComponent(id)}`, { method: 'DELETE' })
       processes.value = processes.value.filter(p => p.id !== id)
     } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to remove process'
@@ -67,7 +69,7 @@ export function useLibrary() {
     loading.value = true
     error.value = null
     try {
-      const entry = await $fetch<LocationLibraryEntry>('/api/library/locations', {
+      const entry = await $api<LocationLibraryEntry>('/api/library/locations', {
         method: 'POST',
         body: { name },
       })
@@ -85,7 +87,7 @@ export function useLibrary() {
     loading.value = true
     error.value = null
     try {
-      await $fetch(`/api/library/locations/${encodeURIComponent(id)}`, { method: 'DELETE' })
+      await $api(`/api/library/locations/${encodeURIComponent(id)}`, { method: 'DELETE' })
       locations.value = locations.value.filter(l => l.id !== id)
     } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to remove location'

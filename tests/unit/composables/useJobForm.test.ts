@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { ref } from 'vue'
 import type { Job, Path, ProcessStep } from '~/server/types/domain'
 
 import { useJobForm, computePathChanges } from '~/app/composables/useJobForm'
@@ -21,8 +22,8 @@ vi.stubGlobal('usePaths', () => ({
   updatePath: mockUpdatePath,
   deletePath: mockDeletePath,
 }))
-vi.stubGlobal('useUsers', () => ({
-  requireUser: () => ({ id: 'test-user-id', username: 'test', displayName: 'Test', isAdmin: true, active: true, createdAt: '' }),
+vi.stubGlobal('useAuth', () => ({
+  authenticatedUser: ref({ id: 'test-user-id', username: 'test', displayName: 'Test User', isAdmin: true, active: true, createdAt: '2024-01-01' }),
 }))
 
 // ---- Helpers ----

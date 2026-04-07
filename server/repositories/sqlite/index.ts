@@ -17,6 +17,7 @@ import { SQLitePartStepStatusRepository } from './partStepStatusRepository'
 import { SQLitePartStepOverrideRepository } from './partStepOverrideRepository'
 import { SQLiteBomVersionRepository } from './bomVersionRepository'
 import { SQLiteLibraryRepository } from './libraryRepository'
+import { SQLiteCryptoKeyRepository } from './cryptoKeyRepository'
 import type { JobRepository } from '../interfaces/jobRepository'
 import type { PathRepository } from '../interfaces/pathRepository'
 import type { PartRepository } from '../interfaces/partRepository'
@@ -31,6 +32,7 @@ import type { PartStepStatusRepository } from '../interfaces/partStepStatusRepos
 import type { PartStepOverrideRepository } from '../interfaces/partStepOverrideRepository'
 import type { BomVersionRepository } from '../interfaces/bomVersionRepository'
 import type { LibraryRepository } from '../interfaces/libraryRepository'
+import type { CryptoKeyRepository } from '../interfaces/cryptoKeyRepository'
 
 export interface RepositorySet {
   jobs: JobRepository
@@ -47,6 +49,7 @@ export interface RepositorySet {
   partStepOverrides: PartStepOverrideRepository
   bomVersions: BomVersionRepository
   library: LibraryRepository
+  cryptoKeys: CryptoKeyRepository
   /** Raw DB handle — used by the service layer for the counter. */
   _db: import('better-sqlite3').Database
 
@@ -192,6 +195,7 @@ export function createSQLiteRepositories(dbPath: string, migrationsDir?: string)
     partStepOverrides: partStepOverrideRepo,
     bomVersions: new SQLiteBomVersionRepository(db),
     library: new SQLiteLibraryRepository(db),
+    cryptoKeys: new SQLiteCryptoKeyRepository(db),
     _db: db,
     // Backward-compatible aliases
     serials: partRepo,

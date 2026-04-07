@@ -35,7 +35,7 @@ app/
   pages/
     index.vue            → Placeholder homepage (to become dashboard)
   components/            → 50+ components: SectionCard (reusable card wrapper), lifecycle dialogs (ScrapDialog, ForceCompleteDialog, AdvanceToStepDropdown), config panels (StepConfigPanel, AdvancementModeSelector, LibraryManager), job form (JobCreationForm), serial creation (SerialCreationPanel — first-step batch creation + advancement), page visibility (PageVisibilitySettings — toggle switches for nav pages), docs (EndpointCard MDC, DocsSidebar, DocsSearch), job view (JobViewToolbar — expand/collapse all jobs/paths buttons, JobExpandableRow — multi-path expansion with bulk signals, JobMobileCard — card-based job display for mobile viewports), work queue (WorkQueueFilterBar — group-by selector, filter dropdowns, text search, preset management), utility (BonusBadge, PathDeleteButton, CertDetailView, TemplateEditor, etc.)
-  composables/           → 25+ composables: useJobForm, useLifecycle, useLibrary, useBomVersions, useAudit (with filters), usePartsView, useStepView, useOperatorWorkQueue (extended with groupBy param), useWorkQueueFilters (wraps useOperatorWorkQueue with groupBy/filter/preset/URL-sync), useSettings (extended with pageToggles), useDocsNavigation, useDocsSearch, useMobileBreakpoint (matchMedia-based mobile viewport detection), useJobPriority (drag-and-drop priority editing) + existing ones
+  composables/           → 25+ composables: useAuth (session/token/user), useAuthFetch (authenticated $fetch instance), useJobForm, useLifecycle, useLibrary, useBomVersions, useAudit (with filters), usePartsView, useStepView, useOperatorWorkQueue (extended with groupBy param), useWorkQueueFilters (wraps useOperatorWorkQueue with groupBy/filter/preset/URL-sync), useSettings (extended with pageToggles), useDocsNavigation, useDocsSearch, useMobileBreakpoint (matchMedia-based mobile viewport detection), useJobPriority (drag-and-drop priority editing) + existing ones
   middleware/
     pageGuard.global.ts  → Global route middleware: blocks navigation to disabled pages, redirects to /
   utils/
@@ -46,15 +46,18 @@ app/
   assets/css/
     main.css             → Tailwind imports + custom violet #8750FF scale + green scale
 server/
-  api/                   → 52+ API routes (see Routes → Services Map below)
-  services/              → 12 service modules (business logic layer)
+  api/                   → 55+ API routes (see Routes → Services Map below)
+  middleware/
+    01.rateLimit.ts      → Tiered rate limiting (login/auth/unauth tiers)
+    02.auth.ts           → JWT auth: verifies token on /api/ routes, exempt list, cookie fallback for SSR
+  services/              → 13 service modules (business logic layer, including authService)
   repositories/
     interfaces/          → 14 repository interfaces + barrel export
     sqlite/              → 14 SQLite implementations + migration system (5 migrations)
     factory.ts           → createRepositories(config) — returns RepositorySet
     types.ts             → Re-exports RepositorySet type
   utils/
-    errors.ts            → ValidationError, NotFoundError, ForbiddenError
+    errors.ts            → ValidationError, NotFoundError, ForbiddenError, AuthenticationError
     httpError.ts         → STATUS_MESSAGES, ERROR_STATUS_MAP, httpError(), defineApiHandler() — centralized HTTP error handler replacing per-route try/catch blocks
     idGenerator.ts       → generateId(prefix), createSequentialSnGenerator()
     serialization.ts     → serialize(), deserialize(), prettyPrint() for all domain types
@@ -128,6 +131,12 @@ tests/
 | Homepage | `app/pages/index.vue` |
 | Service singleton | `server/utils/services.ts` → `getServices()` |
 | Repository singleton | `server/utils/db.ts` → `getRepositories()` |
+| Auth plugin | `app/plugins/auth.ts` → provides `$authFetch` via `nuxtApp.provide` |
+| Auth composable | `app/composables/useAuth.ts` → session state, token, user |
+| Auth fetch | `app/composables/useAuthFetch.ts` → `useAuthFetch()` returns authenticated `$fetch` |
+| Auth middleware | `server/middleware/02.auth.ts` → JWT verification on `/api/` routes |
+| Auth service | `server/services/authService.ts` → PIN hash, JWT sign/verify, key pairs |
+| Rate limiter | `server/middleware/01.rateLimit.ts` → tiered rate limits |
 | Content config | `content.config.ts` |
 | Vitest config | `vitest.config.ts` |
 | ESLint config | `eslint.config.mjs` |
@@ -139,7 +148,7 @@ tests/
 ```
 Components → Composables → API Routes → Services → Repositories → SQLite
    UI only    API client     HTTP glue   Business    Data access    Storage
-                                          logic
+             (useAuthFetch)               logic
 ```
 
 Dependencies flow left-to-right only. All business logic lives in services. See `.ai/architecture.md` for details.
@@ -159,6 +168,7 @@ Dependencies flow left-to-right only. All business logic lives in services. See 
 | `/api/settings/**` | `settingsService` | Jira config + field mappings + page toggles |
 | `/api/notes/**` | `noteService` | Process step notes/defects |
 | `/api/users/**` | `userService` | Kiosk-mode user profiles with username, displayName, isAdmin |
+| `/api/auth/**` | `authService` | PIN login, PIN setup, token refresh, PIN reset (JWT auth) |
 | `/api/operator/**` | (aggregates job/path/serial) | Workstation view data |
 | `/api/steps/:id/assign` | `pathService` | Step assignment (PATCH) |
 | `/api/steps/:id/config` | `pathService` | Step config: optional + dependencyType (PATCH) |
@@ -205,7 +215,7 @@ Core entities and relationships:
 - **SnStepOverride** → per-serial step overrides (fast-track, reversible)
 - **BomVersion** → immutable BOM edit snapshots
 - **ProcessLibraryEntry** / **LocationLibraryEntry** → reusable process name and location libraries
-- **ShopUser** → simple kiosk-mode identity with `username` (unique), `displayName`, `isAdmin` flag (no passwords); admin flag gates UI features (job creation, job/path deletion)
+- **ShopUser** → kiosk-mode identity with `username` (unique), `displayName`, `isAdmin`, `pinHash` (nullable — null means PIN not yet set); PIN-based auth with ES256 JWT tokens; admin flag gates UI features (job creation, job/path deletion, PIN reset)
 - **StepNote** → defect/note on serial(s) at a process step
 - **AppSettings** → singleton: Jira connection + field mappings + page toggles (5 default PI project mappings, 9 page visibility toggles)
 

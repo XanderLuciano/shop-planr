@@ -2,7 +2,7 @@
 import type { Certificate } from '~/types/domain'
 
 const { certs, loading, fetchCerts, createCert, batchAttachCert } = useCerts()
-const { requireUser } = useUsers()
+const { authenticatedUser } = useAuth()
 
 // UI state
 const showForm = ref(false)
@@ -78,13 +78,12 @@ async function onBatchAttach() {
     return
   }
 
-  let userId: string
-  try {
-    userId = requireUser().id
-  } catch {
+  if (!authenticatedUser.value) {
     batchError.value = 'Please select a user first'
     return
   }
+
+  const userId = authenticatedUser.value.id
 
   batchSaving.value = true
   try {

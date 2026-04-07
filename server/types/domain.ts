@@ -187,6 +187,43 @@ export interface ShopUser {
   isAdmin: boolean
   department?: string
   active: boolean
+  pinHash?: string | null
+  createdAt: string
+}
+
+/** Public-facing user shape — strips pinHash, exposes hasPin boolean instead. */
+export interface PublicUser {
+  id: string
+  username: string
+  displayName: string
+  isAdmin: boolean
+  department?: string
+  active: boolean
+  hasPin: boolean
+  createdAt: string
+}
+
+/** Convert a ShopUser to a PublicUser, stripping the pinHash. */
+export function toPublicUser(user: ShopUser): PublicUser {
+  return {
+    id: user.id,
+    username: user.username,
+    displayName: user.displayName,
+    isAdmin: user.isAdmin,
+    department: user.department,
+    active: user.active,
+    hasPin: !!user.pinHash,
+    createdAt: user.createdAt,
+  }
+}
+
+// ---- Crypto Key (ES256 JWT signing) ----
+
+export interface CryptoKey {
+  id: string
+  algorithm: string
+  publicKey: string
+  privateKey: string
   createdAt: string
 }
 

@@ -1,5 +1,7 @@
+import { toPublicUser } from '../../types/domain'
+
 export default defineApiHandler(async (event) => {
   const body = await readBody(event)
   const { userService } = getServices()
-  return userService.createUser(body)
+  return toPublicUser(userService.createUser(body))
 })

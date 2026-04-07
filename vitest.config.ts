@@ -27,6 +27,13 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: true,
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        maxThreads: 4,
+        minThreads: 1,
+      },
+    },
   },
   plugins: [nuxtImportMetaPlugin()],
   resolve: {

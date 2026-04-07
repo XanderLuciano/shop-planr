@@ -1,35 +1,36 @@
 /**
  * Feature: user-admin-roles
- * Property 4: isAdmin Computed Tracks Selected User
+ * Property 4: isAdmin Computed Tracks Authenticated User
  *
  * For any sequence of ShopUser objects with varying `isAdmin` values,
- * when each user is set as the selected user in the `useUsers` composable,
+ * when each user is set as the authenticated user in the `useAuth` composable,
  * the `isAdmin` computed property should equal that user's `isAdmin` field.
- * When the selected user is cleared (set to null), `isAdmin` should return `false`.
+ * When the authenticated user is null, `isAdmin` should return `false`.
  *
  * **Validates: Requirements 5.1, 5.2, 5.3**
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { ref } from 'vue'
 import fc from 'fast-check'
-import { useUsers } from '../../app/composables/useUsers'
 
-// happy-dom provides window but localStorage may not be fully functional.
-// Stub it with a simple in-memory implementation.
-let store: Record<string, string> = {}
-vi.stubGlobal('localStorage', {
-  getItem: (key: string) => store[key] ?? null,
-  setItem: (key: string, value: string) => { store[key] = value },
-  removeItem: (key: string) => { delete store[key] },
-  clear: () => { store = {} },
-})
+// Module-level ref that the useAuth stub will return
+const mockAuthenticatedUser = ref<any>(null)
+
+// Stub useCookie so the real useAuth module doesn't crash if loaded in the same worker
+vi.stubGlobal('useCookie', (_name: string, _opts?: any) => ref(null))
+vi.stubGlobal('useState', (_key: string, init?: () => any) => ref(init ? init() : undefined))
+
+vi.stubGlobal('useAuth', () => ({
+  authenticatedUser: mockAuthenticatedUser,
+  isAdmin: { get value() { return mockAuthenticatedUser.value?.isAdmin === true } },
+}))
 
 beforeEach(() => {
-  store = {}
+  mockAuthenticatedUser.value = null
 })
 
 /**
  * Arbitrary: a ShopUser with random isAdmin flag.
- * Only id and isAdmin matter for this property; other fields are plausible defaults.
  */
 const arbShopUser = fc.record({
   id: fc.uuid(),
@@ -41,38 +42,37 @@ const arbShopUser = fc.record({
   createdAt: fc.constant(new Date().toISOString()),
 })
 
-describe('Property 4: isAdmin Computed Tracks Selected User', () => {
-  it('isAdmin matches selected user isAdmin for any sequence of users, and false after clear', () => {
+describe('Property 4: isAdmin Computed Tracks Authenticated User', () => {
+  it('isAdmin matches authenticated user isAdmin for any sequence of users, and false when null', () => {
     fc.assert(
       fc.property(
         fc.array(arbShopUser, { minLength: 1, maxLength: 20 }),
         (users) => {
-          const { isAdmin, selectUser, clearUser } = useUsers()
+          const auth = useAuth()
 
           for (const user of users) {
-            selectUser(user)
-            expect(isAdmin.value).toBe(user.isAdmin)
+            mockAuthenticatedUser.value = user
+            expect(auth.isAdmin.value).toBe(user.isAdmin)
           }
 
           // After clearing, isAdmin must be false
-          clearUser()
-          expect(isAdmin.value).toBe(false)
+          mockAuthenticatedUser.value = null
+          expect(auth.isAdmin.value).toBe(false)
         },
       ),
       { numRuns: 100 },
     )
   })
 
-  it('isAdmin is false when no user is selected', () => {
+  it('isAdmin is false when no user is authenticated', () => {
     fc.assert(
       fc.property(
         fc.constant(null),
         () => {
-          const { isAdmin, clearUser } = useUsers()
+          const auth = useAuth()
 
-          // Ensure cleared state
-          clearUser()
-          expect(isAdmin.value).toBe(false)
+          mockAuthenticatedUser.value = null
+          expect(auth.isAdmin.value).toBe(false)
         },
       ),
       { numRuns: 100 },

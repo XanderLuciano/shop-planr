@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import type { ShopUser, JiraConnectionSettings, JiraFieldMapping, PageToggles } from '~/types/domain'
+import type { PublicUser, JiraConnectionSettings, JiraFieldMapping, PageToggles } from '~/types/domain'
 
 const { settings, loading, fetchSettings, updateSettings } = useSettings()
-const { fetchUsers } = useUsers()
+const { fetchUsers, isAdmin, authenticatedUser } = useAuth()
+const $api = useAuthFetch()
 
 // Tab state
 const activeTab = ref('users')
@@ -15,9 +16,9 @@ const tabs = [
 ]
 
 // User management state
-const allUsers = ref<ShopUser[]>([])
+const allUsers = ref<PublicUser[]>([])
 const showUserForm = ref(false)
-const editingUser = ref<ShopUser | null>(null)
+const editingUser = ref<PublicUser | null>(null)
 const userSaving = ref(false)
 const userError = ref('')
 const userSuccess = ref('')
@@ -30,7 +31,7 @@ const settingsSuccess = ref('')
 async function loadAllUsers() {
   try {
     // The users composable fetches active users; we need all users for settings
-    const all = await $fetch<ShopUser[]>('/api/users')
+    const all = await $api<PublicUser[]>('/api/users')
     allUsers.value = all
   } catch {
     allUsers.value = []
@@ -42,7 +43,7 @@ async function onCreateUser(data: { username: string, displayName: string, depar
   userSuccess.value = ''
   userSaving.value = true
   try {
-    await $fetch('/api/users', { method: 'POST', body: data })
+    await $api('/api/users', { method: 'POST', body: data })
     showUserForm.value = false
     userSuccess.value = 'User created'
     await loadAllUsers()
@@ -60,7 +61,7 @@ async function onUpdateUser(data: { username?: string, displayName?: string, dep
   userSuccess.value = ''
   userSaving.value = true
   try {
-    await $fetch(`/api/users/${editingUser.value.id}`, { method: 'PUT', body: data })
+    await $api(`/api/users/${editingUser.value.id}`, { method: 'PUT', body: data })
     editingUser.value = null
     userSuccess.value = 'User updated'
     await loadAllUsers()
@@ -72,10 +73,10 @@ async function onUpdateUser(data: { username?: string, displayName?: string, dep
   }
 }
 
-async function toggleUserActive(user: ShopUser) {
+async function toggleUserActive(user: PublicUser) {
   userError.value = ''
   try {
-    await $fetch(`/api/users/${user.id}`, {
+    await $api(`/api/users/${user.id}`, {
       method: 'PUT',
       body: { active: !user.active },
     })
@@ -83,6 +84,22 @@ async function toggleUserActive(user: ShopUser) {
     await fetchUsers()
   } catch (e) {
     userError.value = e?.data?.message ?? e?.message ?? 'Failed to update user'
+  }
+}
+
+async function resetUserPin(user: PublicUser) {
+  userError.value = ''
+  userSuccess.value = ''
+  try {
+    await $api('/api/auth/reset-pin', {
+      method: 'POST',
+      body: { targetUserId: user.id },
+    })
+    userSuccess.value = `PIN reset for ${user.displayName}. They will set a new PIN on next login.`
+    await loadAllUsers()
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string }, message?: string }
+    userError.value = err?.data?.message ?? err?.message ?? 'Failed to reset PIN'
   }
 }
 
@@ -279,6 +296,15 @@ onMounted(async () => {
               </UBadge>
             </div>
             <div class="flex items-center gap-1 shrink-0">
+              <UButton
+                v-if="isAdmin && u.hasPin && u.id !== authenticatedUser?.id"
+                icon="i-lucide-key-round"
+                size="xs"
+                variant="ghost"
+                color="warning"
+                title="Reset PIN"
+                @click="resetUserPin(u)"
+              />
               <UButton
                 icon="i-lucide-pencil"
                 size="xs"
