@@ -1,5 +1,5 @@
 import { generateKeyPair, SignJWT, jwtVerify, importPKCS8, importSPKI, exportPKCS8, exportSPKI } from 'jose'
-import { hashSync, compareSync } from 'bcryptjs'
+import { hash, compare } from 'bcryptjs'
 import type { CryptoKey as JoseCryptoKey, KeyObject } from 'jose'
 import type { UserRepository } from '../repositories/interfaces/userRepository'
 import type { CryptoKeyRepository } from '../repositories/interfaces/cryptoKeyRepository'
@@ -116,7 +116,7 @@ export function createAuthService(repos: {
       throw new ForbiddenError('PIN is already set. Use admin reset to change it.')
     }
 
-    const pinHash = hashSync(pin, BCRYPT_ROUNDS)
+    const pinHash = await hash(pin, BCRYPT_ROUNDS)
     const updated = repos.users.update(userId, { pinHash })
 
     return signToken(updated)
@@ -132,7 +132,7 @@ export function createAuthService(repos: {
       throw new AuthenticationError('Invalid credentials')
     }
 
-    if (!compareSync(pin, user.pinHash)) {
+    if (!await compare(pin, user.pinHash)) {
       throw new AuthenticationError('Invalid credentials')
     }
 
