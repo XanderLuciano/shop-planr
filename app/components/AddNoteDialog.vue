@@ -87,10 +87,11 @@ async function handleSave() {
       description: `Note added to ${selectedPartIds.value.size} part${selectedPartIds.value.size !== 1 ? 's' : ''}`,
       color: 'success',
     })
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string }, message?: string }
     toast.add({
       title: 'Failed to add note',
-      description: e?.data?.message ?? e?.message ?? 'An error occurred',
+      description: err?.data?.message ?? err?.message ?? 'An error occurred',
       color: 'error',
     })
   } finally {

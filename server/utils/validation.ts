@@ -3,6 +3,8 @@
  * All helpers throw ValidationError on failure.
  */
 
+import type { H3Event } from 'h3'
+import type { ZodType, ZodError } from 'zod'
 import { ValidationError } from './errors'
 
 /** Assert that a numeric value is positive (> 0). */
@@ -45,4 +47,40 @@ export function assertDefined<T>(value: T | null | undefined, fieldName: string)
   if (value === null || value === undefined) {
     throw new ValidationError(`${fieldName} is required`)
   }
+}
+
+/**
+ * Reads and validates the request body against a Zod schema.
+ * Throws `ValidationError` (caught by `defineApiHandler` → 400) on failure.
+ *
+ * Usage:
+ * ```ts
+ * import { z } from 'zod'
+ * const Schema = z.object({ name: z.string().min(1) })
+ *
+ * export default defineApiHandler(async (event) => {
+ *   const body = await parseBody(event, Schema)
+ * })
+ * ```
+ */
+export async function parseBody<T>(event: H3Event, schema: ZodType<T>): Promise<T> {
+  const raw = await readBody(event)
+  const result = schema.safeParse(raw)
+  if (!result.success) {
+    throw new ValidationError(formatZodError(result.error))
+  }
+  return result.data
+}
+
+/**
+ * Formats a ZodError into a concise, human-readable message.
+ * Example: "name: Required; steps.0.name: Expected string, received number"
+ */
+function formatZodError(error: ZodError): string {
+  return error.issues
+    .map((issue) => {
+      const path = issue.path.length ? issue.path.join('.') + ': ' : ''
+      return path + issue.message
+    })
+    .join('; ')
 }

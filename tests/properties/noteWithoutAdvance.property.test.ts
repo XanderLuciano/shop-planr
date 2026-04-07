@@ -11,6 +11,17 @@ import { describe, it, expect, afterEach } from 'vitest'
 import fc from 'fast-check'
 import { createTestContext, type TestContext } from '../integration/helpers'
 
+/**
+ * Property 5: Whitespace-only text is rejected
+ *
+ * For any string composed entirely of whitespace characters,
+ * `noteService.createNote` throws a ValidationError and no StepNote
+ * is persisted.
+ *
+ * **Validates: Requirements 5.1, 5.5**
+ */
+import { ValidationError } from '../../server/utils/errors'
+
 describe('Property 1: Note creation never modifies part position', () => {
   let ctx: TestContext
 
@@ -21,11 +32,11 @@ describe('Property 1: Note creation never modifies part position', () => {
   it('creating a note on any subset of parts leaves currentStepId unchanged for every part', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 2, max: 5 }),   // stepCount
-        fc.integer({ min: 1, max: 8 }),    // partCount
-        fc.integer({ min: 0, max: 4 }),    // advanceCount — how many times to advance part[0] before noting
+        fc.integer({ min: 2, max: 5 }), // stepCount
+        fc.integer({ min: 1, max: 8 }), // partCount
+        fc.integer({ min: 0, max: 4 }), // advanceCount — how many times to advance part[0] before noting
         fc.stringMatching(/^[A-Za-z0-9][A-Za-z0-9 .,!?-]{0,199}$/), // noteText — valid non-whitespace-only string
-        fc.infiniteStream(fc.boolean()),   // partSelection — which parts to include in the note
+        fc.infiniteStream(fc.boolean()), // partSelection — which parts to include in the note
         (stepCount, partCount, advanceCount, noteText, partSelectionStream) => {
           ctx = createTestContext()
           const { jobService, pathService, partService, noteService } = ctx
@@ -69,7 +80,7 @@ describe('Property 1: Note creation never modifies part position', () => {
           }
 
           // Snapshot currentStepId for ALL parts before note creation
-          const stepIdsBefore = parts.map(p => {
+          const stepIdsBefore = parts.map((p) => {
             const fresh = partService.getPart(p.id)
             return { id: fresh.id, currentStepId: fresh.currentStepId }
           })
@@ -96,7 +107,6 @@ describe('Property 1: Note creation never modifies part position', () => {
   })
 })
 
-
 /**
  * Property 2: Note attribution and valid timestamp
  *
@@ -116,7 +126,7 @@ describe('Property 2: Note attribution and valid timestamp', () => {
   it('createdBy matches the input userId and createdAt is a valid ISO 8601 timestamp', () => {
     fc.assert(
       fc.property(
-        fc.stringMatching(/^[a-z][a-z0-9_]{0,19}$/),           // userId — simple identifier-like strings
+        fc.stringMatching(/^[a-z][a-z0-9_]{0,19}$/), // userId — simple identifier-like strings
         fc.stringMatching(/^[A-Za-z0-9][A-Za-z0-9 .,!?-]{0,199}$/), // noteText — valid non-whitespace-only string
         (userId, noteText) => {
           ctx = createTestContext()
@@ -162,7 +172,6 @@ describe('Property 2: Note attribution and valid timestamp', () => {
   })
 })
 
-
 /**
  * Property 3: Note visible from each referenced part
  *
@@ -182,9 +191,9 @@ describe('Property 3: Note visible from each referenced part', () => {
   it('getNotesForPart returns the created note for every part in the subset', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 1, max: 8 }),    // partCount
+        fc.integer({ min: 1, max: 8 }), // partCount
         fc.stringMatching(/^[A-Za-z0-9][A-Za-z0-9 .,!?-]{0,199}$/), // noteText
-        fc.infiniteStream(fc.boolean()),   // partSelection — which parts to include in the note
+        fc.infiniteStream(fc.boolean()), // partSelection — which parts to include in the note
         (partCount, noteText, partSelectionStream) => {
           ctx = createTestContext()
           const { jobService, pathService, partService, noteService } = ctx
@@ -238,7 +247,6 @@ describe('Property 3: Note visible from each referenced part', () => {
   })
 })
 
-
 /**
  * Property 4: Audit trail records note creation
  *
@@ -258,10 +266,10 @@ describe('Property 4: Audit trail records note creation', () => {
   it('audit log contains exactly one new note_created entry with matching fields', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 1, max: 5 }),    // partCount
-        fc.stringMatching(/^[a-z][a-z0-9_]{0,19}$/),           // userId
+        fc.integer({ min: 1, max: 5 }), // partCount
+        fc.stringMatching(/^[a-z][a-z0-9_]{0,19}$/), // userId
         fc.stringMatching(/^[A-Za-z0-9][A-Za-z0-9 .,!?-]{0,199}$/), // noteText
-        fc.infiniteStream(fc.boolean()),   // partSelection
+        fc.infiniteStream(fc.boolean()), // partSelection
         (partCount, userId, noteText, partSelectionStream) => {
           ctx = createTestContext()
           const { jobService, pathService, partService, noteService, auditService } = ctx
@@ -330,18 +338,6 @@ describe('Property 4: Audit trail records note creation', () => {
     )
   })
 })
-
-
-/**
- * Property 5: Whitespace-only text is rejected
- *
- * For any string composed entirely of whitespace characters,
- * `noteService.createNote` throws a ValidationError and no StepNote
- * is persisted.
- *
- * **Validates: Requirements 5.1, 5.5**
- */
-import { ValidationError } from '../../server/utils/errors'
 
 describe('Property 5: Whitespace-only text is rejected', () => {
   let ctx: TestContext

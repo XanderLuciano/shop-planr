@@ -111,16 +111,6 @@ async function onStepConfigUpdated() {
   await loadJob()
 }
 
-async function onStepAssigned(_stepId: string, _userId: string | null) {
-  await loadAllDistributions()
-  try {
-    const detail = await getJob(jobId)
-    paths.value = [...detail.paths]
-  } catch {
-    // Silently ignore
-  }
-}
-
 async function loadJob() {
   loading.value = true
   error.value = ''

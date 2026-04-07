@@ -20,6 +20,7 @@ Shop Planr (package name: `shop-erp`) is a job routing and ERP application for m
 | Icons | `@iconify-json/lucide` |
 | Database | SQLite via `better-sqlite3` |
 | ID Generation | `nanoid` |
+| Validation | `zod` (API request body schemas) |
 | Testing | Vitest 3.2 + `happy-dom` + `fast-check` (PBT) + `tsx` (seed scripts) |
 | Linting | ESLint 9 via `@nuxt/eslint` |
 | Deployment | Docker (single container, copies `.output/`) |
@@ -57,11 +58,12 @@ server/
     httpError.ts         → STATUS_MESSAGES, ERROR_STATUS_MAP, httpError(), defineApiHandler() — centralized HTTP error handler replacing per-route try/catch blocks
     idGenerator.ts       → generateId(prefix), createSequentialSnGenerator()
     serialization.ts     → serialize(), deserialize(), prettyPrint() for all domain types
-    validation.ts        → assertPositive, assertNonEmpty, assertNonEmptyArray, assertOneOf, etc.
+    validation.ts        → assertPositive, assertNonEmpty, assertNonEmptyArray, assertOneOf, parseBody() (Zod schema validation)
     db.ts                → getRepositories() singleton — lazy-inits from runtimeConfig
     workQueueGrouping.ts → groupEntriesByDimension() — pure server-side grouping by user/location/step dimension
     services.ts          → getServices() singleton — wires all 12 services together
     pageToggles.ts       → DEFAULT_PAGE_TOGGLES, ROUTE_TOGGLE_MAP, ALWAYS_ENABLED_ROUTES, mergePageToggles(), isPageEnabled() — auto-imported by Nitro
+  schemas/               → Zod request body schemas by domain (pathSchemas.ts, etc.)
   types/
     domain.ts            → 26+ domain types (Job, Path, ProcessStep, SerialNumber, SnStepStatus, SnStepOverride, BomVersion, ProcessLibraryEntry, LocationLibraryEntry, etc.)
     api.ts               → 25+ API input types (ScrapSerialInput, ForceCompleteInput, AdvanceToStepInput, EditBomInput, etc.)

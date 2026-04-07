@@ -86,6 +86,32 @@ if (!id) throw new ValidationError('ID is required')
 if (!id) throw createError({ statusCode: 400, message: 'ID is required' })
 ```
 
+## Request Body Validation (Zod Schemas)
+
+API routes that accept request bodies should validate them with Zod schemas using `parseBody()` (auto-imported from `server/utils/validation.ts`). This ensures invalid input returns a 400 instead of a 500.
+
+Schemas live in `server/schemas/` and are colocated by domain (e.g., `pathSchemas.ts`, `jobSchemas.ts`). Each route imports its schema and calls `parseBody(event, schema)` instead of raw `readBody(event)`.
+
+```ts
+// CORRECT — validated input, wrong types → 400
+import { createPathSchema } from '../../schemas/pathSchemas'
+
+export default defineApiHandler(async (event) => {
+  const body = await parseBody(event, createPathSchema)
+  return getServices().pathService.createPath(body)
+})
+```
+
+```ts
+// WRONG — unvalidated input, wrong types → 500
+export default defineApiHandler(async (event) => {
+  const body = await readBody(event)
+  return getServices().pathService.createPath(body)
+})
+```
+
+When adding a new route with a request body, define a Zod schema in the appropriate `server/schemas/*.ts` file and use `parseBody`. Existing routes are being migrated incrementally — when touching an existing route, convert it to use `parseBody` if it doesn't already.
+
 ## API Error Handling — Empty vs. Not Found
 
 A 404 means the resource itself doesn't exist — not that it has zero children. Empty lists are valid 200 responses.

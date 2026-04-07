@@ -23,7 +23,9 @@ vi.stubGlobal('localStorage', {
   clear: () => { store = {} },
 })
 
-beforeEach(() => { store = {} })
+beforeEach(() => {
+  store = {}
+})
 
 /**
  * Arbitrary: a ShopUser with random isAdmin flag.

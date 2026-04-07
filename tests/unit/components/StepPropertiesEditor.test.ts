@@ -79,7 +79,7 @@ const StepPropertiesEditor = defineComponent({
       return [unassigned, ...userOptions]
     })
 
-    const locationItems = computed(() =>
+    const _locationItems = computed(() =>
       (locations.value as typeof TEST_LOCATIONS).map(l => ({ label: l.name, value: l.name })),
     )
 
@@ -103,39 +103,57 @@ const StepPropertiesEditor = defineComponent({
       }
 
       saving.value = true
-      try {
-        if (assigneeChanged) {
+      const failed: string[] = []
+      let attempted = 0
+
+      if (assigneeChanged) {
+        attempted++
+        try {
           await mockFetch(`/api/steps/${props.stepId}/assign`, {
             method: 'PATCH',
             body: { userId: newAssignee },
           })
+        } catch {
+          failed.push('assignee')
         }
+      }
 
-        if (locationChanged) {
+      if (locationChanged) {
+        attempted++
+        try {
           await mockFetch(`/api/steps/${props.stepId}/config`, {
             method: 'PATCH',
             body: { location: newLocation },
           })
+        } catch {
+          failed.push('location')
         }
+      }
 
+      saving.value = false
+
+      if (failed.length === attempted) {
+        mockToastAdd({
+          title: 'Save failed',
+          description: `Failed to update ${failed.join(' and ')}.`,
+          color: 'error',
+        })
+      } else if (failed.length) {
+        mockToastAdd({
+          title: 'Partial save',
+          description: `Failed to update ${failed.join(' and ')}. Other changes were saved.`,
+          color: 'error',
+        })
+      } else {
         mockToastAdd({
           title: 'Step updated',
           description: 'Step properties saved successfully.',
           color: 'success',
         })
-        emit('saved')
       }
-      catch (e: any) {
-        const message = e?.data?.message ?? e?.message ?? 'Save failed'
-        mockToastAdd({
-          title: 'Save failed',
-          description: message,
-          color: 'error',
-        })
-      }
-      finally {
-        saving.value = false
-      }
+
+      // Always emit saved so parent re-fetches actual server state
+      emit('saved')
     }
 
     return () =>
@@ -143,9 +161,9 @@ const StepPropertiesEditor = defineComponent({
         // Assignee dropdown
         h('select', {
           'data-testid': 'assignee-select',
-          'value': selectedUserId.value,
-          'disabled': saving.value || undefined,
-          'onChange': (e: Event) => {
+          value: selectedUserId.value,
+          disabled: saving.value || undefined,
+          onChange: (e: Event) => {
             selectedUserId.value = (e.target as HTMLSelectElement).value
           },
         }, assigneeItems.value.map(item =>
@@ -155,10 +173,10 @@ const StepPropertiesEditor = defineComponent({
         // Location input
         h('input', {
           'data-testid': 'location-input',
-          'value': selectedLocation.value,
-          'disabled': saving.value || undefined,
-          'placeholder': 'Location...',
-          'onInput': (e: Event) => {
+          value: selectedLocation.value,
+          disabled: saving.value || undefined,
+          placeholder: 'Location...',
+          onInput: (e: Event) => {
             selectedLocation.value = (e.target as HTMLInputElement).value
           },
         }),
@@ -166,15 +184,15 @@ const StepPropertiesEditor = defineComponent({
         // Save button
         h('button', {
           'data-testid': 'save-btn',
-          'disabled': saving.value || undefined,
-          'onClick': handleSave,
+          disabled: saving.value || undefined,
+          onClick: handleSave,
         }, 'Save'),
 
         // Cancel button
         h('button', {
           'data-testid': 'cancel-btn',
-          'disabled': saving.value || undefined,
-          'onClick': () => emit('cancel'),
+          disabled: saving.value || undefined,
+          onClick: () => emit('cancel'),
         }, 'Cancel'),
       ])
   },
@@ -351,6 +369,123 @@ describe('StepPropertiesEditor', () => {
       await flushPromises()
 
       expect(mockFetch).not.toHaveBeenCalled()
+      expect(wrapper.emitted('saved')).toHaveLength(1)
+    })
+  })
+
+  // ── PATCH failure scenarios ──
+  describe('PATCH failure handling', () => {
+    it('shows "Partial save" when assignee fails but location succeeds', async () => {
+      mockFetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/assign')) return Promise.reject(new Error('Network error'))
+        return Promise.resolve({})
+      })
+
+      const wrapper = mountEditor({
+        stepId: 'step-1',
+        currentAssignedTo: 'user-1',
+        currentLocation: 'Bay 1',
+      })
+
+      await wrapper.find('[data-testid="assignee-select"]').setValue('user-2')
+      await wrapper.find('[data-testid="location-input"]').setValue('Bay 3')
+      await wrapper.find('[data-testid="save-btn"]').trigger('click')
+      await flushPromises()
+
+      expect(mockToastAdd).toHaveBeenCalledWith({
+        title: 'Partial save',
+        description: 'Failed to update assignee. Other changes were saved.',
+        color: 'error',
+      })
+      expect(wrapper.emitted('saved')).toHaveLength(1)
+    })
+
+    it('shows "Partial save" when location fails but assignee succeeds', async () => {
+      mockFetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/config')) return Promise.reject(new Error('Network error'))
+        return Promise.resolve({})
+      })
+
+      const wrapper = mountEditor({
+        stepId: 'step-1',
+        currentAssignedTo: 'user-1',
+        currentLocation: 'Bay 1',
+      })
+
+      await wrapper.find('[data-testid="assignee-select"]').setValue('user-2')
+      await wrapper.find('[data-testid="location-input"]').setValue('Bay 3')
+      await wrapper.find('[data-testid="save-btn"]').trigger('click')
+      await flushPromises()
+
+      expect(mockToastAdd).toHaveBeenCalledWith({
+        title: 'Partial save',
+        description: 'Failed to update location. Other changes were saved.',
+        color: 'error',
+      })
+      expect(wrapper.emitted('saved')).toHaveLength(1)
+    })
+
+    it('shows "Save failed" when both PATCHes fail', async () => {
+      mockFetch = vi.fn().mockRejectedValue(new Error('Network error'))
+
+      const wrapper = mountEditor({
+        stepId: 'step-1',
+        currentAssignedTo: 'user-1',
+        currentLocation: 'Bay 1',
+      })
+
+      await wrapper.find('[data-testid="assignee-select"]').setValue('user-2')
+      await wrapper.find('[data-testid="location-input"]').setValue('Bay 3')
+      await wrapper.find('[data-testid="save-btn"]').trigger('click')
+      await flushPromises()
+
+      expect(mockToastAdd).toHaveBeenCalledWith({
+        title: 'Save failed',
+        description: 'Failed to update assignee and location.',
+        color: 'error',
+      })
+      expect(wrapper.emitted('saved')).toHaveLength(1)
+    })
+
+    it('shows "Save failed" when single attempted PATCH fails', async () => {
+      mockFetch = vi.fn().mockRejectedValue(new Error('Network error'))
+
+      const wrapper = mountEditor({
+        stepId: 'step-1',
+        currentAssignedTo: 'user-1',
+        currentLocation: 'Bay 1',
+      })
+
+      // Only change assignee — single PATCH attempted, and it fails
+      await wrapper.find('[data-testid="assignee-select"]').setValue('user-2')
+      await wrapper.find('[data-testid="save-btn"]').trigger('click')
+      await flushPromises()
+
+      expect(mockToastAdd).toHaveBeenCalledWith({
+        title: 'Save failed',
+        description: 'Failed to update assignee.',
+        color: 'error',
+      })
+      expect(wrapper.emitted('saved')).toHaveLength(1)
+    })
+
+    it('shows success toast when all PATCHes succeed', async () => {
+      const wrapper = mountEditor({
+        stepId: 'step-1',
+        currentAssignedTo: 'user-1',
+        currentLocation: 'Bay 1',
+      })
+
+      await wrapper.find('[data-testid="assignee-select"]').setValue('user-2')
+      await wrapper.find('[data-testid="location-input"]').setValue('Bay 3')
+      await wrapper.find('[data-testid="save-btn"]').trigger('click')
+      await flushPromises()
+
+      expect(mockToastAdd).toHaveBeenCalledWith({
+        title: 'Step updated',
+        description: 'Step properties saved successfully.',
+        color: 'success',
+      })
       expect(wrapper.emitted('saved')).toHaveLength(1)
     })
   })
