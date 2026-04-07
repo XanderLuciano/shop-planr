@@ -58,8 +58,10 @@ async function handleSave() {
 
   saving.value = true
   const failed: string[] = []
+  let attempted = 0
 
   if (assigneeChanged) {
+    attempted++
     try {
       await $fetch(`/api/steps/${props.stepId}/assign`, {
         method: 'PATCH',
@@ -71,6 +73,7 @@ async function handleSave() {
   }
 
   if (locationChanged) {
+    attempted++
     try {
       await $fetch(`/api/steps/${props.stepId}/config`, {
         method: 'PATCH',
@@ -83,7 +86,15 @@ async function handleSave() {
 
   saving.value = false
 
-  if (failed.length) {
+  if (failed.length === attempted) {
+    // Everything failed — nothing was saved
+    toast.add({
+      title: 'Save failed',
+      description: `Failed to update ${failed.join(' and ')}.`,
+      color: 'error',
+    })
+  } else if (failed.length) {
+    // Some succeeded, some failed — partial save
     toast.add({
       title: 'Partial save',
       description: `Failed to update ${failed.join(' and ')}. Other changes were saved.`,

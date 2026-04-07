@@ -104,8 +104,10 @@ const StepPropertiesEditor = defineComponent({
 
       saving.value = true
       const failed: string[] = []
+      let attempted = 0
 
       if (assigneeChanged) {
+        attempted++
         try {
           await mockFetch(`/api/steps/${props.stepId}/assign`, {
             method: 'PATCH',
@@ -117,6 +119,7 @@ const StepPropertiesEditor = defineComponent({
       }
 
       if (locationChanged) {
+        attempted++
         try {
           await mockFetch(`/api/steps/${props.stepId}/config`, {
             method: 'PATCH',
@@ -129,7 +132,13 @@ const StepPropertiesEditor = defineComponent({
 
       saving.value = false
 
-      if (failed.length) {
+      if (failed.length === attempted) {
+        mockToastAdd({
+          title: 'Save failed',
+          description: `Failed to update ${failed.join(' and ')}.`,
+          color: 'error',
+        })
+      } else if (failed.length) {
         mockToastAdd({
           title: 'Partial save',
           description: `Failed to update ${failed.join(' and ')}. Other changes were saved.`,
@@ -366,7 +375,7 @@ describe('StepPropertiesEditor', () => {
 
   // ── PATCH failure scenarios ──
   describe('PATCH failure handling', () => {
-    it('shows error toast when assignee PATCH fails and still emits saved', async () => {
+    it('shows "Partial save" when assignee fails but location succeeds', async () => {
       mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes('/assign')) return Promise.reject(new Error('Network error'))
         return Promise.resolve({})
@@ -391,7 +400,7 @@ describe('StepPropertiesEditor', () => {
       expect(wrapper.emitted('saved')).toHaveLength(1)
     })
 
-    it('shows error toast when location PATCH fails and still emits saved', async () => {
+    it('shows "Partial save" when location fails but assignee succeeds', async () => {
       mockFetch = vi.fn().mockImplementation((url: string) => {
         if (url.includes('/config')) return Promise.reject(new Error('Network error'))
         return Promise.resolve({})
@@ -416,7 +425,7 @@ describe('StepPropertiesEditor', () => {
       expect(wrapper.emitted('saved')).toHaveLength(1)
     })
 
-    it('shows combined error toast when both PATCHes fail and still emits saved', async () => {
+    it('shows "Save failed" when both PATCHes fail', async () => {
       mockFetch = vi.fn().mockRejectedValue(new Error('Network error'))
 
       const wrapper = mountEditor({
@@ -431,8 +440,30 @@ describe('StepPropertiesEditor', () => {
       await flushPromises()
 
       expect(mockToastAdd).toHaveBeenCalledWith({
-        title: 'Partial save',
-        description: 'Failed to update assignee and location. Other changes were saved.',
+        title: 'Save failed',
+        description: 'Failed to update assignee and location.',
+        color: 'error',
+      })
+      expect(wrapper.emitted('saved')).toHaveLength(1)
+    })
+
+    it('shows "Save failed" when single attempted PATCH fails', async () => {
+      mockFetch = vi.fn().mockRejectedValue(new Error('Network error'))
+
+      const wrapper = mountEditor({
+        stepId: 'step-1',
+        currentAssignedTo: 'user-1',
+        currentLocation: 'Bay 1',
+      })
+
+      // Only change assignee — single PATCH attempted, and it fails
+      await wrapper.find('[data-testid="assignee-select"]').setValue('user-2')
+      await wrapper.find('[data-testid="save-btn"]').trigger('click')
+      await flushPromises()
+
+      expect(mockToastAdd).toHaveBeenCalledWith({
+        title: 'Save failed',
+        description: 'Failed to update assignee.',
         color: 'error',
       })
       expect(wrapper.emitted('saved')).toHaveLength(1)
