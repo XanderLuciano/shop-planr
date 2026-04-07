@@ -354,4 +354,99 @@ describe('StepPropertiesEditor', () => {
       expect(wrapper.emitted('saved')).toHaveLength(1)
     })
   })
+
+  // ── PATCH failure scenarios ──
+  describe('PATCH failure handling', () => {
+    it('shows error toast when assignee PATCH fails and still emits saved', async () => {
+      mockFetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/assign')) return Promise.reject(new Error('Network error'))
+        return Promise.resolve({})
+      })
+
+      const wrapper = mountEditor({
+        stepId: 'step-1',
+        currentAssignedTo: 'user-1',
+        currentLocation: 'Bay 1',
+      })
+
+      await wrapper.find('[data-testid="assignee-select"]').setValue('user-2')
+      await wrapper.find('[data-testid="location-input"]').setValue('Bay 3')
+      await wrapper.find('[data-testid="save-btn"]').trigger('click')
+      await flushPromises()
+
+      expect(mockToastAdd).toHaveBeenCalledWith({
+        title: 'Partial save',
+        description: 'Failed to update assignee. Other changes were saved.',
+        color: 'error',
+      })
+      expect(wrapper.emitted('saved')).toHaveLength(1)
+    })
+
+    it('shows error toast when location PATCH fails and still emits saved', async () => {
+      mockFetch = vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/config')) return Promise.reject(new Error('Network error'))
+        return Promise.resolve({})
+      })
+
+      const wrapper = mountEditor({
+        stepId: 'step-1',
+        currentAssignedTo: 'user-1',
+        currentLocation: 'Bay 1',
+      })
+
+      await wrapper.find('[data-testid="assignee-select"]').setValue('user-2')
+      await wrapper.find('[data-testid="location-input"]').setValue('Bay 3')
+      await wrapper.find('[data-testid="save-btn"]').trigger('click')
+      await flushPromises()
+
+      expect(mockToastAdd).toHaveBeenCalledWith({
+        title: 'Partial save',
+        description: 'Failed to update location. Other changes were saved.',
+        color: 'error',
+      })
+      expect(wrapper.emitted('saved')).toHaveLength(1)
+    })
+
+    it('shows combined error toast when both PATCHes fail and still emits saved', async () => {
+      mockFetch = vi.fn().mockRejectedValue(new Error('Network error'))
+
+      const wrapper = mountEditor({
+        stepId: 'step-1',
+        currentAssignedTo: 'user-1',
+        currentLocation: 'Bay 1',
+      })
+
+      await wrapper.find('[data-testid="assignee-select"]').setValue('user-2')
+      await wrapper.find('[data-testid="location-input"]').setValue('Bay 3')
+      await wrapper.find('[data-testid="save-btn"]').trigger('click')
+      await flushPromises()
+
+      expect(mockToastAdd).toHaveBeenCalledWith({
+        title: 'Partial save',
+        description: 'Failed to update assignee and location. Other changes were saved.',
+        color: 'error',
+      })
+      expect(wrapper.emitted('saved')).toHaveLength(1)
+    })
+
+    it('shows success toast when all PATCHes succeed', async () => {
+      const wrapper = mountEditor({
+        stepId: 'step-1',
+        currentAssignedTo: 'user-1',
+        currentLocation: 'Bay 1',
+      })
+
+      await wrapper.find('[data-testid="assignee-select"]').setValue('user-2')
+      await wrapper.find('[data-testid="location-input"]').setValue('Bay 3')
+      await wrapper.find('[data-testid="save-btn"]').trigger('click')
+      await flushPromises()
+
+      expect(mockToastAdd).toHaveBeenCalledWith({
+        title: 'Step updated',
+        description: 'Step properties saved successfully.',
+        color: 'success',
+      })
+      expect(wrapper.emitted('saved')).toHaveLength(1)
+    })
+  })
 })
