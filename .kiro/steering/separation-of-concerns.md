@@ -9,8 +9,8 @@ When writing or reviewing code for SHOP_ERP, enforce these layer boundaries stri
 
 ## Layer Rules
 
-- **Components / Pages** (`app/components/`, `app/pages/`): UI rendering only. Call composable methods. Never import from `server/`, never contain business logic, never call `$fetch` directly.
-- **Composables** (`app/composables/`): Thin API clients. Call `$fetch` to API routes, manage reactive UI state (loading, error, data refs). Never validate domain rules, never compute derived domain state, never orchestrate multi-entity operations.
+- **Components / Pages** (`app/components/`, `app/pages/`): UI rendering only. Call composable methods. Never import from `server/`, never contain business logic, never call `$fetch` or `$api` directly.
+- **Composables** (`app/composables/`): Thin API clients. Use `const $api = useAuthFetch()` for authenticated API calls, manage reactive UI state (loading, error, data refs). Never validate domain rules, never compute derived domain state, never orchestrate multi-entity operations.
 - **API Routes** (`server/api/`): Parse request input, call a service method, return the result. Never contain business logic, never call repositories directly, never orchestrate cross-entity operations.
 - **Services** (`server/services/`): ALL business logic lives here. Validation, domain invariants, computed state, cross-entity orchestration, audit trail recording. Services receive repository instances via dependency injection. Services never import Vue/Nuxt client code and never know about HTTP.
 - **Repositories** (`server/repositories/`): CRUD and queries only. No business logic, no domain rules, no calling other repositories.
@@ -19,9 +19,11 @@ When writing or reviewing code for SHOP_ERP, enforce these layer boundaries stri
 
 - A composable computing `(completed / goalQuantity) * 100` → move to service
 - An API route checking `if (goalQuantity <= 0)` → move to service
-- A component calling `$fetch` directly instead of using a composable → use composable
+- A component calling `$fetch` or `$api` directly instead of using a composable → use composable
+- A composable using bare `$fetch` instead of `useAuthFetch()` → use `const $api = useAuthFetch()`
 - A repository enforcing "serial must advance sequentially" → move to service
 - An API route calling `repos.jobs.create()` directly → call service instead
+- An API route using `readBody()` without Zod validation → add `parseBody(event, schema)`
 
 ## Migration Rules
 

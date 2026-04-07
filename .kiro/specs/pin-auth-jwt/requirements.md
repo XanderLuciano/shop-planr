@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This feature replaces Shop Planr's simple user-selector dropdown with a secure PIN-based authentication system backed by JWT session management. Users authenticate via a fullscreen avatar picker and 4-digit PIN entry. The server validates PINs against bcrypt hashes, issues ES256-signed JWTs, and enforces authentication on all API requests via Nitro middleware. A multi-tier rate limiter protects against brute-force attacks. The existing `useUsers()` composable is retired in favor of a new `useAuth()` composable that serves as the single source of truth for authenticated identity across the entire client application.
+This feature replaces Shop Planr's simple user-selector dropdown with a secure PIN-based authentication system backed by JWT session management. Users authenticate via a fullscreen avatar picker and 4-digit PIN entry. The server validates PINs against bcrypt hashes, issues ES256-signed JWTs, and enforces authentication on all API requests via Nitro middleware (with cookie fallback for SSR requests). A multi-tier rate limiter protects against brute-force attacks. The existing `useUsers()` composable is retired in favor of a new `useAuth()` composable that serves as the single source of truth for authenticated identity across the entire client application, using SSR-safe cookies (`useCookie()`) for token persistence and `useState()` for reactive state. A `PublicUser` type ensures `pinHash` is never sent to the client, exposing only a `hasPin` boolean.
 
 ## Glossary
 
@@ -13,11 +13,12 @@ This feature replaces Shop Planr's simple user-selector dropdown with a secure P
 - **Auth_Service**: The server-side service responsible for PIN validation, JWT signing, JWT verification, and token refresh
 - **Auth_Middleware**: The Nitro server middleware that reads the Authorization header, decodes the JWT, and attaches user context to the request event
 - **Rate_Limit_Middleware**: The Nitro server middleware that enforces multi-tier sliding-window rate limits on all incoming requests
-- **Auth_Plugin**: The Nuxt client plugin that creates an `ofetch` instance with automatic `Authorization: Bearer <token>` header injection
-- **Auth_Composable**: The `useAuth()` Vue composable that provides reactive authenticated user state, login/logout/switch actions, and JWT management
+- **Auth_Plugin**: The Nuxt client plugin that creates a `$fetch` instance with automatic `Authorization: Bearer <token>` header injection on `/api/` routes
+- **Auth_Composable**: The `useAuth()` Vue composable that provides reactive authenticated user state, login/logout/switch actions, and JWT management via SSR-safe cookies and `useState()`
 - **Key_Store**: The database storage for the ES256 (ECDSA P-256) key pair used to sign and verify JWTs
 - **Refresh_Token_Endpoint**: The server API endpoint that issues a new JWT before the current token expires
 - **User_Menu**: The header dropdown replacing the current UserSelector, showing avatar + name with "Switch User" and "Log Out" options
+- **Public_User**: The `PublicUser` type that strips `pinHash` from user data sent to the client, exposing a `hasPin` boolean instead for the Auth_Overlay to determine which flow to show
 
 ## Requirements
 
@@ -49,7 +50,7 @@ This feature replaces Shop Planr's simple user-selector dropdown with a secure P
 
 #### Acceptance Criteria
 
-1. WHEN a user with a NULL `pin_hash` selects their avatar in the Auth_Overlay, THE Auth_Overlay SHALL display the PIN_Setup_Flow instead of the PIN_Entry screen
+1. WHEN a user with a NULL `pin_hash` (i.e., `hasPin === false` on the PublicUser) selects their avatar in the Auth_Overlay, THE Auth_Overlay SHALL display the PIN_Setup_Flow instead of the PIN_Entry screen
 2. THE PIN_Setup_Flow SHALL require the user to enter a 4-digit numeric PIN and then confirm the PIN by entering it a second time
 3. WHEN the two PIN entries in the PIN_Setup_Flow match, THE Auth_Service SHALL hash the PIN using bcrypt and store the hash in the `pin_hash` column for that user
 4. WHEN the two PIN entries in the PIN_Setup_Flow do not match, THE Auth_Overlay SHALL display an error message and allow the user to retry
@@ -62,7 +63,7 @@ This feature replaces Shop Planr's simple user-selector dropdown with a secure P
 
 #### Acceptance Criteria
 
-1. WHEN a user with a non-NULL `pin_hash` selects their avatar in the Auth_Overlay, THE Auth_Overlay SHALL display the PIN_Entry screen
+1. WHEN a user with a non-NULL `pin_hash` (i.e., `hasPin === true` on the PublicUser) selects their avatar in the Auth_Overlay, THE Auth_Overlay SHALL display the PIN_Entry screen
 2. WHEN the user submits a PIN, THE Auth_Service SHALL validate the PIN against the stored bcrypt hash
 3. WHEN the PIN is valid, THE Auth_Service SHALL issue a signed JWT and return it to the client
 4. WHEN the PIN is invalid, THE Auth_Service SHALL return a 401 Unauthorized response without revealing whether the username or PIN was incorrect
@@ -85,11 +86,12 @@ This feature replaces Shop Planr's simple user-selector dropdown with a secure P
 
 #### Acceptance Criteria
 
-1. THE Auth_Middleware SHALL read the `Authorization` header from every incoming API request and extract the Bearer token
-2. WHEN a valid JWT is present, THE Auth_Middleware SHALL decode the token, verify the signature using the stored public key, and attach the user context to the event
-3. WHEN no Authorization header is present or the token is invalid, THE Auth_Middleware SHALL return a 401 Unauthorized response for protected routes
-4. THE Auth_Middleware SHALL exempt the login endpoint, the PIN setup endpoint, and the user list endpoint from authentication requirements
+1. THE Auth_Middleware SHALL read the `Authorization` header from every incoming API request and extract the Bearer token, falling back to the `shop-planr-auth-token` cookie when no Bearer header is present (to support SSR requests)
+2. WHEN a valid JWT is present (from header or cookie), THE Auth_Middleware SHALL decode the token, verify the signature using the stored public key, and attach the user context to the event
+3. WHEN no Authorization header or cookie token is present, or the token is invalid, THE Auth_Middleware SHALL return a 401 Unauthorized response for protected routes
+4. THE Auth_Middleware SHALL exempt the login endpoint, the PIN setup endpoint, the user list endpoint, and the refresh endpoint from authentication requirements
 5. WHEN a JWT has expired, THE Auth_Middleware SHALL return a 401 Unauthorized response
+6. THE Auth_Middleware SHALL skip non-API routes and Nuxt internal routes (`/api/_`)
 
 ### Requirement 7: Silent Token Refresh
 
@@ -109,11 +111,13 @@ This feature replaces Shop Planr's simple user-selector dropdown with a secure P
 #### Acceptance Criteria
 
 1. THE Auth_Composable SHALL provide the following reactive state: `authenticatedUser`, `isAuthenticated`, `isAdmin`, `token`, and the following actions: `login()`, `logout()`, `switchUser()`
-2. THE Auth_Composable SHALL store the JWT in `localStorage` for persistence across page loads
-3. WHEN `logout()` is called, THE Auth_Composable SHALL remove the JWT from `localStorage` and reset all reactive state
-4. WHEN `switchUser()` is called, THE Auth_Composable SHALL remove the JWT from `localStorage` and display the Auth_Overlay
+2. THE Auth_Composable SHALL store the JWT in an SSR-safe cookie (`shop-planr-auth-token`) via `useCookie()` for persistence across page loads and SSR requests, with a `maxAge` of 24 hours, `sameSite: 'lax'`, and `path: '/'`
+3. WHEN `logout()` is called, THE Auth_Composable SHALL remove the JWT cookie and reset all reactive state
+4. WHEN `switchUser()` is called, THE Auth_Composable SHALL remove the JWT cookie and display the Auth_Overlay
 5. THE Auth_Composable SHALL replace the existing `useUsers()` composable entirely as the source of authenticated user identity
-6. WHEN the application loads and a JWT exists in `localStorage`, THE Auth_Composable SHALL validate the token expiry and restore the session if the token is still valid
+6. WHEN the application loads and a JWT exists in the cookie, THE Auth_Composable SHALL validate the token expiry and restore the session if the token is still valid
+7. THE Auth_Composable SHALL use `useState()` for all reactive state to prevent cross-request leakage in SSR
+8. AFTER a successful `login()` or `setupPin()`, THE Auth_Composable SHALL call `window.location.reload()` on the client to re-run all page data fetches with the new token
 
 ### Requirement 9: Automatic Authorization Header Injection
 
@@ -121,9 +125,10 @@ This feature replaces Shop Planr's simple user-selector dropdown with a secure P
 
 #### Acceptance Criteria
 
-1. THE Auth_Plugin SHALL create an `ofetch` instance using `ofetch.create()` with an `onRequest` hook that injects the `Authorization: Bearer <token>` header
+1. THE Auth_Plugin SHALL create a `$fetch` instance using `$fetch.create()` with an `onRequest` hook that injects the `Authorization: Bearer <token>` header only on `/api/` routes
 2. THE Auth_Plugin SHALL read the current token from the Auth_Composable on each request
-3. WHEN no token is available, THE Auth_Plugin SHALL send the request without an Authorization header
+3. WHEN no token is available or the request is not to an `/api/` route, THE Auth_Plugin SHALL send the request without an Authorization header
+4. THE Auth_Plugin SHALL be consumed via a `useAuthFetch()` composable (auto-imported) that returns the `$authFetch` instance
 
 ### Requirement 10: Fullscreen Auth Overlay UI
 
@@ -132,7 +137,7 @@ This feature replaces Shop Planr's simple user-selector dropdown with a secure P
 #### Acceptance Criteria
 
 1. WHEN no valid JWT session exists, THE Auth_Overlay SHALL display as a fullscreen overlay with a dimmed background, blocking access to the application
-2. THE Avatar_Picker SHALL display all active users as circular avatars with generated initials and deterministic background colors, with the user's first name displayed underneath
+2. THE Avatar_Picker SHALL display all active users (as `PublicUser` objects) as circular avatars with generated initials and deterministic background colors, with the user's first name displayed underneath
 3. WHEN a user taps an avatar, THE Auth_Overlay SHALL animate a transition from the Avatar_Picker to the PIN_Entry or PIN_Setup_Flow screen for that user
 4. THE Auth_Overlay SHALL provide a back button on the PIN_Entry and PIN_Setup_Flow screens to return to the Avatar_Picker
 
@@ -144,8 +149,8 @@ This feature replaces Shop Planr's simple user-selector dropdown with a secure P
 
 1. WHEN a user is authenticated, THE User_Menu SHALL display the user's avatar (generated initials with deterministic color) and display name in the header
 2. THE User_Menu SHALL provide a dropdown with "Switch User" and "Log Out" menu items
-3. WHEN "Switch User" is selected, THE Auth_Composable SHALL clear the JWT from `localStorage` and display the Auth_Overlay
-4. WHEN "Log Out" is selected, THE Auth_Composable SHALL clear the JWT from `localStorage` and display the Auth_Overlay
+3. WHEN "Switch User" is selected, THE Auth_Composable SHALL clear the JWT cookie and display the Auth_Overlay
+4. WHEN "Log Out" is selected, THE Auth_Composable SHALL clear the JWT cookie and display the Auth_Overlay
 5. THE User_Menu SHALL replace the existing `UserSelector` component in the default layout header
 
 ### Requirement 12: Multi-Tier Rate Limiting
@@ -188,7 +193,7 @@ This feature replaces Shop Planr's simple user-selector dropdown with a secure P
 
 #### Acceptance Criteria
 
-1. THE Auth_Composable SHALL provide a `users` list (fetched from the server) for components that need to display user lists (e.g., WorkQueueFilterBar, Settings page)
+1. THE Auth_Composable SHALL provide a `users` list (fetched from the server as `PublicUser[]`) for components that need to display user lists (e.g., WorkQueueFilterBar, Settings page)
 2. WHEN a component previously called `useUsers().selectedUser`, THE component SHALL instead use `Auth_Composable.authenticatedUser`
 3. WHEN a component previously called `useUsers().requireUser()`, THE component SHALL instead use `Auth_Composable.authenticatedUser` (which is guaranteed non-null when authenticated)
 4. THE `useUsers()` composable file SHALL be removed after all references are migrated to the Auth_Composable

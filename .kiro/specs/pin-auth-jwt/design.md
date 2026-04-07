@@ -6,7 +6,7 @@ This feature replaces Shop Planr's unauthenticated user-selector dropdown with a
 
 - **Database**: Migration 012 adds `pin_hash` column to `users` and a new `crypto_keys` table for the ES256 key pair.
 - **Server**: A new `authService` handles PIN hashing (bcrypt), JWT signing/verification (jose), key pair lifecycle, and admin PIN reset. Two Nitro server middlewares enforce JWT validation and multi-tier rate limiting (via `rate-limiter-flexible`) on all API requests.
-- **Client**: A `useAuth()` composable replaces `useUsers()` as the single source of truth for authenticated identity. An `ofetch`-based plugin auto-injects the Bearer token. A fullscreen Auth Overlay with avatar picker + PIN entry gates all access when no valid session exists. A header User Menu replaces the UserSelector dropdown.
+- **Client**: A `useAuth()` composable replaces `useUsers()` as the single source of truth for authenticated identity, using `useCookie()` for SSR-safe token persistence and `useState()` for reactive state. An `$fetch.create()`-based plugin auto-injects the Bearer token on `/api/` requests. A fullscreen Auth Overlay (Teleported to `<body>`) with avatar picker + PIN entry gates all access when no valid session exists. A header User Menu replaces the UserSelector dropdown. After login, `window.location.reload()` re-runs all page data fetches with the new token. A `PublicUser` type strips `pinHash` from API responses, exposing only a `hasPin` boolean.
 
 ### Key Design Decisions
 
@@ -18,6 +18,9 @@ This feature replaces Shop Planr's unauthenticated user-selector dropdown with a
 | Key pair in DB (not env vars) | Zero-config deployment — auto-generated on first boot |
 | `rate-limiter-flexible` for rate limiting | Battle-tested library (15k+ GitHub stars), `RateLimiterMemory` for in-memory sliding windows, multi-limiter support via multiple instances, built-in `msBeforeNext` for Retry-After headers, zero production dependencies |
 | 24h JWT expiry + 80% refresh | Long enough for full shifts, silent refresh prevents interruption |
+| `useCookie()` for token storage | SSR-safe — cookie available on both server and client, replaces localStorage |
+| `useState()` for reactive state | SSR-safe singleton refs — no cross-request leakage, shared across all `useAuth()` callers |
+| `PublicUser` type for API responses | Strips `pinHash` from user data sent to client, exposes `hasPin` boolean instead |
 | `useAuth()` replaces `useUsers()` | Single source of truth — no split identity state |
 
 ## Architecture
@@ -61,10 +64,10 @@ graph TD
 
 ### Request Flow
 
-1. Client makes API request via `$authFetch` (ofetch instance from Auth Plugin)
-2. Auth Plugin injects `Authorization: Bearer <token>` header
+1. Client makes API request via `$authFetch` (from Auth Plugin, accessed via `useAuthFetch()` composable)
+2. Auth Plugin injects `Authorization: Bearer <token>` header on `/api/` requests when a token is present
 3. Rate Limit Middleware checks sliding-window counters per IP — returns 429 if exceeded
-4. Auth Middleware extracts and verifies JWT — attaches user context to event or returns 401
+4. Auth Middleware extracts JWT from Bearer header, falling back to `shop-planr-auth-token` cookie for SSR requests — attaches user context to event or returns 401
 5. API route handler executes with authenticated user available via `event.context.auth`
 
 ### Middleware Order
@@ -129,7 +132,9 @@ export interface CryptoKeyRepository {
 #### Auth Middleware (`server/middleware/02.auth.ts`)
 
 - Reads `Authorization: Bearer <token>` from request headers
+- Falls back to `shop-planr-auth-token` cookie when no Bearer header is present (enables SSR requests)
 - Exempt routes: `POST /api/auth/login`, `POST /api/auth/setup-pin`, `GET /api/users`, `POST /api/auth/refresh`
+- Skips non-API routes and Nuxt internal routes (`/api/_`)
 - On valid token: sets `event.context.auth = { user: JwtPayload }`
 - On invalid/missing/expired: throws 401 via `createError()`
 
@@ -159,27 +164,54 @@ export interface CryptoKeyRepository {
 
 ```typescript
 export function useAuth() {
-  // Reactive state
-  const authenticatedUser: Ref<ShopUser | null>
+  // SSR-safe token storage via cookie
+  const tokenCookie = useCookie('shop-planr-auth-token', {
+    maxAge: 60 * 60 * 24,
+    sameSite: 'lax',
+    path: '/',
+  })
+
+  // SSR-safe singleton refs via useState()
+  const authenticatedUser: Ref<ShopUser | null>   // useState('auth:user')
+  const users: Ref<PublicUser[]>                   // useState('auth:users')
+  const showOverlay: Ref<boolean>                  // useState('auth:overlay')
+  const initialized: Ref<boolean>                  // useState('auth:init')
+
+  // Computed
   const isAuthenticated: ComputedRef<boolean>
   const isAdmin: ComputedRef<boolean>
-  const token: Ref<string | null>
-  const users: Ref<ShopUser[]>
-  const showOverlay: Ref<boolean>
+  const token: ComputedRef<string | null>          // reads from tokenCookie
 
   // Actions
-  async function login(username: string, pin: string): Promise<void>
-  async function setupPin(userId: string, pin: string): Promise<void>
+  async function login(username: string, pin: string): Promise<void>   // + window.location.reload()
+  async function setupPin(userId: string, pin: string): Promise<void>  // + window.location.reload()
   function logout(): void
   function switchUser(): void
   async function fetchUsers(): Promise<void>
 
   // Internal
-  function scheduleRefresh(): void          // 80% of token lifetime
-  function restoreSession(): void           // Check localStorage on load
-  function decodeToken(jwt: string): JwtPayload
+  function scheduleRefresh(payload: JwtPayload): void  // 80% of token lifetime, client-only
+  function setSession(jwt: string): void               // decode + store cookie + set state
+  function clearSession(): void                        // clear cookie + reset state + show overlay
 }
 ```
+
+Key implementation details:
+- Uses `useCookie()` instead of `localStorage` for SSR-safe token persistence
+- Uses `useState()` for all reactive state to prevent cross-request leakage in SSR
+- Session restoration happens once per SSR request / client app load via `initialized` flag
+- After `login()` and `setupPin()`, calls `window.location.reload()` on the client to re-run all page data fetches with the new token
+- Cannot use `useAuthFetch()` internally (circular dependency with auth plugin) — uses `$fetch` directly for auth endpoints
+
+#### useAuthFetch Composable (`app/composables/useAuthFetch.ts`)
+
+```typescript
+export function useAuthFetch(): $Fetch {
+  return useNuxtApp().$authFetch as $Fetch
+}
+```
+
+Convenience wrapper that returns the `$authFetch` instance provided by the auth plugin. Used by all composables and components that need authenticated API calls.
 
 #### Auth Plugin (`app/plugins/auth.ts`)
 
@@ -187,13 +219,13 @@ export function useAuth() {
 export default defineNuxtPlugin(() => {
   const { token } = useAuth()
 
-  const authFetch = ofetch.create({
-    onRequest({ options }) {
-      if (token.value) {
-        options.headers = {
-          ...options.headers,
-          Authorization: `Bearer ${token.value}`,
-        }
+  const authFetch = $fetch.create({
+    onRequest({ options, request }) {
+      const url = typeof request === 'string' ? request : ''
+      if (url.startsWith('/api/') && token.value) {
+        const headers = new Headers(options.headers as HeadersInit | undefined)
+        headers.set('Authorization', `Bearer ${token.value}`)
+        options.headers = headers
       }
     },
   })
@@ -201,6 +233,12 @@ export default defineNuxtPlugin(() => {
   return { provide: { authFetch } }
 })
 ```
+
+Key implementation details:
+- Uses `$fetch.create()` (Nuxt's global `$fetch`) rather than importing `ofetch.create()` directly
+- Only injects the Authorization header on `/api/` routes (avoids leaking tokens to external URLs)
+- Uses `Headers` constructor for proper header merging
+- Accessed via `useAuthFetch()` composable (auto-imported) rather than `useNuxtApp().$authFetch` directly
 
 #### Auth Overlay (`app/components/AuthOverlay.vue`)
 
@@ -226,7 +264,7 @@ export default defineNuxtPlugin(() => {
 | `/api/auth/setup-pin` | POST | No | Set initial PIN, return JWT |
 | `/api/auth/refresh` | POST | Yes | Refresh JWT before expiry |
 | `/api/auth/reset-pin` | POST | Yes (admin) | Admin resets another user's PIN |
-| `/api/users` | GET | No | List active users (for avatar picker) |
+| `/api/users` | GET | No | List active users as `PublicUser[]` (for avatar picker) |
 
 ### JWT Payload Structure
 
@@ -274,6 +312,32 @@ CREATE TABLE crypto_keys (
 export interface ShopUser {
   // ... existing fields ...
   pinHash?: string | null  // bcrypt hash of 4-digit PIN; null = needs setup
+}
+
+/** Public-facing user shape — strips pinHash, exposes hasPin boolean instead. */
+export interface PublicUser {
+  id: string
+  username: string
+  displayName: string
+  isAdmin: boolean
+  department?: string
+  active: boolean
+  createdAt: string
+  hasPin: boolean
+}
+
+/** Convert a ShopUser to a PublicUser, stripping the pinHash. */
+export function toPublicUser(user: ShopUser): PublicUser {
+  return {
+    id: user.id,
+    username: user.username,
+    displayName: user.displayName,
+    isAdmin: user.isAdmin,
+    department: user.department,
+    active: user.active,
+    createdAt: user.createdAt,
+    hasPin: !!user.pinHash,
+  }
 }
 
 // New type
@@ -385,30 +449,30 @@ The Auth Overlay component manages a state machine with four primary screens. Al
 
 ```mermaid
 stateDiagram-v2
-    [*] --> AvatarPicker: No valid JWT in localStorage
+    [*] --> AvatarPicker: No valid JWT in cookie
 
-    AvatarPicker --> PinEntry: User taps avatar\n(user.pinHash !== null)
-    AvatarPicker --> PinSetup: User taps avatar\n(user.pinHash === null)
+    AvatarPicker --> PinEntry: User taps avatar\n(user.hasPin === true)
+    AvatarPicker --> PinSetup: User taps avatar\n(user.hasPin === false)
 
     PinEntry --> AvatarPicker: Back button
     PinEntry --> PinEntry: Invalid PIN (401)\nShow error, clear input
-    PinEntry --> Authenticated: Valid PIN\nJWT received + stored
+    PinEntry --> Authenticated: Valid PIN\nJWT received + stored in cookie
 
     PinSetup --> AvatarPicker: Back button
     PinSetup --> PinSetupConfirm: First PIN entered\n(4 digits)
     PinSetupConfirm --> PinSetup: PINs don't match\nShow error, reset both
     PinSetupConfirm --> Authenticated: PINs match\nPIN saved + JWT received
 
-    Authenticated --> [*]: Overlay hidden\nApp accessible
+    Authenticated --> [*]: window.location.reload()\nApp accessible with new token
 
     state Authenticated {
         [*] --> AppActive
         AppActive --> TokenRefresh: 80% of JWT lifetime elapsed
-        TokenRefresh --> AppActive: Refresh success\nNew JWT stored
+        TokenRefresh --> AppActive: Refresh success\nNew JWT stored in cookie
         TokenRefresh --> SessionExpired: Refresh failed\n(401 or network error)
     }
 
-    SessionExpired --> AvatarPicker: Clear JWT + state\nShow overlay
+    SessionExpired --> AvatarPicker: Clear cookie + state\nShow overlay
 ```
 
 ### Screen Layouts
@@ -546,7 +610,7 @@ sequenceDiagram
     participant AS as Auth Service
     participant DB as SQLite
 
-    Note over AO: App loads, no JWT in localStorage
+    Note over AO: App loads, no JWT in cookie
     AO->>AC: Check isAuthenticated
     AC-->>AO: false → show overlay
 
@@ -555,10 +619,10 @@ sequenceDiagram
     RL->>AM: Pass (under limit)
     AM->>AS: Exempt route, pass through
     AS->>DB: SELECT active users
-    DB-->>AO: User list (with pinHash null/non-null flag)
+    DB-->>AO: PublicUser list (with hasPin boolean flag)
 
-    U->>AO: Taps avatar (user has PIN)
-    AO->>AO: Animate to PIN Entry
+    U->>AO: Taps avatar (user.hasPin === true)
+    AO->>AO: Show PIN Entry screen
 
     U->>AO: Enters 4-digit PIN
     AO->>AP: POST /api/auth/login {username, pin}
@@ -570,11 +634,11 @@ sequenceDiagram
     alt PIN valid
         AS->>AS: signToken(user) via jose ES256
         AS-->>AO: { token: "eyJ..." }
-        AO->>AC: setToken(jwt)
+        AO->>AC: setSession(jwt)
         AC->>AC: Decode payload → set authenticatedUser
-        AC->>AC: Store in localStorage
+        AC->>AC: Store in cookie (useCookie)
         AC->>AC: scheduleRefresh() at 80% lifetime
-        AO->>AO: Hide overlay → app accessible
+        AC->>AC: window.location.reload() to re-run page data fetches
     else PIN invalid
         AS-->>AO: 401 "Invalid credentials"
         AO->>AO: Show error, clear PIN input
@@ -591,8 +655,8 @@ sequenceDiagram
     participant AS as Auth Service
     participant DB as SQLite
 
-    U->>AO: Taps avatar (user has NO PIN)
-    AO->>AO: Animate to PIN Setup
+    U->>AO: Taps avatar (user.hasPin === false)
+    AO->>AO: Show PIN Setup screen
 
     U->>AO: Enters PIN (4 digits)
     AO->>AO: Show confirm input
@@ -604,8 +668,8 @@ sequenceDiagram
         AS->>DB: UPDATE users SET pin_hash = ? WHERE id = ?
         AS->>AS: signToken(user)
         AS-->>AO: { token: "eyJ..." }
-        AO->>AC: setToken(jwt)
-        AO->>AO: Hide overlay → app accessible
+        AO->>AC: setSession(jwt)
+        AC->>AC: Store in cookie + window.location.reload()
     else PINs don't match
         AO->>AO: Show error, clear both inputs
     end
@@ -620,17 +684,16 @@ sequenceDiagram
     participant AS as Auth Service
 
     Note over AC: Timer fires at 80% of JWT lifetime (~19.2 hours)
-    AC->>AP: POST /api/auth/refresh (with current JWT)
+    AC->>AP: POST /api/auth/refresh (with current JWT from cookie)
     AP->>AP: Inject Authorization header
     alt Refresh success
         AS->>AS: Verify current token
         AS->>AS: Sign new token (fresh 24h expiry)
         AS-->>AC: { token: "eyJ..." }
-        AC->>AC: Replace token in state + localStorage
+        AC->>AC: Replace token in cookie + update state
         AC->>AC: scheduleRefresh() for new token
     else Refresh failed (401 / network)
-        AC->>AC: Clear token + user state
-        AC->>AC: Remove from localStorage
+        AC->>AC: Clear cookie + user state
         AC->>AC: showOverlay = true
     end
 ```
@@ -693,21 +756,27 @@ sequenceDiagram
 ```
 app.vue
 └── NuxtLayout (default.vue)
-    ├── AuthOverlay.vue                    ← NEW: fullscreen gate
-    │   ├── AvatarPicker.vue              ← NEW: user grid
-    │   │   └── UserAvatar.vue            ← NEW: initials circle (reusable)
-    │   ├── PinEntry.vue                  ← NEW: 4-digit masked input
-    │   └── PinSetup.vue                  ← NEW: enter + confirm flow
-    ├── UDashboardNavbar
-    │   └── UserMenu.vue                  ← NEW: replaces UserSelector.vue
-    │       └── UserAvatar.vue            ← reused from overlay
+    ├── AuthOverlay.vue (Teleported to body)    ← NEW: fullscreen gate
+    │   ├── AvatarPicker.vue                    ← NEW: user grid
+    │   │   └── UserAvatar.vue                  ← NEW: initials circle (reusable)
+    │   ├── PinEntry.vue                        ← NEW: 4-digit masked input
+    │   └── PinSetup.vue                        ← NEW: enter + confirm flow
+    ├── UDashboardSidebar (collapsible, resizable)
+    │   ├── UNavigationMenu (nav items)
+    │   └── Footer links (API Docs, Report Issue)
+    ├── UDashboardPanel
+    │   └── UDashboardNavbar
+    │       ├── left: BarcodeInput
+    │       └── right: UColorModeButton + UserMenu.vue  ← NEW: replaces UserSelector.vue
+    │           └── UserAvatar.vue                       ← reused from overlay
     └── <slot /> (page content)
 ```
 
 - `UserAvatar.vue` is a shared component used in both the overlay and the header menu
-- `AuthOverlay.vue` manages the state machine and renders the appropriate sub-component
-- The overlay is rendered inside `default.vue` layout, above the dashboard content
-- When `showOverlay` is true, the overlay covers everything with `position: fixed; inset: 0; z-index: 50`
+- `AuthOverlay.vue` is Teleported to `<body>` and manages the state machine, rendering the appropriate sub-component
+- The overlay renders via `<Teleport to="body">` with `position: fixed; inset: 0; z-index: 50`
+- Layout uses `UDashboardSidebar` (collapsible/resizable) with `UDashboardPanel` for the main content area
+- `UserMenu` sits in the navbar's right slot alongside `UColorModeButton`
 
 ## Correctness Properties
 
@@ -757,7 +826,7 @@ app.vue
 
 ### Property 8: Logout and switch clear token and state
 
-*For any* authenticated session (with a token in localStorage and a non-null authenticatedUser), calling either `logout()` or `switchUser()` should result in: (a) localStorage no longer containing the token key, (b) `authenticatedUser` being null, and (c) `isAuthenticated` being false.
+*For any* authenticated session (with a token in the cookie and a non-null authenticatedUser), calling either `logout()` or `switchUser()` should result in: (a) the cookie no longer containing the token, (b) `authenticatedUser` being null, and (c) `isAuthenticated` being false.
 
 **Validates: Requirements 8.3, 8.4, 11.3, 11.4**
 
