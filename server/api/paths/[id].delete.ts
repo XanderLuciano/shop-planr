@@ -1,9 +1,7 @@
-import { deletePathSchema } from '../../schemas/pathSchemas'
-
 export default defineApiHandler(async (event) => {
   const id = getRouterParam(event, 'id')!
-  const body = await parseBody(event, deletePathSchema)
+  const userId = getAuthUserId(event)
   const { pathService } = getServices()
-  const result = pathService.deletePath(id, body.userId)
+  const result = pathService.deletePath(id, userId)
   return { success: true, ...result }
 })

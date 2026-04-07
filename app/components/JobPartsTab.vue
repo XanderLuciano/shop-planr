@@ -94,11 +94,9 @@ function onScrapped() {
 }
 
 async function handleQuickAdvance(partId: string) {
-  const { operatorId } = useOperatorIdentity()
-  if (!operatorId.value) return
   try {
     const { advancePart } = useParts()
-    await advancePart(partId, operatorId.value)
+    await advancePart(partId)
     await loadParts()
   } catch {
     // silent

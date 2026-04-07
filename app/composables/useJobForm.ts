@@ -293,7 +293,7 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
 
     // Deletes first
     for (const path of changes.toDelete) {
-      await deletePath(path.id, authenticatedUser.value.id)
+      await deletePath(path.id)
     }
 
     // Then updates

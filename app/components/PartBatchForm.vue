@@ -49,8 +49,6 @@ async function onSubmit() {
     return
   }
 
-  const userId = authenticatedUser.value.id
-
   saving.value = true
   try {
     const parts = await batchCreateParts({
@@ -58,7 +56,6 @@ async function onSubmit() {
       pathId: props.pathId,
       quantity: quantity.value,
       certId: selectedOrUndefined(selectedCertId.value),
-      userId,
     })
     quantity.value = 1
     selectedCertId.value = SELECT_NONE

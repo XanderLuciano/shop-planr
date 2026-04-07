@@ -104,7 +104,7 @@ export function useWorkQueueFilters() {
   function syncToUrl(): void {
     const query: Record<string, string | (string | null)[]> = {}
 
-    // Preserve non-filter query params (e.g. operator)
+    // Preserve non-filter query params
     for (const [key, value] of Object.entries(route.query)) {
       if (!(FILTER_URL_KEYS as readonly string[]).includes(key)) {
         query[key] = value as string

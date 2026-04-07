@@ -12,7 +12,6 @@ const emit = defineEmits<{
 }>()
 
 const { scrapPart, loading, error } = useLifecycle()
-const { operatorId } = useOperatorIdentity()
 
 const scrapReasons: { label: string, value: ScrapReason | SelectNone, disabled?: boolean }[] = [
   { label: 'Select a reason...', value: SELECT_NONE, disabled: true },
@@ -53,16 +52,11 @@ async function handleConfirm() {
     validationError.value = 'Explanation is required when reason is "Other"'
     return
   }
-  if (!operatorId.value) {
-    validationError.value = 'No operator selected'
-    return
-  }
 
   try {
     await scrapPart(props.partId, {
       reason: selectedReason.value,
       explanation: selectedReason.value === 'other' ? explanation.value.trim() : undefined,
-      userId: operatorId.value,
     })
     resetForm()
     isOpen.value = false

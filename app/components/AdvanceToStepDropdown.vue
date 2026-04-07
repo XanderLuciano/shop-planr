@@ -12,7 +12,6 @@ const emit = defineEmits<{
 }>()
 
 const { advanceToStep, loading, error } = useLifecycle()
-const { operatorId } = useOperatorIdentity()
 
 // Find the current step to determine its order
 const currentStep = computed(() =>
@@ -51,10 +50,6 @@ const validationError = ref<string | null>(null)
 
 async function handleAdvance() {
   validationError.value = null
-  if (!operatorId.value) {
-    validationError.value = 'No operator selected'
-    return
-  }
   if (!selectedStepId.value) {
     validationError.value = 'No target step selected'
     return
@@ -63,7 +58,6 @@ async function handleAdvance() {
   try {
     await advanceToStep(props.partId, {
       targetStepId: selectedStepId.value,
-      userId: operatorId.value,
     })
     emit('advanced')
   } catch {

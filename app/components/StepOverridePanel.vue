@@ -12,7 +12,6 @@ const emit = defineEmits<{
 }>()
 
 const { createStepOverride, reverseStepOverride, loading, error } = useLifecycle()
-const { operatorId } = useOperatorIdentity()
 
 const selectedParts = ref<string[]>([])
 const selectedStepId = ref<string | SelectNone>(SELECT_NONE)
@@ -54,17 +53,12 @@ async function handleCreate() {
     validationError.value = 'Reason is required'
     return
   }
-  if (!operatorId.value) {
-    validationError.value = 'No operator selected'
-    return
-  }
 
   try {
     await createStepOverride(selectedParts.value[0]!, {
       partIds: selectedParts.value,
       stepId: selectedStepId.value,
       reason: reason.value.trim(),
-      userId: operatorId.value,
     })
     selectedParts.value = []
     selectedStepId.value = SELECT_NONE

@@ -5,8 +5,8 @@ export default defineApiHandler(async (event) => {
     stepId: string
     partIds: string[]
     text: string
-    userId: string
   }>(event)
+  const userId = getAuthUserId(event)
   const { noteService } = getServices()
-  return noteService.createNote(body)
+  return noteService.createNote({ ...body, userId })
 })

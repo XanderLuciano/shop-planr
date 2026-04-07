@@ -41,14 +41,12 @@ async function onSubmit() {
     return
   }
   try {
-    const user = authenticatedUser.value
     const note = await createNote({
       jobId: props.jobId,
       pathId: props.pathId,
       stepId: props.stepId,
       partIds: props.partIds,
       text: trimmed,
-      userId: user.id,
     })
 
     // Push to Jira if checked

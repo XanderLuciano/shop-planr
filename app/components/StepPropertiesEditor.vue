@@ -10,7 +10,7 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-const { activeUsers, fetchActiveUsers } = useOperatorIdentity()
+const { users, fetchUsers } = useAuth()
 const { locations, fetchLocations } = useLibrary()
 const toast = useToast()
 const $api = useAuthFetch()
@@ -26,7 +26,7 @@ const selectedLocation = ref(props.currentLocation ?? '')
 // Build assignee dropdown items
 const assigneeItems = computed(() => {
   const unassigned = { label: 'Unassigned', value: SELECT_UNASSIGNED }
-  const userOptions = activeUsers.value
+  const userOptions = users.value
     .filter(u => u.active)
     .map(u => ({ label: u.displayName, value: u.id }))
   return [unassigned, ...userOptions]
@@ -39,7 +39,7 @@ const locationItems = computed(() =>
 
 onMounted(async () => {
   // Fetch users and locations if not already cached
-  if (!activeUsers.value.length) await fetchActiveUsers()
+  if (!users.value.length) await fetchUsers()
   if (!locations.value.length) await fetchLocations()
 })
 

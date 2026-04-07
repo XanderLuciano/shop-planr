@@ -35,13 +35,11 @@ export function selectNone(): Set<string> {
 export function canSave(
   noteText: string,
   selectedPartIds: Set<string>,
-  operatorId: string | null,
   saving: boolean,
 ): boolean {
   return (
     noteText.trim().length > 0
     && selectedPartIds.size > 0
-    && !!operatorId
     && !saving
   )
 }
@@ -86,15 +84,13 @@ export function buildCreateNotePayload(
   stepId: string,
   selectedPartIds: Set<string>,
   noteText: string,
-  userId: string,
-): { jobId: string, pathId: string, stepId: string, partIds: string[], text: string, userId: string } {
+): { jobId: string, pathId: string, stepId: string, partIds: string[], text: string } {
   return {
     jobId,
     pathId,
     stepId,
     partIds: Array.from(selectedPartIds),
     text: noteText.trim(),
-    userId,
   }
 }
 
@@ -144,22 +140,22 @@ describe('AddNoteDialog — pure logic', () => {
   // 2. Save button disabled when no text entered (Req 5.1)
   describe('Save button disabled when no text entered', () => {
     it('canSave returns false when noteText is empty', () => {
-      expect(canSave('', new Set(['SN-00001']), 'user-1', false)).toBe(false)
+      expect(canSave('', new Set(['SN-00001']), false)).toBe(false)
     })
 
     it('canSave returns false when noteText is whitespace-only', () => {
-      expect(canSave('   ', new Set(['SN-00001']), 'user-1', false)).toBe(false)
+      expect(canSave('   ', new Set(['SN-00001']), false)).toBe(false)
     })
 
     it('canSave returns false when noteText is tabs and newlines', () => {
-      expect(canSave('\t\n  ', new Set(['SN-00001']), 'user-1', false)).toBe(false)
+      expect(canSave('\t\n  ', new Set(['SN-00001']), false)).toBe(false)
     })
   })
 
   // 3. Save button disabled when no parts selected (Req 5.2)
   describe('Save button disabled when no parts selected', () => {
     it('canSave returns false when selectedPartIds is empty', () => {
-      expect(canSave('Valid note text', new Set(), 'user-1', false)).toBe(false)
+      expect(canSave('Valid note text', new Set(), false)).toBe(false)
     })
   })
 
@@ -184,11 +180,10 @@ describe('AddNoteDialog — pure logic', () => {
       // Simulate handleSave flow
       const noteText = 'Surface finish within tolerance'
       const selectedPartIds = new Set(['SN-00001'])
-      const operatorId = 'user-op1'
 
-      if (canSave(noteText, selectedPartIds, operatorId, false)) {
+      if (canSave(noteText, selectedPartIds, false)) {
         const note = await mockCreateNote(
-          buildCreateNotePayload('job-1', 'path-1', 'step-1', selectedPartIds, noteText, operatorId),
+          buildCreateNotePayload('job-1', 'path-1', 'step-1', selectedPartIds, noteText),
         )
         emittedEvents.push(note)
       }
@@ -200,7 +195,7 @@ describe('AddNoteDialog — pure logic', () => {
 
     it('payload includes all selected part IDs for multi-part note', () => {
       const selectedPartIds = new Set(['SN-00001', 'SN-00002', 'SN-00003'])
-      const payload = buildCreateNotePayload('job-1', 'path-1', 'step-1', selectedPartIds, 'Batch note', 'user-op1')
+      const payload = buildCreateNotePayload('job-1', 'path-1', 'step-1', selectedPartIds, 'Batch note')
 
       expect(payload.partIds).toHaveLength(3)
       expect(payload.partIds).toContain('SN-00001')
@@ -209,7 +204,7 @@ describe('AddNoteDialog — pure logic', () => {
     })
 
     it('payload trims note text', () => {
-      const payload = buildCreateNotePayload('job-1', 'path-1', 'step-1', new Set(['SN-00001']), '  trimmed note  ', 'user-op1')
+      const payload = buildCreateNotePayload('job-1', 'path-1', 'step-1', new Set(['SN-00001']), '  trimmed note  ')
       expect(payload.text).toBe('trimmed note')
     })
 
@@ -298,20 +293,16 @@ describe('AddNoteDialog — pure logic', () => {
 // ---- Additional edge case tests ----
 
 describe('canSave — additional edge cases', () => {
-  it('returns false when operatorId is null', () => {
-    expect(canSave('Valid text', new Set(['SN-00001']), null, false)).toBe(false)
-  })
-
   it('returns false when saving is true', () => {
-    expect(canSave('Valid text', new Set(['SN-00001']), 'user-1', true)).toBe(false)
+    expect(canSave('Valid text', new Set(['SN-00001']), true)).toBe(false)
   })
 
   it('returns true when all conditions are met', () => {
-    expect(canSave('Valid text', new Set(['SN-00001']), 'user-1', false)).toBe(true)
+    expect(canSave('Valid text', new Set(['SN-00001']), false)).toBe(true)
   })
 
   it('returns false when all conditions fail simultaneously', () => {
-    expect(canSave('', new Set(), null, true)).toBe(false)
+    expect(canSave('', new Set(), true)).toBe(false)
   })
 })
 
@@ -323,7 +314,6 @@ describe('buildCreateNotePayload', () => {
       'step-3',
       new Set(['SN-00001', 'SN-00002']),
       'Test note',
-      'user-op1',
     )
 
     expect(payload).toEqual({
@@ -332,13 +322,12 @@ describe('buildCreateNotePayload', () => {
       stepId: 'step-3',
       partIds: expect.arrayContaining(['SN-00001', 'SN-00002']),
       text: 'Test note',
-      userId: 'user-op1',
     })
     expect(payload.partIds).toHaveLength(2)
   })
 
   it('converts Set to array for partIds', () => {
-    const payload = buildCreateNotePayload('j', 'p', 's', new Set(['A', 'B', 'C']), 'note', 'u')
+    const payload = buildCreateNotePayload('j', 'p', 's', new Set(['A', 'B', 'C']), 'note')
     expect(Array.isArray(payload.partIds)).toBe(true)
     expect(payload.partIds).toHaveLength(3)
   })

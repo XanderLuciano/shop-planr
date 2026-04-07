@@ -11,7 +11,6 @@ export function useLifecycle() {
   async function scrapPart(partId: string, input: {
     reason: string
     explanation?: string
-    userId: string
   }): Promise<Part> {
     loading.value = true
     error.value = null
@@ -30,7 +29,6 @@ export function useLifecycle() {
 
   async function forceComplete(partId: string, input: {
     reason?: string
-    userId: string
   }): Promise<Part> {
     loading.value = true
     error.value = null
@@ -49,7 +47,6 @@ export function useLifecycle() {
 
   async function advanceToStep(partId: string, input: {
     targetStepId: string
-    userId: string
   }): Promise<AdvancementResult> {
     loading.value = true
     error.value = null
@@ -66,15 +63,12 @@ export function useLifecycle() {
     }
   }
 
-  async function completeDeferredStep(partId: string, stepId: string, input: {
-    userId: string
-  }): Promise<PartStepStatus> {
+  async function completeDeferredStep(partId: string, stepId: string): Promise<PartStepStatus> {
     loading.value = true
     error.value = null
     try {
       return await $api<PartStepStatus>(`/api/parts/${encodeURIComponent(partId)}/complete-deferred/${encodeURIComponent(stepId)}`, {
         method: 'POST',
-        body: input,
       })
     } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to complete deferred step'
@@ -86,7 +80,6 @@ export function useLifecycle() {
 
   async function waiveStep(partId: string, stepId: string, input: {
     reason: string
-    approverId: string
   }): Promise<PartStepStatus> {
     loading.value = true
     error.value = null
@@ -107,7 +100,6 @@ export function useLifecycle() {
     partIds: string[]
     stepId: string
     reason: string
-    userId: string
   }): Promise<PartStepOverride[]> {
     loading.value = true
     error.value = null

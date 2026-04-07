@@ -21,7 +21,7 @@ export function useBomVersions() {
     }
   }
 
-  async function editBom(bomId: string, input: EditBomInput): Promise<void> {
+  async function editBom(bomId: string, input: Omit<EditBomInput, 'userId'>): Promise<void> {
     loading.value = true
     error.value = null
     try {

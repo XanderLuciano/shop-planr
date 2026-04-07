@@ -59,6 +59,7 @@ server/
   utils/
     errors.ts            → ValidationError, NotFoundError, ForbiddenError, AuthenticationError
     httpError.ts         → STATUS_MESSAGES, ERROR_STATUS_MAP, httpError(), defineApiHandler() — centralized HTTP error handler replacing per-route try/catch blocks
+    authUser.ts          → getAuthUserId(event) — extracts authenticated user ID from JWT context (auto-imported by Nitro)
     idGenerator.ts       → generateId(prefix), createSequentialSnGenerator()
     serialization.ts     → serialize(), deserialize(), prettyPrint() for all domain types
     validation.ts        → assertPositive, assertNonEmpty, assertNonEmptyArray, assertOneOf, parseBody() (Zod schema validation)
@@ -215,7 +216,7 @@ Core entities and relationships:
 - **SnStepOverride** → per-serial step overrides (fast-track, reversible)
 - **BomVersion** → immutable BOM edit snapshots
 - **ProcessLibraryEntry** / **LocationLibraryEntry** → reusable process name and location libraries
-- **ShopUser** → kiosk-mode identity with `username` (unique), `displayName`, `isAdmin`, `pinHash` (nullable — null means PIN not yet set); PIN-based auth with ES256 JWT tokens; admin flag gates UI features (job creation, job/path deletion, PIN reset)
+- **ShopUser** → kiosk-mode identity with `username` (unique), `displayName`, `isAdmin`, `pinHash` (nullable — null means PIN not yet set); PIN-based auth with ES256 JWT tokens; admin flag gates UI features (job creation, job/path deletion, PIN reset); all mutation endpoints derive userId from JWT `event.context.auth.user.sub` via `getAuthUserId()` — no client-side userId override
 - **StepNote** → defect/note on serial(s) at a process step
 - **AppSettings** → singleton: Jira connection + field mappings + page toggles (5 default PI project mappings, 9 page visibility toggles)
 

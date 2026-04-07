@@ -41,13 +41,12 @@ export function useWorkQueue() {
 
   async function advanceBatch(params: {
     partIds: string[]
-    userId: string
     jobId: string
     pathId: string
     stepId: string
     note?: string
   }): Promise<{ advanced: number, nextStepName?: string }> {
-    const { partIds, userId, jobId, pathId, stepId, note } = params
+    const { partIds, jobId, pathId, stepId, note } = params
 
     // Validate quantity against available parts
     const job = queue.value?.jobs.find(
@@ -60,7 +59,6 @@ export function useWorkQueue() {
     for (const partId of partIds) {
       await $api(`/api/parts/${encodeURIComponent(partId)}/advance`, {
         method: 'POST',
-        body: { userId },
       })
     }
 
@@ -78,13 +76,9 @@ export function useWorkQueue() {
           stepId,
           partIds,
           text: trimmedNote,
-          userId,
         },
       })
     }
-
-    // Re-fetch queue to reflect changes
-    await fetchQueue(userId)
 
     return {
       advanced: partIds.length,
