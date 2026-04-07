@@ -55,9 +55,9 @@
   - _Requirements: 4.1, 5.1_
 
 - [x] 6. Fix collapsed sidebar text wrapping and icon centering
-  - [ ] 6.1 Add `group` class to sidebar root via `:ui` prop to enable `group-data-[collapsed=true]` selectors
-  - [ ] 6.2 Add `group-data-[collapsed=true]:hidden` to "Shop Planr" header text span
-  - [ ] 6.3 Update existing `group-data-[collapsed]:hidden` to `group-data-[collapsed=true]:hidden` on API Docs text and external link icon (value-specific match required)
-  - [ ] 6.4 Wrap `UNavigationMenu` in `<template #default="{ collapsed }">` and pass `:collapsed="collapsed"` prop
-  - [ ] 6.5 Add collapsed-aware padding/centering via `:ui` prop: body `items-center` + `px-2`, header `justify-center`, footer `items-center` + `px-2`
+  - [x] 6.1 Add `group` class to sidebar root via `:ui` prop to enable `group-data-[collapsed=true]` selectors
+  - [x] 6.2 Add `group-data-[collapsed=true]:hidden` to "Shop Planr" header text span
+  - [x] 6.3 Update existing `group-data-[collapsed]:hidden` to `group-data-[collapsed=true]:hidden` on API Docs text and external link icon (value-specific match required)
+  - [x] 6.4 Wrap `UNavigationMenu` in `<template #default="{ collapsed }">` and pass `:collapsed="collapsed"` prop
+  - [x] 6.5 Add collapsed-aware padding/centering via `:ui` prop: body `items-center` + `px-2`, header `justify-center`, footer `items-center` + `px-2`
   - _Requirements: 4.2, 4.3, 4.4, 5.2, 5.3, 5.4_
