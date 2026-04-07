@@ -52,7 +52,7 @@ jobs:
           curl -sf http://localhost:3000 > /dev/null
           echo "✅ Frontend OK"
           echo "Checking API..."
-          curl -sf http://localhost:3000/api/jobs > /dev/null
+          curl -sf http://localhost:3000/api/health > /dev/null
           echo "✅ API OK"
           kill $SERVER_PID
 
@@ -100,7 +100,7 @@ jobs:
               echo "❌ Frontend health check failed"
               FAILED=1
             fi
-            if curl -sf http://localhost:3005/api/jobs > /dev/null; then
+            if curl -sf http://localhost:3005/api/health > /dev/null; then
               echo "✅ API health check passed"
             else
               echo "❌ API health check failed"
