@@ -6,6 +6,7 @@ const { jobs, loading, fetchJobs } = useJobs()
 
 const jobProgressList = ref<JobProgress[]>([])
 const progressLoading = ref(false)
+const progressError = ref<string | null>(null)
 
 async function loadDashboard() {
   await fetchJobs()
@@ -19,8 +20,11 @@ async function loadJobProgress() {
   }
 
   progressLoading.value = true
+  progressError.value = null
   try {
     jobProgressList.value = await $api<JobProgress[]>('/api/jobs/progress')
+  } catch (e) {
+    progressError.value = e?.data?.message ?? e?.message ?? 'Failed to load job progress'
   } finally {
     progressLoading.value = false
   }
@@ -89,6 +93,20 @@ onMounted(() => {
         :value="card.value"
         :icon="card.icon"
         :to="card.to"
+      />
+    </div>
+
+    <div
+      v-if="progressError"
+      class="flex items-center gap-2 text-xs text-(--ui-error)"
+    >
+      <span>{{ progressError }}</span>
+      <UButton
+        size="xs"
+        variant="ghost"
+        icon="i-lucide-refresh-cw"
+        label="Retry"
+        @click="loadJobProgress"
       />
     </div>
 

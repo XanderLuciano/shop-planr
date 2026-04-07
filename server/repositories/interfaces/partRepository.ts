@@ -14,6 +14,8 @@ export interface PartRepository {
   /** Counts completed parts for a job. Uses `current_step_id IS NULL AND status = 'completed'`. */
   countCompletedByJobId(jobId: string): number
   countScrappedByJobId(jobId: string): number
+  /** Returns total, completed, and scrapped counts for all jobs in a single GROUP BY query. */
+  countsByJob(): Map<string, { total: number, completed: number, scrapped: number }>
   listAll(): Part[]
   /** Returns all parts enriched with job/path/step names via a single JOIN query. */
   listAllEnriched(): EnrichedPart[]

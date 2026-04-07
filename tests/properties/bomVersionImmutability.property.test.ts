@@ -73,6 +73,7 @@ function createInMemoryPartRepo() {
     countByJobId: () => 0,
     countCompletedByJobId: () => 0,
     countScrappedByJobId: () => 0,
+    countsByJob: () => new Map(),
   }
 }
 

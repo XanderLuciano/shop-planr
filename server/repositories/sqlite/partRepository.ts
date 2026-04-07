@@ -159,6 +159,28 @@ export class SQLitePartRepository implements PartRepository {
     return row.count
   }
 
+  countsByJob(): Map<string, { total: number, completed: number, scrapped: number }> {
+    const rows = this.db.prepare(`
+      SELECT
+        job_id,
+        COUNT(*) AS total,
+        SUM(CASE WHEN current_step_id IS NULL AND status = 'completed' THEN 1 ELSE 0 END) AS completed,
+        SUM(CASE WHEN status = 'scrapped' THEN 1 ELSE 0 END) AS scrapped
+      FROM parts
+      GROUP BY job_id
+    `).all() as Array<{ job_id: string, total: number, completed: number, scrapped: number }>
+
+    const map = new Map<string, { total: number, completed: number, scrapped: number }>()
+    for (const row of rows) {
+      map.set(row.job_id, {
+        total: row.total,
+        completed: row.completed,
+        scrapped: row.scrapped,
+      })
+    }
+    return map
+  }
+
   listAll(): Part[] {
     const rows = this.db.prepare('SELECT * FROM parts ORDER BY created_at ASC').all() as PartRow[]
     return rows.map(rowToDomain)
