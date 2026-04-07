@@ -20,7 +20,10 @@ const items: DropdownMenuItem[][] = [
 </script>
 
 <template>
-  <UDropdownMenu v-if="authenticatedUser" :items="items">
+  <UDropdownMenu
+    v-if="authenticatedUser"
+    :items="items"
+  >
     <button class="flex items-center gap-2 cursor-pointer">
       <UserAvatar
         :username="authenticatedUser.username"
@@ -28,7 +31,10 @@ const items: DropdownMenuItem[][] = [
         size="sm"
       />
       <span class="text-sm font-medium">{{ authenticatedUser.displayName }}</span>
-      <UIcon name="i-lucide-chevron-down" class="size-4" />
+      <UIcon
+        name="i-lucide-chevron-down"
+        class="size-4"
+      />
     </button>
   </UDropdownMenu>
 </template>

@@ -69,12 +69,10 @@ export function useAuth() {
           if (import.meta.client) {
             scheduleRefresh(payload)
           }
-        }
-        else {
+        } else {
           tokenCookie.value = null
         }
-      }
-      catch {
+      } catch {
         tokenCookie.value = null
       }
     }
@@ -102,8 +100,7 @@ export function useAuth() {
           headers: { Authorization: `Bearer ${tokenCookie.value}` },
         })
         setSession(data.token)
-      }
-      catch {
+      } catch {
         clearSession()
       }
     }, delayMs)
@@ -131,7 +128,9 @@ export function useAuth() {
     })
     setSession(data.token)
     // Full reload to re-run all page data fetches with the new token
-    if (import.meta.client) window.location.reload()
+    if (import.meta.client) {
+      window.location.reload()
+    }
   }
 
   async function setupPin(userId: string, pin: string): Promise<void> {
@@ -140,7 +139,9 @@ export function useAuth() {
       body: { userId, pin },
     })
     setSession(data.token)
-    if (import.meta.client) window.location.reload()
+    if (import.meta.client) {
+      window.location.reload()
+    }
   }
 
   function logout(): void {
@@ -154,8 +155,7 @@ export function useAuth() {
   async function fetchUsers(): Promise<void> {
     try {
       users.value = await $fetch<PublicUser[]>('/api/users')
-    }
-    catch {
+    } catch {
       users.value = []
     }
   }

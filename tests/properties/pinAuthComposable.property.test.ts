@@ -46,8 +46,7 @@ vi.stubGlobal('useCookie', (name: string, _opts?: any) => {
         target.value = value
         if (value === null || value === undefined) {
           delete cookieStore[name]
-        }
-        else {
+        } else {
           cookieStore[name] = value
         }
         return true

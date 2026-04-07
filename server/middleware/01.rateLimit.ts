@@ -54,10 +54,10 @@ export default defineEventHandler(async (event) => {
 
   try {
     await Promise.all(limiters.map(limiter => limiter.consume(clientIP)))
-  }
-  catch (rateLimiterRes: any) {
-    const retryAfter = Math.ceil(rateLimiterRes.msBeforeNext / 1000)
-    setHeader(event, 'Retry-After', String(retryAfter))
+  } catch (rateLimiterRes: unknown) {
+    const res = rateLimiterRes as { msBeforeNext: number }
+    const retryAfter = Math.ceil(res.msBeforeNext / 1000)
+    setHeader(event, 'Retry-After', retryAfter)
     throw createError({
       statusCode: 429,
       statusMessage: 'Too Many Requests',

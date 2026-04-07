@@ -42,8 +42,7 @@ async function handlePinLogin(pin: string) {
   error.value = ''
   try {
     await login(selectedUser.value.username, pin)
-  }
-  catch {
+  } catch {
     error.value = 'Invalid PIN'
   }
 }
@@ -53,8 +52,7 @@ async function handlePinSetup(pin: string) {
   error.value = ''
   try {
     await setupPin(selectedUser.value.id, pin)
-  }
-  catch {
+  } catch {
     error.value = 'Failed to set up PIN. Please try again.'
   }
 }
@@ -68,7 +66,10 @@ async function handlePinSetup(pin: string) {
     >
       <div class="w-full max-w-md px-6">
         <!-- Avatar Picker -->
-        <div v-if="state === 'picker'" class="flex flex-col items-center gap-8">
+        <div
+          v-if="state === 'picker'"
+          class="flex flex-col items-center gap-8"
+        >
           <div class="text-center">
             <h1 class="text-3xl font-bold text-white">
               Shop Planr
@@ -84,7 +85,10 @@ async function handlePinSetup(pin: string) {
         </div>
 
         <!-- PIN Entry -->
-        <div v-else-if="state === 'pin-entry' && selectedUser" class="flex flex-col items-center gap-6">
+        <div
+          v-else-if="state === 'pin-entry' && selectedUser"
+          class="flex flex-col items-center gap-6"
+        >
           <button
             type="button"
             class="self-start text-sm text-gray-300 hover:text-white transition-colors cursor-pointer"
@@ -111,7 +115,10 @@ async function handlePinSetup(pin: string) {
         </div>
 
         <!-- PIN Setup -->
-        <div v-else-if="state === 'pin-setup' && selectedUser" class="flex flex-col items-center gap-6">
+        <div
+          v-else-if="state === 'pin-setup' && selectedUser"
+          class="flex flex-col items-center gap-6"
+        >
           <button
             type="button"
             class="self-start text-sm text-gray-300 hover:text-white transition-colors cursor-pointer"

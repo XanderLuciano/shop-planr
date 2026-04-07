@@ -20,7 +20,7 @@ function handleConfirmPin(pin: string) {
   if (pin === firstPin.value) {
     emit('submit', pin)
   } else {
-    error.value = "PINs don't match"
+    error.value = 'PINs don\'t match'
     firstPin.value = ''
     phase.value = 'create'
     nextTick(() => {
@@ -38,7 +38,10 @@ function handleInput() {
 
 <template>
   <div class="flex flex-col items-center gap-6">
-    <div v-if="phase === 'create'" class="flex flex-col items-center gap-3">
+    <div
+      v-if="phase === 'create'"
+      class="flex flex-col items-center gap-3"
+    >
       <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
         Create your PIN
       </p>
@@ -48,7 +51,10 @@ function handleInput() {
       />
     </div>
 
-    <div v-if="phase === 'confirm'" class="flex flex-col items-center gap-3">
+    <div
+      v-if="phase === 'confirm'"
+      class="flex flex-col items-center gap-3"
+    >
       <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
         Confirm your PIN
       </p>

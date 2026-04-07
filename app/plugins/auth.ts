@@ -5,7 +5,7 @@ export default defineNuxtPlugin(() => {
   // Nuxt internal routes (/_nuxt_icon/, /_payload/, etc.) are left untouched.
   const original$fetch = globalThis.$fetch
   globalThis.$fetch = Object.assign(
-    (url: any, opts?: any) => {
+    (url: string | Request, opts?: Record<string, unknown>) => {
       const urlStr = typeof url === 'string' ? url : ''
       if (urlStr.startsWith('/api/') && token.value) {
         opts = opts || {}

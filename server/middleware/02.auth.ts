@@ -31,8 +31,7 @@ export default defineEventHandler(async (event) => {
 
   if (authHeader?.startsWith('Bearer ')) {
     tokenStr = authHeader.slice(7)
-  }
-  else {
+  } else {
     // Fall back to cookie for SSR requests
     tokenStr = getCookie(event, 'shop-planr-auth-token') || undefined
   }
@@ -45,8 +44,7 @@ export default defineEventHandler(async (event) => {
     const { authService } = getServices()
     const payload = await authService.verifyToken(tokenStr)
     event.context.auth = { user: payload }
-  }
-  catch {
+  } catch {
     throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
   }
 })

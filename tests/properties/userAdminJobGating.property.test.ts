@@ -42,7 +42,7 @@ const arbShopUser = fc.record({
   isAdmin: fc.boolean(),
   department: fc.option(fc.string({ minLength: 1, maxLength: 20 }), { nil: undefined }),
   active: fc.boolean(),
-  createdAt: fc.date({ min: new Date('2020-01-01'), max: new Date('2030-01-01') }).map(d => d.toISOString()),
+  createdAt: fc.date({ min: new Date('2020-01-01'), max: new Date('2026-01-01') }).map(d => d.toISOString()),
 })
 
 describe('Property 5: Admin-Gated New Job Button Visibility', () => {

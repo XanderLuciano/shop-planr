@@ -108,7 +108,10 @@ defineExpose({ clear: clearAll })
 
 <template>
   <div class="flex flex-col items-center gap-4">
-    <div class="flex gap-3" @paste="handlePaste">
+    <div
+      class="flex gap-3"
+      @paste="handlePaste"
+    >
       <input
         v-for="(_, index) in 4"
         :key="index"

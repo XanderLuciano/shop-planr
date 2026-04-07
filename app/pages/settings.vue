@@ -96,8 +96,9 @@ async function resetUserPin(user: PublicUser) {
     })
     userSuccess.value = `PIN reset for ${user.displayName}. They will set a new PIN on next login.`
     await loadAllUsers()
-  } catch (e: any) {
-    userError.value = e?.data?.message ?? e?.message ?? 'Failed to reset PIN'
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string }, message?: string }
+    userError.value = err?.data?.message ?? err?.message ?? 'Failed to reset PIN'
   }
 }
 
