@@ -9,6 +9,32 @@ import { generateId } from '../utils/idGenerator'
 import { assertPositive, assertNonEmpty } from '../utils/validation'
 import { NotFoundError, ValidationError } from '../utils/errors'
 
+function buildJobProgress(
+  job: Job,
+  counts: { total: number, completed: number, scrapped: number },
+): JobProgress {
+  const { total: totalParts, completed: completedParts, scrapped: scrappedParts } = counts
+  const inProgressParts = totalParts - completedParts - scrappedParts
+
+  const adjustedGoal = job.goalQuantity - scrappedParts
+  const progressPercent = adjustedGoal > 0
+    ? (completedParts / adjustedGoal) * 100
+    : (completedParts > 0 ? 100 : 0)
+
+  return {
+    jobId: job.id,
+    jobName: job.name,
+    goalQuantity: job.goalQuantity,
+    totalParts,
+    completedParts,
+    inProgressParts,
+    scrappedParts,
+    producedQuantity: totalParts,
+    orderedQuantity: job.goalQuantity,
+    progressPercent,
+  }
+}
+
 export function createJobService(repos: {
   jobs: JobRepository
   paths: PathRepository
@@ -74,29 +100,11 @@ export function createJobService(repos: {
         throw new NotFoundError('Job', jobId)
       }
 
-      const totalParts = repos.parts.countByJobId(jobId)
-      const completedParts = repos.parts.countCompletedByJobId(jobId)
-      const scrappedParts = repos.parts.countScrappedByJobId(jobId)
-      const inProgressParts = totalParts - completedParts - scrappedParts
-
-      // progressPercent = completedCount / (goalQuantity - scrappedCount) * 100
-      const adjustedGoal = job.goalQuantity - scrappedParts
-      const progressPercent = adjustedGoal > 0
-        ? (completedParts / adjustedGoal) * 100
-        : (completedParts > 0 ? 100 : 0)
-
-      return {
-        jobId: job.id,
-        jobName: job.name,
-        goalQuantity: job.goalQuantity,
-        totalParts,
-        completedParts,
-        inProgressParts,
-        scrappedParts,
-        producedQuantity: totalParts,
-        orderedQuantity: job.goalQuantity,
-        progressPercent,
-      }
+      return buildJobProgress(job, {
+        total: repos.parts.countByJobId(jobId),
+        completed: repos.parts.countCompletedByJobId(jobId),
+        scrapped: repos.parts.countScrappedByJobId(jobId),
+      })
     },
 
     computeAllJobProgress(): JobProgress[] {
@@ -105,28 +113,7 @@ export function createJobService(repos: {
 
       return jobs.map((job) => {
         const counts = countsByJob.get(job.id) ?? { total: 0, completed: 0, scrapped: 0 }
-        const totalParts = counts.total
-        const completedParts = counts.completed
-        const scrappedParts = counts.scrapped
-        const inProgressParts = totalParts - completedParts - scrappedParts
-
-        const adjustedGoal = job.goalQuantity - scrappedParts
-        const progressPercent = adjustedGoal > 0
-          ? (completedParts / adjustedGoal) * 100
-          : (completedParts > 0 ? 100 : 0)
-
-        return {
-          jobId: job.id,
-          jobName: job.name,
-          goalQuantity: job.goalQuantity,
-          totalParts,
-          completedParts,
-          inProgressParts,
-          scrappedParts,
-          producedQuantity: totalParts,
-          orderedQuantity: job.goalQuantity,
-          progressPercent,
-        }
+        return buildJobProgress(job, counts)
       })
     },
 
