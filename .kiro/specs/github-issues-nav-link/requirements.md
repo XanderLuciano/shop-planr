@@ -7,7 +7,7 @@ This document defines the requirements for adding a GitHub Issues navigation lin
 ## Glossary
 
 - **Sidebar**: The collapsible `UDashboardSidebar` component rendered in `app/layouts/default.vue`, containing the primary navigation menu and a footer section.
-- **Sidebar_Footer**: The `#footer` template slot of the Sidebar, currently containing the API Docs link, a collapse button, and a color mode toggle.
+- **Sidebar_Footer**: The `#footer` template slot of the Sidebar, currently containing the API Docs link and a collapse button.
 - **GitHub_Issues_Link**: A `NuxtLink` element in the Sidebar Footer that navigates to the project's GitHub Issues page in a new browser tab.
 - **API_Docs_Link**: The existing `NuxtLink` element in the Sidebar Footer that opens the API documentation page in a new tab.
 
@@ -19,7 +19,7 @@ This document defines the requirements for adding a GitHub Issues navigation lin
 
 #### Acceptance Criteria
 
-1. THE Sidebar_Footer SHALL display the GitHub_Issues_Link below the API_Docs_Link and above the collapse/color-mode row.
+1. THE Sidebar_Footer SHALL display the GitHub_Issues_Link below the API_Docs_Link and above the collapse button.
 2. THE GitHub_Issues_Link SHALL display a bug icon (`i-lucide-bug`), the text label "Report Issue", and a trailing external-link icon (`i-lucide-external-link`).
 3. THE GitHub_Issues_Link SHALL use identical CSS classes and icon sizing as the API_Docs_Link to maintain visual consistency.
 
@@ -48,7 +48,7 @@ This document defines the requirements for adding a GitHub Issues navigation lin
 #### Acceptance Criteria
 
 1. WHILE the Sidebar is collapsed, THE GitHub_Issues_Link SHALL display only the bug icon.
-2. WHILE the Sidebar is collapsed, THE GitHub_Issues_Link SHALL hide the text label and the external-link icon using `group-data-[collapsed]:hidden`.
+2. WHILE the Sidebar is collapsed, THE GitHub_Issues_Link SHALL hide the text label and the external-link icon using `group-data-[collapsed=true]:hidden`.
 
 ### Requirement 5: Accessibility
 
@@ -57,6 +57,7 @@ This document defines the requirements for adding a GitHub Issues navigation lin
 #### Acceptance Criteria
 
 1. THE GitHub_Issues_Link SHALL render as a semantic `<a>` element (via `NuxtLink`) with visible text content for screen readers.
+2. THE GitHub_Issues_Link SHALL include `aria-label="Report Issue"` to ensure an accessible name when the text label is hidden in collapsed state.
 
 ### Requirement 6: No Side Effects on Existing Navigation
 

@@ -12,7 +12,7 @@ The implementation follows the exact same pattern as the existing "API Docs" ext
 graph TD
     A[UDashboardSidebar footer] --> B[API Docs Link - existing]
     A --> C[GitHub Issues Link - new]
-    A --> D[Collapse + Color Mode - existing]
+    A --> D[Collapse button - existing]
     C -->|target=_blank| E[GitHub Issues Page]
     B -->|target=_blank| F[API Docs Page]
 ```
@@ -42,7 +42,7 @@ sequenceDiagram
 ```typescript
 // Sidebar footer currently contains:
 // 1. API Docs link (NuxtLink, external, target="_blank")
-// 2. Collapse button + Color mode toggle row
+// 2. Collapse button (UDashboardSidebarCollapse)
 ```
 
 **New footer structure**:
@@ -50,7 +50,7 @@ sequenceDiagram
 // Sidebar footer will contain:
 // 1. API Docs link (NuxtLink, external, target="_blank")       ← existing
 // 2. GitHub Issues link (NuxtLink, external, target="_blank")   ← NEW
-// 3. Collapse button + Color mode toggle row                    ← existing
+// 3. Collapse button (UDashboardSidebarCollapse)                ← existing
 ```
 
 **Interface**: No new props, events, or composables. The link is a static `<NuxtLink>` element.
@@ -60,9 +60,10 @@ sequenceDiagram
 ```typescript
 // The new link element attributes
 const githubIssuesLink = {
-  to: 'https://github.com/[owner]/[repo]/issues',
+  to: 'https://github.com/XanderLuciano/shop-planr/issues',
   target: '_blank',
   rel: 'noopener noreferrer',
+  ariaLabel: 'Report Issue',
   icon: 'i-lucide-bug',           // Lucide "bug" icon from @iconify-json/lucide
   label: 'Report Issue',
   externalIcon: 'i-lucide-external-link',  // Same trailing icon as API Docs link
@@ -79,16 +80,17 @@ No new data models. This feature is entirely client-side presentational markup. 
 
 ```vue
 <NuxtLink
-  to="https://github.com/[owner]/[repo]/issues"
+  to="https://github.com/XanderLuciano/shop-planr/issues"
   target="_blank"
   rel="noopener noreferrer"
+  aria-label="Report Issue"
   class="flex items-center gap-2 px-2 py-1.5 text-sm text-(--ui-text-muted) hover:text-(--ui-text-highlighted) rounded-md hover:bg-(--ui-bg-elevated) transition-colors"
 >
   <UIcon name="i-lucide-bug" class="size-4" />
-  <span class="truncate group-data-[collapsed]:hidden">Report Issue</span>
+  <span class="truncate group-data-[collapsed=true]:hidden">Report Issue</span>
   <UIcon
     name="i-lucide-external-link"
-    class="size-3 ml-auto opacity-50 group-data-[collapsed]:hidden"
+    class="size-3 ml-auto opacity-50 group-data-[collapsed=true]:hidden"
   />
 </NuxtLink>
 ```
@@ -116,7 +118,7 @@ OUTPUT: rendered <a> element in sidebar footer
 
 BEGIN
   RENDER NuxtLink with:
-    href = "https://github.com/[owner]/[repo]/issues"
+    href = "https://github.com/XanderLuciano/shop-planr/issues"
     target = "_blank"
     rel = "noopener noreferrer"
     icon = lucide bug icon
@@ -124,7 +126,7 @@ BEGIN
     external indicator = lucide external-link icon
   
   APPLY same CSS classes as existing "API Docs" link
-  APPLY collapsed-sidebar hiding via group-data-[collapsed]:hidden
+  APPLY collapsed-sidebar hiding via group-data-[collapsed=true]:hidden
 END
 ```
 
@@ -136,7 +138,7 @@ After implementation, the sidebar footer will render as:
 ┌─────────────────────┐
 │  📖 API Docs      ↗ │  ← existing
 │  🐛 Report Issue  ↗ │  ← NEW
-│  [◀] [🌙]           │  ← existing collapse + theme toggle
+│  [◀]                │  ← existing collapse button
 └─────────────────────┘
 ```
 
@@ -154,7 +156,7 @@ User interaction:
 2. **Security**: The link MUST include `rel="noopener noreferrer"` to prevent reverse tabnapping. **Validates: Requirement 3.1**
 3. **Visual consistency**: The link MUST use identical CSS classes and icon sizing as the existing "API Docs" link. **Validates: Requirement 1.3**
 4. **Collapsed sidebar**: When the sidebar is collapsed, only the bug icon should be visible; the text label and external-link icon MUST be hidden. **Validates: Requirements 4.1, 4.2**
-5. **Accessibility**: The link MUST be a semantic `<a>` element (rendered by `NuxtLink`) with visible text content for screen readers. **Validates: Requirement 5.1**
+5. **Accessibility**: The link MUST be a semantic `<a>` element (rendered by `NuxtLink`) with `aria-label="Report Issue"` for screen readers when the text is hidden. **Validates: Requirements 5.1, 5.2**
 6. **No side effects**: Adding this link MUST NOT affect page toggle filtering, route middleware, or any other nav behavior. **Validates: Requirements 6.1, 6.2**
 7. **URL correctness**: The `href` MUST point to a valid GitHub Issues URL for the project repository. **Validates: Requirement 2.3**
 
