@@ -253,7 +253,7 @@ describe('AddNoteDialog — pure logic', () => {
     it('dialog stays open on failure — saving flag resets, text preserved', async () => {
       const mockCreateNote = vi.fn().mockRejectedValue(new Error('Server error'))
       let saving = true
-      let dialogOpen = true
+      const dialogOpen = true
       const noteText = 'My important note'
       let toastShown: { title: string, color: string } | null = null
 
