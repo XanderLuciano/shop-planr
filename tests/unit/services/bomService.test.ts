@@ -38,6 +38,7 @@ function createMockPartRepo(counts: Record<string, { total: number, completed: n
     countCompletedByJobId: vi.fn((jobId: string) => counts[jobId]?.completed ?? 0),
     countScrappedByJobId: vi.fn(() => 0),
     listAll: vi.fn(() => []),
+    listAllEnriched: vi.fn(() => []),
   }
 }
 

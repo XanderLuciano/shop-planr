@@ -70,6 +70,7 @@ function createMockPartRepo(): PartRepository {
     ),
     countScrappedByJobId: vi.fn(() => 0),
     listAll: vi.fn(() => [...store.values()]),
+    listAllEnriched: vi.fn(() => []),
   }
 }
 

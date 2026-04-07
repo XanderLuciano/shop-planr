@@ -99,6 +99,34 @@ export function createJobService(repos: {
       }
     },
 
+    computeAllJobProgress(): JobProgress[] {
+      const jobs = repos.jobs.list()
+      return jobs.map((job) => {
+        const totalParts = repos.parts.countByJobId(job.id)
+        const completedParts = repos.parts.countCompletedByJobId(job.id)
+        const scrappedParts = repos.parts.countScrappedByJobId(job.id)
+        const inProgressParts = totalParts - completedParts - scrappedParts
+
+        const adjustedGoal = job.goalQuantity - scrappedParts
+        const progressPercent = adjustedGoal > 0
+          ? (completedParts / adjustedGoal) * 100
+          : (completedParts > 0 ? 100 : 0)
+
+        return {
+          jobId: job.id,
+          jobName: job.name,
+          goalQuantity: job.goalQuantity,
+          totalParts,
+          completedParts,
+          inProgressParts,
+          scrappedParts,
+          producedQuantity: totalParts,
+          orderedQuantity: job.goalQuantity,
+          progressPercent,
+        }
+      })
+    },
+
     getJobPartCount(jobId: string): number {
       return repos.parts.countByJobId(jobId)
     },

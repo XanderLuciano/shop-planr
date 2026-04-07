@@ -20,14 +20,7 @@ async function loadJobProgress() {
 
   progressLoading.value = true
   try {
-    const results = await Promise.all(
-      jobs.value.map(job =>
-        $api<{ progress: JobProgress }>(`/api/jobs/${job.id}`)
-          .then(detail => detail.progress)
-          .catch(() => null),
-      ),
-    )
-    jobProgressList.value = results.filter((p): p is JobProgress => p !== null)
+    jobProgressList.value = await $api<JobProgress[]>('/api/jobs/progress')
   } finally {
     progressLoading.value = false
   }

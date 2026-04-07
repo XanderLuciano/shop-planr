@@ -5,6 +5,7 @@
  */
 import type Database from 'better-sqlite3'
 import type { Part } from '../../types/domain'
+import type { EnrichedPart } from '../../types/computed'
 import type { PartRepository } from '../interfaces/partRepository'
 import { NotFoundError } from '../../utils/errors'
 
@@ -161,6 +162,75 @@ export class SQLitePartRepository implements PartRepository {
   listAll(): Part[] {
     const rows = this.db.prepare('SELECT * FROM parts ORDER BY created_at ASC').all() as PartRow[]
     return rows.map(rowToDomain)
+  }
+
+  listAllEnriched(): EnrichedPart[] {
+    const rows = this.db.prepare(`
+      SELECT
+        p.id,
+        p.job_id,
+        j.name AS job_name,
+        p.path_id,
+        pa.name AS path_name,
+        p.current_step_id,
+        ps.name AS step_name,
+        ps.assigned_to,
+        p.status,
+        p.scrap_reason,
+        p.force_completed,
+        p.created_at
+      FROM parts p
+      LEFT JOIN jobs j ON j.id = p.job_id
+      LEFT JOIN paths pa ON pa.id = p.path_id
+      LEFT JOIN process_steps ps ON ps.id = p.current_step_id
+      ORDER BY p.created_at ASC
+    `).all() as Array<{
+      id: string
+      job_id: string
+      job_name: string | null
+      path_id: string
+      path_name: string | null
+      current_step_id: string | null
+      step_name: string | null
+      assigned_to: string | null
+      status: string
+      scrap_reason: string | null
+      force_completed: number
+      created_at: string
+    }>
+
+    return rows.map((row) => {
+      let status: 'in-progress' | 'completed' | 'scrapped'
+      if (row.status === 'scrapped') {
+        status = 'scrapped'
+      } else if (row.current_step_id === null || row.status === 'completed') {
+        status = 'completed'
+      } else {
+        status = 'in-progress'
+      }
+
+      let currentStepName = 'Completed'
+      if (row.status === 'scrapped') {
+        currentStepName = 'Scrapped'
+      } else if (row.current_step_id !== null) {
+        currentStepName = row.step_name ?? ''
+      }
+
+      return {
+        id: row.id,
+        jobId: row.job_id,
+        jobName: row.job_name ?? '',
+        pathId: row.path_id,
+        pathName: row.path_name ?? '',
+        currentStepId: row.current_step_id,
+        currentStepName,
+        assignedTo: row.assigned_to ?? undefined,
+        status,
+        scrapReason: (row.scrap_reason as EnrichedPart['scrapReason']) ?? undefined,
+        forceCompleted: row.force_completed === 1 ? true : undefined,
+        createdAt: row.created_at,
+      }
+    })
   }
 
   deleteByPathId(pathId: string): number {

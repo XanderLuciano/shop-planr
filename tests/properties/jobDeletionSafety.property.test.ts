@@ -69,6 +69,7 @@ function createMockPartRepo(partCount: number): PartRepository {
     countCompletedByJobId: vi.fn(() => 0),
     countScrappedByJobId: vi.fn(() => 0),
     listAll: vi.fn(),
+    listAllEnriched: vi.fn(() => []),
   }
 }
 
