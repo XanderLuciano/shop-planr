@@ -13,6 +13,7 @@ export type {
   AuditEntry,
   AuditAction,
   ShopUser,
+  PublicUser,
   StepNote,
   PageToggles,
   AppSettings,
@@ -28,3 +29,5 @@ export type {
   LocationLibraryEntry,
   StepInput,
 } from '../../server/types/domain'
+
+export { toPublicUser } from '../../server/types/domain'

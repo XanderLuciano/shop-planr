@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { ShopUser } from '~/types/domain'
+import type { PublicUser } from '~/types/domain'
 
 const { showOverlay, users, login, setupPin, fetchUsers } = useAuth()
 
 type OverlayState = 'picker' | 'pin-entry' | 'pin-setup'
 
 const state = ref<OverlayState>('picker')
-const selectedUser = ref<ShopUser | null>(null)
+const selectedUser = ref<PublicUser | null>(null)
 const error = ref('')
 
 const pinEntryRef = ref<{ clear: () => void } | null>(null)
@@ -25,10 +25,10 @@ onMounted(() => {
   fetchUsers()
 })
 
-function handleUserSelect(user: ShopUser) {
+function handleUserSelect(user: PublicUser) {
   selectedUser.value = user
   error.value = ''
-  state.value = user.pinHash ? 'pin-entry' : 'pin-setup'
+  state.value = user.hasPin ? 'pin-entry' : 'pin-setup'
 }
 
 function handleBack() {
@@ -45,7 +45,6 @@ async function handlePinLogin(pin: string) {
   }
   catch {
     error.value = 'Invalid PIN'
-    nextTick(() => pinEntryRef.value?.clear())
   }
 }
 
@@ -106,16 +105,9 @@ async function handlePinSetup(pin: string) {
           </p>
           <PinEntry
             ref="pinEntryRef"
-            :error="error"
+            v-model:error="error"
             @submit="handlePinLogin"
           />
-          <p
-            v-if="error"
-            class="text-sm text-red-400"
-            role="alert"
-          >
-            {{ error }}
-          </p>
         </div>
 
         <!-- PIN Setup -->

@@ -112,6 +112,10 @@ export function createAuthService(repos: {
     const user = repos.users.getById(userId)
     if (!user) throw new NotFoundError('User', userId)
 
+    if (user.pinHash) {
+      throw new ForbiddenError('PIN is already set. Use admin reset to change it.')
+    }
+
     const pinHash = hashSync(pin, BCRYPT_ROUNDS)
     const updated = repos.users.update(userId, { pinHash })
 

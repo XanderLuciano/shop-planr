@@ -287,9 +287,13 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
 
     const changes = computePathChanges(originalPaths, pathDrafts.value)
 
+    if (!authenticatedUser.value) {
+      throw new Error('Authentication required — please sign in again')
+    }
+
     // Deletes first
     for (const path of changes.toDelete) {
-      await deletePath(path.id, authenticatedUser.value!.id)
+      await deletePath(path.id, authenticatedUser.value.id)
     }
 
     // Then updates

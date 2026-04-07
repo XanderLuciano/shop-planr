@@ -37,7 +37,19 @@ export default defineEventHandler(async (event) => {
   const authHeader = getHeader(event, 'authorization')
   const isAuthenticated = !!authHeader?.startsWith('Bearer ')
 
-  const clientIP = getRequestIP(event) ?? getHeader(event, 'x-forwarded-for') ?? '127.0.0.1'
+  // Use socket remoteAddress as the base — this is always trustworthy.
+  // Only fall back to x-forwarded-for when TRUST_PROXY is enabled (app sits behind a known reverse proxy).
+  const socketIP = getRequestIP(event)
+  let clientIP = socketIP ?? '127.0.0.1'
+
+  const trustProxy = process.env.TRUST_PROXY === 'true'
+  if (trustProxy && !socketIP) {
+    const forwarded = getHeader(event, 'x-forwarded-for')
+    if (forwarded) {
+      // Take only the first (leftmost) IP — the client-originating address
+      clientIP = forwarded.split(',')[0]!.trim()
+    }
+  }
   const limiters = getLimiters(path, isAuthenticated)
 
   try {

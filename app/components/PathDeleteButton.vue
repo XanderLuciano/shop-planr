@@ -17,12 +17,16 @@ const error = ref<string | null>(null)
 const { authenticatedUser } = useAuth()
 
 async function performDelete() {
+  if (!authenticatedUser.value) {
+    error.value = 'Authentication required — please sign in again'
+    return
+  }
   loading.value = true
   error.value = null
   try {
     await $fetch(`/api/paths/${encodeURIComponent(props.pathId)}`, {
       method: 'DELETE',
-      body: { userId: authenticatedUser.value!.id },
+      body: { userId: authenticatedUser.value.id },
     })
     confirming.value = false
     showModal.value = false

@@ -39,12 +39,16 @@ const certOptions = computed(() => [
 
 async function onSubmit() {
   error.value = ''
+  if (!authenticatedUser.value) {
+    error.value = 'Authentication required — please sign in again'
+    return
+  }
   if (quantity.value < 1) {
     error.value = 'Quantity must be at least 1'
     return
   }
 
-  const userId = authenticatedUser.value!.id
+  const userId = authenticatedUser.value.id
 
   saving.value = true
   try {

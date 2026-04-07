@@ -55,17 +55,41 @@ describe('PIN validation', () => {
   })
 
   it('accepts 0000', async () => {
-    const token = await ctx.authService.setupPin(userId, '0000')
+    const user = ctx.repos.users.create({
+      id: generateId('user'),
+      username: 'pinval_0000',
+      displayName: 'Pin Val 0000',
+      isAdmin: false,
+      active: true,
+      createdAt: new Date().toISOString(),
+    })
+    const token = await ctx.authService.setupPin(user.id, '0000')
     expect(typeof token).toBe('string')
   })
 
   it('accepts 9999', async () => {
-    const token = await ctx.authService.setupPin(userId, '9999')
+    const user = ctx.repos.users.create({
+      id: generateId('user'),
+      username: 'pinval_9999',
+      displayName: 'Pin Val 9999',
+      isAdmin: false,
+      active: true,
+      createdAt: new Date().toISOString(),
+    })
+    const token = await ctx.authService.setupPin(user.id, '9999')
     expect(typeof token).toBe('string')
   })
 
   it('accepts PIN with leading zeros', async () => {
-    const token = await ctx.authService.setupPin(userId, '0001')
+    const user = ctx.repos.users.create({
+      id: generateId('user'),
+      username: 'pinval_0001',
+      displayName: 'Pin Val 0001',
+      isAdmin: false,
+      active: true,
+      createdAt: new Date().toISOString(),
+    })
+    const token = await ctx.authService.setupPin(user.id, '0001')
     expect(typeof token).toBe('string')
   })
 })

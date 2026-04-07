@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { ShopUser } from '~/types/domain'
+import type { PublicUser } from '~/types/domain'
 
 defineProps<{
-  users: ShopUser[]
+  users: PublicUser[]
 }>()
 
 const emit = defineEmits<{
-  select: [user: ShopUser]
+  select: [user: PublicUser]
 }>()
 
 function getFirstName(displayName: string): string {

@@ -1,5 +1,5 @@
 import { computed } from 'vue'
-import type { ShopUser } from '~/types/domain'
+import type { ShopUser, PublicUser } from '~/types/domain'
 
 const COOKIE_NAME = 'shop-planr-auth-token'
 
@@ -50,7 +50,7 @@ export function useAuth() {
 
   // useState — SSR-safe singleton refs shared across all useAuth() callers
   const authenticatedUser = useState<ShopUser | null>('auth:user', () => null)
-  const users = useState<ShopUser[]>('auth:users', () => [])
+  const users = useState<PublicUser[]>('auth:users', () => [])
   const showOverlay = useState<boolean>('auth:overlay', () => true)
   const initialized = useState<boolean>('auth:init', () => false)
 
@@ -153,7 +153,7 @@ export function useAuth() {
 
   async function fetchUsers(): Promise<void> {
     try {
-      users.value = await $fetch<ShopUser[]>('/api/users')
+      users.value = await $fetch<PublicUser[]>('/api/users')
     }
     catch {
       users.value = []

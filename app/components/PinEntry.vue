@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import type { ComponentPublicInstance } from 'vue'
+
 const props = defineProps<{
   error?: string
 }>()
 
 const emit = defineEmits<{
   submit: [pin: string]
+  'update:error': [value: string]
 }>()
 
 const inputRefs = ref<(HTMLInputElement | null)[]>([])
@@ -27,6 +30,7 @@ function handleInput(index: number, event: Event) {
 
   // Clear error state on any input
   if (props.error) {
+    emit('update:error', '')
     clearAll()
     return
   }
@@ -52,9 +56,9 @@ function handleInput(index: number, event: Event) {
 }
 
 function handleKeydown(index: number, event: KeyboardEvent) {
-  // Clear error on any keypress
+  // Clear error on any keypress and let the keystroke through
   if (props.error) {
-    event.preventDefault()
+    emit('update:error', '')
     clearAll()
     return
   }
@@ -74,6 +78,7 @@ function handlePaste(event: ClipboardEvent) {
   event.preventDefault()
 
   if (props.error) {
+    emit('update:error', '')
     clearAll()
     return
   }

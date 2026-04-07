@@ -36,8 +36,12 @@ async function onSubmit() {
   localError.value = ''
   jiraPushResult.value = ''
   jiraPushIsError.value = false
+  if (!authenticatedUser.value) {
+    localError.value = 'Authentication required — please sign in again'
+    return
+  }
   try {
-    const user = authenticatedUser.value!
+    const user = authenticatedUser.value
     const note = await createNote({
       jobId: props.jobId,
       pathId: props.pathId,

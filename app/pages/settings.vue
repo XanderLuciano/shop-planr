@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ShopUser, JiraConnectionSettings, JiraFieldMapping, PageToggles } from '~/types/domain'
+import type { PublicUser, JiraConnectionSettings, JiraFieldMapping, PageToggles } from '~/types/domain'
 
 const { settings, loading, fetchSettings, updateSettings } = useSettings()
 const { fetchUsers, isAdmin, authenticatedUser } = useAuth()
@@ -15,9 +15,9 @@ const tabs = [
 ]
 
 // User management state
-const allUsers = ref<ShopUser[]>([])
+const allUsers = ref<PublicUser[]>([])
 const showUserForm = ref(false)
-const editingUser = ref<ShopUser | null>(null)
+const editingUser = ref<PublicUser | null>(null)
 const userSaving = ref(false)
 const userError = ref('')
 const userSuccess = ref('')
@@ -30,7 +30,7 @@ const settingsSuccess = ref('')
 async function loadAllUsers() {
   try {
     // The users composable fetches active users; we need all users for settings
-    const all = await $fetch<ShopUser[]>('/api/users')
+    const all = await $fetch<PublicUser[]>('/api/users')
     allUsers.value = all
   } catch {
     allUsers.value = []
@@ -72,7 +72,7 @@ async function onUpdateUser(data: { username?: string, displayName?: string, dep
   }
 }
 
-async function toggleUserActive(user: ShopUser) {
+async function toggleUserActive(user: PublicUser) {
   userError.value = ''
   try {
     await $fetch(`/api/users/${user.id}`, {
@@ -86,7 +86,7 @@ async function toggleUserActive(user: ShopUser) {
   }
 }
 
-async function resetUserPin(user: ShopUser) {
+async function resetUserPin(user: PublicUser) {
   userError.value = ''
   userSuccess.value = ''
   try {
@@ -295,7 +295,7 @@ onMounted(async () => {
             </div>
             <div class="flex items-center gap-1 shrink-0">
               <UButton
-                v-if="isAdmin && u.pinHash && u.id !== authenticatedUser?.id"
+                v-if="isAdmin && u.hasPin && u.id !== authenticatedUser?.id"
                 icon="i-lucide-key-round"
                 size="xs"
                 variant="ghost"
