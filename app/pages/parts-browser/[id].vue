@@ -398,7 +398,7 @@ onMounted(async () => {
                 'bg-(--ui-primary)/10 border-l-2 border-l-(--ui-primary)': part.currentStepId === step.id,
                 'bg-(--ui-bg-elevated)/30': part.currentStepId !== step.id,
               }"
-              @click="navigateTo(`/parts/step/${encodeURIComponent(step.id)}`)"
+              @click="navigateTo(`/parts/step/${encodeURIComponent(step.id)}?from=/parts-browser/${encodeURIComponent(partId)}`)"
             >
               <!-- Step order -->
               <div

@@ -36,4 +36,9 @@ describe('resolveBackNavigation', () => {
     const result = resolveBackNavigation('/parts')
     expect(result).toEqual({ to: '/parts', label: 'Back to Parts' })
   })
+
+  it('returns part path and "Back to Part" for a parts-browser path', () => {
+    const result = resolveBackNavigation('/parts-browser/part_00004')
+    expect(result).toEqual({ to: '/parts-browser/part_00004', label: 'Back to Part' })
+  })
 })

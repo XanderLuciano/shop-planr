@@ -15,5 +15,9 @@ export function resolveBackNavigation(from: string | undefined | null): BackNavi
     return { to: from, label: 'Back to Job' }
   }
 
+  if (typeof from === 'string' && from.startsWith('/parts-browser/')) {
+    return { to: from, label: 'Back to Part' }
+  }
+
   return { to: '/parts', label: 'Back to Parts' }
 }
