@@ -104,13 +104,11 @@ export function useNavigationStack() {
   })
 
   function goBack(): void {
-    const entry = pop()
-    if (entry) {
-      navigateTo(entry.path)
-    } else {
-      const fallbackPath = resolveFallbackRoute(useRoute().path)
-      navigateTo(fallbackPath)
-    }
+    // Navigate to the back destination without popping — the middleware
+    // will detect that to.path matches the stack top and pop for us.
+    // This avoids a double-pop race where goBack() pops first, then
+    // the middleware sees a different stack top and pushes instead.
+    navigateTo(backNavigation.value.to)
   }
 
   const entries = computed<readonly NavigationEntry[]>(() => stack.value)
