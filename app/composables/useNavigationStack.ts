@@ -88,8 +88,6 @@ export function useNavigationStack() {
     if (import.meta.client) writeToStorage(next)
   }
 
-  const route = useRoute()
-
   const backNavigation = computed<BackNavigation>(() => {
     // Find first valid entry from top of stack
     for (let i = stack.value.length - 1; i >= 0; i--) {
@@ -98,8 +96,9 @@ export function useNavigationStack() {
         return { to: entry.path, label: `Back to ${entry.label}` }
       }
     }
-    // Fallback when stack is empty
-    const fallbackPath = resolveFallbackRoute(route.path)
+    // Fallback when stack is empty — useRoute() called lazily here
+    // so the middleware (which only uses push/pop/replaceTop) never triggers it
+    const fallbackPath = resolveFallbackRoute(useRoute().path)
     const fallbackLabel = resolveLabel(fallbackPath)
     return { to: fallbackPath, label: `Back to ${fallbackLabel}` }
   })
@@ -109,7 +108,7 @@ export function useNavigationStack() {
     if (entry) {
       navigateTo(entry.path)
     } else {
-      const fallbackPath = resolveFallbackRoute(route.path)
+      const fallbackPath = resolveFallbackRoute(useRoute().path)
       navigateTo(fallbackPath)
     }
   }
