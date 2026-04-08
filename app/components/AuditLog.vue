@@ -5,6 +5,21 @@ defineProps<{
   entries: readonly AuditEntry[]
 }>()
 
+const { users } = useAuth()
+
+const userDisplayMap = computed(() => {
+  const map = new Map<string, string>()
+  for (const u of users.value) {
+    map.set(u.id, u.username)
+  }
+  return map
+})
+
+function resolveUser(userId?: string | null): string {
+  if (!userId) return '—'
+  return userDisplayMap.value.get(userId) ?? userId
+}
+
 const actionConfig: Record<AuditAction, { label: string, color: string, icon: string }> = {
   cert_attached: { label: 'Cert Attached', color: 'text-blue-500', icon: 'i-lucide-paperclip' },
   part_created: { label: 'Part Created', color: 'text-green-500', icon: 'i-lucide-plus-circle' },
@@ -93,7 +108,7 @@ function formatTime(ts: string): string {
           </span>
         </td>
         <td class="py-1 px-2 text-(--ui-text-highlighted)">
-          {{ entry.userId || '—' }}
+          {{ resolveUser(entry.userId) }}
         </td>
         <td class="py-1 px-2 font-mono">
           {{ entry.partId || (entry.batchQuantity ? `×${entry.batchQuantity}` : '—') }}
