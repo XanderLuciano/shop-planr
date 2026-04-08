@@ -5,11 +5,11 @@ export default <RouterConfig>{
     // Restore saved position on browser back/forward
     if (savedPosition) return savedPosition
 
-    // Skip scroll for hashes used as tab state (no matching DOM element)
-    if (to.hash && !document.querySelector(to.hash)) return false
-
-    // Scroll to hash anchor if the element exists
-    if (to.hash) return { el: to.hash, behavior: 'smooth' }
+    if (to.hash) {
+      const id = to.hash.slice(1)
+      if (!id || !document.getElementById(id)) return false
+      return { el: `#${CSS.escape(id)}`, behavior: 'smooth' }
+    }
 
     // Default: scroll to top
     return { top: 0 }

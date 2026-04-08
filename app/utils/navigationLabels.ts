@@ -3,13 +3,22 @@ export interface NavigationLabel {
   label: (match: RegExpMatchArray) => string
 }
 
+/** Safely decode a URI component, returning the raw value on malformed input. */
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
+}
+
 /** Ordered list of route patterns → label resolvers. First match wins. */
 export const NAVIGATION_LABELS: NavigationLabel[] = [
   { pattern: /^\/$/, label: () => 'Dashboard' },
   { pattern: /^\/jobs$/, label: () => 'Jobs' },
   { pattern: /^\/jobs\/([^/]+)$/, label: () => 'Job' },
   { pattern: /^\/parts-browser$/, label: () => 'Parts Browser' },
-  { pattern: /^\/parts-browser\/([^/]+)$/, label: m => `Part ${decodeURIComponent(m[1]!)}` },
+  { pattern: /^\/parts-browser\/([^/]+)$/, label: m => `Part ${safeDecode(m[1]!)}` },
   { pattern: /^\/parts$/, label: () => 'Parts' },
   { pattern: /^\/parts\/step\/([^/]+)$/, label: () => 'Step View' },
   { pattern: /^\/queue$/, label: () => 'Work Queue' },
