@@ -64,31 +64,61 @@ const assigneeOptions = computed(() => {
       v-model="selectedJob"
       class="text-xs rounded-md border border-(--ui-border) bg-(--ui-bg) px-2 py-1.5 text-(--ui-text-highlighted)"
     >
-      <option v-for="o in jobOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+      <option
+        v-for="o in jobOptions"
+        :key="o.value"
+        :value="o.value"
+      >
+        {{ o.label }}
+      </option>
     </select>
     <select
       v-model="selectedPath"
       class="text-xs rounded-md border border-(--ui-border) bg-(--ui-bg) px-2 py-1.5 text-(--ui-text-highlighted)"
     >
-      <option v-for="o in pathOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+      <option
+        v-for="o in pathOptions"
+        :key="o.value"
+        :value="o.value"
+      >
+        {{ o.label }}
+      </option>
     </select>
     <select
       v-model="selectedStep"
       class="text-xs rounded-md border border-(--ui-border) bg-(--ui-bg) px-2 py-1.5 text-(--ui-text-highlighted)"
     >
-      <option v-for="o in stepOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+      <option
+        v-for="o in stepOptions"
+        :key="o.value"
+        :value="o.value"
+      >
+        {{ o.label }}
+      </option>
     </select>
     <select
       v-model="selectedStatus"
       class="text-xs rounded-md border border-(--ui-border) bg-(--ui-bg) px-2 py-1.5 text-(--ui-text-highlighted)"
     >
-      <option v-for="o in statusOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+      <option
+        v-for="o in statusOptions"
+        :key="o.value"
+        :value="o.value"
+      >
+        {{ o.label }}
+      </option>
     </select>
     <select
       v-model="selectedAssignee"
       class="text-xs rounded-md border border-(--ui-border) bg-(--ui-bg) px-2 py-1.5 text-(--ui-text-highlighted)"
     >
-      <option v-for="o in assigneeOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+      <option
+        v-for="o in assigneeOptions"
+        :key="o.value"
+        :value="o.value"
+      >
+        {{ o.label }}
+      </option>
     </select>
   </div>
 </template>

@@ -68,7 +68,10 @@ function statusColor(status: string) {
             @click="emit('sort', col.key)"
           >
             {{ col.label }}
-            <span v-if="sortColumn === col.key" class="ml-0.5">{{ sortIcon(col.key, sortColumn, sortDirection) }}</span>
+            <span
+              v-if="sortColumn === col.key"
+              class="ml-0.5"
+            >{{ sortIcon(col.key, sortColumn, sortDirection) }}</span>
           </th>
         </tr>
       </thead>
@@ -79,23 +82,52 @@ function statusColor(status: string) {
           class="cursor-pointer hover:bg-(--ui-bg-elevated)/50 transition-colors"
           @click="emit('select', s)"
         >
-          <td class="px-3 py-2 font-medium text-(--ui-text-highlighted)">{{ s.id }}</td>
-          <td class="px-3 py-2">{{ s.jobName }}</td>
-          <td class="px-3 py-2">{{ s.currentStepName }}</td>
+          <td class="px-3 py-2 font-medium text-(--ui-text-highlighted)">
+            {{ s.id }}
+          </td>
           <td class="px-3 py-2">
-            <UBadge :color="statusColor(s.status)" variant="subtle" size="sm">{{ statusLabel(s.status) }}</UBadge>
+            {{ s.jobName }}
+          </td>
+          <td class="px-3 py-2">
+            {{ s.currentStepName }}
+          </td>
+          <td class="px-3 py-2">
+            <UBadge
+              :color="statusColor(s.status)"
+              variant="subtle"
+              size="sm"
+            >
+              {{ statusLabel(s.status) }}
+            </UBadge>
           </td>
           <td class="px-3 py-2 text-(--ui-text-muted)">
-            <span v-if="resolveUser(s.assignedTo)" class="inline-flex items-center gap-1.5">
-              <UserAvatar :username="resolveUser(s.assignedTo)!.username" :display-name="resolveUser(s.assignedTo)!.displayName" size="sm" />
+            <span
+              v-if="resolveUser(s.assignedTo)"
+              class="inline-flex items-center gap-1.5"
+            >
+              <UserAvatar
+                :username="resolveUser(s.assignedTo)!.username"
+                :display-name="resolveUser(s.assignedTo)!.displayName"
+                size="sm"
+              />
               <span>{{ resolveUser(s.assignedTo)!.displayName }}</span>
             </span>
-            <span v-else class="text-(--ui-text-dimmed)">Unassigned</span>
+            <span
+              v-else
+              class="text-(--ui-text-dimmed)"
+            >Unassigned</span>
           </td>
-          <td class="px-3 py-2 text-(--ui-text-muted)">{{ new Date(s.createdAt).toLocaleDateString() }}</td>
+          <td class="px-3 py-2 text-(--ui-text-muted)">
+            {{ new Date(s.createdAt).toLocaleDateString() }}
+          </td>
         </tr>
         <tr v-if="parts.length === 0">
-          <td colspan="6" class="px-3 py-8 text-center text-(--ui-text-muted)">No parts found.</td>
+          <td
+            colspan="6"
+            class="px-3 py-8 text-center text-(--ui-text-muted)"
+          >
+            No parts found.
+          </td>
         </tr>
       </tbody>
     </table>

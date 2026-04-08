@@ -57,16 +57,34 @@ function statusColor(status: string) {
     >
       <div class="flex items-center justify-between">
         <span class="font-mono text-sm font-medium text-(--ui-text-highlighted)">{{ s.id }}</span>
-        <UBadge :color="statusColor(s.status)" variant="subtle" size="sm">{{ statusLabel(s.status) }}</UBadge>
+        <UBadge
+          :color="statusColor(s.status)"
+          variant="subtle"
+          size="sm"
+        >
+          {{ statusLabel(s.status) }}
+        </UBadge>
       </div>
-      <div class="text-xs text-(--ui-text-muted)">{{ s.jobName }}</div>
+      <div class="text-xs text-(--ui-text-muted)">
+        {{ s.jobName }}
+      </div>
       <div class="flex items-center justify-between text-xs">
         <span>{{ s.currentStepName }}</span>
-        <span v-if="resolveUser(s.assignedTo)" class="inline-flex items-center gap-1 text-(--ui-text-muted)">
-          <UserAvatar :username="resolveUser(s.assignedTo)!.username" :display-name="resolveUser(s.assignedTo)!.displayName" size="sm" />
+        <span
+          v-if="resolveUser(s.assignedTo)"
+          class="inline-flex items-center gap-1 text-(--ui-text-muted)"
+        >
+          <UserAvatar
+            :username="resolveUser(s.assignedTo)!.username"
+            :display-name="resolveUser(s.assignedTo)!.displayName"
+            size="sm"
+          />
           <span>{{ resolveUser(s.assignedTo)!.displayName }}</span>
         </span>
-        <span v-else class="text-(--ui-text-dimmed)">Unassigned</span>
+        <span
+          v-else
+          class="text-(--ui-text-dimmed)"
+        >Unassigned</span>
       </div>
     </div>
   </div>

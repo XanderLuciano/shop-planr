@@ -29,7 +29,9 @@ const selectedAssignee = ref(SELECT_ALL)
 let searchTimeout: ReturnType<typeof setTimeout> | null = null
 watch(searchInput, (val) => {
   if (searchTimeout) clearTimeout(searchTimeout)
-  searchTimeout = setTimeout(() => { searchQuery.value = val }, 300)
+  searchTimeout = setTimeout(() => {
+    searchQuery.value = val
+  }, 300)
 })
 
 // Sync filter refs to composable
@@ -56,7 +58,9 @@ function handleSelect(part: EnrichedPart) {
   navigateTo(`/parts-browser/${encodeURIComponent(part.id)}`)
 }
 
-onMounted(() => { fetchParts() })
+onMounted(() => {
+  fetchParts()
+})
 </script>
 
 <template>
@@ -75,18 +79,36 @@ onMounted(() => { fetchParts() })
       :parts="parts"
     />
 
-    <div v-if="filtersActive" class="text-xs text-(--ui-text-muted)">
+    <div
+      v-if="filtersActive"
+      class="text-xs text-(--ui-text-muted)"
+    >
       Showing {{ filteredCount }} of {{ totalCount }} parts
     </div>
 
-    <div v-if="loading" class="flex items-center gap-2 text-sm text-(--ui-text-muted) py-8">
-      <UIcon name="i-lucide-loader-2" class="animate-spin size-4" />
+    <div
+      v-if="loading"
+      class="flex items-center gap-2 text-sm text-(--ui-text-muted) py-8"
+    >
+      <UIcon
+        name="i-lucide-loader-2"
+        class="animate-spin size-4"
+      />
       Loading parts...
     </div>
 
-    <div v-else-if="error" class="flex items-center gap-2 text-xs text-(--ui-error)">
+    <div
+      v-else-if="error"
+      class="flex items-center gap-2 text-xs text-(--ui-error)"
+    >
       <span>{{ error }}</span>
-      <UButton size="xs" variant="ghost" icon="i-lucide-refresh-cw" label="Retry" @click="fetchParts" />
+      <UButton
+        size="xs"
+        variant="ghost"
+        icon="i-lucide-refresh-cw"
+        label="Retry"
+        @click="fetchParts"
+      />
     </div>
 
     <template v-if="!loading && !error">
