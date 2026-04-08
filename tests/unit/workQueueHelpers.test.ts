@@ -76,6 +76,16 @@ describe('shouldIncludeStep', () => {
     expect(shouldIncludeStep(step, 0, true, goalQuantity)).toBe(false)
   })
 
+  it('returns true for first-active step with parts > 0 even when goal is met', () => {
+    const step = makeStep({ order: 0, completedCount: goalQuantity })
+    expect(shouldIncludeStep(step, 3, true, goalQuantity)).toBe(true)
+  })
+
+  it('returns true for first-active step with parts > 0 even when completedCount exceeds goal', () => {
+    const step = makeStep({ order: 0, completedCount: goalQuantity + 5 })
+    expect(shouldIncludeStep(step, 1, true, goalQuantity)).toBe(true)
+  })
+
   it('returns false for non-first-active step with partCount = 0', () => {
     const step = makeStep({ order: 2, completedCount: 0 })
     expect(shouldIncludeStep(step, 0, false, goalQuantity)).toBe(false)
