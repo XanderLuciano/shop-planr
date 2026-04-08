@@ -46,7 +46,7 @@ const props = defineProps<{
           />
 
           <!-- Overlaid job name (left) + percentage pill (right) -->
-          <span class="absolute inset-0 flex items-center justify-between text-s font-bold px-2 dark:text-white text-gray-800 drop-shadow-sm">
+          <span class="absolute inset-0 flex items-center justify-between text-sm font-bold px-2 dark:text-white text-gray-800 drop-shadow-sm">
             <span class="truncate">{{ job.jobName }}</span>
             <UTooltip
               :delay-duration="0"

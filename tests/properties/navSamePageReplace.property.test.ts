@@ -1,13 +1,12 @@
-// Feature: navigation-stack, Property 10: Same-Page-Type Replace vs Different-Page-Type Push
+// Feature: navigation-stack, Property 10: Same-Page-Type No-Op vs Different-Page-Type Push
 /**
- * Property 10: Same-Page-Type Replace vs Different-Page-Type Push
- * Property 11: Route Pattern Consistency (covered in navRoutePatternConsistency)
+ * Property 10: Same-Page-Type No-Op vs Different-Page-Type Push
  *
  * **Validates: Requirements 8.1, 8.3**
  *
  * Verifies that when two routes share the same routePattern, the middleware
- * replaces the top entry (stack size unchanged). When patterns differ,
- * the stack size increases by one.
+ * leaves the stack unchanged (no-op). When patterns differ, the stack size
+ * increases by one (push).
  */
 import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
@@ -45,7 +44,7 @@ function simulateMiddleware(
   stack: NavigationEntry[],
   fromPath: string,
   toPath: string,
-): { result: NavigationEntry[], action: 'replace' | 'push' | 'pop' | 'skip' } {
+): { result: NavigationEntry[], action: 'noop' | 'push' | 'pop' | 'skip' } {
   if (toPath === fromPath) return { result: [...stack], action: 'skip' }
 
   const copy = [...stack]
@@ -56,15 +55,9 @@ function simulateMiddleware(
     return { result: copy, action: 'pop' }
   }
 
-  // Same-page-type → replace
+  // Same-page-type → no-op (stack unchanged)
   if (routePattern(fromPath) === routePattern(toPath)) {
-    const entry = { path: fromPath, label: resolveLabel(fromPath) }
-    if (copy.length > 0) {
-      copy[copy.length - 1] = entry
-    } else {
-      copy.push(entry)
-    }
-    return { result: copy, action: 'replace' }
+    return { result: copy, action: 'noop' }
   }
 
   // Different page type → push
@@ -72,16 +65,16 @@ function simulateMiddleware(
   return { result: copy, action: 'push' }
 }
 
-describe('Property 10: Same-Page-Type Replace vs Different-Page-Type Push', () => {
+describe('Property 10: Same-Page-Type No-Op vs Different-Page-Type Push', () => {
   // Feature: navigation-stack, Property 10
 
   /**
    * **Validates: Requirements 8.1**
    *
-   * When from and to share the same routePattern, the stack size stays the same
-   * (replace, not push).
+   * When from and to share the same routePattern, the stack is unchanged (no-op).
+   * This preserves the entry point (e.g., Queue) when navigating Step → Step.
    */
-  it('same-page-type navigation replaces top entry (stack size unchanged)', () => {
+  it('same-page-type navigation is a no-op (stack unchanged)', () => {
     fc.assert(
       fc.property(
         fc.array(arbNavigationEntry, { minLength: 1, maxLength: 10 }),
@@ -92,8 +85,8 @@ describe('Property 10: Same-Page-Type Replace vs Different-Page-Type Push', () =
           if (stack.length === 0) return // skip degenerate case
 
           const { result, action } = simulateMiddleware(stack, fromPath, toPath)
-          expect(action).toBe('replace')
-          expect(result.length).toBe(stack.length)
+          expect(action).toBe('noop')
+          expect(result).toEqual(stack)
         },
       ),
       { numRuns: 200 },

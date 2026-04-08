@@ -14,9 +14,9 @@ export default defineNuxtRouteMiddleware((to, from) => {
     return
   }
 
-  // Same-page-type navigation (e.g., Step → Step via Prev/Next): replace top
+  // Same-page-type navigation (e.g., Step → Step via Prev/Next): no-op
+  // The stack already has the entry point (e.g., Queue), don't replace it
   if (routePattern(from.path) === routePattern(to.path)) {
-    replaceTop({ path: from.path, label: resolveLabel(from.path) })
     return
   }
 
