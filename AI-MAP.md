@@ -35,12 +35,14 @@ app/
   pages/
     index.vue            → Placeholder homepage (to become dashboard)
   components/            → 50+ components: SectionCard (reusable card wrapper), lifecycle dialogs (ScrapDialog, ForceCompleteDialog, AdvanceToStepDropdown), config panels (StepConfigPanel, AdvancementModeSelector, LibraryManager), job form (JobCreationForm), serial creation (SerialCreationPanel — first-step batch creation + advancement), page visibility (PageVisibilitySettings — toggle switches for nav pages), docs (EndpointCard MDC, DocsSidebar, DocsSearch), job view (JobViewToolbar — expand/collapse all jobs/paths buttons, JobExpandableRow — multi-path expansion with bulk signals, JobMobileCard — card-based job display for mobile viewports), work queue (WorkQueueFilterBar — group-by selector, filter dropdowns, text search, preset management), utility (BonusBadge, PathDeleteButton, CertDetailView, TemplateEditor, etc.)
-  composables/           → 25+ composables: useAuth (session/token/user), useAuthFetch (authenticated $fetch instance), useJobForm, useLifecycle, useLibrary, useBomVersions, useAudit (with filters), usePartsView, useStepView, useOperatorWorkQueue (extended with groupBy param), useWorkQueueFilters (wraps useOperatorWorkQueue with groupBy/filter/preset/URL-sync), useAdvanceBatch (extracted advanceBatch() with client-side validation), useSettings (extended with pageToggles), useDocsNavigation, useDocsSearch, useMobileBreakpoint (matchMedia-based mobile viewport detection), useJobPriority (drag-and-drop priority editing) + existing ones
+  composables/           → 25+ composables: useAuth (session/token/user), useAuthFetch (authenticated $fetch instance), useJobForm, useLifecycle, useLibrary, useBomVersions, useAudit (with filters), usePartsView, useStepView, useOperatorWorkQueue (extended with groupBy param), useWorkQueueFilters (wraps useOperatorWorkQueue with groupBy/filter/preset/URL-sync), useAdvanceBatch (extracted advanceBatch() with client-side validation), useSettings (extended with pageToggles), useDocsNavigation, useDocsSearch, useMobileBreakpoint (matchMedia-based mobile viewport detection), useJobPriority (drag-and-drop priority editing), useNavigationStack (stack-based back navigation via sessionStorage) + existing ones
   middleware/
     pageGuard.global.ts  → Global route middleware: blocks navigation to disabled pages, redirects to /
+    stackTracker.global.ts → Global route middleware: auto-maintains navigation stack (push/pop/replace) on every client-side route change
   utils/
     pageToggles.ts       → Re-exports DEFAULT_PAGE_TOGGLES, ROUTE_TOGGLE_MAP, ALWAYS_ENABLED_ROUTES, isPageEnabled() for client-side auto-import
-    resolveBackNavigation.ts → Pure helper: computes back-arrow destination/label from `from` query param (auto-imported)
+    navigationLabels.ts  → Label registry: resolveLabel(path) → human-readable label, routePattern(path) → same-page-type detection
+    navigationFallbacks.ts → resolveFallbackRoute(path) → deterministic parent route when nav stack is empty
     docsMethodColor.ts   → getMethodColor() — maps HTTP methods to Tailwind color classes for EndpointCard badges
     workQueueFilters.ts  → applyFilters() + extractAvailableValues() — pure client-side filtering for work queue groups
   assets/css/

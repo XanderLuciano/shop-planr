@@ -7,17 +7,8 @@ const router = useRouter()
 const partId = route.params.id as string
 const $api = useAuthFetch()
 
-// Context-aware back navigation
-const fromQuery = route.query.from as string | undefined
-const backNav = computed(() => {
-  if (fromQuery && fromQuery.startsWith('/parts/step/')) {
-    return { to: fromQuery, label: 'Back to Step' }
-  }
-  if (fromQuery && fromQuery.startsWith('/queue')) {
-    return { to: '/queue', label: 'Back to Queue' }
-  }
-  return { to: '/parts-browser', label: 'Back to Parts Browser' }
-})
+// Stack-based back navigation
+const { backNavigation: backNav } = useNavigationStack()
 
 const {
   part,
@@ -410,7 +401,7 @@ onMounted(async () => {
                 'bg-(--ui-primary)/10 border-l-2 border-l-(--ui-primary)': part.currentStepId === step.id,
                 'bg-(--ui-bg-elevated)/30': part.currentStepId !== step.id,
               }"
-              @click="navigateTo(`/parts/step/${encodeURIComponent(step.id)}?from=/parts-browser/${encodeURIComponent(partId)}`)"
+              @click="navigateTo(`/parts/step/${encodeURIComponent(step.id)}`)"
             >
               <!-- Step order -->
               <div
@@ -698,7 +689,7 @@ onMounted(async () => {
                 :key="sib.id"
                 class="cursor-pointer transition-colors"
                 :class="sib.id === partId ? 'bg-(--ui-primary)/10 font-medium' : 'hover:bg-(--ui-bg-elevated)/50'"
-                @click="navigateTo(`/parts-browser/${encodeURIComponent(sib.id)}${fromQuery ? `?from=${encodeURIComponent(fromQuery)}` : ''}`)"
+                @click="navigateTo(`/parts-browser/${encodeURIComponent(sib.id)}`)"
               >
                 <td class="px-3 py-2 text-(--ui-text-highlighted)">
                   {{ sib.id }}
