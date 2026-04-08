@@ -698,7 +698,7 @@ onMounted(async () => {
                 :key="sib.id"
                 class="cursor-pointer transition-colors"
                 :class="sib.id === partId ? 'bg-(--ui-primary)/10 font-medium' : 'hover:bg-(--ui-bg-elevated)/50'"
-                @click="navigateTo(`/parts-browser/${encodeURIComponent(sib.id)}`)"
+                @click="navigateTo(`/parts-browser/${encodeURIComponent(sib.id)}${fromQuery ? `?from=${encodeURIComponent(fromQuery)}` : ''}`)"
               >
                 <td class="px-3 py-2 text-(--ui-text-highlighted)">
                   {{ sib.id }}
