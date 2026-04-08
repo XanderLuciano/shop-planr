@@ -22,6 +22,7 @@ import type {
   WorkQueueGroup,
   StepViewResponse,
 } from '../../server/types/computed'
+import { findFirstActiveStep, shouldIncludeStep } from '../../server/utils/workQueueHelpers'
 
 // ---------------------------------------------------------------------------
 // Pure function replications of endpoint logic
@@ -37,9 +38,12 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
     const paths = pathService.listPathsByJob(job.id)
     for (const path of paths) {
       const totalSteps = path.steps.length
+      const firstActiveStep = findFirstActiveStep(path.steps)
       for (const step of path.steps) {
+        if (step.removedAt) continue
         const parts = partService.listPartsByCurrentStepId(step.id)
-        if (parts.length === 0 && step.order !== 0) continue
+        const isFirstActive = firstActiveStep != null && step.id === firstActiveStep.id
+        if (!shouldIncludeStep(step, parts.length, isFirstActive, path.goalQuantity)) continue
         const key = `${job.id}|${path.id}|${step.order}`
         const isFinalStep = step.order === totalSteps - 1
         const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
@@ -60,6 +64,7 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
           isFinalStep,
           assignedTo: step.assignedTo,
           jobPriority: job.priority,
+          ...(isFirstActive && { goalQuantity: path.goalQuantity, completedCount: step.completedCount }),
         })
       }
     }
@@ -67,7 +72,7 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
 
   const queueJobs = Array.from(groupMap.values())
   const totalParts = queueJobs.reduce((sum, j) => sum + j.partCount, 0)
-  return { operatorId: '_all', jobs: queueJobs, totalParts }
+  return { jobs: queueJobs, totalParts }
 }
 
 /** Replicates GET /api/operator/step/[stepId] */
@@ -138,9 +143,12 @@ function aggregateGroupedWork(
     const paths = pathService.listPathsByJob(job.id)
     for (const path of paths) {
       const totalSteps = path.steps.length
+      const firstActiveStep = findFirstActiveStep(path.steps)
       for (const step of path.steps) {
+        if (step.removedAt) continue
         const parts = partService.listPartsByCurrentStepId(step.id)
-        if (parts.length === 0) continue
+        const isFirstActive = firstActiveStep != null && step.id === firstActiveStep.id
+        if (!shouldIncludeStep(step, parts.length, isFirstActive, path.goalQuantity)) continue
         const isFinalStep = step.order === totalSteps - 1
         const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
         entries.push({
@@ -162,6 +170,7 @@ function aggregateGroupedWork(
             isFinalStep,
             assignedTo: step.assignedTo,
             jobPriority: job.priority,
+            ...(isFirstActive && { goalQuantity: path.goalQuantity, completedCount: step.completedCount }),
           },
         })
       }
@@ -251,7 +260,6 @@ describe('Operator View Redesign Integration', () => {
     // Should have 3 groups: job1/step0 (2 parts), job1/step1 (2 parts), job2/step0 (3 parts)
     expect(response.jobs).toHaveLength(3)
     expect(response.totalParts).toBe(7)
-    expect(response.operatorId).toBe('_all')
 
     // Verify job1 step 0 (Milling) — 2 remaining parts
     const milling = response.jobs.find(

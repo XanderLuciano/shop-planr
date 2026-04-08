@@ -42,7 +42,6 @@ const workQueueJobArb: fc.Arbitrary<WorkQueueJob> = fc.record({
 const wellFormedWorkQueueResponseArb: fc.Arbitrary<WorkQueueResponse> = fc
   .array(workQueueJobArb, { minLength: 0, maxLength: 8 })
   .map(jobs => ({
-    operatorId: '_all',
     jobs,
     totalParts: jobs.reduce((sum, j) => sum + j.partCount, 0),
   }))

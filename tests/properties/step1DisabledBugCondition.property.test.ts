@@ -14,6 +14,7 @@ import { describe, it, afterEach, expect } from 'vitest'
 import fc from 'fast-check'
 import { createTestContext, type TestContext } from '../integration/helpers'
 import type { WorkQueueJob, StepViewResponse, WorkQueueResponse } from '../../server/types/computed'
+import { findFirstActiveStep, shouldIncludeStep } from '../../server/utils/workQueueHelpers'
 
 // ---------------------------------------------------------------------------
 // Replicated FIXED logic from server/api/operator/step/[stepId].get.ts
@@ -89,10 +90,13 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
 
     for (const path of paths) {
       const totalSteps = path.steps.length
+      const firstActiveStep = findFirstActiveStep(path.steps)
 
       for (const step of path.steps) {
+        if (step.removedAt) continue
         const parts = partService.listPartsByCurrentStepId(step.id)
-        if (parts.length === 0 && step.order !== 0) continue // FIXED: only skip non-first steps with zero parts
+        const isFirstActive = firstActiveStep != null && step.id === firstActiveStep.id
+        if (!shouldIncludeStep(step, parts.length, isFirstActive, path.goalQuantity)) continue
 
         const key = `${job.id}|${path.id}|${step.order}`
         const isFinalStep = step.order === totalSteps - 1
@@ -114,6 +118,8 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
           nextStepLocation: nextStep?.location,
           isFinalStep,
           assignedTo: step.assignedTo,
+          jobPriority: job.priority,
+          ...(isFirstActive && { goalQuantity: path.goalQuantity, completedCount: step.completedCount }),
         })
       }
     }
@@ -121,7 +127,7 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
 
   const queueJobs = Array.from(groupMap.values())
   const totalParts = queueJobs.reduce((sum, j) => sum + j.partCount, 0)
-  return { operatorId: '_all', jobs: queueJobs, totalParts }
+  return { jobs: queueJobs, totalParts }
 }
 
 // ---------------------------------------------------------------------------
@@ -297,24 +303,25 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
    * Property 3: Bug Condition — First Step Included in Parts View
    *
    * For any valid first step (step_order = 0) with zero active parts,
-   * aggregateAllWork should include that step in the response so it
-   * remains navigable from the Parts View.
-   *
-   * This validates the fixed behavior; unfixed code would skip steps
-   * with parts.length === 0.
+   * aggregateAllWork should include that step in the response when
+   * completedCount < goalQuantity (goal not yet met). Once all parts
+   * have been advanced past step 0 (completedCount >= goalQuantity),
+   * the step correctly disappears from the queue.
    *
    * **Validates: Requirements 2.3**
    */
-  it('Property 3: Parts View includes first step even with zero parts', () => {
+  it('Property 3: Parts View includes first step even with zero parts when goal not met', () => {
     fc.assert(
       fc.property(jobPathConfigArb, (config) => {
         ctx = createTestContext()
         const { jobService, pathService, partService } = ctx
 
-        // Create job + path
+        // Create job + path — use partCount + 1 as goalQuantity so advancing
+        // all parts still leaves completedCount < goalQuantity
+        const goalQuantity = config.partCount + 1
         const job = jobService.createJob({
           name: config.jobName,
-          goalQuantity: config.partCount,
+          goalQuantity,
         })
 
         const steps = Array.from({ length: config.stepCount }, (_, i) => ({
@@ -325,7 +332,7 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
         const path = pathService.createPath({
           jobId: job.id,
           name: config.pathName,
-          goalQuantity: config.partCount,
+          goalQuantity,
           steps,
         })
 
@@ -347,11 +354,11 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
         // Call aggregateAllWork
         const response = aggregateAllWork(ctx)
 
-        // ASSERT: step 0 should appear in the response
+        // ASSERT: step 0 should appear because completedCount < goalQuantity
         const step0Id = path.steps[0].id
         const step0InResponse = response.jobs.some(j => j.stepId === step0Id)
 
-        expect(step0InResponse, `Step 0 (${step0Id}) should be included in Parts View even with 0 parts`).toBe(true)
+        expect(step0InResponse, `Step 0 (${step0Id}) should be included when completedCount < goalQuantity`).toBe(true)
 
         ctx.cleanup()
         ctx = null as any
