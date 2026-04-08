@@ -7,6 +7,9 @@ const router = useRouter()
 const partId = route.params.id as string
 const $api = useAuthFetch()
 
+// Stack-based back navigation
+const { backNavigation: backNav } = useNavigationStack()
+
 const {
   part,
   job,
@@ -83,11 +86,19 @@ const siblingInProgressCount = computed(() =>
 )
 
 watch(activeTab, async (tab) => {
-  if (tab === 'siblings' && !siblingsLoaded.value) {
+  if (tab === 'siblings' && !siblingsLoaded.value && part.value) {
     await fetchSiblings()
     siblingsLoaded.value = true
   }
 }, { immediate: true })
+
+// When detail data loads and we're already on siblings tab, fetch them
+watch(() => part.value, async () => {
+  if (activeTab.value === 'siblings' && !siblingsLoaded.value && part.value) {
+    await fetchSiblings()
+    siblingsLoaded.value = true
+  }
+})
 
 // Computed states
 const isScrapped = computed(() => part.value?.status === 'scrapped')
@@ -270,14 +281,14 @@ onMounted(async () => {
   <div class="p-4 space-y-4 max-w-5xl">
     <!-- Back link -->
     <NuxtLink
-      to="/parts-browser"
+      :to="backNav.to"
       class="inline-flex items-center gap-1 text-xs text-(--ui-text-muted) hover:text-(--ui-text-highlighted) transition-colors"
     >
       <UIcon
         name="i-lucide-arrow-left"
         class="size-3"
       />
-      Back to Parts Browser
+      {{ backNav.label }}
     </NuxtLink>
 
     <!-- Loading -->

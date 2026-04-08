@@ -6,9 +6,10 @@
  */
 
 export function tabToHash(tab: string): string {
-  return tab === 'siblings' ? '#parts' : '#routing'
+  return `#${tab}`
 }
 
 export function hashToTab(hash: string): string {
-  return hash === '#parts' ? 'siblings' : 'routing'
+  const tab = hash.replace(/^#/, '')
+  return tab === 'siblings' ? 'siblings' : 'routing'
 }

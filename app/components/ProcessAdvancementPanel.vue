@@ -179,7 +179,7 @@ onMounted(() => {
               color="neutral"
               icon="i-lucide-eye"
               title="View part detail"
-              :to="partDetailLink(partId)"
+              :to="`/parts-browser/${encodeURIComponent(partId)}`"
               @click.stop
             />
             <UButton

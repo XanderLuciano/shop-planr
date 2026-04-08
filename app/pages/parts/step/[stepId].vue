@@ -1,8 +1,7 @@
 <script setup lang="ts">
 const route = useRoute()
 const stepId = route.params.stepId as string
-const fromQuery = route.query.from as string | undefined
-const backNav = computed(() => resolveBackNavigation(fromQuery))
+const { backNavigation: backNav, goBack } = useNavigationStack()
 
 const {
   job,
@@ -122,7 +121,7 @@ async function handleCreated(count: number) {
 }
 
 function handleCancel() {
-  navigateTo(backNav.value.to)
+  goBack()
 }
 
 onMounted(async () => {
@@ -244,7 +243,7 @@ onMounted(async () => {
             icon="i-lucide-arrow-left"
             label="Prev"
             :disabled="job.stepOrder === 0"
-            :to="job.previousStepId ? `/parts/step/${job.previousStepId}${fromQuery ? `?from=${encodeURIComponent(fromQuery)}` : ''}` : undefined"
+            :to="job.previousStepId ? `/parts/step/${job.previousStepId}` : undefined"
           />
           <UButton
             size="xs"
@@ -252,7 +251,7 @@ onMounted(async () => {
             trailing-icon="i-lucide-arrow-right"
             label="Next"
             :disabled="job.isFinalStep"
-            :to="job.nextStepId ? `/parts/step/${job.nextStepId}${fromQuery ? `?from=${encodeURIComponent(fromQuery)}` : ''}` : undefined"
+            :to="job.nextStepId ? `/parts/step/${job.nextStepId}` : undefined"
           />
         </div>
       </div>

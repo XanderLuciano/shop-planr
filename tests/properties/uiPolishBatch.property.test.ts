@@ -9,7 +9,6 @@ import fc from 'fast-check'
 import { removePartFromList, removePartFromSelection } from '~/app/utils/scrapPartFromList'
 import { shouldHighlightStep } from '~/app/utils/stepHighlight'
 import { tabToHash, hashToTab } from '~/app/utils/tabHash'
-import { partDetailLink } from '~/app/utils/eyeIconLink'
 
 import { shouldShowSkip } from '~/app/utils/shouldShowSkip'
 
@@ -116,31 +115,6 @@ describe('Property 3: Step highlight classification', () => {
 })
 
 /**
- * Property 4: Eye icon link target correctness
- *
- * For any part ID string, the eye icon link resolves to
- * `/parts-browser/${encodeURIComponent(partId)}`.
- *
- * **Validates: Requirements 4.1, 4.2**
- */
-describe('Property 4: Eye icon link target correctness', () => {
-  it('link resolves to /parts-browser/{encodedPartId}', () => {
-    fc.assert(
-      fc.property(
-        fc.string({ minLength: 1, maxLength: 50 }),
-        (partId) => {
-          const link = partDetailLink(partId)
-          expect(link).toBe(`/parts-browser/${encodeURIComponent(partId)}`)
-          // Link always starts with the correct prefix
-          expect(link.startsWith('/parts-browser/')).toBe(true)
-        },
-      ),
-      { numRuns: 100 },
-    )
-  })
-})
-
-/**
  * Property 5: Tab-hash round trip
  *
  * Converting a tab to a hash and back produces the original tab.
@@ -166,7 +140,7 @@ describe('Property 5: Tab-hash round trip', () => {
   it('hash → tab → hash round-trips correctly', () => {
     fc.assert(
       fc.property(
-        fc.constantFrom('#routing', '#parts'),
+        fc.constantFrom('#routing', '#siblings'),
         (hash) => {
           const tab = hashToTab(hash)
           const roundTripped = tabToHash(tab)
