@@ -1,13 +1,10 @@
-import type { WorkQueueJob, WorkQueueGroup, GroupByDimension } from '../../types/computed'
-
-const VALID_GROUP_BY: GroupByDimension[] = ['user', 'location', 'step']
+import type { WorkQueueJob, WorkQueueGroup } from '../../types/computed'
+import { findFirstActiveStep, shouldIncludeStep } from '../../utils/workQueueHelpers'
+import { parseQuery } from '../../utils/validation'
+import { workQueueQuerySchema } from '../../schemas/operatorSchemas'
 
 export default defineApiHandler(async (event) => {
-  const query = getQuery(event)
-  const rawGroupBy = query.groupBy as string | undefined
-  const groupBy: GroupByDimension = VALID_GROUP_BY.includes(rawGroupBy as GroupByDimension)
-    ? (rawGroupBy as GroupByDimension)
-    : 'location'
+  const { groupBy } = parseQuery(event, workQueueQuerySchema)
 
   const { jobService, pathService, partService, userService } = getServices()
   const jobs = jobService.listJobs()
@@ -20,10 +17,15 @@ export default defineApiHandler(async (event) => {
 
     for (const path of paths) {
       const totalSteps = path.steps.length
+      const firstActiveStep = findFirstActiveStep(path.steps)
 
       for (const step of path.steps) {
+        if (step.removedAt) continue
+
         const parts = partService.listPartsByCurrentStepId(step.id)
-        if (parts.length === 0) continue
+        const isFirstActive = firstActiveStep != null && step.id === firstActiveStep.id
+
+        if (!shouldIncludeStep(step, parts.length, isFirstActive, path.goalQuantity)) continue
 
         const isFinalStep = step.order === totalSteps - 1
         const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
@@ -47,6 +49,7 @@ export default defineApiHandler(async (event) => {
             nextStepName: nextStep?.name,
             nextStepLocation: nextStep?.location,
             isFinalStep,
+            ...(isFirstActive && { goalQuantity: path.goalQuantity, completedCount: step.completedCount }),
           },
         })
       }

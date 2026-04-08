@@ -115,6 +115,12 @@ function formatNextStep(job: WorkQueueJob): string {
               >
                 {{ entry.partCount }}
               </UBadge>
+              <span
+                v-if="entry.goalQuantity != null"
+                class="text-xs text-(--ui-text-muted)"
+              >
+                {{ entry.completedCount }} / {{ entry.goalQuantity }} completed
+              </span>
               <UIcon
                 name="i-lucide-chevron-right"
                 class="size-4 text-(--ui-text-muted)"

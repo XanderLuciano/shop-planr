@@ -3,16 +3,17 @@
  *
  * For any set of jobs, each with paths containing ordered process steps and
  * parts at various steps, the all-work endpoint should return a WorkQueueJob
- * entry for every step that has at least one active part. Each entry should
- * contain the correct partCount, stepName, stepLocation, pathName, jobName,
- * and partIds.
+ * entry for every step that should be included per the first-step visibility
+ * and soft-delete filtering rules. Each entry should contain the correct
+ * partCount, stepName, stepLocation, pathName, jobName, and partIds.
  *
- * **Validates: Requirements 1.2, 1.3**
+ * **Validates: Requirements 10.2, 9.3**
  */
 import { describe, it, afterEach, expect } from 'vitest'
 import fc from 'fast-check'
 import { createTestContext, type TestContext } from '../integration/helpers'
 import type { WorkQueueJob, WorkQueueResponse } from '../../server/types/computed'
+import { findFirstActiveStep, shouldIncludeStep } from '../../server/utils/workQueueHelpers'
 
 /**
  * Replicate the aggregation logic from server/api/operator/queue/_all.get.ts
@@ -28,10 +29,15 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
 
     for (const path of paths) {
       const totalSteps = path.steps.length
+      const firstActiveStep = findFirstActiveStep(path.steps)
 
       for (const step of path.steps) {
+        if (step.removedAt) continue
+
         const parts = partService.listPartsByCurrentStepId(step.id)
-        if (parts.length === 0) continue
+        const isFirstActive = firstActiveStep != null && step.id === firstActiveStep.id
+
+        if (!shouldIncludeStep(step, parts.length, isFirstActive, path.goalQuantity)) continue
 
         const key = `${job.id}|${path.id}|${step.order}`
         const isFinalStep = step.order === totalSteps - 1
@@ -53,6 +59,8 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
           nextStepLocation: nextStep?.location,
           isFinalStep,
           assignedTo: step.assignedTo,
+          jobPriority: job.priority,
+          ...(isFirstActive && { goalQuantity: path.goalQuantity, completedCount: step.completedCount }),
         })
       }
     }
@@ -61,7 +69,7 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
   const queueJobs = Array.from(groupMap.values())
   const totalParts = queueJobs.reduce((sum, j) => sum + j.partCount, 0)
 
-  return { operatorId: '_all', jobs: queueJobs, totalParts }
+  return { jobs: queueJobs, totalParts }
 }
 
 /** Arbitrary for a single job with one path, random steps, and random parts */
@@ -204,6 +212,16 @@ describe('Property 1: All-Work Endpoint Completeness', () => {
           expectedGroups.get(key)!.add(s.id)
         }
 
+        // Also account for first-step entries that may have partCount === 0
+        // (these are included by the first-step visibility logic)
+        const firstStepKeys = new Set<string>()
+        for (const entry of response.jobs) {
+          if (entry.partCount === 0 && entry.goalQuantity != null) {
+            const key = `${entry.jobId}|${entry.pathId}|${entry.stepOrder}`
+            firstStepKeys.add(key)
+          }
+        }
+
         // 1. Every step with active parts has a corresponding WorkQueueJob
         for (const [key, _partIds] of expectedGroups) {
           const entry = response.jobs.find((j) => {
@@ -213,18 +231,25 @@ describe('Property 1: All-Work Endpoint Completeness', () => {
           expect(entry, `Missing WorkQueueJob for group ${key}`).toBeDefined()
         }
 
-        // 2. No extra entries — response only contains steps with active parts
-        expect(response.jobs.length).toBe(expectedGroups.size)
+        // 2. Response entries = steps with active parts + first-step entries with 0 parts
+        expect(response.jobs.length).toBe(expectedGroups.size + firstStepKeys.size)
 
         // 3. Each entry has correct partCount and partIds
         for (const entry of response.jobs) {
           const key = `${entry.jobId}|${entry.pathId}|${entry.stepOrder}`
-          const expectedIds = expectedGroups.get(key)!
+          const expectedIds = expectedGroups.get(key)
 
-          expect(entry.partCount).toBe(expectedIds.size)
-          expect(entry.partIds.length).toBe(expectedIds.size)
-          for (const sid of entry.partIds) {
-            expect(expectedIds.has(sid)).toBe(true)
+          if (expectedIds) {
+            expect(entry.partCount).toBe(expectedIds.size)
+            expect(entry.partIds.length).toBe(expectedIds.size)
+            for (const sid of entry.partIds) {
+              expect(expectedIds.has(sid)).toBe(true)
+            }
+          } else {
+            // First-step entry with 0 parts
+            expect(entry.partCount).toBe(0)
+            expect(entry.partIds.length).toBe(0)
+            expect(entry.goalQuantity).toBeDefined()
           }
         }
 

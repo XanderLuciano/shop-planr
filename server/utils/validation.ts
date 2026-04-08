@@ -5,6 +5,7 @@
 
 import type { H3Event } from 'h3'
 import type { ZodType, ZodError } from 'zod'
+import { getQuery } from 'h3'
 import { ValidationError } from './errors'
 
 /** Assert that a numeric value is positive (> 0). */
@@ -83,4 +84,27 @@ function formatZodError(error: ZodError): string {
       return path + issue.message
     })
     .join('; ')
+}
+
+/**
+ * Reads and validates the request query parameters against a Zod schema.
+ * Throws `ValidationError` (caught by `defineApiHandler` → 400) on failure.
+ *
+ * Usage:
+ * ```ts
+ * import { z } from 'zod'
+ * const Schema = z.object({ groupBy: z.enum(['user', 'location', 'step']).default('location') })
+ *
+ * export default defineApiHandler(async (event) => {
+ *   const query = parseQuery(event, Schema)
+ * })
+ * ```
+ */
+export function parseQuery<T>(event: H3Event, schema: ZodType<T>): T {
+  const raw = getQuery(event)
+  const result = schema.safeParse(raw)
+  if (!result.success) {
+    throw new ValidationError(formatZodError(result.error))
+  }
+  return result.data
 }

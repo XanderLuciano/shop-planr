@@ -14,7 +14,7 @@ const {
   fetchStep,
 } = useStepView(stepId)
 
-const { advanceBatch } = useWorkQueue()
+const { advanceBatch } = useAdvanceBatch()
 const { users } = useAuth()
 
 const advanceLoading = ref(false)
@@ -48,10 +48,11 @@ async function handleAdvance(payload: { partIds: string[], note?: string }) {
       jobId: job.value.jobId,
       pathId: job.value.pathId,
       stepId: job.value.stepId,
+      availablePartCount: job.value.partCount,
       note: payload.note,
     })
 
-    const dest = result.nextStepName ?? 'Completed'
+    const dest = job.value.isFinalStep ? 'Completed' : (job.value.nextStepName ?? 'next step')
     toast.add({
       title: 'Parts advanced',
       description: `${result.advanced} part${result.advanced !== 1 ? 's' : ''} moved to ${dest}`,

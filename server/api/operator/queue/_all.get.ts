@@ -1,4 +1,5 @@
 import type { WorkQueueJob, WorkQueueResponse } from '../../../types/computed'
+import { findFirstActiveStep, shouldIncludeStep } from '../../../utils/workQueueHelpers'
 
 export default defineApiHandler(async () => {
   const { jobService, pathService, partService } = getServices()
@@ -11,10 +12,15 @@ export default defineApiHandler(async () => {
 
     for (const path of paths) {
       const totalSteps = path.steps.length
+      const firstActiveStep = findFirstActiveStep(path.steps)
 
       for (const step of path.steps) {
+        if (step.removedAt) continue
+
         const parts = partService.listPartsByCurrentStepId(step.id)
-        if (parts.length === 0 && step.order !== 0) continue
+        const isFirstActive = firstActiveStep != null && step.id === firstActiveStep.id
+
+        if (!shouldIncludeStep(step, parts.length, isFirstActive, path.goalQuantity)) continue
 
         const key = `${job.id}|${path.id}|${step.order}`
         const isFinalStep = step.order === totalSteps - 1
@@ -37,6 +43,7 @@ export default defineApiHandler(async () => {
           nextStepLocation: nextStep?.location,
           isFinalStep,
           jobPriority: job.priority,
+          ...(isFirstActive && { goalQuantity: path.goalQuantity, completedCount: step.completedCount }),
         })
       }
     }
@@ -46,7 +53,6 @@ export default defineApiHandler(async () => {
   const totalParts = queueJobs.reduce((sum, j) => sum + j.partCount, 0)
 
   const response: WorkQueueResponse = {
-    operatorId: '_all',
     jobs: queueJobs,
     totalParts,
   }

@@ -24,11 +24,9 @@ The operator experience is split into two complementary views:
 
 The work queue provides a higher-level view of all active work across the shop:
 
-- **Grouped queue** (`GET /api/operator/work-queue`) — Groups all active steps by assigned operator, showing each operator's workload with part counts. Unassigned work is grouped under "Unassigned".
+- **Grouped queue** (`GET /api/operator/work-queue`) — Groups all active steps by a configurable dimension (user, location, or step), showing workload distribution with part counts. Unassigned work is grouped under "Unassigned". Includes first-step entries for paths that still need parts fabricated.
 
-- **All queue items** (`GET /api/operator/queue/_all`) — Flat list of all active step/job/path combinations with serial counts. Includes first steps with zero serials (for serial creation).
-
-- **User queue** (`GET /api/operator/queue/:userId`) — Filtered view showing only steps assigned to a specific operator. Used for the operator kiosk mode.
+- **All queue items** (`GET /api/operator/queue/_all`) — Flat list of all active step/job/path combinations with part counts. Includes first-step entries (the first non-soft-deleted step in a path) when `completedCount < goalQuantity`, even with zero parts currently present.
 
 ### WorkQueueJob Shape
 
@@ -42,22 +40,21 @@ All queue and step view endpoints return data using the `WorkQueueJob` type, whi
 
 ### Zero-Serial Steps
 
-The `_all` queue endpoint includes first steps (order 0) even when they have zero serials. This ensures the serial creation panel is accessible for paths that haven't had any serials created yet. Other queue endpoints only include steps with at least one serial.
+The `_all` queue endpoint and the grouped `work-queue` endpoint include the **first active step** (the first non-soft-deleted step in a path) even when it has zero parts currently present, as long as `completedCount < goalQuantity`. This ensures the serial creation panel is accessible for paths that still need parts fabricated. Once `completedCount >= goalQuantity`, the step follows normal inclusion rules (only shown if it has parts). Soft-deleted steps are always excluded.
 
 ## Common Use Cases
 
-- **Operator kiosk** — An operator logs in, views their personal queue, and clicks into a step to advance parts.
-- **Supervisor dashboard** — View the grouped work queue to see workload distribution across operators and identify unassigned work.
+- **Supervisor dashboard** — View the grouped work queue to see workload distribution across operators, locations, or steps, and identify unassigned work.
 - **Station monitor** — Display the Parts View for a specific step name on a wall-mounted screen to show real-time part flow.
+- **First-step tracking** — See which paths still need initial part fabrication, with progress indicators showing `completedCount / goalQuantity`.
 
 ## Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
 | `GET` | [`/api/operator/step/:stepId`](/api-docs/operator/step-view) | Get step view data for a specific step instance |
-| `GET` | [`/api/operator/work-queue`](/api-docs/operator/work-queue) | Get work queue grouped by operator |
+| `GET` | [`/api/operator/work-queue`](/api-docs/operator/work-queue) | Get work queue grouped by dimension |
 | `GET` | [`/api/operator/queue/_all`](/api-docs/operator/queue-all) | Get all queue items (flat list) |
-| `GET` | [`/api/operator/queue/:userId`](/api-docs/operator/queue-user) | Get queue items for a specific operator |
 | `GET` | [`/api/operator/:stepName`](/api-docs/operator/by-step-name) | Get parts view data by step name |
 
 ## Related
