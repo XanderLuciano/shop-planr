@@ -86,11 +86,19 @@ const siblingInProgressCount = computed(() =>
 )
 
 watch(activeTab, async (tab) => {
-  if (tab === 'siblings' && !siblingsLoaded.value) {
+  if (tab === 'siblings' && !siblingsLoaded.value && part.value) {
     await fetchSiblings()
     siblingsLoaded.value = true
   }
 }, { immediate: true })
+
+// When detail data loads and we're already on siblings tab, fetch them
+watch(() => part.value, async () => {
+  if (activeTab.value === 'siblings' && !siblingsLoaded.value && part.value) {
+    await fetchSiblings()
+    siblingsLoaded.value = true
+  }
+})
 
 // Computed states
 const isScrapped = computed(() => part.value?.status === 'scrapped')
