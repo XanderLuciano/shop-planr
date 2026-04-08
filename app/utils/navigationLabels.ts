@@ -7,7 +7,7 @@ export interface NavigationLabel {
 export const NAVIGATION_LABELS: NavigationLabel[] = [
   { pattern: /^\/$/, label: () => 'Dashboard' },
   { pattern: /^\/jobs$/, label: () => 'Jobs' },
-  { pattern: /^\/jobs\/([^/]+)$/, label: m => `Job ${decodeURIComponent(m[1]!)}` },
+  { pattern: /^\/jobs\/([^/]+)$/, label: () => 'Job' },
   { pattern: /^\/parts-browser$/, label: () => 'Parts Browser' },
   { pattern: /^\/parts-browser\/([^/]+)$/, label: m => `Part ${decodeURIComponent(m[1]!)}` },
   { pattern: /^\/parts$/, label: () => 'Parts' },

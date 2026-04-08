@@ -9,7 +9,7 @@ describe('resolveLabel', () => {
   it.each([
     ['/', 'Dashboard'],
     ['/jobs', 'Jobs'],
-    ['/jobs/JOB-123', 'Job JOB-123'],
+    ['/jobs/JOB-123', 'Job'],
     ['/parts-browser', 'Parts Browser'],
     ['/parts-browser/SN-00004', 'Part SN-00004'],
     ['/parts', 'Parts'],
