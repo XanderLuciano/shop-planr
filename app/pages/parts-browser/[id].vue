@@ -7,6 +7,18 @@ const router = useRouter()
 const partId = route.params.id as string
 const $api = useAuthFetch()
 
+// Context-aware back navigation
+const fromQuery = route.query.from as string | undefined
+const backNav = computed(() => {
+  if (fromQuery && fromQuery.startsWith('/parts/step/')) {
+    return { to: fromQuery, label: 'Back to Step' }
+  }
+  if (fromQuery && fromQuery.startsWith('/queue')) {
+    return { to: '/queue', label: 'Back to Queue' }
+  }
+  return { to: '/parts-browser', label: 'Back to Parts Browser' }
+})
+
 const {
   part,
   job,
@@ -270,14 +282,14 @@ onMounted(async () => {
   <div class="p-4 space-y-4 max-w-5xl">
     <!-- Back link -->
     <NuxtLink
-      to="/parts-browser"
+      :to="backNav.to"
       class="inline-flex items-center gap-1 text-xs text-(--ui-text-muted) hover:text-(--ui-text-highlighted) transition-colors"
     >
       <UIcon
         name="i-lucide-arrow-left"
         class="size-3"
       />
-      Back to Parts Browser
+      {{ backNav.label }}
     </NuxtLink>
 
     <!-- Loading -->

@@ -5,6 +5,8 @@
  * Placed in `app/utils/` for Nuxt auto-import.
  */
 
-export function partDetailLink(partId: string): string {
-  return `/parts-browser/${encodeURIComponent(partId)}`
+export function partDetailLink(partId: string, from?: string): string {
+  const base = `/parts-browser/${encodeURIComponent(partId)}`
+  if (from) return `${base}?from=${encodeURIComponent(from)}`
+  return base
 }

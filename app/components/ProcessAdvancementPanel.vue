@@ -2,6 +2,8 @@
 import type { WorkQueueJob } from '~/types/computed'
 import type { StepNote } from '~/types/domain'
 
+const route = useRoute()
+
 const props = defineProps<{
   job: WorkQueueJob
   loading: boolean
@@ -179,7 +181,7 @@ onMounted(() => {
               color="neutral"
               icon="i-lucide-eye"
               title="View part detail"
-              :to="partDetailLink(partId)"
+              :to="partDetailLink(partId, route.fullPath)"
               @click.stop
             />
             <UButton
