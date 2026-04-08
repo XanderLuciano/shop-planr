@@ -19,5 +19,9 @@ export function resolveBackNavigation(from: string | undefined | null): BackNavi
     return { to: from, label: 'Back to Part' }
   }
 
+  if (typeof from === 'string' && from === '/queue') {
+    return { to: '/queue', label: 'Back to Queue' }
+  }
+
   return { to: '/parts', label: 'Back to Parts' }
 }

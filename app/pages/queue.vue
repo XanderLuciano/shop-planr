@@ -85,7 +85,7 @@ const groupTypeLabel = computed(() => {
 })
 
 function handleStepClick(job: WorkQueueJob) {
-  navigateTo(`/parts/step/${job.stepId}`)
+  navigateTo(`/parts/step/${job.stepId}?from=/queue`)
 }
 
 async function handleRetry() {

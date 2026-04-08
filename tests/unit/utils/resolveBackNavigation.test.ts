@@ -41,4 +41,9 @@ describe('resolveBackNavigation', () => {
     const result = resolveBackNavigation('/parts-browser/part_00004')
     expect(result).toEqual({ to: '/parts-browser/part_00004', label: 'Back to Part' })
   })
+
+  it('returns /queue and "Back to Queue" for /queue', () => {
+    const result = resolveBackNavigation('/queue')
+    expect(result).toEqual({ to: '/queue', label: 'Back to Queue' })
+  })
 })
