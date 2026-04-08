@@ -5,7 +5,7 @@ export default defineNuxtRouteMiddleware((to, from) => {
   // Skip if only query/hash changed (same path)
   if (to.path === from.path) return
 
-  const { push, pop, replaceTop, entries } = useNavigationStack()
+  const { push, pop, entries } = useNavigationStack()
   const stack = entries.value
 
   // Back navigation detected: destination matches stack top
