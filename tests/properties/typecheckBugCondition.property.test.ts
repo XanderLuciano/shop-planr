@@ -40,7 +40,6 @@ const CROSS_LAYER_IMPORT_FILES = [
   'app/composables/usePartDetail.ts',
   'app/composables/usePartsView.ts',
   'app/composables/useStepView.ts',
-  'app/composables/useWorkQueue.ts',
   'app/composables/usePaths.ts',
   'app/composables/useCerts.ts',
   'app/composables/useSettings.ts',

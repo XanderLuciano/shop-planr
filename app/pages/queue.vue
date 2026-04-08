@@ -303,6 +303,12 @@ onMounted(async () => {
                 >
                   {{ job.partCount }}
                 </UBadge>
+                <span
+                  v-if="job.goalQuantity != null"
+                  class="text-xs text-(--ui-text-muted)"
+                >
+                  {{ job.completedCount }} / {{ job.goalQuantity }} completed
+                </span>
                 <UIcon
                   name="i-lucide-chevron-right"
                   class="size-4 text-(--ui-text-muted)"

@@ -11,6 +11,7 @@ import { createTestContext, type TestContext } from '../../integration/helpers'
 import { SQLiteUserRepository } from '../../../server/repositories/sqlite/userRepository'
 import { createUserService } from '../../../server/services/userService'
 import type { WorkQueueJob, WorkQueueResponse, WorkQueueGroup, WorkQueueGroupedResponse, StepViewResponse } from '../../../server/types/computed'
+import { findFirstActiveStep, shouldIncludeStep } from '../../../server/utils/workQueueHelpers'
 
 // ---- Pure function replications of endpoint logic ----
 
@@ -26,9 +27,12 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
     const paths = pathService.listPathsByJob(job.id)
     for (const path of paths) {
       const totalSteps = path.steps.length
+      const firstActiveStep = findFirstActiveStep(path.steps)
       for (const step of path.steps) {
+        if (step.removedAt) continue
         const parts = partService.listPartsByCurrentStepId(step.id)
-        if (parts.length === 0 && step.order !== 0) continue
+        const isFirstActive = firstActiveStep != null && step.id === firstActiveStep.id
+        if (!shouldIncludeStep(step, parts.length, isFirstActive, path.goalQuantity)) continue
         const key = `${job.id}|${path.id}|${step.order}`
         const isFinalStep = step.order === totalSteps - 1
         const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
@@ -37,7 +41,8 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
           stepId: step.id, stepName: step.name, stepOrder: step.order, stepLocation: step.location,
           totalSteps, partIds: parts.map(s => s.id), partCount: parts.length,
           nextStepName: nextStep?.name, nextStepLocation: nextStep?.location, isFinalStep,
-          jobPriority: job.priority,
+          assignedTo: step.assignedTo, jobPriority: job.priority,
+          ...(isFirstActive && { goalQuantity: path.goalQuantity, completedCount: step.completedCount }),
         })
       }
     }
@@ -45,7 +50,7 @@ function aggregateAllWork(ctx: TestContext): WorkQueueResponse {
 
   const queueJobs = Array.from(groupMap.values())
   const totalParts = queueJobs.reduce((sum, j) => sum + j.partCount, 0)
-  return { operatorId: '_all', jobs: queueJobs, totalParts }
+  return { jobs: queueJobs, totalParts }
 }
 
 /**
@@ -107,9 +112,12 @@ function aggregateGroupedWork(
     const paths = pathService.listPathsByJob(job.id)
     for (const path of paths) {
       const totalSteps = path.steps.length
+      const firstActiveStep = findFirstActiveStep(path.steps)
       for (const step of path.steps) {
+        if (step.removedAt) continue
         const parts = partService.listPartsByCurrentStepId(step.id)
-        if (parts.length === 0) continue
+        const isFirstActive = firstActiveStep != null && step.id === firstActiveStep.id
+        if (!shouldIncludeStep(step, parts.length, isFirstActive, path.goalQuantity)) continue
         const isFinalStep = step.order === totalSteps - 1
         const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
         entries.push({
@@ -119,7 +127,8 @@ function aggregateGroupedWork(
             stepId: step.id, stepName: step.name, stepOrder: step.order, stepLocation: step.location,
             totalSteps, partIds: parts.map(s => s.id), partCount: parts.length,
             nextStepName: nextStep?.name, nextStepLocation: nextStep?.location, isFinalStep,
-            jobPriority: job.priority,
+            assignedTo: step.assignedTo, jobPriority: job.priority,
+            ...(isFirstActive && { goalQuantity: path.goalQuantity, completedCount: step.completedCount }),
           },
         })
       }
@@ -182,7 +191,6 @@ describe('Work Queue API Endpoint Unit Tests', () => {
       expect(response.jobs[0].stepOrder).toBe(0)
       expect(response.jobs[0].partCount).toBe(0)
       expect(response.totalParts).toBe(0)
-      expect(response.operatorId).toBe('_all')
     })
   })
 
@@ -241,7 +249,7 @@ describe('Work Queue API Endpoint Unit Tests', () => {
   })
 
   describe('GET /api/operator/work-queue — Grouped Endpoint', () => {
-    it('returns empty groups and totalParts 0 when no work exists', () => {
+    it('returns first-step entry with zero parts when goal not met, totalParts 0', () => {
       ctx = createTestContext()
       const userRepo = new SQLiteUserRepository(ctx.db)
       const userService = createUserService({ users: userRepo })
@@ -257,7 +265,12 @@ describe('Work Queue API Endpoint Unit Tests', () => {
 
       const response = aggregateGroupedWork(ctx, userService)
 
-      expect(response.groups).toEqual([])
+      // First-step logic: step 0 appears because completedCount (0) < goalQuantity (5)
+      expect(response.groups).toHaveLength(1)
+      expect(response.groups[0].jobs).toHaveLength(1)
+      expect(response.groups[0].jobs[0].partCount).toBe(0)
+      expect(response.groups[0].jobs[0].goalQuantity).toBe(5)
+      expect(response.groups[0].jobs[0].completedCount).toBe(0)
       expect(response.totalParts).toBe(0)
     })
 

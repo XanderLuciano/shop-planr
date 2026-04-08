@@ -15,7 +15,8 @@ import fc from 'fast-check'
 import { createTestContext, type TestContext } from '../integration/helpers'
 import { SQLiteUserRepository } from '../../server/repositories/sqlite/userRepository'
 import { createUserService } from '../../server/services/userService'
-import type { WorkQueueJob, WorkQueueGroupedResponse } from '../../server/types/computed'
+import type { WorkQueueJob, WorkQueueGroupedResponse, WorkQueueGroup } from '../../server/types/computed'
+import { findFirstActiveStep, shouldIncludeStep } from '../../server/utils/workQueueHelpers'
 
 /**
  * Replicate the grouping logic from server/api/operator/work-queue.get.ts
@@ -35,10 +36,15 @@ function aggregateGroupedWork(
 
     for (const path of paths) {
       const totalSteps = path.steps.length
+      const firstActiveStep = findFirstActiveStep(path.steps)
 
       for (const step of path.steps) {
+        if (step.removedAt) continue
+
         const serials = partService.listPartsByCurrentStepId(step.id)
-        if (serials.length === 0) continue
+        const isFirstActive = firstActiveStep != null && step.id === firstActiveStep.id
+
+        if (!shouldIncludeStep(step, serials.length, isFirstActive, path.goalQuantity)) continue
 
         const isFinalStep = step.order === totalSteps - 1
         const nextStep = isFinalStep ? undefined : path.steps[step.order + 1]
@@ -62,6 +68,7 @@ function aggregateGroupedWork(
             isFinalStep,
             assignedTo: step.assignedTo,
             jobPriority: job.priority,
+            ...(isFirstActive && { goalQuantity: path.goalQuantity, completedCount: step.completedCount }),
           },
         })
       }

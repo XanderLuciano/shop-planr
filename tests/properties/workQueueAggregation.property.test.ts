@@ -5,76 +5,23 @@
  * currentStepId !== null, the work queue aggregation returns WorkQueueJob
  * entries whose partIds collectively contain exactly all active part IDs,
  * each in exactly one group matching its pathId and currentStepId.
+ * First-step entries with partCount === 0 are also included when the
+ * first active step has completedCount < goalQuantity.
  *
- * **Validates: Requirements 1.1, 3.2**
+ * **Validates: Requirements 10.1, 9.3**
  */
 import { describe, it, afterEach, expect } from 'vitest'
 import fc from 'fast-check'
-import Database from 'better-sqlite3'
-import { resolve } from 'path'
-import { runMigrations } from '../../server/repositories/sqlite/index'
-import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
-import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
-import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
-import { SQLiteCertRepository } from '../../server/repositories/sqlite/certRepository'
-import { SQLiteAuditRepository } from '../../server/repositories/sqlite/auditRepository'
-import { createJobService } from '../../server/services/jobService'
-import { createPathService } from '../../server/services/pathService'
-import { createPartService } from '../../server/services/partService'
-import { createAuditService } from '../../server/services/auditService'
-import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
+import { createTestContext, type TestContext } from '../integration/helpers'
 import type { WorkQueueJob, WorkQueueResponse } from '../../server/types/computed'
-
-const migrationsDir = resolve(__dirname, '../../server/repositories/sqlite/migrations')
-
-function createTestDb() {
-  const db = new Database(':memory:')
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
-  runMigrations(db, migrationsDir)
-  return db
-}
-
-function setupServices(db: Database.default.Database) {
-  const repos = {
-    jobs: new SQLiteJobRepository(db),
-    paths: new SQLitePathRepository(db),
-    parts: new SQLitePartRepository(db),
-    certs: new SQLiteCertRepository(db),
-    audit: new SQLiteAuditRepository(db),
-  }
-
-  const partIdGenerator = createSequentialPartIdGenerator({
-    getCounter: () => {
-      const row = db.prepare('SELECT value FROM counters WHERE name = ?').get('part') as { value: number } | undefined
-      return row?.value ?? 0
-    },
-    setCounter: (v: number) => {
-      db.prepare('INSERT OR REPLACE INTO counters (name, value) VALUES (?, ?)').run('part', v)
-    },
-  })
-
-  const auditService = createAuditService({ audit: repos.audit })
-  const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts })
-  const pathService = createPathService({ paths: repos.paths, parts: repos.parts })
-  const partService = createPartService(
-    { parts: repos.parts, paths: repos.paths, certs: repos.certs },
-    auditService,
-    partIdGenerator,
-  )
-
-  return { jobService, pathService, partService }
-}
+import { findFirstActiveStep, shouldIncludeStep } from '../../server/utils/workQueueHelpers'
 
 /**
- * Replicate the aggregation logic from server/api/operator/queue/[userId].get.ts
- * as a pure function that takes services and returns WorkQueueResponse.
+ * Replicate the aggregation logic from server/api/operator/queue/_all.get.ts
+ * as a pure function that takes a test context and returns WorkQueueResponse.
  */
-function aggregateWorkQueue(
-  services: ReturnType<typeof setupServices>,
-  userId: string,
-): WorkQueueResponse {
-  const { jobService, pathService, partService } = services
+function aggregateWorkQueue(ctx: TestContext): WorkQueueResponse {
+  const { jobService, pathService, partService } = ctx
   const jobs = jobService.listJobs()
   const groupMap = new Map<string, WorkQueueJob>()
 
@@ -83,10 +30,15 @@ function aggregateWorkQueue(
 
     for (const path of paths) {
       const totalSteps = path.steps.length
+      const firstActiveStep = findFirstActiveStep(path.steps)
 
       for (const step of path.steps) {
+        if (step.removedAt) continue
+
         const parts = partService.listPartsByCurrentStepId(step.id)
-        if (parts.length === 0) continue
+        const isFirstActive = firstActiveStep != null && step.id === firstActiveStep.id
+
+        if (!shouldIncludeStep(step, parts.length, isFirstActive, path.goalQuantity)) continue
 
         const key = `${job.id}|${path.id}|${step.order}`
         const isFinalStep = step.order === totalSteps - 1
@@ -109,6 +61,7 @@ function aggregateWorkQueue(
           isFinalStep,
           assignedTo: step.assignedTo,
           jobPriority: job.priority,
+          ...(isFirstActive && { goalQuantity: path.goalQuantity, completedCount: step.completedCount }),
         })
       }
     }
@@ -117,7 +70,7 @@ function aggregateWorkQueue(
   const queueJobs = Array.from(groupMap.values())
   const totalParts = queueJobs.reduce((sum, j) => sum + j.partCount, 0)
 
-  return { operatorId: userId, jobs: queueJobs, totalParts }
+  return { jobs: queueJobs, totalParts }
 }
 
 /** Arbitrary for a single job/path/part configuration */
@@ -142,21 +95,20 @@ const jobPathConfigArb = fc.record({
 const scenarioArb = fc.array(jobPathConfigArb, { minLength: 1, maxLength: 3 })
 
 describe('Property 1: Queue aggregation correctness', () => {
-  let db: Database.default.Database
+  let ctx: TestContext
 
   afterEach(() => {
-    if (db) {
-      db.close()
-      db = null as any
+    if (ctx) {
+      ctx.cleanup()
+      ctx = null as any
     }
   })
 
   it('all active part IDs appear exactly once across WorkQueueJob.partIds, each in the correct group', () => {
     fc.assert(
       fc.property(scenarioArb, (configs) => {
-        db = createTestDb()
-        const services = setupServices(db)
-        const { jobService, pathService, partService } = services
+        ctx = createTestContext()
+        const { jobService, pathService, partService } = ctx
 
         // Track all created parts with their expected state
         const allParts: Array<{
@@ -218,7 +170,7 @@ describe('Property 1: Queue aggregation correctness', () => {
         }
 
         // Run aggregation
-        const response = aggregateWorkQueue(services, 'user_test')
+        const response = aggregateWorkQueue(ctx)
 
         // Collect all active parts (currentStepId !== null)
         const expectedActiveIds = new Set(
@@ -239,7 +191,7 @@ describe('Property 1: Queue aggregation correctness', () => {
           expect(actualIdSet.has(expectedId)).toBe(true)
         }
 
-        // 2. No extra parts in the response (no completed parts)
+        // 2. Part count matches (excluding first-step entries with 0 parts)
         expect(actualIds.length).toBe(expectedActiveIds.size)
 
         // 3. No duplicates — each part appears exactly once
@@ -254,8 +206,15 @@ describe('Property 1: Queue aggregation correctness', () => {
           }
         }
 
-        db.close()
-        db = null as any
+        // 5. First-step entries with 0 parts have goalQuantity set
+        for (const job of response.jobs) {
+          if (job.partCount === 0) {
+            expect(job.goalQuantity).toBeDefined()
+          }
+        }
+
+        ctx.cleanup()
+        ctx = null as any
       }),
       { numRuns: 100 },
     )
@@ -274,21 +233,20 @@ describe('Property 1: Queue aggregation correctness', () => {
  * **Validates: Requirements 1.2, 1.3, 1.4**
  */
 describe('Property 2: Queue structural invariants', () => {
-  let db: ReturnType<typeof createTestDb>
+  let ctx: TestContext
 
   afterEach(() => {
-    if (db) {
-      db.close()
-      db = null as any
+    if (ctx) {
+      ctx.cleanup()
+      ctx = null as any
     }
   })
 
   it('partCount === partIds.length, stepName/stepId non-empty, totalParts === sum(partCount), grouping uniqueness', () => {
     fc.assert(
       fc.property(scenarioArb, (configs) => {
-        db = createTestDb()
-        const services = setupServices(db)
-        const { jobService, pathService, partService } = services
+        ctx = createTestContext()
+        const { jobService, pathService, partService } = ctx
 
         for (const config of configs) {
           const job = jobService.createJob({
@@ -330,7 +288,7 @@ describe('Property 2: Queue structural invariants', () => {
         }
 
         // Run aggregation
-        const response = aggregateWorkQueue(services, 'user_test')
+        const response = aggregateWorkQueue(ctx)
 
         // (a) partCount === partIds.length for every job
         for (const job of response.jobs) {
@@ -352,8 +310,8 @@ describe('Property 2: Queue structural invariants', () => {
         const uniqueKeys = new Set(groupKeys)
         expect(uniqueKeys.size).toBe(groupKeys.length)
 
-        db.close()
-        db = null as any
+        ctx.cleanup()
+        ctx = null as any
       }),
       { numRuns: 100 },
     )

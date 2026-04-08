@@ -35,7 +35,7 @@ app/
   pages/
     index.vue            → Placeholder homepage (to become dashboard)
   components/            → 50+ components: SectionCard (reusable card wrapper), lifecycle dialogs (ScrapDialog, ForceCompleteDialog, AdvanceToStepDropdown), config panels (StepConfigPanel, AdvancementModeSelector, LibraryManager), job form (JobCreationForm), serial creation (SerialCreationPanel — first-step batch creation + advancement), page visibility (PageVisibilitySettings — toggle switches for nav pages), docs (EndpointCard MDC, DocsSidebar, DocsSearch), job view (JobViewToolbar — expand/collapse all jobs/paths buttons, JobExpandableRow — multi-path expansion with bulk signals, JobMobileCard — card-based job display for mobile viewports), work queue (WorkQueueFilterBar — group-by selector, filter dropdowns, text search, preset management), utility (BonusBadge, PathDeleteButton, CertDetailView, TemplateEditor, etc.)
-  composables/           → 25+ composables: useAuth (session/token/user), useAuthFetch (authenticated $fetch instance), useJobForm, useLifecycle, useLibrary, useBomVersions, useAudit (with filters), usePartsView, useStepView, useOperatorWorkQueue (extended with groupBy param), useWorkQueueFilters (wraps useOperatorWorkQueue with groupBy/filter/preset/URL-sync), useSettings (extended with pageToggles), useDocsNavigation, useDocsSearch, useMobileBreakpoint (matchMedia-based mobile viewport detection), useJobPriority (drag-and-drop priority editing) + existing ones
+  composables/           → 25+ composables: useAuth (session/token/user), useAuthFetch (authenticated $fetch instance), useJobForm, useLifecycle, useLibrary, useBomVersions, useAudit (with filters), usePartsView, useStepView, useOperatorWorkQueue (extended with groupBy param), useWorkQueueFilters (wraps useOperatorWorkQueue with groupBy/filter/preset/URL-sync), useAdvanceBatch (extracted advanceBatch() with client-side validation), useSettings (extended with pageToggles), useDocsNavigation, useDocsSearch, useMobileBreakpoint (matchMedia-based mobile viewport detection), useJobPriority (drag-and-drop priority editing) + existing ones
   middleware/
     pageGuard.global.ts  → Global route middleware: blocks navigation to disabled pages, redirects to /
   utils/
@@ -62,12 +62,13 @@ server/
     authUser.ts          → getAuthUserId(event) — extracts authenticated user ID from JWT context (auto-imported by Nitro)
     idGenerator.ts       → generateId(prefix), createSequentialSnGenerator()
     serialization.ts     → serialize(), deserialize(), prettyPrint() for all domain types
-    validation.ts        → assertPositive, assertNonEmpty, assertNonEmptyArray, assertOneOf, parseBody() (Zod schema validation)
+    validation.ts        → assertPositive, assertNonEmpty, assertNonEmptyArray, assertOneOf, parseBody(), parseQuery() (Zod schema validation for body and query params)
     db.ts                → getRepositories() singleton — lazy-inits from runtimeConfig
     workQueueGrouping.ts → groupEntriesByDimension() — pure server-side grouping by user/location/step dimension
+    workQueueHelpers.ts  → findFirstActiveStep(), shouldIncludeStep() — first-step visibility logic for work queue entry assembly
     services.ts          → getServices() singleton — wires all 12 services together
     pageToggles.ts       → DEFAULT_PAGE_TOGGLES, ROUTE_TOGGLE_MAP, ALWAYS_ENABLED_ROUTES, mergePageToggles(), isPageEnabled() — auto-imported by Nitro
-  schemas/               → Zod request body schemas by domain (pathSchemas.ts, etc.)
+  schemas/               → Zod request body schemas by domain (pathSchemas.ts, operatorSchemas.ts, etc.)
   types/
     domain.ts            → 26+ domain types (Job, Path, ProcessStep, SerialNumber, SnStepStatus, SnStepOverride, BomVersion, ProcessLibraryEntry, LocationLibraryEntry, etc.)
     api.ts               → 25+ API input types (ScrapSerialInput, ForceCompleteInput, AdvanceToStepInput, EditBomInput, etc.)
@@ -89,7 +90,7 @@ content/
     settings/            → Settings API: index.md + get.md, update.md
     users/               → Users API: index.md + list.md, create.md, update.md
     notes/               → Notes API: index.md + create.md, by-serial.md, by-step.md
-    operator/            → Operator API: index.md + step-view.md, work-queue.md, queue-all.md, queue-user.md, by-step-name.md
+    operator/            → Operator API: index.md + step-view.md, work-queue.md, queue-all.md, by-step-name.md
     steps/               → Steps API: index.md + assign.md, config.md
     library/             → Library API: index.md + processes.md, process-delete.md, locations.md, location-delete.md
 tests/

@@ -15,9 +15,11 @@ navigation:
 
 ::endpoint-card{method="GET" path="/api/operator/queue/_all"}
 
-Retrieves all items in the operator queue as a flat (ungrouped) list. Unlike the grouped work queue endpoint, this returns every active step/job/path combination without operator grouping, making it suitable for the "All" tab in the Parts View page.
+Retrieves all items in the operator queue as a flat (ungrouped) list. Unlike the grouped work queue endpoint, this returns every active step/job/path combination without grouping, making it suitable for the "All" tab in the Parts View page.
 
-A key difference from other queue endpoints: **first steps (order 0) are always included**, even when they have zero serials. This ensures the serial creation panel is accessible for paths that haven't had any serials created yet. Non-first steps are only included when they have at least one serial.
+### First-Step Behavior
+
+The **first active step** in each path (the first non-soft-deleted step) is always included in the response when `completedCount < goalQuantity`, even if it has zero parts currently present. This ensures the serial creation panel is accessible for paths that still need parts fabricated. Once `completedCount >= goalQuantity`, the step follows normal inclusion rules (only shown if it has parts). Soft-deleted steps (`removedAt` set) are always excluded.
 
 Each item is keyed by the combination of `jobId|pathId|stepOrder` to prevent duplicates.
 
@@ -33,7 +35,6 @@ Returns a `WorkQueueResponse` object.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `operatorId` | `string` | Always `"_all"` for this endpoint |
 | `jobs` | `WorkQueueJob[]` | Array of all queue items |
 | `totalParts` | `number` | Total count of in-progress parts across all items |
 
@@ -50,11 +51,15 @@ Returns a `WorkQueueResponse` object.
 | `stepOrder` | `number` | Zero-based step index |
 | `stepLocation` | `string \| undefined` | Physical location |
 | `totalSteps` | `number` | Total steps in the path |
-| `serialIds` | `string[]` | Serial IDs at this step (may be empty for first steps) |
-| `partCount` | `number` | Count of serials at this step |
+| `partIds` | `string[]` | Part IDs at this step (may be empty for first-step entries) |
+| `partCount` | `number` | Count of parts at this step |
+| `assignedTo` | `string \| undefined` | Assigned operator user ID |
 | `nextStepName` | `string \| undefined` | Name of the next step |
 | `nextStepLocation` | `string \| undefined` | Location of the next step |
 | `isFinalStep` | `boolean` | Whether this is the last step |
+| `jobPriority` | `number` | Job priority (lower = higher priority) |
+| `goalQuantity` | `number \| undefined` | Path goal quantity — only set on first-active-step entries |
+| `completedCount` | `number \| undefined` | Parts that have advanced past this step — only set on first-active-step entries |
 
 ### 500 Internal Server Error
 
@@ -70,11 +75,10 @@ Returns a `WorkQueueResponse` object.
 curl http://localhost:3000/api/operator/queue/_all
 ```
 
-### Response — Mixed items including empty first step
+### Response — Mixed items including first-step entry
 
 ```json
 {
-  "operatorId": "_all",
   "jobs": [
     {
       "jobId": "job_abc123",
@@ -86,11 +90,12 @@ curl http://localhost:3000/api/operator/queue/_all
       "stepOrder": 0,
       "stepLocation": "Bay 1",
       "totalSteps": 4,
-      "serialIds": ["sn_00001", "sn_00002"],
+      "partIds": ["sn_00001", "sn_00002"],
       "partCount": 2,
       "nextStepName": "Deburring",
       "nextStepLocation": "Bay 2",
-      "isFinalStep": false
+      "isFinalStep": false,
+      "jobPriority": 1
     },
     {
       "jobId": "job_abc123",
@@ -102,10 +107,11 @@ curl http://localhost:3000/api/operator/queue/_all
       "stepOrder": 2,
       "stepLocation": "QC Lab",
       "totalSteps": 4,
-      "serialIds": ["sn_00010"],
+      "partIds": ["sn_00010"],
       "partCount": 1,
       "nextStepName": "Packaging",
-      "isFinalStep": false
+      "isFinalStep": false,
+      "jobPriority": 1
     },
     {
       "jobId": "job_def456",
@@ -116,10 +122,13 @@ curl http://localhost:3000/api/operator/queue/_all
       "stepName": "Assembly",
       "stepOrder": 0,
       "totalSteps": 2,
-      "serialIds": [],
+      "partIds": [],
       "partCount": 0,
       "nextStepName": "Final Check",
-      "isFinalStep": false
+      "isFinalStep": false,
+      "jobPriority": 2,
+      "goalQuantity": 50,
+      "completedCount": 12
     }
   ],
   "totalParts": 3
@@ -130,7 +139,6 @@ curl http://localhost:3000/api/operator/queue/_all
 
 ```json
 {
-  "operatorId": "_all",
   "jobs": [],
   "totalParts": 0
 }
@@ -138,17 +146,17 @@ curl http://localhost:3000/api/operator/queue/_all
 
 ## Notes
 
-- The `operatorId` field is always the literal string `"_all"` for this endpoint. It does not represent an actual user.
-- First steps (order 0) are included even with zero serials. This is the "step 1 always visible" behavior that ensures the serial creation panel is accessible in the Parts View.
-- Non-first steps with zero serials are excluded to keep the queue focused on active work.
+- The **first active step** (first non-soft-deleted step) in each path is included even with zero parts, as long as `completedCount < goalQuantity`. Once `completedCount >= goalQuantity`, the step follows normal inclusion rules.
+- First-active-step entries include `goalQuantity` and `completedCount` fields so the frontend can display progress (e.g., "12 / 50 completed"). Non-first-active-step entries do not include these fields.
+- Soft-deleted steps (`removedAt` set) are always excluded and are never considered as the first active step.
+- Non-first-active steps with zero parts are excluded to keep the queue focused on active work.
 - Items are deduplicated by the composite key `jobId|pathId|stepOrder`. Each unique step instance appears at most once.
-- The `totalParts` count only includes serials that are actually at a step (not the zero-serial first steps).
+- The `totalParts` count only includes parts that are actually at a step (not the zero-part first-step entries).
 - This endpoint does not include `previousStepId`/`previousStepName` fields.
 
 ## Related Endpoints
 
-- [Get Work Queue](/api-docs/operator/work-queue) — Same data grouped by operator
-- [Get User Queue](/api-docs/operator/queue-user) — Queue filtered to a single operator
+- [Get Work Queue](/api-docs/operator/work-queue) — Same data grouped by dimension (user, location, or step)
 - [Get Step View](/api-docs/operator/step-view) — Detailed view for a specific step
 
 ::

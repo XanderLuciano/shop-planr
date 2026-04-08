@@ -142,11 +142,12 @@ export interface WorkQueueJob {
   stepOptional?: boolean
   assignedTo?: string
   jobPriority: number
+  goalQuantity?: number
+  completedCount?: number
 }
 
 /** Response from the operator work queue endpoint */
 export interface WorkQueueResponse {
-  operatorId: string
   jobs: WorkQueueJob[]
   totalParts: number
 }
