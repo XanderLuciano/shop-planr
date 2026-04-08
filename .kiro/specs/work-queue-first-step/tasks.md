@@ -20,7 +20,15 @@ Implement first-step visibility in the work queue (first active step shown when 
     - `shouldIncludeStep(step, partCount, isFirstActiveStep, pathGoalQuantity)` returns `true` if `partCount > 0` OR (`isFirstActiveStep` AND `step.completedCount < pathGoalQuantity`)
     - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.2_
 
-  - [ ]* 1.4 Write unit tests for `findFirstActiveStep` and `shouldIncludeStep`
+  - [ ] 1.4 Add `parseQuery()` utility to `server/utils/validation.ts`
+    - Mirrors `parseBody()`: accepts H3 event + Zod schema, parses `getQuery(event)`, throws `ValidationError` on failure
+    - _Requirements: 12.1_
+
+  - [ ] 1.5 Create `server/schemas/operatorSchemas.ts` with `workQueueQuerySchema`
+    - Schema: `z.object({ groupBy: z.enum(['user', 'location', 'step']).default('location') })`
+    - _Requirements: 12.2_
+
+  - [ ]* 1.6 Write unit tests for `findFirstActiveStep` and `shouldIncludeStep`
     - Test: all active steps → returns step with lowest order
     - Test: first step soft-deleted → returns next non-removed step
     - Test: all steps soft-deleted → returns `undefined`
@@ -30,11 +38,12 @@ Implement first-step visibility in the work queue (first active step shown when 
 
 - [ ] 2. Backend: Update API route endpoints with first-step logic
   - [ ] 2.1 Update `server/api/operator/work-queue.get.ts` (grouped endpoint)
+    - Replace manual `VALID_GROUP_BY` array check with `parseQuery(event, workQueueQuerySchema)` for Zod-validated `groupBy` with default
     - Add soft-delete filtering: skip steps where `step.removedAt` is set
     - Compute `firstActiveStep` per path using `findFirstActiveStep`
     - Replace `if (parts.length === 0) continue` with `if (!shouldIncludeStep(...)) continue`
     - Attach `goalQuantity` and `completedCount` to entries for first-active-step only via spread: `...(isFirstActive && { goalQuantity: path.goalQuantity, completedCount: step.completedCount })`
-    - _Requirements: 1.1, 1.2, 1.3, 2.1, 3.1, 4.3, 4.4, 5.1_
+    - _Requirements: 1.1, 1.2, 1.3, 2.1, 3.1, 4.3, 4.4, 5.1, 12.3_
 
   - [ ] 2.2 Update `server/api/operator/queue/_all.get.ts` (flat endpoint)
     - Add soft-delete filtering: skip steps where `step.removedAt` is set
@@ -143,8 +152,9 @@ Implement first-step visibility in the work queue (first active step shown when 
     - Remove `[userId]` queue endpoint from route table
     - Remove `operatorId` from `WorkQueueResponse` description
     - Add `useAdvanceBatch` composable
+    - Add `parseQuery` utility to server/utils description
     - Note first-step visibility feature
-    - _Requirements: 12.1_
+    - _Requirements: 13.1_
 
 - [ ] 10. Final checkpoint
   - Ensure all tests pass, ask the user if questions arise.

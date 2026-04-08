@@ -110,6 +110,16 @@
 
 11.2. THE file `content/api-docs/operator/work-queue.md` MUST be updated to document the new first-step behavior and the new `goalQuantity`/`completedCount` fields on `WorkQueueJob`.
 
-### 12. AI Map Updates
+### 12. Zod Query Validation
 
-12.1. AFTER implementation, `AI-MAP.md` MUST be updated to reflect the removal of the `[userId]` queue endpoint, the removal of `operatorId` from `WorkQueueResponse`, the new `useAdvanceBatch` composable, and the first-step visibility feature.
+12.1. A `parseQuery()` utility function MUST be added to `server/utils/validation.ts` that mirrors the existing `parseBody()` pattern: accepts an H3 event and a Zod schema, parses `getQuery(event)` through the schema, and throws `ValidationError` with formatted messages on failure.
+
+12.2. A Zod schema for the `work-queue` endpoint query params MUST be created in `server/schemas/operatorSchemas.ts` with a `groupBy` field typed as `z.enum(['user', 'location', 'step']).default('location')`.
+
+12.3. THE `work-queue.get.ts` endpoint MUST replace its manual `VALID_GROUP_BY` array check with `parseQuery(event, workQueueQuerySchema)` to validate and default the `groupBy` parameter via Zod.
+
+12.4. THE `_all.get.ts` endpoint does NOT require Zod validation — it accepts no parameters.
+
+### 13. AI Map Updates
+
+13.1. AFTER implementation, `AI-MAP.md` MUST be updated to reflect the removal of the `[userId]` queue endpoint, the removal of `operatorId` from `WorkQueueResponse`, the new `useAdvanceBatch` composable, the `parseQuery` utility, and the first-step visibility feature.
