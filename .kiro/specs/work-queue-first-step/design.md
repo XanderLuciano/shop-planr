@@ -176,7 +176,7 @@ sequenceDiagram
 |------|--------|--------|
 | `server/api/operator/work-queue.get.ts` | Add first-active-step inclusion logic, soft-delete filtering, `goalQuantity`/`completedCount` fields | Feature: first-step visibility |
 | `server/api/operator/queue/_all.get.ts` | Replace hardcoded `step.order !== 0` with first-active-step predicate using `completedCount`, add soft-delete filtering, add `goalQuantity`/`completedCount` fields | Feature: first-step visibility + tighten existing behavior |
-| `server/types/computed.ts` | Add `goalQuantity?: number` and `completedCount?: number` to `WorkQueueJob` | Feature: type change |
+| `server/types/computed.ts` | Add `goalQuantity?: number` and `completedCount?: number` to `WorkQueueJob`; remove `operatorId` from `WorkQueueResponse` | Feature: type change + cleanup: dead field removal |
 | `app/pages/parts/step/[stepId].vue` | Change `useWorkQueue().advanceBatch` → `useAdvanceBatch().advanceBatch` | Cleanup: composable migration |
 | `app/pages/queue.vue` | Add first-step progress display (`completedCount / goalQuantity`) | Feature: frontend display |
 | `app/components/WorkQueueList.vue` | Add first-step progress display for Parts View | Feature: frontend display |
@@ -197,7 +197,7 @@ The `WorkQueueResponse` type is still needed — it's used by:
 - `tests/properties/totalPartsInvariant.property.test.ts` (kept)
 - `tests/properties/workQueueAggregation.property.test.ts` (updated)
 
-The `operatorId` field on `WorkQueueResponse` becomes vestigial after removing the `[userId]` endpoint (it's always `"_all"` now). We keep it for backward compatibility but it could be removed in a future cleanup.
+The `operatorId` field is removed from `WorkQueueResponse`. After deleting the `[userId]` endpoint, it was always `"_all"` and carried no information. The `_all` endpoint response becomes `{ jobs: WorkQueueJob[], totalParts: number }`. All property tests and integration tests that construct or assert on `WorkQueueResponse` are updated to remove `operatorId`. The frontend consumer (`usePartsView`) does not read `operatorId` — no frontend changes needed for this removal.
 
 ## Components and Interfaces
 
@@ -247,7 +247,7 @@ Note: The type definition includes `previousStepId`, `previousStepName`, `nextSt
 
 ### New Composable: useAdvanceBatch
 
-Extracted from the dead `useWorkQueue.ts`. Contains only the `advanceBatch()` function.
+Extracted from the dead `useWorkQueue.ts`. Contains only the `advanceBatch()` function. The caller passes `availablePartCount` so the composable can perform client-side validation without owning any queue state.
 
 ```typescript
 // app/composables/useAdvanceBatch.ts
@@ -259,16 +259,27 @@ export function useAdvanceBatch() {
     jobId: string
     pathId: string
     stepId: string
+    availablePartCount: number
     note?: string
-  }): Promise<{ advanced: number, nextStepName?: string }> {
-    // ... same logic as current useWorkQueue.advanceBatch ...
+  }): Promise<{ advanced: number }> {
+    // Client-side guard: instant feedback before any API calls
+    if (params.partIds.length > params.availablePartCount) {
+      throw new Error(`Cannot advance ${params.partIds.length} parts — only ${params.availablePartCount} available`)
+    }
+    // ... same advance + note logic as current useWorkQueue.advanceBatch ...
   }
 
   return { advanceBatch }
 }
 ```
 
-The Step View page (`parts/step/[stepId].vue`) changes its import from `useWorkQueue().advanceBatch` to `useAdvanceBatch().advanceBatch`.
+The return type is `{ advanced: number }` — deliberately simpler than the old `useWorkQueue.advanceBatch` which returned `{ advanced: number, nextStepName?: string }`. The old composable looked up `nextStepName` from its internal queue state just to echo it back to the caller. Since the caller (`parts/step/[stepId].vue`) already has `job.value` with `isFinalStep` and `nextStepName`, the composable doesn't need to know about job metadata. The caller builds the toast destination itself:
+
+```typescript
+const dest = job.value.isFinalStep ? 'Completed' : (job.value.nextStepName ?? 'next step')
+```
+
+The Step View page (`parts/step/[stepId].vue`) changes its import from `useWorkQueue().advanceBatch` to `useAdvanceBatch().advanceBatch`, passes `job.value.partCount` as `availablePartCount`, and handles the `nextStepName` resolution locally in `handleAdvance`.
 
 ### Modified API Routes
 
@@ -517,7 +528,7 @@ BEGIN
   queueJobs ← VALUES(groupMap)
   totalParts ← SUM(queueJobs, j → j.partCount)
 
-  RETURN { operatorId: "_all", jobs: queueJobs, totalParts }
+  RETURN { jobs: queueJobs, totalParts }
 END
 ```
 
@@ -597,9 +608,9 @@ if (parts.length === 0 && !isFirstStepBelowGoal) continue
 
 When a first-active-step entry appears in the work queue with `goalQuantity` and `completedCount` set, the frontend should display progress context so operators know how many parts they're aiming to make.
 
-In `queue.vue`, the step entry badge area should show:
+In `queue.vue` and `WorkQueueList`, the step entry badge area should show:
 - Normal steps: `{{ job.partCount }}` (existing behavior — count of parts at this step)
-- First-active-step entries: `{{ job.completedCount }} / {{ job.goalQuantity }} completed` — shows how many parts have been fabricated and advanced past this step vs. the goal
+- First-active-step entries: the part count badge as usual, PLUS additional progress text `{{ job.completedCount }} / {{ job.goalQuantity }} completed` — shows how many parts have been fabricated and advanced past this step vs. the goal. Both the part count badge and the progress text are visible simultaneously.
 
 This applies to both the Work Queue page (`queue.vue`) and the Parts View page (`parts/index.vue` via `WorkQueueList`). The display logic is:
 
@@ -632,7 +643,9 @@ const isFirstStepEntry = computed(() => job.goalQuantity != null)
 
 9. **No Dead Imports (CP-WQ-CL2):** After cleanup, no file in `app/` or `server/` MUST import from `useWorkQueue` or reference `GET /api/operator/queue/[userId]`.
 
-10. **Test Alignment (CP-WQ-CL3):** All property tests that replicate work queue aggregation logic MUST match the actual endpoint behavior, including first-step inclusion and soft-delete filtering.
+10. **operatorId Removal (CP-WQ-CL3):** After cleanup, the `WorkQueueResponse` type MUST NOT contain an `operatorId` field. The `_all` endpoint response MUST contain only `jobs` and `totalParts`. No test or frontend code MUST reference `operatorId` on `WorkQueueResponse`.
+
+11. **Test Alignment (CP-WQ-CL4):** All property tests that replicate work queue aggregation logic MUST match the actual endpoint behavior, including first-step inclusion and soft-delete filtering.
 
 ## Error Handling
 

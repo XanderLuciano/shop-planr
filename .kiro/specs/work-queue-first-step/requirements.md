@@ -56,11 +56,11 @@
 
 ### 6. Frontend Display
 
-6.1. THE Work_Queue_Page (`queue.vue`) MUST display progress context for first-active-step entries showing `completedCount / goalQuantity completed`.
+6.1. THE Work_Queue_Page (`queue.vue`) and Parts_View_Page (`parts/index.vue` via `WorkQueueList`) MUST display the existing `partCount` badge for ALL entries, including first-active-step entries.
 
-6.2. THE Parts_View_Page (`parts/index.vue`) via `WorkQueueList` component MUST display the same progress context for first-active-step entries.
+6.2. FOR first-active-step entries (where `goalQuantity` is defined), the UI MUST additionally display progress text showing `completedCount / goalQuantity completed` alongside the part count badge. Both indicators MUST be visible simultaneously.
 
-6.3. FOR normal steps (where `goalQuantity` is undefined), the existing `partCount` badge display MUST remain unchanged.
+6.3. FOR normal steps (where `goalQuantity` is undefined), the existing `partCount` badge display MUST remain unchanged with no additional progress text.
 
 ### 7. Dead Endpoint Removal
 
@@ -76,26 +76,40 @@
 
 8.1. THE file `app/composables/useWorkQueue.ts` MUST be deleted.
 
-8.2. A new file `app/composables/useAdvanceBatch.ts` MUST be created containing only the `advanceBatch()` function extracted from `useWorkQueue.ts`, with identical behavior.
+8.2. A new file `app/composables/useAdvanceBatch.ts` MUST be created containing only the `advanceBatch()` function extracted from `useWorkQueue.ts`.
 
-8.3. THE file `app/pages/parts/step/[stepId].vue` MUST be updated to use `useAdvanceBatch().advanceBatch` instead of `useWorkQueue().advanceBatch`.
+8.3. THE `advanceBatch()` function MUST accept an `availablePartCount` parameter so callers can provide the known part count for client-side validation. WHEN `partIds.length > availablePartCount`, the function MUST throw an error with a user-friendly message (e.g., "Cannot advance N parts — only M available") before making any API calls.
 
-8.4. AFTER cleanup, no file in `app/` or `server/` SHALL import from `useWorkQueue` or reference `GET /api/operator/queue/[userId]`.
+8.4. THE file `app/pages/parts/step/[stepId].vue` MUST be updated to use `useAdvanceBatch().advanceBatch` instead of `useWorkQueue().advanceBatch`, passing `job.partCount` as the `availablePartCount` parameter. The `handleAdvance` function MUST resolve `nextStepName` locally from `job.value` (which it already has in scope) instead of reading it from the `advanceBatch` return value. The new `advanceBatch` returns `{ advanced: number }` only — it does not echo back job metadata the caller already owns.
 
-### 9. Test Alignment
+8.5. AFTER cleanup, no file in `app/` or `server/` SHALL import from `useWorkQueue` or reference `GET /api/operator/queue/[userId]`.
 
-9.1. THE file `tests/properties/workQueueAggregation.property.test.ts` MUST be updated to replicate the `_all` endpoint logic (not the deleted `[userId]` endpoint), including first-step inclusion and soft-delete filtering.
+### 9. WorkQueueResponse operatorId Removal
 
-9.2. THE file `tests/properties/allWorkEndpoint.property.test.ts` MUST be updated to include the first-step inclusion behavior in its replicated logic.
+9.1. THE `operatorId` field MUST be removed from the `WorkQueueResponse` interface in `server/types/computed.ts`. After the `[userId]` endpoint deletion, this field is always `"_all"` and carries no information.
 
-9.3. THE file `tests/properties/assigneeGrouping.property.test.ts` MUST be updated to include soft-delete filtering and first-step inclusion in its replicated logic.
+9.2. THE Work_Queue_All_Endpoint (`_all.get.ts`) MUST stop including `operatorId` in its response object.
 
-### 10. Content Documentation
+9.3. ALL property tests and integration tests that construct or assert on `WorkQueueResponse` MUST be updated to remove `operatorId` references.
 
-10.1. THE file `content/api-docs/operator/queue-all.md` MUST be updated to document the new first-step behavior (first active step included when `completedCount < goalQuantity`, with `goalQuantity` and `completedCount` fields).
+9.4. THE `usePartsView` composable and any other frontend consumers of `WorkQueueResponse` MUST NOT break from this removal (verified: `usePartsView` does not read `operatorId`).
 
-10.2. THE file `content/api-docs/operator/work-queue.md` MUST be updated to document the new first-step behavior and the new `goalQuantity`/`completedCount` fields on `WorkQueueJob`.
+9.5. THE content documentation for the `_all` endpoint (`content/api-docs/operator/queue-all.md`) MUST be updated to remove `operatorId` from the documented response shape.
 
-### 11. AI Map Updates
+### 10. Test Alignment
 
-11.1. AFTER implementation, `AI-MAP.md` MUST be updated to reflect the removal of the `[userId]` queue endpoint, the new `useAdvanceBatch` composable, and the first-step visibility feature.
+10.1. THE file `tests/properties/workQueueAggregation.property.test.ts` MUST be updated to replicate the `_all` endpoint logic (not the deleted `[userId]` endpoint), including first-step inclusion and soft-delete filtering.
+
+10.2. THE file `tests/properties/allWorkEndpoint.property.test.ts` MUST be updated to include the first-step inclusion behavior in its replicated logic.
+
+10.3. THE file `tests/properties/assigneeGrouping.property.test.ts` MUST be updated to include soft-delete filtering and first-step inclusion in its replicated logic.
+
+### 11. Content Documentation
+
+11.1. THE file `content/api-docs/operator/queue-all.md` MUST be updated to document the new first-step behavior (first active step included when `completedCount < goalQuantity`, with `goalQuantity` and `completedCount` fields) and to remove `operatorId` from the documented response shape.
+
+11.2. THE file `content/api-docs/operator/work-queue.md` MUST be updated to document the new first-step behavior and the new `goalQuantity`/`completedCount` fields on `WorkQueueJob`.
+
+### 12. AI Map Updates
+
+12.1. AFTER implementation, `AI-MAP.md` MUST be updated to reflect the removal of the `[userId]` queue endpoint, the removal of `operatorId` from `WorkQueueResponse`, the new `useAdvanceBatch` composable, and the first-step visibility feature.
