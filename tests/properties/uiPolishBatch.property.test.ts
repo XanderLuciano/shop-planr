@@ -140,7 +140,7 @@ describe('Property 5: Tab-hash round trip', () => {
   it('hash → tab → hash round-trips correctly', () => {
     fc.assert(
       fc.property(
-        fc.constantFrom('#routing', '#parts'),
+        fc.constantFrom('#routing', '#siblings'),
         (hash) => {
           const tab = hashToTab(hash)
           const roundTripped = tabToHash(tab)
