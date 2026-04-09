@@ -46,6 +46,16 @@ vi.stubGlobal('useOperatorWorkQueue', () => ({
 }))
 vi.stubGlobal('applyFilters', (groups: any[]) => groups)
 vi.stubGlobal('extractAvailableValues', () => ({ locations: [], stepNames: [], userIds: [] }))
+
+// Mock useAuth — returns a test user so the built-in "My Queue" preset is generated
+const mockAuthUser = { id: 'test-user-1', username: 'testuser', displayName: 'Test User', isAdmin: false, active: true, createdAt: '2024-01-01T00:00:00Z' }
+vi.stubGlobal('useAuth', () => ({
+  authenticatedUser: { value: mockAuthUser },
+  users: { value: [] },
+}))
+
+// Auto-imported constant from composable
+vi.stubGlobal('MY_QUEUE_PRESET_ID', '__my-queue__')
 vi.stubGlobal('crypto', {
   randomUUID: () => `test-uuid-${++uuidCounter}`,
 })
@@ -266,8 +276,9 @@ describe('Property 8: Preset Round-Trip (CP-WQF-8)', () => {
           // 2. Save preset
           wq.savePreset(presetName)
 
-          expect(wq.presets.value).toHaveLength(1)
-          const savedId = wq.presets.value[0].id
+          // presets includes built-in "My Queue" at [0] + user preset at [1]
+          expect(wq.presets.value).toHaveLength(2)
+          const savedId = wq.presets.value[1].id
 
           // 3. Change state to something different
           wq.groupBy.value = 'location'
@@ -325,25 +336,26 @@ describe('Property 9: Preset Capacity (CP-WQF-9)', () => {
             wq.savePreset(`Preset ${i}`)
           }
 
-          // Capacity invariant: never more than 20
-          expect(wq.presets.value.length).toBeLessThanOrEqual(20)
+          // Capacity invariant: user presets never more than 20, plus 1 built-in
+          const userPresetCount = wq.presets.value.length - 1 // subtract built-in
+          expect(userPresetCount).toBeLessThanOrEqual(20)
 
           if (saveCount > 20) {
-            expect(wq.presets.value).toHaveLength(20)
+            expect(userPresetCount).toBe(20)
 
-            // Oldest should be evicted: first preset name = "Preset <saveCount - 19>"
+            // Oldest should be evicted: first user preset name = "Preset <saveCount - 19>"
             const expectedOldestName = `Preset ${saveCount - 19}`
-            expect(wq.presets.value[0].name).toBe(expectedOldestName)
+            expect(wq.presets.value[1].name).toBe(expectedOldestName)
 
             // Newest should be the last saved
-            expect(wq.presets.value[19].name).toBe(`Preset ${saveCount}`)
+            expect(wq.presets.value[20].name).toBe(`Preset ${saveCount}`)
           } else {
-            expect(wq.presets.value).toHaveLength(saveCount)
+            expect(userPresetCount).toBe(saveCount)
           }
 
-          // Verify localStorage matches reactive state
+          // Verify localStorage matches user presets (excludes built-in)
           const stored = JSON.parse(storageMap['wq-filter-presets'] ?? '[]')
-          expect(stored).toHaveLength(wq.presets.value.length)
+          expect(stored).toHaveLength(userPresetCount)
         },
       ),
       { numRuns: 100 },
