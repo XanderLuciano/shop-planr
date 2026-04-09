@@ -268,6 +268,7 @@ onMounted(async () => {
             v-for="job in group.jobs"
             :key="`${job.stepId}`"
             :job="job"
+            :group-by="groupBy"
             @select="handleStepClick"
           />
         </div>
