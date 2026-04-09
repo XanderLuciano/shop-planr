@@ -1,12 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createPartService } from '../../../server/services/partService'
 import type { PartIdGenerator } from '../../../server/services/partService'
-import { NotFoundError, ValidationError } from '../../../server/utils/errors'
+import { NotFoundError, ValidationError, ForbiddenError } from '../../../server/utils/errors'
 import type { PartRepository } from '../../../server/repositories/interfaces/partRepository'
 import type { PathRepository } from '../../../server/repositories/interfaces/pathRepository'
 import type { CertRepository } from '../../../server/repositories/interfaces/certRepository'
+import type { UserRepository } from '../../../server/repositories/interfaces/userRepository'
+import type { PartStepStatusRepository } from '../../../server/repositories/interfaces/partStepStatusRepository'
+import type { PartStepOverrideRepository } from '../../../server/repositories/interfaces/partStepOverrideRepository'
 import type { AuditService } from '../../../server/services/auditService'
-import type { Part, Path, Certificate, ProcessStep } from '../../../server/types/domain'
+import type { Part, Path, Certificate, ProcessStep, ShopUser } from '../../../server/types/domain'
 
 function makePath(overrides: Partial<Path> & { steps?: ProcessStep[] } = {}): Path {
   return {
@@ -72,6 +75,22 @@ function createMockPartRepo(): PartRepository {
     countsByJob: vi.fn(() => new Map()),
     listAll: vi.fn(() => [...store.values()]),
     listAllEnriched: vi.fn(() => []),
+    deleteByPathId: vi.fn((pathId: string) => {
+      let count = 0
+      for (const [id, p] of store) {
+        if (p.pathId === pathId) {
+          store.delete(id)
+          count++
+        }
+      }
+      return count
+    }),
+    delete: vi.fn((id: string) => {
+      if (!store.has(id)) {
+        throw new NotFoundError('Part', id)
+      }
+      store.delete(id)
+    }),
   }
 }
 
@@ -102,6 +121,45 @@ function createMockCertRepo(): CertRepository {
     getAttachmentsForPart: vi.fn(() => []),
     listAttachmentsByCertId: vi.fn(() => []),
     batchAttach: vi.fn(a => a),
+    deleteAttachmentsByPartIds: vi.fn(() => 0),
+  } as unknown as CertRepository
+}
+
+function createMockUserRepo(users: ShopUser[] = []): UserRepository {
+  const store = new Map<string, ShopUser>(users.map(u => [u.id, u]))
+  return {
+    getById: vi.fn((id: string) => store.get(id) ?? null),
+  } as unknown as UserRepository
+}
+
+function createMockPartStepStatusRepo(): PartStepStatusRepository {
+  return {
+    deleteByPartIds: vi.fn(() => 0),
+  } as unknown as PartStepStatusRepository
+}
+
+function createMockPartStepOverrideRepo(): PartStepOverrideRepository {
+  return {
+    deleteByPartIds: vi.fn(() => 0),
+  } as unknown as PartStepOverrideRepository
+}
+
+/** Minimal fake better-sqlite3 Database — only `transaction` is used by partService. */
+function createMockDb(): any {
+  return {
+    transaction: (fn: (...args: unknown[]) => unknown) => (...args: unknown[]) => fn(...args),
+  }
+}
+
+function makeAdminUser(overrides: Partial<ShopUser> = {}): ShopUser {
+  return {
+    id: 'admin_1',
+    username: 'admin',
+    displayName: 'Admin User',
+    isAdmin: true,
+    active: true,
+    createdAt: '2024-01-01T00:00:00.000Z',
+    ...overrides,
   }
 }
 
@@ -124,7 +182,9 @@ function createMockAuditService(): AuditService {
     recordStepOverrideCreated: vi.fn(() => ({} as any)),
     recordStepOverrideReversed: vi.fn(() => ({} as any)),
     recordBomEdited: vi.fn(() => ({} as any)),
-  }
+    recordPathDeletion: vi.fn(() => ({} as any)),
+    recordPartDeletion: vi.fn(() => ({} as any)),
+  } as unknown as AuditService
 }
 
 function createMockPartIdGenerator(startAt = 0): PartIdGenerator {
@@ -401,6 +461,139 @@ describe('PartService', () => {
 
       const result = service.listPartsByCurrentStepId('step_0')
       expect(result).toHaveLength(2)
+    })
+  })
+
+  describe('deletePart', () => {
+    let userRepo: UserRepository
+    let partStepStatusRepo: PartStepStatusRepository
+    let partStepOverrideRepo: PartStepOverrideRepository
+    let db: ReturnType<typeof createMockDb>
+    let adminService: ReturnType<typeof createPartService>
+
+    beforeEach(() => {
+      userRepo = createMockUserRepo([makeAdminUser({ id: 'admin_1' })])
+      partStepStatusRepo = createMockPartStepStatusRepo()
+      partStepOverrideRepo = createMockPartStepOverrideRepo()
+      db = createMockDb()
+      adminService = createPartService(
+        {
+          parts: partRepo,
+          paths: pathRepo,
+          certs: certRepo,
+          users: userRepo,
+          partStepStatuses: partStepStatusRepo,
+          partStepOverrides: partStepOverrideRepo,
+          db,
+        },
+        auditService,
+        partIdGenerator,
+      )
+    })
+
+    it('deletes the part and cascades dependent rows inside a transaction', () => {
+      partRepo.create(makePart({ id: 'part_00001' }))
+      const txSpy = vi.spyOn(db, 'transaction')
+
+      const result = adminService.deletePart('part_00001', 'admin_1')
+
+      expect(result).toEqual({ deletedPartId: 'part_00001' })
+      expect(txSpy).toHaveBeenCalledTimes(1)
+      expect(certRepo.deleteAttachmentsByPartIds).toHaveBeenCalledWith(['part_00001'])
+      expect(partStepOverrideRepo.deleteByPartIds).toHaveBeenCalledWith(['part_00001'])
+      expect(partStepStatusRepo.deleteByPartIds).toHaveBeenCalledWith(['part_00001'])
+      expect(partRepo.delete).toHaveBeenCalledWith('part_00001')
+      expect(partRepo.getById('part_00001')).toBeNull()
+    })
+
+    it('records an audit entry with job, path, and part metadata', () => {
+      partRepo.create(makePart({
+        id: 'part_00001',
+        jobId: 'job_1',
+        pathId: 'path_1',
+        currentStepId: 'step_0',
+        status: 'in_progress',
+      }))
+
+      adminService.deletePart('part_00001', 'admin_1')
+
+      expect(auditService.recordPartDeletion).toHaveBeenCalledWith({
+        userId: 'admin_1',
+        partId: 'part_00001',
+        jobId: 'job_1',
+        pathId: 'path_1',
+        metadata: {
+          status: 'in_progress',
+          currentStepId: 'step_0',
+        },
+      })
+    })
+
+    it('throws NotFoundError when the part does not exist', () => {
+      expect(() => adminService.deletePart('nonexistent', 'admin_1')).toThrow(NotFoundError)
+      expect(partRepo.delete).not.toHaveBeenCalled()
+      expect(auditService.recordPartDeletion).not.toHaveBeenCalled()
+    })
+
+    it('throws ForbiddenError when the user is not an admin', () => {
+      partRepo.create(makePart({ id: 'part_00001' }))
+      const nonAdminRepo = createMockUserRepo([
+        makeAdminUser({ id: 'user_1', isAdmin: false }),
+      ])
+      const nonAdminService = createPartService(
+        {
+          parts: partRepo,
+          paths: pathRepo,
+          certs: certRepo,
+          users: nonAdminRepo,
+          partStepStatuses: partStepStatusRepo,
+          partStepOverrides: partStepOverrideRepo,
+          db,
+        },
+        auditService,
+        partIdGenerator,
+      )
+
+      expect(() => nonAdminService.deletePart('part_00001', 'user_1')).toThrow(ForbiddenError)
+      expect(partRepo.delete).not.toHaveBeenCalled()
+    })
+
+    it('throws ValidationError when userId is missing', () => {
+      partRepo.create(makePart({ id: 'part_00001' }))
+      expect(() => adminService.deletePart('part_00001', '')).toThrow(ValidationError)
+      expect(partRepo.delete).not.toHaveBeenCalled()
+    })
+
+    it('throws ValidationError when the user does not exist', () => {
+      partRepo.create(makePart({ id: 'part_00001' }))
+      expect(() => adminService.deletePart('part_00001', 'ghost')).toThrow(ValidationError)
+      expect(partRepo.delete).not.toHaveBeenCalled()
+    })
+
+    it('throws ValidationError when user repository is not wired', () => {
+      partRepo.create(makePart({ id: 'part_00001' }))
+      const bareService = createPartService(
+        { parts: partRepo, paths: pathRepo, certs: certRepo },
+        auditService,
+        partIdGenerator,
+      )
+      expect(() => bareService.deletePart('part_00001', 'admin_1')).toThrow(ValidationError)
+    })
+
+    it('throws ValidationError when cascade repositories are not wired', () => {
+      partRepo.create(makePart({ id: 'part_00001' }))
+      const noCascadeService = createPartService(
+        {
+          parts: partRepo,
+          paths: pathRepo,
+          certs: certRepo,
+          users: userRepo,
+        },
+        auditService,
+        partIdGenerator,
+      )
+      expect(() => noCascadeService.deletePart('part_00001', 'admin_1')).toThrow(ValidationError)
+      expect(partRepo.delete).not.toHaveBeenCalled()
     })
   })
 })

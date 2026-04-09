@@ -275,6 +275,22 @@ export function createAuditService(repos: { audit: AuditRepository }) {
       })
     },
 
+    recordPartDeletion(params: {
+      userId: string
+      partId: string
+      jobId: string
+      pathId: string
+      metadata?: Record<string, unknown>
+    }): AuditEntry {
+      return createEntry('part_deleted', {
+        userId: params.userId,
+        partId: params.partId,
+        jobId: params.jobId,
+        pathId: params.pathId,
+        metadata: params.metadata,
+      })
+    },
+
     recordBomEdited(params: {
       userId: string
       metadata: { bomId: string, changeDescription: string, versionNumber: number }

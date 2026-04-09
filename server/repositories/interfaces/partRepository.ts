@@ -20,6 +20,8 @@ export interface PartRepository {
   /** Returns all parts enriched with job/path/step names via a single JOIN query. */
   listAllEnriched(): EnrichedPart[]
   deleteByPathId(pathId: string): number
+  /** Deletes a single part by ID. Throws NotFoundError if the part does not exist. */
+  delete(id: string): void
 }
 
 /** @deprecated Use `PartRepository` instead. Backward-compatible alias. */

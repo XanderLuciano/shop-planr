@@ -3,11 +3,14 @@
  * Backward compatibility: Both legacy `SN-` and new `part_` prefixed IDs are accepted.
  * The service passes IDs through to the repository without prefix validation.
  */
+import type { Database } from 'better-sqlite3'
 import type { PartRepository } from '../repositories/interfaces/partRepository'
 import type { PathRepository } from '../repositories/interfaces/pathRepository'
 import type { CertRepository } from '../repositories/interfaces/certRepository'
 import type { JobRepository } from '../repositories/interfaces/jobRepository'
+import type { UserRepository } from '../repositories/interfaces/userRepository'
 import type { PartStepStatusRepository } from '../repositories/interfaces/partStepStatusRepository'
+import type { PartStepOverrideRepository } from '../repositories/interfaces/partStepOverrideRepository'
 import type { Part } from '../types/domain'
 import type { BatchCreatePartsInput } from '../types/api'
 import type { EnrichedPart } from '../types/computed'
@@ -15,7 +18,7 @@ import type { AuditService } from '../services/auditService'
 import type { LifecycleService } from '../services/lifecycleService'
 import { generateId } from '../utils/idGenerator'
 import { assertPositive, assertNonEmptyArray } from '../utils/validation'
-import { NotFoundError, ValidationError } from '../utils/errors'
+import { NotFoundError, ValidationError, ForbiddenError } from '../utils/errors'
 
 export interface PartIdGenerator {
   next(): string
@@ -28,7 +31,10 @@ export function createPartService(
     paths: PathRepository
     certs: CertRepository
     jobs?: JobRepository
+    users?: UserRepository
     partStepStatuses?: PartStepStatusRepository
+    partStepOverrides?: PartStepOverrideRepository
+    db?: Database
   },
   auditService: AuditService,
   partIdGenerator: PartIdGenerator,
@@ -232,6 +238,65 @@ export function createPartService(
 
     listAllPartsEnriched(): EnrichedPart[] {
       return repos.parts.listAllEnriched()
+    },
+
+    /**
+     * Admin-only hard delete of a single part with cascade cleanup.
+     *
+     * Cascades (inside a transaction, FK-safe order):
+     *   1. cert_attachments (by part_id)
+     *   2. part_step_overrides (by part_id)
+     *   3. part_step_statuses (by part_id)
+     *   4. parts (the row itself)
+     *
+     * Notes are keyed by stepId and reference parts via a JSON `serial_ids` column
+     * (no FK), so they are left intact — removing a single part does not remove the
+     * note. Audit entries also have no FK on `part_id`, preserving the audit trail.
+     */
+    deletePart(id: string, userId: string): { deletedPartId: string } {
+      if (!userId) {
+        throw new ValidationError('userId is required')
+      }
+      if (!repos.users) {
+        throw new ValidationError('User repository not available')
+      }
+      const user = repos.users.getById(userId)
+      if (!user) {
+        throw new ValidationError(`User not found: ${userId}`)
+      }
+      if (!user.isAdmin) {
+        throw new ForbiddenError('Admin access required to delete parts')
+      }
+
+      const part = repos.parts.getById(id)
+      if (!part) {
+        throw new NotFoundError('Part', id)
+      }
+
+      if (!repos.partStepOverrides || !repos.partStepStatuses || !repos.db) {
+        throw new ValidationError('Cannot delete part: required repositories not available')
+      }
+
+      // Cascade delete inside a transaction in FK-safe order
+      repos.db.transaction(() => {
+        repos.certs.deleteAttachmentsByPartIds([id])
+        repos.partStepOverrides!.deleteByPartIds([id])
+        repos.partStepStatuses!.deleteByPartIds([id])
+        repos.parts.delete(id)
+      })()
+
+      auditService.recordPartDeletion({
+        userId,
+        partId: id,
+        jobId: part.jobId,
+        pathId: part.pathId,
+        metadata: {
+          status: part.status,
+          currentStepId: part.currentStepId,
+        },
+      })
+
+      return { deletedPartId: id }
     },
   }
 }
