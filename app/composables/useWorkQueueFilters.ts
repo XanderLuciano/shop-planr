@@ -241,24 +241,26 @@ export function useWorkQueueFilters() {
   watch(filters, () => syncToUrl(), { deep: true })
   watch(searchQuery, () => syncToUrl())
 
-  // --- Restore from URL + load presets on mount ---
+  // --- Apply default state synchronously (before first render) ---
+  // Check URL for explicit filter params; if none, apply "My Queue" default.
+  // This ensures the filter bar renders with the correct initial state.
+  const hasUrlFilters = FILTER_URL_KEYS.some(key => !!route.query[key])
+  if (hasUrlFilters) {
+    syncFromUrl()
+  } else if (myQueuePreset.value) {
+    groupBy.value = myQueuePreset.value.groupBy
+    filters.value = { ...myQueuePreset.value.filters }
+    searchQuery.value = ''
+    activePresetId.value = MY_QUEUE_PRESET_ID
+  }
+
+  // --- Load user presets from localStorage on mount (client-only) ---
   onMounted(() => {
     if (import.meta.client) {
       userPresets.value = loadPresetsFromStorage()
     }
-
-    // If URL has filter params, restore from URL (user navigated with explicit filters)
-    const hasUrlFilters = FILTER_URL_KEYS.some(key => !!route.query[key])
-    if (hasUrlFilters) {
-      syncFromUrl()
-    } else if (myQueuePreset.value) {
-      // No URL params → auto-activate "My Queue" for the current user
-      groupBy.value = myQueuePreset.value.groupBy
-      filters.value = { ...myQueuePreset.value.filters }
-      searchQuery.value = ''
-      activePresetId.value = MY_QUEUE_PRESET_ID
-      syncToUrl()
-    }
+    // Sync URL to reflect the initial state (safe to call after mount)
+    syncToUrl()
   })
 
   // --- Initial fetch helper ---
