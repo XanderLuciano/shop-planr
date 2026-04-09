@@ -58,6 +58,10 @@ export function useWorkQueueFilters() {
   const userPresets = ref<WorkQueuePreset[]>([])
   const activePresetId = ref<string | null>(null)
 
+  // Gate URL-sync watchers until after mount to prevent router.replace()
+  // from firing during setup / SSR when initial state is being applied.
+  const initialized = ref(false)
+
   // --- Built-in "My Queue" preset (always first, not deletable) ---
   const myQueuePreset = computed<WorkQueuePreset | null>(() => {
     const user = authenticatedUser.value
@@ -237,16 +241,38 @@ export function useWorkQueueFilters() {
   }
 
   // --- Watchers: sync state → URL on every change ---
-  watch(groupBy, () => syncToUrl())
-  watch(filters, () => syncToUrl(), { deep: true })
-  watch(searchQuery, () => syncToUrl())
+  // Gated behind `initialized` so they don't fire router.replace() during
+  // setup or SSR while initial state is being applied.
+  watch(groupBy, () => {
+    if (initialized.value) syncToUrl()
+  })
+  watch(filters, () => {
+    if (initialized.value) syncToUrl()
+  }, { deep: true })
+  watch(searchQuery, () => {
+    if (initialized.value) syncToUrl()
+  })
 
   // --- Apply default state synchronously (before first render) ---
-  // Check URL for explicit filter params; if none, apply "My Queue" default.
-  // This ensures the filter bar renders with the correct initial state.
+  // URL params take priority: if someone navigated here with explicit filter
+  // params, honour those instead of the "My Queue" default. Only fall back to
+  // "My Queue" when the URL carries no filter params at all.
   const hasUrlFilters = FILTER_URL_KEYS.some(key => !!route.query[key])
   if (hasUrlFilters) {
     syncFromUrl()
+    // If the URL params happen to match the "My Queue" preset, mark it active
+    // so the UI highlights it correctly.
+    const mq = myQueuePreset.value
+    if (
+      mq
+      && groupBy.value === mq.groupBy
+      && filters.value.userId === mq.filters.userId
+      && !filters.value.location
+      && !filters.value.stepName
+      && !searchQuery.value
+    ) {
+      activePresetId.value = MY_QUEUE_PRESET_ID
+    }
   } else if (myQueuePreset.value) {
     groupBy.value = myQueuePreset.value.groupBy
     filters.value = { ...myQueuePreset.value.filters }
@@ -254,13 +280,15 @@ export function useWorkQueueFilters() {
     activePresetId.value = MY_QUEUE_PRESET_ID
   }
 
-  // --- Load user presets from localStorage on mount (client-only) ---
+  // --- Load user presets from localStorage & finalise URL on mount ---
   onMounted(() => {
     if (import.meta.client) {
       userPresets.value = loadPresetsFromStorage()
     }
-    // Sync URL to reflect the initial state (safe to call after mount)
+    // Single intentional URL sync now that we're safely mounted.
     syncToUrl()
+    // Open the gate — subsequent reactive changes will sync to URL.
+    initialized.value = true
   })
 
   // --- Initial fetch helper ---

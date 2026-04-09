@@ -130,8 +130,9 @@ function isCurrentUserGroup(group: WorkQueueGroup): boolean {
 const hasActiveFilters = computed(() => activeFilterCount.value > 0 || searchQuery.value.trim().length > 0)
 
 onMounted(async () => {
-  // Composable's onMounted already restores state from URL or applies "My Queue" default.
-  // Just fetch the data with the correct groupBy.
+  // State (groupBy, filters, searchQuery) is restored synchronously during
+  // composable setup — either from URL params or the "My Queue" default.
+  // initFilters() just triggers the initial data fetch with those values.
   await initFilters()
 })
 </script>
