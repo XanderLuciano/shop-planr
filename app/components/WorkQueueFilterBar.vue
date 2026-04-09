@@ -115,6 +115,23 @@ function handleSavePreset() {
 const presetMenuItems = computed<DropdownMenuItem[][]>(() => {
   const items: DropdownMenuItem[][] = []
 
+  // Built-in + user presets (load section)
+  if (props.presets.length > 0) {
+    items.push(
+      props.presets.map(preset => ({
+        label: preset.name,
+        icon: preset.id === props.activePresetId
+          ? 'i-lucide-check'
+          : preset.id === MY_QUEUE_PRESET_ID
+            ? 'i-lucide-user'
+            : 'i-lucide-bookmark',
+        onSelect() {
+          emit('loadPreset', preset.id)
+        },
+      })),
+    )
+  }
+
   // Save action
   items.push([
     {
@@ -126,21 +143,11 @@ const presetMenuItems = computed<DropdownMenuItem[][]>(() => {
     },
   ])
 
-  // Saved presets
-  if (props.presets.length > 0) {
+  // Delete section — only user-created presets (exclude built-in)
+  const deletable = props.presets.filter(p => p.id !== MY_QUEUE_PRESET_ID)
+  if (deletable.length > 0) {
     items.push(
-      props.presets.map(preset => ({
-        label: preset.name,
-        icon: preset.id === props.activePresetId ? 'i-lucide-check' : 'i-lucide-bookmark',
-        onSelect() {
-          emit('loadPreset', preset.id)
-        },
-      })),
-    )
-
-    // Delete section
-    items.push(
-      props.presets.map(preset => ({
+      deletable.map(preset => ({
         label: `Delete "${preset.name}"`,
         icon: 'i-lucide-trash-2',
         color: 'error' as const,

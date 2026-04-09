@@ -14,6 +14,9 @@ const VALID_GROUP_BY: GroupByDimension[] = ['user', 'location', 'step']
 const PRESET_STORAGE_KEY = 'wq-filter-presets'
 const MAX_PRESETS = 20
 
+/** Well-known ID for the built-in "My Queue" preset (not deletable). */
+export const MY_QUEUE_PRESET_ID = '__my-queue__'
+
 /** Read presets from localStorage. Returns [] on corrupt/missing data. */
 function loadPresetsFromStorage(): WorkQueuePreset[] {
   if (!import.meta.client) return []
@@ -46,13 +49,34 @@ export function useWorkQueueFilters() {
   const route = useRoute()
   const router = useRouter()
   const workQueue = useOperatorWorkQueue()
+  const { authenticatedUser } = useAuth()
 
   // --- Reactive state ---
   const groupBy = ref<GroupByDimension>('location')
   const filters = ref<WorkQueueFilterState>({})
   const searchQuery = ref('')
-  const presets = ref<WorkQueuePreset[]>([])
+  const userPresets = ref<WorkQueuePreset[]>([])
   const activePresetId = ref<string | null>(null)
+
+  // --- Built-in "My Queue" preset (always first, not deletable) ---
+  const myQueuePreset = computed<WorkQueuePreset | null>(() => {
+    const user = authenticatedUser.value
+    if (!user) return null
+    return {
+      id: MY_QUEUE_PRESET_ID,
+      name: 'My Queue',
+      groupBy: 'location',
+      filters: { userId: user.id },
+      searchQuery: '',
+      createdAt: '',
+    }
+  })
+
+  /** All presets: built-in "My Queue" first, then user-saved presets. */
+  const presets = computed<WorkQueuePreset[]>(() => {
+    const builtIn = myQueuePreset.value
+    return builtIn ? [builtIn, ...userPresets.value] : [...userPresets.value]
+  })
 
   // --- Raw groups: direct pass-through from the work queue composable ---
   const rawGroups = computed<WorkQueueGroup[]>(() => {
@@ -177,7 +201,7 @@ export function useWorkQueueFilters() {
       : current
 
     savePresetsToStorage(capped)
-    presets.value = capped
+    userPresets.value = capped
     activePresetId.value = preset.id
   }
 
@@ -200,9 +224,12 @@ export function useWorkQueueFilters() {
   }
 
   function deletePreset(presetId: string): void {
+    // Built-in preset cannot be deleted
+    if (presetId === MY_QUEUE_PRESET_ID) return
+
     const updated = loadPresetsFromStorage().filter(p => p.id !== presetId)
     savePresetsToStorage(updated)
-    presets.value = updated
+    userPresets.value = updated
 
     if (activePresetId.value === presetId) {
       activePresetId.value = null
@@ -216,9 +243,21 @@ export function useWorkQueueFilters() {
 
   // --- Restore from URL + load presets on mount ---
   onMounted(() => {
-    syncFromUrl()
     if (import.meta.client) {
-      presets.value = loadPresetsFromStorage()
+      userPresets.value = loadPresetsFromStorage()
+    }
+
+    // If URL has filter params, restore from URL (user navigated with explicit filters)
+    const hasUrlFilters = FILTER_URL_KEYS.some(key => !!route.query[key])
+    if (hasUrlFilters) {
+      syncFromUrl()
+    } else if (myQueuePreset.value) {
+      // No URL params → auto-activate "My Queue" for the current user
+      groupBy.value = myQueuePreset.value.groupBy
+      filters.value = { ...myQueuePreset.value.filters }
+      searchQuery.value = ''
+      activePresetId.value = MY_QUEUE_PRESET_ID
+      syncToUrl()
     }
   })
 
