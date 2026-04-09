@@ -223,25 +223,24 @@ const presetMenuItems = computed<DropdownMenuItem[][]>(() => {
       </div>
     </div>
 
-    <!-- Bottom row: filter dropdowns + search -->
+    <!-- Bottom row: search + filter dropdowns -->
     <div class="flex flex-wrap items-end gap-3">
+      <div>
+        <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Search</label>
+        <UInput
+          v-model="localSearch"
+          size="xs"
+          placeholder="Search jobs, steps…"
+          icon="i-lucide-search"
+          class="w-48"
+        />
+      </div>
+
       <div>
         <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Location</label>
         <USelect
           v-model="selectedLocation"
           :items="locationItems"
-          value-key="value"
-          label-key="label"
-          size="xs"
-          class="w-40"
-        />
-      </div>
-
-      <div>
-        <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Step</label>
-        <USelect
-          v-model="selectedStep"
-          :items="stepItems"
           value-key="value"
           label-key="label"
           size="xs"
@@ -262,13 +261,14 @@ const presetMenuItems = computed<DropdownMenuItem[][]>(() => {
       </div>
 
       <div>
-        <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Search</label>
-        <UInput
-          v-model="localSearch"
+        <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Step</label>
+        <USelect
+          v-model="selectedStep"
+          :items="stepItems"
+          value-key="value"
+          label-key="label"
           size="xs"
-          placeholder="Search jobs, steps…"
-          icon="i-lucide-search"
-          class="w-48"
+          class="w-40"
         />
       </div>
     </div>
