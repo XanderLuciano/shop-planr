@@ -17,7 +17,6 @@ const {
   setGroupBy,
   setFilter,
   clearFilters,
-  syncFromUrl,
   init: initFilters,
   fetchGroupedWork,
   savePreset,
@@ -131,10 +130,8 @@ function isCurrentUserGroup(group: WorkQueueGroup): boolean {
 const hasActiveFilters = computed(() => activeFilterCount.value > 0 || searchQuery.value.trim().length > 0)
 
 onMounted(async () => {
-  // Restore filter state from URL
-  syncFromUrl()
-
-  // Fetch with the correct groupBy from URL
+  // Composable's onMounted already restores state from URL or applies "My Queue" default.
+  // Just fetch the data with the correct groupBy.
   await initFilters()
 })
 </script>
