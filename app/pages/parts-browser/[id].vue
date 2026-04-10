@@ -10,6 +10,10 @@ const $api = useAuthFetch()
 // Stack-based back navigation
 const { backNavigation: backNav } = useNavigationStack()
 
+// Deterministic fallback derived from shared helpers (no sessionStorage dependency)
+const fallbackPath = resolveFallbackRoute(route.path)
+const fallbackLabel = `Back to ${resolveLabel(fallbackPath)}`
+
 const {
   part,
   job,
@@ -300,14 +304,14 @@ onMounted(async () => {
       </NuxtLink>
       <template #fallback>
         <NuxtLink
-          to="/parts-browser"
+          :to="fallbackPath"
           class="inline-flex items-center gap-1 text-xs text-(--ui-text-muted) hover:text-(--ui-text-highlighted) transition-colors"
         >
           <UIcon
             name="i-lucide-arrow-left"
             class="size-3"
           />
-          Back to Parts Browser
+          {{ fallbackLabel }}
         </NuxtLink>
       </template>
     </ClientOnly>

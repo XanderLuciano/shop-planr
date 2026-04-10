@@ -3,6 +3,10 @@ const route = useRoute()
 const stepId = route.params.stepId as string
 const { backNavigation: backNav, goBack } = useNavigationStack()
 
+// Deterministic fallback derived from shared helpers (no sessionStorage dependency)
+const fallbackPath = resolveFallbackRoute(route.path)
+const fallbackLabel = `Back to ${resolveLabel(fallbackPath)}`
+
 const {
   job,
   notes,
@@ -145,14 +149,14 @@ onMounted(async () => {
       </NuxtLink>
       <template #fallback>
         <NuxtLink
-          to="/parts"
+          :to="fallbackPath"
           class="inline-flex items-center gap-1 text-sm text-(--ui-text-muted) hover:text-(--ui-text-highlighted) transition-colors"
         >
           <UIcon
             name="i-lucide-arrow-left"
             class="size-4"
           />
-          Back to Parts
+          {{ fallbackLabel }}
         </NuxtLink>
       </template>
     </ClientOnly>
@@ -194,10 +198,10 @@ onMounted(async () => {
         />
         <template #fallback>
           <UButton
-            to="/parts"
+            :to="fallbackPath"
             size="sm"
             variant="soft"
-            label="Back to Parts"
+            :label="fallbackLabel"
             icon="i-lucide-arrow-left"
           />
         </template>
@@ -318,10 +322,10 @@ onMounted(async () => {
           />
           <template #fallback>
             <UButton
-              to="/parts"
+              :to="fallbackPath"
               size="sm"
               variant="soft"
-              label="Back to Parts"
+              :label="fallbackLabel"
               icon="i-lucide-arrow-left"
             />
           </template>
