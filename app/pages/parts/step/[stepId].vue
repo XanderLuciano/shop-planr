@@ -98,11 +98,20 @@ async function handleAdvance(payload: { partIds: string[], note?: string }) {
     })
 
     const dest = job.value.isFinalStep ? 'Completed' : (job.value.nextStepName ?? 'next step')
-    toast.add({
-      title: 'Parts advanced',
-      description: `${result.advanced} part${result.advanced !== 1 ? 's' : ''} moved to ${dest}`,
-      color: 'success',
-    })
+
+    if (result.failed > 0) {
+      toast.add({
+        title: 'Partial advancement',
+        description: `${result.advanced} part${result.advanced !== 1 ? 's' : ''} moved to ${dest}, ${result.failed} failed`,
+        color: 'warning',
+      })
+    } else {
+      toast.add({
+        title: 'Parts advanced',
+        description: `${result.advanced} part${result.advanced !== 1 ? 's' : ''} moved to ${dest}`,
+        color: 'success',
+      })
+    }
 
     // Refresh step data
     await fetchStep()
