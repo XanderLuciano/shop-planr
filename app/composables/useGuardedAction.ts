@@ -1,7 +1,7 @@
-export function useGuardedAction<T>(fn: (...args: unknown[]) => Promise<T>) {
+export function useGuardedAction<Args extends unknown[], T>(fn: (...args: Args) => Promise<T>) {
   const loading = ref(false)
 
-  async function execute(...args: unknown[]): Promise<T | undefined> {
+  async function execute(...args: Args): Promise<T | undefined> {
     if (loading.value) return undefined
     loading.value = true
     try {

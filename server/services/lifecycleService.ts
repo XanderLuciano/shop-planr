@@ -299,6 +299,27 @@ export function createLifecycleService(repos: {
         })
       }
 
+      // Record audit for origin step when skipping
+      if (isSkipping) {
+        if (originStatus === 'skipped') {
+          auditService.recordStepSkipped({
+            userId,
+            partId,
+            jobId: part.jobId,
+            pathId: part.pathId,
+            stepId: currentStep.id,
+          })
+        } else if (originStatus === 'deferred') {
+          auditService.recordStepDeferred({
+            userId,
+            partId,
+            jobId: part.jobId,
+            pathId: part.pathId,
+            stepId: currentStep.id,
+          })
+        }
+      }
+
       // Only increment completedCount for normal advancement (not skipping)
       if (!isSkipping) {
         repos.paths.updateStep(currentStep.id, {

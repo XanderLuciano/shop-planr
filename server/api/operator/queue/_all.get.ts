@@ -14,6 +14,14 @@ export default defineApiHandler(async () => {
       const totalSteps = path.steps.length
       const firstActiveStep = findFirstActiveStep(path.steps)
 
+      const pathSteps = path.steps.filter(s => !s.removedAt).map(s => ({
+        id: s.id,
+        name: s.name,
+        order: s.order,
+        location: s.location,
+        optional: s.optional,
+      }))
+
       for (const step of path.steps) {
         if (step.removedAt) continue
 
@@ -44,13 +52,7 @@ export default defineApiHandler(async () => {
           isFinalStep,
           jobPriority: job.priority,
           pathAdvancementMode: path.advancementMode,
-          pathSteps: path.steps.filter(s => !s.removedAt).map(s => ({
-            id: s.id,
-            name: s.name,
-            order: s.order,
-            location: s.location,
-            optional: s.optional,
-          })),
+          pathSteps,
           ...(isFirstActive && { goalQuantity: path.goalQuantity, completedCount: step.completedCount }),
         })
       }
