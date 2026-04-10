@@ -149,19 +149,55 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="p-4 space-y-4 max-w-5xl">
-    <!-- Back link -->
+  <div class="px-4 pt-2 pb-4 space-y-3 max-w-5xl">
+    <!-- Back link + step stepper -->
     <ClientOnly>
-      <NuxtLink
-        :to="backNav.to"
-        class="inline-flex items-center gap-1 text-sm text-(--ui-text-muted) hover:text-(--ui-text-highlighted) transition-colors"
-      >
-        <UIcon
-          name="i-lucide-arrow-left"
-          class="size-4"
-        />
-        {{ backNav.label }}
-      </NuxtLink>
+      <div class="flex items-center justify-between">
+        <NuxtLink
+          :to="backNav.to"
+          class="inline-flex items-center gap-1 text-sm text-(--ui-text-muted) hover:text-(--ui-text-highlighted) transition-colors"
+        >
+          <UIcon
+            name="i-lucide-arrow-left"
+            class="size-4"
+          />
+          {{ backNav.label }}
+        </NuxtLink>
+        <div
+          v-if="job"
+          class="flex items-center gap-0.5 shrink-0 bg-primary/5 ring ring-inset ring-primary/15 rounded-lg p-0.5"
+        >
+          <UButton
+            size="sm"
+            variant="ghost"
+            color="primary"
+            icon="i-lucide-chevron-left"
+            aria-label="Previous step"
+            :disabled="job.stepOrder === 0"
+            :to="job.previousStepId ? `/parts/step/${job.previousStepId}` : undefined"
+          />
+          <USeparator
+            orientation="vertical"
+            class="h-4"
+          />
+          <span class="text-xs font-medium text-primary px-1.5 tabular-nums">
+            <span class="hidden sm:inline">Step </span>{{ job.stepOrder + 1 }} / {{ job.totalSteps }}
+          </span>
+          <USeparator
+            orientation="vertical"
+            class="h-4"
+          />
+          <UButton
+            size="sm"
+            variant="ghost"
+            color="primary"
+            icon="i-lucide-chevron-right"
+            aria-label="Next step"
+            :disabled="job.isFinalStep"
+            :to="job.nextStepId ? `/parts/step/${job.nextStepId}` : undefined"
+          />
+        </div>
+      </div>
       <template #fallback>
         <NuxtLink
           :to="fallbackPath"
@@ -242,62 +278,65 @@ onMounted(async () => {
     <template v-else-if="job">
       <!-- Step header -->
       <div class="space-y-2">
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="flex items-center gap-2">
-              <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
-                {{ job.stepName }}
-              </h1>
-              <span class="text-xs text-(--ui-text-muted) bg-(--ui-bg-elevated) px-1.5 py-0.5 rounded">
-                Step {{ job.stepOrder + 1 }} of {{ job.totalSteps }}
-              </span>
-              <UButton
-                v-if="!editing"
-                size="xs"
-                variant="ghost"
-                icon="i-lucide-pencil"
-                aria-label="Edit step properties"
-                @click="editing = true"
-              />
-            </div>
-            <p
-              v-if="!editing"
-              class="text-sm text-(--ui-text-muted)"
-            >
-              {{ job.jobName }} · {{ job.pathName }}
-              <span v-if="job.stepLocation"> · 📍 {{ job.stepLocation }}</span>
-              <span v-if="assigneeName"> · 👤 {{ assigneeName }}</span>
-            </p>
-            <StepPropertiesEditor
-              v-if="editing"
-              :step-id="job.stepId"
-              :current-assigned-to="job.assignedTo"
-              :current-location="job.stepLocation"
-              @saved="handleSaved"
-              @cancel="handleEditCancel"
-            />
-          </div>
+        <!-- Breadcrumb: Job (linked) › Path › Step -->
+        <UBreadcrumb
+          :items="[
+            { label: job.jobName, to: `/jobs/${encodeURIComponent(job.jobId)}`, icon: 'i-lucide-briefcase' },
+            { label: job.pathName, icon: 'i-lucide-git-branch' },
+            { label: job.stepName },
+          ]"
+        />
+
+        <!-- Title row: step name -->
+        <div class="flex items-center gap-2 min-w-0">
+          <h1 class="text-xl font-semibold text-(--ui-text-highlighted) truncate">
+            {{ job.stepName }}
+          </h1>
+          <UButton
+            v-if="!editing"
+            size="xs"
+            variant="ghost"
+            color="neutral"
+            icon="i-lucide-pencil"
+            aria-label="Edit step properties"
+            @click="editing = true"
+          />
         </div>
 
-        <!-- Prev / Next step navigation -->
-        <div class="flex items-center justify-between">
-          <UButton
-            size="xs"
-            variant="ghost"
-            icon="i-lucide-arrow-left"
-            label="Prev"
-            :disabled="job.stepOrder === 0"
-            :to="job.previousStepId ? `/parts/step/${job.previousStepId}` : undefined"
-          />
-          <UButton
-            size="xs"
-            variant="ghost"
-            trailing-icon="i-lucide-arrow-right"
-            label="Next"
-            :disabled="job.isFinalStep"
-            :to="job.nextStepId ? `/parts/step/${job.nextStepId}` : undefined"
-          />
+        <!-- Metadata badges -->
+        <div
+          v-if="!editing && (job.stepLocation || assigneeName)"
+          class="flex items-center gap-1.5 flex-wrap"
+        >
+          <UBadge
+            v-if="job.stepLocation"
+            size="sm"
+            color="neutral"
+            variant="soft"
+            leading-icon="i-lucide-map-pin"
+          >
+            {{ job.stepLocation }}
+          </UBadge>
+          <UBadge
+            v-if="assigneeName"
+            size="sm"
+            color="neutral"
+            variant="soft"
+            leading-icon="i-lucide-user"
+          >
+            {{ assigneeName }}
+          </UBadge>
         </div>
+
+        <!-- Inline editor (replaces metadata when active) -->
+        <StepPropertiesEditor
+          v-if="editing"
+          :step-id="job.stepId"
+          :current-assigned-to="job.assignedTo"
+          :current-location="job.stepLocation"
+          @saved="handleSaved"
+          @cancel="handleEditCancel"
+        />
       </div>
 
       <!-- First step (always shows PartCreationPanel, even with 0 parts) -->
