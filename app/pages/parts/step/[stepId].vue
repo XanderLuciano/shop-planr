@@ -281,7 +281,7 @@ onMounted(async () => {
         <!-- Breadcrumb: Job (linked) › Path › Step -->
         <UBreadcrumb
           :items="[
-            { label: job.jobName, to: `/jobs/${job.jobId}`, icon: 'i-lucide-briefcase' },
+            { label: job.jobName, to: `/jobs/${encodeURIComponent(job.jobId)}`, icon: 'i-lucide-briefcase' },
             { label: job.pathName, icon: 'i-lucide-git-branch' },
             { label: job.stepName },
           ]"

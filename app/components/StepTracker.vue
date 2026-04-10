@@ -56,7 +56,14 @@ function computeColumns() {
   // For N cards: N * CARD_MIN_WIDTH + (N-1) * (ARROW_WIDTH + GAP) + (N-1) * GAP <= width
   // Simplify: each card slot = CARD_MIN_WIDTH, each gap between = ARROW_WIDTH + 2*GAP
   const slotGap = ARROW_WIDTH + 2 * GAP
-  const cols = Math.max(2, Math.floor((width + slotGap) / (CARD_MIN_WIDTH + slotGap)))
+  const maxCols = allItems.value.length || 1
+  let cols = Math.min(maxCols, Math.max(1, Math.floor((width + slotGap) / (CARD_MIN_WIDTH + slotGap))))
+  // Reduce columns if cardWidth would fall below CARD_MIN_WIDTH
+  while (cols > 1) {
+    const arrowSpace = (cols - 1) * (ARROW_WIDTH + 2 * GAP)
+    if (Math.floor((width - arrowSpace) / cols) >= CARD_MIN_WIDTH) break
+    cols--
+  }
   columnsPerRow.value = cols
 }
 
