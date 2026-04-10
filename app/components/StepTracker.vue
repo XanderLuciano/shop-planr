@@ -7,7 +7,6 @@ const props = withDefaults(defineProps<{
   distribution: StepDistribution[]
   completedCount?: number
   users?: ShopUser[]
-  stepAssignments?: Record<string, string | undefined>
 }>(), {
   completedCount: 0,
   users: () => [],
@@ -220,87 +219,87 @@ watch(() => props.distribution, () => nextTick(computeColumns))
         class="flex items-stretch gap-x-1"
         :class="row.length < columnsPerRow ? 'justify-center' : ''"
       >
-      <template
-        v-for="(item, colIdx) in row"
-        :key="item.type === 'step' ? item.step!.stepId : 'done'"
-      >
-        <!-- Arrow between cards (not before first in row) -->
-        <div
-          v-if="colIdx > 0"
-          class="flex items-center justify-center shrink-0"
+        <template
+          v-for="(item, colIdx) in row"
+          :key="item.type === 'step' ? item.step!.stepId : 'done'"
         >
-          <UIcon
-            name="i-lucide-chevron-right"
-            class="size-4 text-(--ui-text-muted)"
-          />
-        </div>
-
-        <!-- Step card -->
-        <div
-          v-if="item.type === 'step'"
-          class="flex flex-col items-center justify-center shrink-0 px-2 py-2.5 rounded border text-center cursor-pointer transition-colors hover:border-(--ui-primary) hover:bg-(--ui-primary)/5"
-          :class="stepBorderClass(item.step!)"
-          :style="{ width: `${cardWidth}px` }"
-          @click="handleStepClick(item.step!)"
-        >
-          <span class="text-[10px] text-(--ui-text-muted) mb-0.5 flex items-center gap-0.5">
-            Step {{ item.index + 1 }}
-            <UIcon
-              v-if="depIcon(getProcessStep(item.step!.stepId)?.dependencyType)"
-              :name="depIcon(getProcessStep(item.step!.stepId)?.dependencyType)!"
-              class="size-2.5"
-            />
-            <BottleneckBadge
-              v-if="item.step!.isBottleneck"
-              :is-bottleneck="true"
-            />
-          </span>
-          <span
-            class="text-xs font-medium text-(--ui-text-highlighted) text-center break-words"
-            :title="item.step!.stepName"
-          >{{ item.step!.stepName }}</span>
-          <span
-            v-if="item.step!.location"
-            class="text-[10px] text-(--ui-text-muted) text-center break-words"
-            :title="item.step!.location"
-          >{{ item.step!.location }}</span>
-          <span
-            v-if="getProcessStep(item.step!.stepId)?.optional"
-            class="text-[9px] text-(--ui-text-muted) italic"
-          >Optional</span>
-          <div class="mt-1 flex items-center gap-1 text-[10px] flex-wrap justify-center">
-            <span class="font-bold text-(--ui-text-highlighted)">{{ item.step!.partCount }}</span>
-            <span class="text-(--ui-text-muted)">at ·</span>
-            <span class="text-green-600 dark:text-green-400">{{ item.step!.completedCount }} done</span>
-          </div>
-          <span
-            v-if="users.length"
-            class="mt-1 text-[10px] text-(--ui-text-muted) text-center break-words"
-            :title="getProcessStep(item.step!.stepId)?.assignedTo ? users.find(u => u.id === getProcessStep(item.step!.stepId)?.assignedTo)?.displayName ?? 'Assigned' : 'Unassigned'"
+          <!-- Arrow between cards (not before first in row) -->
+          <div
+            v-if="colIdx > 0"
+            class="flex items-center justify-center shrink-0"
           >
-            👤 {{ getProcessStep(item.step!.stepId)?.assignedTo ? users.find(u => u.id === getProcessStep(item.step!.stepId)?.assignedTo)?.displayName ?? 'Assigned' : 'Unassigned' }}
-          </span>
-        </div>
+            <UIcon
+              name="i-lucide-chevron-right"
+              class="size-4 text-(--ui-text-muted)"
+            />
+          </div>
 
-        <!-- Done card -->
-        <div
-          v-else
-          class="flex flex-col items-center justify-center shrink-0 min-h-[100px] px-2 py-1.5 rounded border border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/30 text-center"
-          :style="{ width: `${cardWidth}px` }"
-        >
-          <span class="text-[10px] text-(--ui-text-muted) mb-0.5">Done</span>
-          <UIcon
-            name="i-lucide-check-circle"
-            class="size-4 text-green-600 dark:text-green-400"
-          />
-          <div class="mt-1">
-            <span class="text-sm font-bold text-green-600 dark:text-green-400">
-              {{ completedCount }}
+          <!-- Step card -->
+          <div
+            v-if="item.type === 'step'"
+            class="flex flex-col items-center justify-center shrink-0 px-2 py-2.5 rounded border text-center cursor-pointer transition-colors hover:border-(--ui-primary) hover:bg-(--ui-primary)/5"
+            :class="stepBorderClass(item.step!)"
+            :style="{ width: `${cardWidth}px` }"
+            @click="handleStepClick(item.step!)"
+          >
+            <span class="text-[10px] text-(--ui-text-muted) mb-0.5 flex items-center gap-0.5">
+              Step {{ item.index + 1 }}
+              <UIcon
+                v-if="depIcon(getProcessStep(item.step!.stepId)?.dependencyType)"
+                :name="depIcon(getProcessStep(item.step!.stepId)?.dependencyType)!"
+                class="size-2.5"
+              />
+              <BottleneckBadge
+                v-if="item.step!.isBottleneck"
+                :is-bottleneck="true"
+              />
+            </span>
+            <span
+              class="text-xs font-medium text-(--ui-text-highlighted) text-center break-words"
+              :title="item.step!.stepName"
+            >{{ item.step!.stepName }}</span>
+            <span
+              v-if="item.step!.location"
+              class="text-[10px] text-(--ui-text-muted) text-center break-words"
+              :title="item.step!.location"
+            >{{ item.step!.location }}</span>
+            <span
+              v-if="getProcessStep(item.step!.stepId)?.optional"
+              class="text-[9px] text-(--ui-text-muted) italic"
+            >Optional</span>
+            <div class="mt-1 flex items-center gap-1 text-[10px] flex-wrap justify-center">
+              <span class="font-bold text-(--ui-text-highlighted)">{{ item.step!.partCount }}</span>
+              <span class="text-(--ui-text-muted)">at ·</span>
+              <span class="text-green-600 dark:text-green-400">{{ item.step!.completedCount }} done</span>
+            </div>
+            <span
+              v-if="users.length"
+              class="mt-1 text-[10px] text-(--ui-text-muted) text-center break-words"
+              :title="getProcessStep(item.step!.stepId)?.assignedTo ? users.find(u => u.id === getProcessStep(item.step!.stepId)?.assignedTo)?.displayName ?? 'Assigned' : 'Unassigned'"
+            >
+              👤 {{ getProcessStep(item.step!.stepId)?.assignedTo ? users.find(u => u.id === getProcessStep(item.step!.stepId)?.assignedTo)?.displayName ?? 'Assigned' : 'Unassigned' }}
             </span>
           </div>
-          <span class="text-[10px] text-(--ui-text-muted)">completed</span>
-        </div>
-      </template>
+
+          <!-- Done card -->
+          <div
+            v-else
+            class="flex flex-col items-center justify-center shrink-0 min-h-[100px] px-2 py-1.5 rounded border border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/30 text-center"
+            :style="{ width: `${cardWidth}px` }"
+          >
+            <span class="text-[10px] text-(--ui-text-muted) mb-0.5">Done</span>
+            <UIcon
+              name="i-lucide-check-circle"
+              class="size-4 text-green-600 dark:text-green-400"
+            />
+            <div class="mt-1">
+              <span class="text-sm font-bold text-green-600 dark:text-green-400">
+                {{ completedCount }}
+              </span>
+            </div>
+            <span class="text-[10px] text-(--ui-text-muted)">completed</span>
+          </div>
+        </template>
       </div>
     </template>
   </div>
