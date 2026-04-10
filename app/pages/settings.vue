@@ -181,23 +181,11 @@ onMounted(async () => {
 
     <template v-else>
       <!-- Tabs -->
-      <div class="flex gap-1 border-b border-(--ui-border) mb-3 overflow-x-auto">
-        <button
-          v-for="tab in tabs"
-          :key="tab.value"
-          class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border-b-2 -mb-px transition-colors whitespace-nowrap shrink-0"
-          :class="activeTab === tab.value
-            ? 'border-(--ui-color-primary-500) text-(--ui-text-highlighted)'
-            : 'border-transparent text-(--ui-text-muted) hover:text-(--ui-text-highlighted)'"
-          @click="activeTab = tab.value"
-        >
-          <UIcon
-            :name="tab.icon"
-            class="size-3.5"
-          />
-          {{ tab.label }}
-        </button>
-      </div>
+      <ScrollFadeTabs
+        v-model="activeTab"
+        :tabs="tabs"
+        class="mb-3"
+      />
 
       <!-- Users tab -->
       <div
