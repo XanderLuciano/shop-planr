@@ -27,10 +27,6 @@ function jobPartCount(entries: WorkQueueJob[]): number {
   return entries.reduce((sum, e) => sum + e.partCount, 0)
 }
 
-function formatLocation(loc?: string): string {
-  return loc ? `📍 ${loc}` : ''
-}
-
 function formatNextStep(job: WorkQueueJob): string {
   if (job.isFinalStep) return 'Completed'
   if (!job.nextStepName) return '—'
@@ -86,48 +82,21 @@ function formatNextStep(job: WorkQueueJob): string {
 
       <!-- Step rows within this job -->
       <div class="divide-y divide-(--ui-border)">
-        <button
+        <WorkQueueJobRow
           v-for="entry in entries"
           :key="`${entry.pathId}-${entry.stepOrder}`"
-          class="w-full text-left px-3 py-2 hover:bg-(--ui-bg-elevated)/30 transition-colors cursor-pointer"
-          type="button"
-          @click="emit('select-job', entry)"
+          :job="entry"
+          @select="emit('select-job', $event)"
         >
-          <div class="flex items-center justify-between">
-            <div class="space-y-0.5">
-              <div class="flex items-center gap-2 text-xs">
-                <span class="font-medium text-(--ui-text-highlighted)">{{ entry.stepName }}</span>
-                <span
-                  v-if="entry.stepLocation"
-                  class="text-(--ui-text-muted)"
-                >{{ formatLocation(entry.stepLocation) }}</span>
-              </div>
-              <div class="text-xs text-(--ui-text-muted)">
-                {{ entry.pathName }} · Step {{ entry.stepOrder + 1 }}/{{ entry.totalSteps }}
-                · Next: {{ formatNextStep(entry) }}
-              </div>
-            </div>
-            <div class="flex items-center gap-2">
-              <UBadge
-                :color="entry.isFinalStep ? 'success' : 'neutral'"
-                variant="subtle"
-                size="xs"
-              >
-                {{ entry.partCount }}
-              </UBadge>
-              <span
-                v-if="entry.goalQuantity != null"
-                class="text-xs text-(--ui-text-muted)"
-              >
-                {{ entry.completedCount }} / {{ entry.goalQuantity }} completed
-              </span>
-              <UIcon
-                name="i-lucide-chevron-right"
-                class="size-4 text-(--ui-text-muted)"
-              />
-            </div>
-          </div>
-        </button>
+          <template #subtitle>
+            {{ entry.pathName }} · Step {{ entry.stepOrder + 1 }}/{{ entry.totalSteps }}
+            · Next: {{ formatNextStep(entry) }}
+          </template>
+          <template #subtitle-mobile>
+            {{ entry.pathName }} · {{ entry.stepOrder + 1 }}/{{ entry.totalSteps }}
+            · Next: {{ formatNextStep(entry) }}
+          </template>
+        </WorkQueueJobRow>
       </div>
     </div>
   </div>

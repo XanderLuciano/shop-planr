@@ -102,15 +102,6 @@ function handleUpdateFilters(f: WorkQueueFilterState) {
   }
 }
 
-function formatLocation(loc?: string): string {
-  return loc ? `📍 ${loc}` : ''
-}
-
-function formatStepInfo(job: WorkQueueJob): string {
-  const parts = [job.jobName, job.pathName, `Step ${job.stepOrder + 1}/${job.totalSteps}`]
-  return parts.join(' · ')
-}
-
 // Group icon based on groupType
 function groupIcon(group: WorkQueueGroup): string {
   switch (group.groupType) {
@@ -273,47 +264,13 @@ onMounted(async () => {
 
         <!-- Step entries within this group -->
         <div class="divide-y divide-(--ui-border)">
-          <button
+          <WorkQueueJobRow
             v-for="job in group.jobs"
             :key="`${job.stepId}`"
-            class="w-full text-left px-3 py-2 hover:bg-(--ui-bg-elevated)/30 transition-colors cursor-pointer"
-            type="button"
-            @click="handleStepClick(job)"
-          >
-            <div class="flex items-center justify-between">
-              <div class="space-y-0.5">
-                <div class="flex items-center gap-2 text-xs">
-                  <span class="font-medium text-(--ui-text-highlighted)">{{ job.stepName }}</span>
-                  <span
-                    v-if="job.stepLocation"
-                    class="text-(--ui-text-muted)"
-                  >{{ formatLocation(job.stepLocation) }}</span>
-                </div>
-                <div class="text-xs text-(--ui-text-muted)">
-                  {{ formatStepInfo(job) }}
-                </div>
-              </div>
-              <div class="flex items-center gap-2">
-                <UBadge
-                  :color="job.isFinalStep ? 'success' : 'neutral'"
-                  variant="subtle"
-                  size="xs"
-                >
-                  {{ job.partCount }}
-                </UBadge>
-                <span
-                  v-if="job.goalQuantity != null"
-                  class="text-xs text-(--ui-text-muted)"
-                >
-                  {{ job.completedCount }} / {{ job.goalQuantity }} completed
-                </span>
-                <UIcon
-                  name="i-lucide-chevron-right"
-                  class="size-4 text-(--ui-text-muted)"
-                />
-              </div>
-            </div>
-          </button>
+            :job="job"
+            :group-by="groupBy"
+            @select="handleStepClick"
+          />
         </div>
       </div>
     </template>

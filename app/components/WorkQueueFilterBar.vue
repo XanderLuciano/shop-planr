@@ -87,6 +87,18 @@ const localSearch = computed({
   set: (val: string) => emit('update:searchQuery', val),
 })
 
+// --- Mobile filter toggle ---
+const showFilterDropdowns = ref(false)
+
+/** Count of active dropdown filters (excludes search) for the toggle badge */
+const activeDropdownCount = computed(() => {
+  let count = 0
+  if (props.filters.location) count++
+  if (props.filters.stepName) count++
+  if (props.filters.userId) count++
+  return count
+})
+
 // --- Preset save dialog ---
 const showPresetInput = ref(false)
 const presetName = ref('')
@@ -150,7 +162,7 @@ const presetMenuItems = computed<DropdownMenuItem[][]>(() => {
 <template>
   <div class="p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/30 space-y-3">
     <!-- Top row: group-by toggle (left) + presets & clear (right) -->
-    <div class="flex items-center justify-between gap-3">
+    <div class="flex items-center justify-between gap-2">
       <!-- Group-by toggle buttons -->
       <UFieldGroup
         orientation="horizontal"
@@ -164,6 +176,7 @@ const presetMenuItems = computed<DropdownMenuItem[][]>(() => {
           :color="props.groupBy === opt.value ? 'primary' : 'neutral'"
           :icon="opt.icon"
           :label="opt.label"
+          :class="{ 'sm:inline-flex': true, '[&>span:last-child]:hidden sm:[&>span:last-child]:inline': true }"
           @click="emit('update:groupBy', opt.value)"
         />
       </UFieldGroup>
@@ -175,7 +188,8 @@ const presetMenuItems = computed<DropdownMenuItem[][]>(() => {
           size="xs"
           variant="ghost"
           icon="i-lucide-x"
-          label="Clear filters"
+          class="[&>span:last-child]:hidden sm:[&>span:last-child]:inline"
+          label="Clear"
           @click="emit('clear')"
         />
 
@@ -190,6 +204,7 @@ const presetMenuItems = computed<DropdownMenuItem[][]>(() => {
             icon="i-lucide-bookmark"
             label="Presets"
             trailing-icon="i-lucide-chevron-down"
+            class="[&>span:last-child]:hidden sm:[&>span:last-child]:inline [&>span:first-child]:hidden sm:[&>span:first-child]:inline"
           />
         </UDropdownMenu>
 
@@ -199,7 +214,7 @@ const presetMenuItems = computed<DropdownMenuItem[][]>(() => {
             v-model="presetName"
             size="xs"
             placeholder="Preset name…"
-            class="w-40"
+            class="w-32 sm:w-40"
             autofocus
             @keydown.enter="handleSavePreset"
             @keydown.escape="showPresetInput = false"
@@ -223,20 +238,47 @@ const presetMenuItems = computed<DropdownMenuItem[][]>(() => {
       </div>
     </div>
 
-    <!-- Bottom row: search + filter dropdowns -->
-    <div class="flex flex-wrap items-end gap-3">
-      <div>
+    <!-- Search + mobile filter toggle -->
+    <div class="flex items-end gap-2">
+      <div class="flex-1 sm:flex-none">
         <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Search</label>
         <UInput
           v-model="localSearch"
           size="xs"
           placeholder="Search jobs, steps…"
           icon="i-lucide-search"
-          class="w-48"
+          class="w-full sm:w-48"
         />
       </div>
 
-      <div>
+      <!-- Mobile: toggle button for filter dropdowns -->
+      <UButton
+        size="xs"
+        :variant="showFilterDropdowns ? 'soft' : 'outline'"
+        :color="activeDropdownCount > 0 ? 'primary' : 'neutral'"
+        icon="i-lucide-sliders-horizontal"
+        class="sm:hidden shrink-0"
+        @click="showFilterDropdowns = !showFilterDropdowns"
+      >
+        Filters
+        <UBadge
+          v-if="activeDropdownCount > 0"
+          color="primary"
+          variant="solid"
+          size="xs"
+          class="ml-1"
+        >
+          {{ activeDropdownCount }}
+        </UBadge>
+      </UButton>
+    </div>
+
+    <!-- Filter dropdowns: always visible on sm+, toggled on mobile -->
+    <div
+      :class="showFilterDropdowns ? 'flex' : 'hidden sm:flex'"
+      class="flex-wrap items-end gap-3"
+    >
+      <div class="w-full sm:w-auto">
         <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Location</label>
         <USelect
           v-model="selectedLocation"
@@ -244,11 +286,11 @@ const presetMenuItems = computed<DropdownMenuItem[][]>(() => {
           value-key="value"
           label-key="label"
           size="xs"
-          class="w-40"
+          class="w-full sm:w-40"
         />
       </div>
 
-      <div>
+      <div class="w-full sm:w-auto">
         <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">User</label>
         <USelect
           v-model="selectedUser"
@@ -256,11 +298,11 @@ const presetMenuItems = computed<DropdownMenuItem[][]>(() => {
           value-key="value"
           label-key="label"
           size="xs"
-          class="w-40"
+          class="w-full sm:w-40"
         />
       </div>
 
-      <div>
+      <div class="w-full sm:w-auto">
         <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Step</label>
         <USelect
           v-model="selectedStep"
@@ -268,7 +310,7 @@ const presetMenuItems = computed<DropdownMenuItem[][]>(() => {
           value-key="value"
           label-key="label"
           size="xs"
-          class="w-40"
+          class="w-full sm:w-40"
         />
       </div>
     </div>
