@@ -95,8 +95,7 @@ function onScrapped() {
 
 async function handleQuickAdvance(partId: string) {
   try {
-    const { advancePart } = useParts()
-    await advancePart(partId)
+    await $api('/api/parts/advance', { method: 'POST', body: { partIds: [partId] } })
     await loadParts()
   } catch {
     // silent

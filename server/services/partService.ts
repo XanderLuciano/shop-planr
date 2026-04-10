@@ -20,6 +20,12 @@ import { generateId } from '../utils/idGenerator'
 import { assertPositive, assertNonEmptyArray } from '../utils/validation'
 import { NotFoundError, ValidationError, ForbiddenError } from '../utils/errors'
 
+export interface BatchAdvanceResult {
+  partId: string
+  success: boolean
+  error?: string
+}
+
 export interface PartIdGenerator {
   next(): string
   nextBatch(count: number): string[]
@@ -40,7 +46,7 @@ export function createPartService(
   partIdGenerator: PartIdGenerator,
   lifecycleService?: LifecycleService,
 ) {
-  return {
+  const service = {
     batchCreateParts(input: BatchCreatePartsInput, userId: string): Part[] {
       assertPositive(input.quantity, 'quantity')
 
@@ -298,7 +304,34 @@ export function createPartService(
 
       return { deletedPartId: id }
     },
+
+    batchAdvanceParts(partIds: string[], userId: string): { advanced: number, failed: number, results: BatchAdvanceResult[] } {
+      assertNonEmptyArray(partIds, 'partIds')
+      if (partIds.length > 100) {
+        throw new ValidationError('Cannot advance more than 100 parts at once')
+      }
+
+      const results: BatchAdvanceResult[] = []
+      let advanced = 0
+      let failed = 0
+
+      for (const partId of partIds) {
+        try {
+          service.advancePart(partId, userId)
+          results.push({ partId, success: true })
+          advanced++
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'Unknown error'
+          results.push({ partId, success: false, error: message })
+          failed++
+        }
+      }
+
+      return { advanced, failed, results }
+    },
   }
+
+  return service
 }
 
 export type PartService = ReturnType<typeof createPartService>

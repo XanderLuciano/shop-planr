@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import type { PartStepStatusView } from '~/types/computed'
+
 const route = useRoute()
 const stepId = route.params.stepId as string
 const { backNavigation: backNav, goBack } = useNavigationStack()
@@ -18,12 +20,52 @@ const {
 } = useStepView(stepId)
 
 const { advanceBatch } = useAdvanceBatch()
+const { getStepStatuses } = useLifecycle()
 const { users } = useAuth()
 
 const advanceLoading = ref(false)
-const skipLoading = ref(false)
 const editing = ref(false)
 const toast = useToast()
+
+// Deferred steps: map of partId → step statuses (only for parts with deferred steps)
+const partStepStatuses = ref<Map<string, PartStepStatusView[]>>(new Map())
+
+const partsWithDeferredSteps = computed(() => {
+  const entries: { partId: string, steps: PartStepStatusView[] }[] = []
+  for (const [partId, steps] of partStepStatuses.value) {
+    if (steps.some(s => s.status === 'deferred')) {
+      entries.push({ partId, steps })
+    }
+  }
+  return entries
+})
+
+async function fetchDeferredSteps() {
+  if (!job.value?.partIds?.length) {
+    partStepStatuses.value = new Map()
+    return
+  }
+  const statusMap = new Map<string, PartStepStatusView[]>()
+  const results = await Promise.allSettled(
+    job.value.partIds.map(async (partId) => {
+      const statuses = await getStepStatuses(partId)
+      return { partId, statuses }
+    }),
+  )
+  for (const result of results) {
+    if (result.status === 'fulfilled') {
+      const { partId, statuses } = result.value
+      if (statuses.some(s => s.status === 'deferred')) {
+        statusMap.set(partId, statuses)
+      }
+    }
+  }
+  partStepStatuses.value = statusMap
+}
+
+async function handleDeferredStepChanged() {
+  await Promise.all([fetchStep(), fetchDeferredSteps()])
+}
 
 // Resolve assignee user ID to display name
 const assigneeName = computed(() => {
@@ -56,14 +98,24 @@ async function handleAdvance(payload: { partIds: string[], note?: string }) {
     })
 
     const dest = job.value.isFinalStep ? 'Completed' : (job.value.nextStepName ?? 'next step')
-    toast.add({
-      title: 'Parts advanced',
-      description: `${result.advanced} part${result.advanced !== 1 ? 's' : ''} moved to ${dest}`,
-      color: 'success',
-    })
+
+    if (result.failed > 0) {
+      toast.add({
+        title: 'Partial advancement',
+        description: `${result.advanced} part${result.advanced !== 1 ? 's' : ''} moved to ${dest}, ${result.failed} failed`,
+        color: 'warning',
+      })
+    } else {
+      toast.add({
+        title: 'Parts advanced',
+        description: `${result.advanced} part${result.advanced !== 1 ? 's' : ''} moved to ${dest}`,
+        color: 'success',
+      })
+    }
 
     // Refresh step data
     await fetchStep()
+    await fetchDeferredSteps()
   } catch (e) {
     toast.add({
       title: 'Advancement failed',
@@ -75,45 +127,6 @@ async function handleAdvance(payload: { partIds: string[], note?: string }) {
   }
 }
 
-async function handleSkip(payload: { partIds: string[] }) {
-  if (!job.value) return
-
-  skipLoading.value = true
-  try {
-    const { advanceToStep } = useLifecycle()
-    const result = await executeSkip({
-      partIds: payload.partIds,
-      nextStepId: job.value.nextStepId,
-      advanceToStep,
-    })
-
-    if (!result.skipped) {
-      toast.add({
-        title: 'Skip failed',
-        description: result.error ?? 'An error occurred',
-        color: 'warning',
-      })
-      return
-    }
-
-    toast.add({
-      title: 'Step skipped',
-      description: `${result.count} part${result.count !== 1 ? 's' : ''} skipped to ${job.value.nextStepName ?? 'next step'}`,
-      color: 'success',
-    })
-
-    await fetchStep()
-  } catch (e) {
-    toast.add({
-      title: 'Skip failed',
-      description: e?.message ?? 'An error occurred',
-      color: 'error',
-    })
-  } finally {
-    skipLoading.value = false
-  }
-}
-
 async function handleCreated(count: number) {
   toast.add({
     title: 'Parts created',
@@ -122,6 +135,7 @@ async function handleCreated(count: number) {
   })
   // Refresh step data to pick up newly created parts
   await fetchStep()
+  await fetchDeferredSteps()
 }
 
 function handleCancel() {
@@ -130,6 +144,7 @@ function handleCancel() {
 
 onMounted(async () => {
   await fetchStep()
+  await fetchDeferredSteps()
 })
 </script>
 
@@ -336,13 +351,23 @@ onMounted(async () => {
       <ProcessAdvancementPanel
         v-else
         :job="job"
-        :loading="advanceLoading || skipLoading"
+        :loading="advanceLoading"
         :notes="notes"
         @advance="handleAdvance"
-        @skip="handleSkip"
+        @skipped="handleDeferredStepChanged"
         @cancel="handleCancel"
         @scrapped="fetchStep"
         @note-added="fetchStep"
+      />
+
+      <!-- Deferred steps for parts at this step -->
+      <DeferredStepsList
+        v-for="entry in partsWithDeferredSteps"
+        :key="entry.partId"
+        :part-id="entry.partId"
+        :steps="entry.steps"
+        @completed="handleDeferredStepChanged"
+        @waived="handleDeferredStepChanged"
       />
     </template>
   </div>

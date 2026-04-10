@@ -39,12 +39,15 @@ describe('Skip validation', () => {
     expect(advanceToStep).toHaveBeenCalledTimes(3)
     expect(advanceToStep).toHaveBeenNthCalledWith(1, 'PART-001', {
       targetStepId: 'step-next-abc',
+      skip: true,
     })
     expect(advanceToStep).toHaveBeenNthCalledWith(2, 'PART-002', {
       targetStepId: 'step-next-abc',
+      skip: true,
     })
     expect(advanceToStep).toHaveBeenNthCalledWith(3, 'PART-003', {
       targetStepId: 'step-next-abc',
+      skip: true,
     })
   })
 
@@ -62,6 +65,7 @@ describe('Skip validation', () => {
     expect(advanceToStep).toHaveBeenCalledTimes(1)
     expect(advanceToStep).toHaveBeenCalledWith('PART-SOLO', {
       targetStepId: 'step-2',
+      skip: true,
     })
   })
 })

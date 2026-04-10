@@ -6,6 +6,11 @@ const props = defineProps<{
   steps: PartStepStatusView[]
 }>()
 
+const emit = defineEmits<{
+  completed: [stepId: string]
+  waived: [stepId: string]
+}>()
+
 const { completeDeferredStep, waiveStep, loading } = useLifecycle()
 
 const waiveReason = ref('')
@@ -20,6 +25,7 @@ async function handleComplete(stepId: string) {
   actionError.value = null
   try {
     await completeDeferredStep(props.partId, stepId)
+    emit('completed', stepId)
   } catch (e) {
     actionError.value = e?.data?.message ?? e?.message ?? 'Failed to complete step'
   }
@@ -46,7 +52,9 @@ async function confirmWaive() {
     await waiveStep(props.partId, waiveStepId.value, {
       reason: waiveReason.value.trim(),
     })
+    const waived = waiveStepId.value
     cancelWaive()
+    emit('waived', waived)
   } catch (e) {
     actionError.value = e?.data?.message ?? e?.message ?? 'Failed to waive step'
   }

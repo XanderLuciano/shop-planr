@@ -12,9 +12,13 @@ const emit = defineEmits<{
   advance: [payload: { partIds: string[], note?: string }]
   cancel: []
   scrapped: []
-  skip: [payload: { partIds: string[] }]
+  skipped: []
   noteAdded: [note: StepNote]
 }>()
+
+const { isAdmin } = useAuth()
+const { advanceToStep } = useLifecycle()
+const toast = useToast()
 
 const localPartIds = ref<string[]>([...props.job.partIds])
 const selectedParts = ref<Set<string>>(new Set())
@@ -36,6 +40,63 @@ const showScrapDialog = ref(false)
 const scrapTargetId = ref<string | null>(null)
 const showForceCompleteDialog = ref(false)
 const forceCompleteTargetId = ref<string | null>(null)
+
+// --- Advanced options state ---
+const advancedOpen = ref(false)
+const selectedTargetStepId = ref<string | typeof SELECT_NONE>(SELECT_NONE)
+const skipLoading = ref(false)
+
+// Reset advanced options when step changes
+watch(() => props.job.stepId, () => {
+  advancedOpen.value = false
+  selectedTargetStepId.value = SELECT_NONE
+})
+
+// Compute available target steps for skip-to dropdown
+const availableTargetSteps = computed(() => {
+  const steps = props.job.pathSteps
+  if (!steps || steps.length === 0) return []
+
+  const futureSteps = steps.filter(s => s.order > props.job.stepOrder)
+
+  // In strict mode, only show the immediate next step
+  if (props.job.pathAdvancementMode === 'strict') {
+    const nextStep = futureSteps.find(s => s.order === props.job.stepOrder + 1)
+    return nextStep ? [nextStep] : []
+  }
+
+  return futureSteps
+})
+
+const targetStepItems = computed(() => [
+  { label: 'Select step...', value: SELECT_NONE, disabled: true },
+  ...availableTargetSteps.value.map(s => ({
+    label: `${s.order + 1}. ${s.name}${s.location ? ` (${s.location})` : ''}`,
+    value: s.id,
+  })),
+])
+
+// Compute bypass preview: steps between current and target
+const bypassPreview = computed(() => {
+  const targetId = selectedOrUndefined(selectedTargetStepId.value)
+  if (!targetId || !props.job.pathSteps) return []
+
+  const targetStep = props.job.pathSteps.find(s => s.id === targetId)
+  if (!targetStep) return []
+
+  // Steps between current step and target (exclusive of both)
+  return props.job.pathSteps
+    .filter(s => s.order > props.job.stepOrder && s.order < targetStep.order)
+    .map(s => ({
+      stepId: s.id,
+      stepName: s.name,
+      classification: s.optional ? 'skip' as const : 'defer' as const,
+    }))
+})
+
+const hasTargetSelected = computed(() =>
+  selectedOrUndefined(selectedTargetStepId.value) !== undefined,
+)
 
 watch(selectedParts, (sel) => {
   quantity.value = sel.size
@@ -90,12 +151,6 @@ function handleAdvance() {
   emit('advance', { partIds: ids, note: trimmedNote || undefined })
 }
 
-function handleSkip() {
-  if (selectedParts.value.size === 0) return
-  const ids = localPartIds.value.filter((id: string) => selectedParts.value.has(id))
-  emit('skip', { partIds: ids })
-}
-
 function formatDestination(): string {
   if (props.job.isFinalStep) return 'Completed'
   if (!props.job.nextStepName) return '—'
@@ -121,6 +176,34 @@ function handleScrapped() {
   selectedParts.value = removePartFromSelection(selectedParts.value, scrappedId)
   scrapTargetId.value = null
   emit('scrapped')
+}
+
+async function handleSkipSelectedParts() {
+  const targetId = selectedOrUndefined(selectedTargetStepId.value)
+  if (!targetId || selectedParts.value.size === 0 || skipLoading.value) return
+
+  const ids = localPartIds.value.filter((id: string) => selectedParts.value.has(id))
+  skipLoading.value = true
+  try {
+    for (const partId of ids) {
+      await advanceToStep(partId, { targetStepId: targetId, skip: true })
+    }
+    toast.add({
+      title: 'Parts skipped',
+      description: `${ids.length} part${ids.length !== 1 ? 's' : ''} skipped forward`,
+      color: 'success',
+    })
+    emit('skipped')
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string }, message?: string }
+    toast.add({
+      title: 'Skip failed',
+      description: err?.data?.message ?? err?.message ?? 'An error occurred',
+      color: 'error',
+    })
+  } finally {
+    skipLoading.value = false
+  }
 }
 
 onMounted(() => {
@@ -251,23 +334,12 @@ onMounted(() => {
     <div class="flex items-center gap-2 pt-1">
       <UButton
         :loading="loading"
-        :disabled="loading || !!validationError || selectedParts.size === 0"
+        :disabled="loading || skipLoading || !!validationError || selectedParts.size === 0"
         size="sm"
         color="primary"
         label="Advance"
         icon="i-lucide-arrow-right"
         @click="handleAdvance"
-      />
-      <UButton
-        v-if="shouldShowSkip(job.stepOptional, job.isFinalStep)"
-        :loading="loading"
-        :disabled="loading || selectedParts.size === 0"
-        size="sm"
-        variant="outline"
-        color="neutral"
-        label="Skip"
-        icon="i-lucide-skip-forward"
-        @click="handleSkip"
       />
       <UButton
         size="sm"
@@ -282,6 +354,80 @@ onMounted(() => {
         label="Cancel"
         @click="emit('cancel')"
       />
+    </div>
+
+    <!-- Admin-only Advanced options -->
+    <div v-if="isAdmin">
+      <button
+        class="flex items-center gap-1 text-xs text-(--ui-text-muted) hover:text-(--ui-text-highlighted) transition-colors"
+        @click="advancedOpen = !advancedOpen"
+      >
+        <UIcon
+          :name="advancedOpen ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
+          class="size-4"
+        />
+        Advanced options
+      </button>
+
+      <div
+        v-if="advancedOpen"
+        class="mt-2 border border-(--ui-border) rounded-md p-3 space-y-3"
+      >
+        <!-- Skip-to-step dropdown -->
+        <div>
+          <label class="text-xs font-semibold text-(--ui-text-highlighted) block mb-1">Skip to:</label>
+          <USelect
+            v-model="selectedTargetStepId"
+            :items="targetStepItems"
+            size="sm"
+            class="w-full"
+          />
+        </div>
+
+        <!-- Bypass preview -->
+        <div
+          v-if="hasTargetSelected && bypassPreview.length > 0"
+          class="text-xs space-y-1"
+        >
+          <p class="font-medium text-amber-600 dark:text-amber-400">
+            ⚠ {{ bypassPreview.length }} step{{ bypassPreview.length !== 1 ? 's' : '' }} will be bypassed:
+          </p>
+          <div class="border border-amber-200 dark:border-amber-800 rounded-md divide-y divide-amber-200 dark:divide-amber-800">
+            <div
+              v-for="bp in bypassPreview"
+              :key="bp.stepId"
+              class="px-2 py-1.5 flex items-center justify-between"
+            >
+              <span class="text-(--ui-text-highlighted)">{{ bp.stepName }}</span>
+              <UBadge
+                :color="bp.classification === 'skip' ? 'neutral' : 'warning'"
+                variant="subtle"
+                size="xs"
+              >
+                {{ bp.classification === 'skip' ? 'Skip' : 'Defer' }}
+              </UBadge>
+            </div>
+          </div>
+          <p
+            v-if="bypassPreview.some(b => b.classification === 'defer')"
+            class="text-amber-600 dark:text-amber-400"
+          >
+            ⚠ Required steps will be deferred and must be completed before final sign-off.
+          </p>
+        </div>
+
+        <!-- Skip Selected Parts button -->
+        <UButton
+          :loading="skipLoading"
+          :disabled="skipLoading || loading || !hasTargetSelected || selectedParts.size === 0"
+          size="sm"
+          variant="outline"
+          color="neutral"
+          label="Skip Selected Parts"
+          icon="i-lucide-skip-forward"
+          @click="handleSkipSelectedParts"
+        />
+      </div>
     </div>
 
     <!-- Success message -->

@@ -56,6 +56,14 @@ export default defineApiHandler(async (event) => {
           isFinalStep,
           stepOptional: step.optional ?? false,
           jobPriority: job.priority,
+          pathAdvancementMode: path.advancementMode,
+          pathSteps: path.steps.filter(s => !s.removedAt).map(s => ({
+            id: s.id,
+            name: s.name,
+            order: s.order,
+            location: s.location,
+            optional: s.optional,
+          })),
         }
         break
       }

@@ -464,6 +464,72 @@ describe('PartService', () => {
     })
   })
 
+  describe('batchAdvanceParts', () => {
+    it('returns all succeeded when every part advances', () => {
+      partRepo.create(makePart({ id: 'part_00001', currentStepId: 'step_0' }))
+      partRepo.create(makePart({ id: 'part_00002', currentStepId: 'step_0' }))
+      partRepo.create(makePart({ id: 'part_00003', currentStepId: 'step_0' }))
+
+      const result = service.batchAdvanceParts(
+        ['part_00001', 'part_00002', 'part_00003'],
+        'user_1',
+      )
+
+      expect(result.advanced).toBe(3)
+      expect(result.failed).toBe(0)
+      expect(result.results).toHaveLength(3)
+      expect(result.results.every(r => r.success)).toBe(true)
+    })
+
+    it('handles partial failure when some parts are not found or already completed', () => {
+      partRepo.create(makePart({ id: 'part_00001', currentStepId: 'step_0' }))
+      partRepo.create(makePart({ id: 'part_00002', currentStepId: null, status: 'completed' }))
+      // part_00003 does not exist
+
+      const result = service.batchAdvanceParts(
+        ['part_00001', 'part_00002', 'part_00003'],
+        'user_1',
+      )
+
+      expect(result.advanced).toBe(1)
+      expect(result.failed).toBe(2)
+      expect(result.results[0]).toEqual({ partId: 'part_00001', success: true })
+      expect(result.results[1]).toMatchObject({ partId: 'part_00002', success: false })
+      expect(result.results[1].error).toBeDefined()
+      expect(result.results[2]).toMatchObject({ partId: 'part_00003', success: false })
+      expect(result.results[2].error).toBeDefined()
+    })
+
+    it('throws ValidationError for empty array', () => {
+      expect(() => service.batchAdvanceParts([], 'user_1')).toThrow(ValidationError)
+    })
+
+    it('throws ValidationError for more than 100 parts', () => {
+      const ids = Array.from({ length: 101 }, (_, i) => `part_${String(i).padStart(5, '0')}`)
+      expect(() => service.batchAdvanceParts(ids, 'user_1')).toThrow(ValidationError)
+    })
+
+    it('results length always equals input length', () => {
+      partRepo.create(makePart({ id: 'part_00001', currentStepId: 'step_0' }))
+      // part_00002 does not exist
+
+      const ids = ['part_00001', 'part_00002']
+      const result = service.batchAdvanceParts(ids, 'user_1')
+
+      expect(result.results).toHaveLength(ids.length)
+    })
+
+    it('advanced + failed equals total input length', () => {
+      partRepo.create(makePart({ id: 'part_00001', currentStepId: 'step_0' }))
+      partRepo.create(makePart({ id: 'part_00002', currentStepId: null, status: 'completed' }))
+
+      const ids = ['part_00001', 'part_00002']
+      const result = service.batchAdvanceParts(ids, 'user_1')
+
+      expect(result.advanced + result.failed).toBe(ids.length)
+    })
+  })
+
   describe('deletePart', () => {
     let userRepo: UserRepository
     let partStepStatusRepo: PartStepStatusRepository
