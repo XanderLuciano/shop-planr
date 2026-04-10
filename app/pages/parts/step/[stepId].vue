@@ -226,85 +226,95 @@ onMounted(async () => {
     <!-- Step content -->
     <template v-else-if="job">
       <!-- Step header -->
-      <div class="space-y-2">
-        <div class="flex items-center justify-between">
-          <div class="space-y-1">
-            <!-- Job + Path context (parent breadcrumb) -->
-            <div class="flex items-center gap-1.5 text-xs text-(--ui-text-muted)">
-              <NuxtLink
-                :to="`/jobs/${job.jobId}`"
-                class="inline-flex items-center gap-1 hover:text-(--ui-text-highlighted) transition-colors"
-              >
-                <UIcon
-                  name="i-lucide-briefcase"
-                  class="size-3.5"
-                />
-                {{ job.jobName }}
-              </NuxtLink>
-              <UIcon
-                name="i-lucide-chevron-right"
-                class="size-3 text-(--ui-text-dimmed)"
-              />
-              <span>{{ job.pathName }}</span>
-            </div>
+      <div class="space-y-3">
+        <!-- Breadcrumb: Job (linked) › Path › Step -->
+        <UBreadcrumb
+          :items="[
+            { label: job.jobName, to: `/jobs/${job.jobId}`, icon: 'i-lucide-briefcase' },
+            { label: job.pathName, icon: 'i-lucide-git-branch' },
+            { label: job.stepName },
+          ]"
+        />
 
-            <!-- Step name + position -->
-            <div class="flex items-center gap-2">
-              <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
-                {{ job.stepName }}
-              </h1>
-              <span class="text-xs text-(--ui-text-muted) bg-(--ui-bg-elevated) px-1.5 py-0.5 rounded">
-                Step {{ job.stepOrder + 1 }} of {{ job.totalSteps }}
-              </span>
-              <UButton
-                v-if="!editing"
-                size="xs"
-                variant="ghost"
-                icon="i-lucide-pencil"
-                aria-label="Edit step properties"
-                @click="editing = true"
-              />
-            </div>
-
-            <!-- Step metadata (location, assignee) -->
-            <p
-              v-if="!editing && (job.stepLocation || assigneeName)"
-              class="text-sm text-(--ui-text-muted)"
+        <!-- Title row: step name + prev/next -->
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2 min-w-0">
+            <h1 class="text-xl font-semibold text-(--ui-text-highlighted) truncate">
+              {{ job.stepName }}
+            </h1>
+            <UButton
+              v-if="!editing"
+              size="xs"
+              variant="ghost"
+              color="neutral"
+              icon="i-lucide-pencil"
+              aria-label="Edit step properties"
+              @click="editing = true"
+            />
+          </div>
+          <div class="flex items-center gap-1 shrink-0">
+            <UButton
+              size="xs"
+              variant="ghost"
+              color="neutral"
+              icon="i-lucide-chevron-left"
+              aria-label="Previous step"
+              :disabled="job.stepOrder === 0"
+              :to="job.previousStepId ? `/parts/step/${job.previousStepId}` : undefined"
+            />
+            <UBadge
+              size="sm"
+              color="neutral"
+              variant="subtle"
             >
-              <span v-if="job.stepLocation">📍 {{ job.stepLocation }}</span>
-              <span v-if="job.stepLocation && assigneeName"> · </span>
-              <span v-if="assigneeName">👤 {{ assigneeName }}</span>
-            </p>
-            <StepPropertiesEditor
-              v-if="editing"
-              :step-id="job.stepId"
-              :current-assigned-to="job.assignedTo"
-              :current-location="job.stepLocation"
-              @saved="handleSaved"
-              @cancel="handleEditCancel"
+              {{ job.stepOrder + 1 }} / {{ job.totalSteps }}
+            </UBadge>
+            <UButton
+              size="xs"
+              variant="ghost"
+              color="neutral"
+              icon="i-lucide-chevron-right"
+              aria-label="Next step"
+              :disabled="job.isFinalStep"
+              :to="job.nextStepId ? `/parts/step/${job.nextStepId}` : undefined"
             />
           </div>
         </div>
 
-        <!-- Prev / Next step navigation -->
-        <div class="flex items-center justify-between">
-          <UButton
-            size="xs"
-            variant="ghost"
-            icon="i-lucide-arrow-left"
-            label="Prev"
-            :disabled="job.stepOrder === 0"
-            :to="job.previousStepId ? `/parts/step/${job.previousStepId}` : undefined"
-          />
-          <UButton
-            size="xs"
-            variant="ghost"
-            trailing-icon="i-lucide-arrow-right"
-            label="Next"
-            :disabled="job.isFinalStep"
-            :to="job.nextStepId ? `/parts/step/${job.nextStepId}` : undefined"
-          />
+        <!-- Metadata badges -->
+        <div
+          v-if="!editing && (job.stepLocation || assigneeName)"
+          class="flex items-center gap-1.5 flex-wrap"
+        >
+          <UBadge
+            v-if="job.stepLocation"
+            size="sm"
+            color="neutral"
+            variant="soft"
+            leading-icon="i-lucide-map-pin"
+          >
+            {{ job.stepLocation }}
+          </UBadge>
+          <UBadge
+            v-if="assigneeName"
+            size="sm"
+            color="neutral"
+            variant="soft"
+            leading-icon="i-lucide-user"
+          >
+            {{ assigneeName }}
+          </UBadge>
         </div>
+
+        <!-- Inline editor (replaces metadata when active) -->
+        <StepPropertiesEditor
+          v-if="editing"
+          :step-id="job.stepId"
+          :current-assigned-to="job.assignedTo"
+          :current-location="job.stepLocation"
+          @saved="handleSaved"
+          @cancel="handleEditCancel"
+        />
       </div>
 
       <!-- First step (always shows PartCreationPanel, even with 0 parts) -->
