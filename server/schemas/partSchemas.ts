@@ -12,5 +12,6 @@ import { z } from 'zod'
  * IDs — the service passes IDs through without prefix validation.
  */
 export const partIdParamSchema = z.object({
-  id: z.string().min(1, 'Part id is required'),
+  id: z.string({ error: 'Part id is required' })
+    .min(1, { error: 'Part id is required' }),
 })

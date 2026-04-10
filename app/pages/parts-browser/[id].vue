@@ -338,7 +338,6 @@ onMounted(async () => {
         </div>
         <PartDeleteButton
           :part-id="part.id"
-          :part-status="part.status"
           @deleted="onPartDeleted"
         />
       </div>

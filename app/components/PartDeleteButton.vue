@@ -1,7 +1,6 @@
 <script setup lang="ts">
 const props = defineProps<{
   partId: string
-  partStatus: string
 }>()
 
 const emit = defineEmits<{
@@ -25,13 +24,7 @@ async function performDelete() {
     showModal.value = false
     emit('deleted')
   } catch (e: unknown) {
-    const err = e as { response?: { status?: number }, statusCode?: number, data?: { message?: string }, message?: string } | null
-    const status = err?.response?.status ?? err?.statusCode
-    if (status === 403) {
-      error.value = 'Admin access required'
-    } else {
-      error.value = err?.data?.message ?? err?.message ?? 'Failed to delete part'
-    }
+    error.value = extractDeleteError(e)
   } finally {
     loading.value = false
   }
