@@ -228,7 +228,27 @@ onMounted(async () => {
       <!-- Step header -->
       <div class="space-y-2">
         <div class="flex items-center justify-between">
-          <div>
+          <div class="space-y-1">
+            <!-- Job + Path context (parent breadcrumb) -->
+            <div class="flex items-center gap-1.5 text-xs text-(--ui-text-muted)">
+              <NuxtLink
+                :to="`/jobs/${job.jobId}`"
+                class="inline-flex items-center gap-1 hover:text-(--ui-text-highlighted) transition-colors"
+              >
+                <UIcon
+                  name="i-lucide-briefcase"
+                  class="size-3.5"
+                />
+                {{ job.jobName }}
+              </NuxtLink>
+              <UIcon
+                name="i-lucide-chevron-right"
+                class="size-3 text-(--ui-text-dimmed)"
+              />
+              <span>{{ job.pathName }}</span>
+            </div>
+
+            <!-- Step name + position -->
             <div class="flex items-center gap-2">
               <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
                 {{ job.stepName }}
@@ -245,13 +265,15 @@ onMounted(async () => {
                 @click="editing = true"
               />
             </div>
+
+            <!-- Step metadata (location, assignee) -->
             <p
-              v-if="!editing"
+              v-if="!editing && (job.stepLocation || assigneeName)"
               class="text-sm text-(--ui-text-muted)"
             >
-              {{ job.jobName }} · {{ job.pathName }}
-              <span v-if="job.stepLocation"> · 📍 {{ job.stepLocation }}</span>
-              <span v-if="assigneeName"> · 👤 {{ assigneeName }}</span>
+              <span v-if="job.stepLocation">📍 {{ job.stepLocation }}</span>
+              <span v-if="job.stepLocation && assigneeName"> · </span>
+              <span v-if="assigneeName">👤 {{ assigneeName }}</span>
             </p>
             <StepPropertiesEditor
               v-if="editing"
