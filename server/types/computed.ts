@@ -144,6 +144,8 @@ export interface WorkQueueJob {
   jobPriority: number
   goalQuantity?: number
   completedCount?: number
+  pathAdvancementMode?: 'strict' | 'flexible' | 'per_step'
+  pathSteps?: readonly { id: string, name: string, order: number, location?: string, optional: boolean }[]
 }
 
 /** Response from the operator work queue endpoint */

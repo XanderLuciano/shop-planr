@@ -217,13 +217,13 @@ async function handleSaveNote() {
 
 async function handleAdvance(payload: { partIds: string[], note?: string }) {
   if (!part.value || !currentStep.value) return
-  const { advancePart } = useParts()
 
   advanceLoading.value = true
   try {
-    for (const sid of payload.partIds) {
-      await advancePart(sid)
-    }
+    await $api('/api/parts/advance', {
+      method: 'POST',
+      body: { partIds: payload.partIds },
+    })
     if (payload.note?.trim()) {
       await $api('/api/notes', {
         method: 'POST',
