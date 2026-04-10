@@ -59,48 +59,52 @@ const progressPercent = computed(() => {
           {{ job.partCount }} {{ job.partCount === 1 ? 'part' : 'parts' }}
         </UBadge>
 
-        <!-- Step info line (desktop secondary line) -->
+        <!-- Step info line (desktop secondary line) — overridable via #subtitle slot -->
         <div class="items-center gap-1.5 text-xs text-(--ui-text-muted) hidden sm:flex">
-          <UIcon
-            name="i-lucide-layers"
-            class="size-3 shrink-0"
-          />
-          <span v-if="showStepName">{{ job.stepName }} ·</span>
-          <span class="shrink-0">step {{ job.stepOrder + 1 }} of {{ job.totalSteps }}</span>
-          <template v-if="showLocation">
-            <span>·</span>
-            <span class="inline-flex items-center gap-0.5 shrink-0">
-              <UIcon
-                name="i-lucide-map-pin"
-                class="size-3"
-              />
-              {{ job.stepLocation }}
-            </span>
-          </template>
+          <slot name="subtitle">
+            <UIcon
+              name="i-lucide-layers"
+              class="size-3 shrink-0"
+            />
+            <span v-if="showStepName">{{ job.stepName }} ·</span>
+            <span class="shrink-0">step {{ job.stepOrder + 1 }} of {{ job.totalSteps }}</span>
+            <template v-if="showLocation">
+              <span>·</span>
+              <span class="inline-flex items-center gap-0.5 shrink-0">
+                <UIcon
+                  name="i-lucide-map-pin"
+                  class="size-3"
+                />
+                {{ job.stepLocation }}
+              </span>
+            </template>
+          </slot>
         </div>
       </div>
 
       <!-- Bottom row (mobile): step details + location + progress -->
       <div class="flex items-center justify-between gap-2 sm:hidden">
         <div class="flex items-center gap-1.5 text-xs text-(--ui-text-muted) min-w-0">
-          <UIcon
-            name="i-lucide-layers"
-            class="size-3 shrink-0"
-          />
-          <span
-            v-if="showStepName"
-            class="truncate"
-          >{{ job.stepName }}</span>
-          <span v-if="showStepName">·</span>
-          <span class="shrink-0">{{ job.stepOrder + 1 }}/{{ job.totalSteps }}</span>
-          <template v-if="showLocation">
-            <span>·</span>
+          <slot name="subtitle-mobile">
             <UIcon
-              name="i-lucide-map-pin"
+              name="i-lucide-layers"
               class="size-3 shrink-0"
             />
-            <span class="truncate">{{ job.stepLocation }}</span>
-          </template>
+            <span
+              v-if="showStepName"
+              class="truncate"
+            >{{ job.stepName }}</span>
+            <span v-if="showStepName">·</span>
+            <span class="shrink-0">{{ job.stepOrder + 1 }}/{{ job.totalSteps }}</span>
+            <template v-if="showLocation">
+              <span>·</span>
+              <UIcon
+                name="i-lucide-map-pin"
+                class="size-3 shrink-0"
+              />
+              <span class="truncate">{{ job.stepLocation }}</span>
+            </template>
+          </slot>
         </div>
 
         <!-- Goal progress on mobile -->

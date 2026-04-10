@@ -92,6 +92,10 @@ function formatNextStep(job: WorkQueueJob): string {
             {{ entry.pathName }} · Step {{ entry.stepOrder + 1 }}/{{ entry.totalSteps }}
             · Next: {{ formatNextStep(entry) }}
           </template>
+          <template #subtitle-mobile>
+            {{ entry.pathName }} · {{ entry.stepOrder + 1 }}/{{ entry.totalSteps }}
+            · Next: {{ formatNextStep(entry) }}
+          </template>
         </WorkQueueJobRow>
       </div>
     </div>
