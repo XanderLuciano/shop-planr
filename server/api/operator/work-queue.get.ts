@@ -57,6 +57,7 @@ export default defineApiHandler(async (event) => {
             assignedTo: step.assignedTo,
             nextStepName: nextStep?.name,
             nextStepLocation: nextStep?.location,
+            nextStepAssignedTo: nextStep?.assignedTo,
             isFinalStep,
             pathAdvancementMode: path.advancementMode,
             pathSteps,

@@ -13,6 +13,7 @@ const emit = defineEmits<{
 }>()
 
 const { batchCreateParts } = useParts()
+const { users } = useAuth()
 
 const quantity = ref<number>(1)
 const creating = ref(false)
@@ -37,9 +38,13 @@ function validateQuantity() {
 function formatDestination(): string {
   if (props.job.isFinalStep) return 'Completed'
   if (!props.job.nextStepName) return '—'
-  return props.job.nextStepLocation
-    ? `${props.job.nextStepName} → ${props.job.nextStepLocation}`
-    : props.job.nextStepName
+  let dest = props.job.nextStepName
+  if (props.job.nextStepLocation) dest += ` → ${props.job.nextStepLocation}`
+  if (props.job.nextStepAssignedTo) {
+    const user = users.value.find(u => u.id === props.job.nextStepAssignedTo)
+    if (user) dest += ` · ${user.displayName}`
+  }
+  return dest
 }
 
 function togglePart(partId: string) {

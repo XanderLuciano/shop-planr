@@ -16,7 +16,7 @@ const emit = defineEmits<{
   noteAdded: [note: StepNote]
 }>()
 
-const { isAdmin } = useAuth()
+const { isAdmin, users } = useAuth()
 const { advanceToStep } = useLifecycle()
 const toast = useToast()
 
@@ -154,9 +154,13 @@ function handleAdvance() {
 function formatDestination(): string {
   if (props.job.isFinalStep) return 'Completed'
   if (!props.job.nextStepName) return '—'
-  return props.job.nextStepLocation
-    ? `${props.job.nextStepName} → ${props.job.nextStepLocation}`
-    : props.job.nextStepName
+  let dest = props.job.nextStepName
+  if (props.job.nextStepLocation) dest += ` → ${props.job.nextStepLocation}`
+  if (props.job.nextStepAssignedTo) {
+    const user = users.value.find(u => u.id === props.job.nextStepAssignedTo)
+    if (user) dest += ` · ${user.displayName}`
+  }
+  return dest
 }
 
 function openScrap(partId: string) {
