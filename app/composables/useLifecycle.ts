@@ -47,6 +47,7 @@ export function useLifecycle() {
 
   async function advanceToStep(partId: string, input: {
     targetStepId: string
+    skip?: boolean
   }): Promise<AdvancementResult> {
     loading.value = true
     error.value = null

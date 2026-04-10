@@ -63,9 +63,9 @@ function clearMessages() {
 }
 
 async function handleCreate() {
-  if (validationError.value) return
-  clearMessages()
+  if (validationError.value || creating.value) return
   creating.value = true
+  clearMessages()
   try {
     const created = await batchCreateParts({
       jobId: props.job.jobId,
@@ -82,9 +82,9 @@ async function handleCreate() {
 }
 
 async function handleCreateAndAdvance() {
-  if (validationError.value) return
-  clearMessages()
+  if (validationError.value || creating.value) return
   creating.value = true
+  clearMessages()
   try {
     const created = await batchCreateParts({
       jobId: props.job.jobId,

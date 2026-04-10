@@ -11,12 +11,6 @@ export function useParts() {
     })
   }
 
-  async function advancePart(id: string): Promise<Part> {
-    return await $api<Part>(`/api/parts/${id}/advance`, {
-      method: 'POST',
-    })
-  }
-
   async function getPart(id: string) {
     return await $api<Part & { certs: unknown[] }>(`/api/parts/${id}`)
   }
@@ -30,7 +24,6 @@ export function useParts() {
 
   return {
     batchCreateParts,
-    advancePart,
     getPart,
     attachCert,
   }

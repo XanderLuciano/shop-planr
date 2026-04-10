@@ -8,7 +8,7 @@
 export interface SkipStepParams {
   partIds: string[]
   nextStepId: string | undefined
-  advanceToStep: (partId: string, input: { targetStepId: string }) => Promise<unknown>
+  advanceToStep: (partId: string, input: { targetStepId: string, skip?: boolean }) => Promise<unknown>
 }
 
 export interface SkipStepResult {
@@ -27,6 +27,7 @@ export async function executeSkip(params: SkipStepParams): Promise<SkipStepResul
   for (const partId of partIds) {
     await advanceToStep(partId, {
       targetStepId: nextStepId,
+      skip: true,
     })
   }
 

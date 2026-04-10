@@ -262,32 +262,49 @@ export function createLifecycleService(repos: {
         }
       }
 
-      // 8. Update origin step (current) → completed
+      // 8. Update origin step status
+      const isSkipping = input.skip === true
+      const isOriginEffectivelyOptional = currentStep.optional || overriddenStepIds.has(currentStep.id)
+
+      let originStatus: 'completed' | 'skipped' | 'deferred'
+      if (isSkipping && isOriginEffectivelyOptional) {
+        // Origin step was skipped (not completed)
+        originStatus = 'skipped'
+      } else if (isSkipping && !isOriginEffectivelyOptional) {
+        // Skipping a required step → deferred (must be completed later)
+        originStatus = 'deferred'
+      } else {
+        // Normal advancement — origin step was completed
+        originStatus = 'completed'
+      }
+
       const originEntry = repos.partStepStatuses.getLatestByPartAndStep(partId, currentStep.id)
       if (originEntry) {
         repos.partStepStatuses.updateLatestByPartAndStep(partId, currentStep.id, {
-          status: 'completed',
-          completedAt: now,
+          status: originStatus,
+          completedAt: originStatus === 'completed' ? now : undefined,
           updatedAt: now,
         })
       } else {
-        // Legacy data: no routing entry exists — create one as completed
+        // Legacy data: no routing entry exists — create one
         repos.partStepStatuses.create({
           id: generateId('pss'),
           partId,
           stepId: currentStep.id,
           sequenceNumber: nextSeq++,
-          status: 'completed',
+          status: originStatus,
           enteredAt: now,
-          completedAt: now,
+          completedAt: originStatus === 'completed' ? now : undefined,
           updatedAt: now,
         })
       }
 
-      // Increment origin step's completedCount
-      repos.paths.updateStep(currentStep.id, {
-        completedCount: currentStep.completedCount + 1,
-      })
+      // Only increment completedCount for normal advancement (not skipping)
+      if (!isSkipping) {
+        repos.paths.updateStep(currentStep.id, {
+          completedCount: currentStep.completedCount + 1,
+        })
+      }
 
       // 9. Check if this is completion (target past last step or no target step)
       if (!targetStep) {

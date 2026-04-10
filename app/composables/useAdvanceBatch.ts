@@ -16,13 +16,13 @@ export function useAdvanceBatch() {
       throw new Error(`Cannot advance ${partIds.length} parts — only ${availablePartCount} available`)
     }
 
-    for (const partId of partIds) {
-      await $api(`/api/parts/${encodeURIComponent(partId)}/advance`, {
-        method: 'POST',
-      })
-    }
+    // Single HTTP call replaces N sequential calls
+    const response = await $api<{ advanced: number }>('/api/parts/advance', {
+      method: 'POST',
+      body: { partIds },
+    })
 
-    // Create note if provided and non-empty
+    // Create note if provided and non-empty (separate call, after advancement)
     const trimmedNote = note?.trim()
     if (trimmedNote && trimmedNote.length > 0) {
       if (trimmedNote.length > 1000) {
@@ -40,7 +40,7 @@ export function useAdvanceBatch() {
       })
     }
 
-    return { advanced: partIds.length }
+    return { advanced: response.advanced }
   }
 
   return { advanceBatch }

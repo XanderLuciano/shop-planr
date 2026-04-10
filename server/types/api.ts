@@ -149,6 +149,7 @@ export interface ForceCompleteInput {
 export interface AdvanceToStepInput {
   targetStepId: string
   userId: string
+  skip?: boolean  // when true, origin step is marked 'skipped' not 'completed'
 }
 
 export interface CompleteDeferredStepInput {
