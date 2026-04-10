@@ -36,6 +36,7 @@ const actionConfig: Record<AuditAction, { label: string, color: string, icon: st
   step_waived: { label: 'Step Waived', color: 'text-purple-400', icon: 'i-lucide-circle-slash' },
   bom_edited: { label: 'BOM Edited', color: 'text-cyan-500', icon: 'i-lucide-table' },
   path_deleted: { label: 'Path Deleted', color: 'text-red-400', icon: 'i-lucide-folder-x' },
+  part_deleted: { label: 'Part Deleted', color: 'text-red-500', icon: 'i-lucide-trash' },
 }
 
 function formatTime(ts: string): string {

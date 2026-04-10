@@ -36,6 +36,11 @@ const showNoteForm = ref(false)
 const noteText = ref('')
 const noteSaving = ref(false)
 
+function onPartDeleted() {
+  toast.add({ title: 'Part deleted', description: `${partId} has been permanently removed`, color: 'success' })
+  navigateTo('/parts-browser')
+}
+
 // Lifecycle data
 const stepStatuses = ref<PartStepStatusView[]>([])
 const overrides = ref<PartStepOverride[]>([])
@@ -313,22 +318,28 @@ onMounted(async () => {
 
     <template v-else-if="part && job && path">
       <!-- Header -->
-      <div class="space-y-1">
-        <div class="flex items-center gap-2">
-          <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
-            {{ part.id }}
-          </h1>
-          <UBadge
-            :color="isScrapped ? 'error' : isCompleted ? 'success' : 'warning'"
-            variant="subtle"
-            size="sm"
-          >
-            {{ isScrapped ? 'Scrapped' : isForceCompleted ? 'Force Completed' : isCompleted ? 'Completed' : 'In Progress' }}
-          </UBadge>
+      <div class="flex items-start justify-between gap-4">
+        <div class="space-y-1">
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
+              {{ part.id }}
+            </h1>
+            <UBadge
+              :color="isScrapped ? 'error' : isCompleted ? 'success' : 'warning'"
+              variant="subtle"
+              size="sm"
+            >
+              {{ isScrapped ? 'Scrapped' : isForceCompleted ? 'Force Completed' : isCompleted ? 'Completed' : 'In Progress' }}
+            </UBadge>
+          </div>
+          <div class="text-xs text-(--ui-text-muted)">
+            {{ job?.name }} · {{ path.name }}
+          </div>
         </div>
-        <div class="text-xs text-(--ui-text-muted)">
-          {{ job?.name }} · {{ path.name }}
-        </div>
+        <PartDeleteButton
+          :part-id="part.id"
+          @deleted="onPartDeleted"
+        />
       </div>
 
       <!-- Scrap indicator -->

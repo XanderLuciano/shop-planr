@@ -161,6 +161,7 @@ export type AuditAction
     | 'step_waived'
     | 'bom_edited'
     | 'path_deleted'
+    | 'part_deleted'
 
 export interface AuditEntry {
   id: string

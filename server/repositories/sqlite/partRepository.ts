@@ -259,4 +259,11 @@ export class SQLitePartRepository implements PartRepository {
     const result = this.db.prepare('DELETE FROM parts WHERE path_id = ?').run(pathId)
     return result.changes
   }
+
+  delete(id: string): void {
+    const result = this.db.prepare('DELETE FROM parts WHERE id = ?').run(id)
+    if (result.changes === 0) {
+      throw new NotFoundError('Part', id)
+    }
+  }
 }
