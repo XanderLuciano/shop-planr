@@ -46,18 +46,6 @@ function computeBypassPreview(
     }))
 }
 
-/** Generate an array of path steps with random optional flags */
-function arbPathSteps(count: number): fc.Arbitrary<PathStep[]> {
-  return fc.array(fc.boolean(), { minLength: count, maxLength: count }).map(flags =>
-    flags.map((optional, i) => ({
-      id: `step-${i}`,
-      name: `Step ${i}`,
-      order: i,
-      optional,
-    })),
-  )
-}
-
 describe('Property 10: Bypass preview classification', () => {
   it('each intermediate step is classified as skip (optional) or defer (required)', () => {
     fc.assert(

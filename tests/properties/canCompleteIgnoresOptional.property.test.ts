@@ -142,7 +142,7 @@ describe('Property 9: canComplete ignores optional steps and blocks on deferred 
         fc.constant(null),
         () => {
           db = createTestDb()
-          const { jobService, pathService, partService, lifecycleService, repos } = setupServices(db)
+          const { jobService, pathService, partService, lifecycleService } = setupServices(db)
 
           // Path: 2 required steps, advance past first to second, skip first → deferred
           const job = jobService.createJob({ name: 'Deferred Block Test', goalQuantity: 1 })

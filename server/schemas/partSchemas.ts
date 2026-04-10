@@ -22,7 +22,7 @@ export const partIdParamSchema = z.object({
  */
 export const batchAdvanceSchema = z.object({
   partIds: z.array(
-    z.string().min(1, { error: 'Part ID must be non-empty' })
+    z.string().min(1, { error: 'Part ID must be non-empty' }),
   )
     .min(1, { error: 'At least one part ID is required' })
     .max(100, { error: 'Cannot advance more than 100 parts at once' }),

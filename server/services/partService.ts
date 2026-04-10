@@ -305,7 +305,7 @@ export function createPartService(
       return { deletedPartId: id }
     },
 
-    batchAdvanceParts(partIds: string[], userId: string): { advanced: number; failed: number; results: BatchAdvanceResult[] } {
+    batchAdvanceParts(partIds: string[], userId: string): { advanced: number, failed: number, results: BatchAdvanceResult[] } {
       assertNonEmptyArray(partIds, 'partIds')
       if (partIds.length > 100) {
         throw new ValidationError('Cannot advance more than 100 parts at once')
