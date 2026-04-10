@@ -155,7 +155,7 @@ const WorkQueueFilterBar = defineComponent({
 
         // Clear filters button (conditional)
         hasActiveFilters.value
-          ? h('button', { class: 'clear-btn', onClick: () => emit('clear') }, 'Clear filters')
+          ? h('button', { class: 'clear-btn', onClick: () => emit('clear') }, 'Clear')
           : null,
 
         // Preset load buttons
@@ -342,7 +342,7 @@ describe('WorkQueueFilterBar', () => {
     it('shows clear button when a property filter is active', () => {
       const wrapper = mountBar({ filters: { userId: 'u1' } })
       expect(wrapper.find('.clear-btn').exists()).toBe(true)
-      expect(wrapper.find('.clear-btn').text()).toBe('Clear filters')
+      expect(wrapper.find('.clear-btn').text()).toBe('Clear')
       wrapper.unmount()
     })
 
