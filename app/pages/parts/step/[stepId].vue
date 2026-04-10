@@ -132,16 +132,30 @@ onMounted(async () => {
 <template>
   <div class="p-4 space-y-4 max-w-5xl">
     <!-- Back link -->
-    <NuxtLink
-      :to="backNav.to"
-      class="inline-flex items-center gap-1 text-sm text-(--ui-text-muted) hover:text-(--ui-text-highlighted) transition-colors"
-    >
-      <UIcon
-        name="i-lucide-arrow-left"
-        class="size-4"
-      />
-      {{ backNav.label }}
-    </NuxtLink>
+    <ClientOnly>
+      <NuxtLink
+        :to="backNav.to"
+        class="inline-flex items-center gap-1 text-sm text-(--ui-text-muted) hover:text-(--ui-text-highlighted) transition-colors"
+      >
+        <UIcon
+          name="i-lucide-arrow-left"
+          class="size-4"
+        />
+        {{ backNav.label }}
+      </NuxtLink>
+      <template #fallback>
+        <NuxtLink
+          to="/parts"
+          class="inline-flex items-center gap-1 text-sm text-(--ui-text-muted) hover:text-(--ui-text-highlighted) transition-colors"
+        >
+          <UIcon
+            name="i-lucide-arrow-left"
+            class="size-4"
+          />
+          Back to Parts
+        </NuxtLink>
+      </template>
+    </ClientOnly>
 
     <!-- Loading state -->
     <div
@@ -170,13 +184,24 @@ onMounted(async () => {
       <p class="text-xs text-(--ui-text-muted) mb-4">
         This step doesn't exist or has no active parts.
       </p>
-      <UButton
-        :to="backNav.to"
-        size="sm"
-        variant="soft"
-        :label="backNav.label"
-        icon="i-lucide-arrow-left"
-      />
+      <ClientOnly>
+        <UButton
+          :to="backNav.to"
+          size="sm"
+          variant="soft"
+          :label="backNav.label"
+          icon="i-lucide-arrow-left"
+        />
+        <template #fallback>
+          <UButton
+            to="/parts"
+            size="sm"
+            variant="soft"
+            label="Back to Parts"
+            icon="i-lucide-arrow-left"
+          />
+        </template>
+      </ClientOnly>
     </div>
 
     <!-- Error state (non-404) -->
@@ -283,13 +308,24 @@ onMounted(async () => {
           {{ previousStepWipCount ?? 0 }} part{{ (previousStepWipCount ?? 0) !== 1 ? 's' : '' }} in progress.
           Parts will appear here once they are advanced from the previous step.
         </p>
-        <UButton
-          :to="backNav.to"
-          size="sm"
-          variant="soft"
-          :label="backNav.label"
-          icon="i-lucide-arrow-left"
-        />
+        <ClientOnly>
+          <UButton
+            :to="backNav.to"
+            size="sm"
+            variant="soft"
+            :label="backNav.label"
+            icon="i-lucide-arrow-left"
+          />
+          <template #fallback>
+            <UButton
+              to="/parts"
+              size="sm"
+              variant="soft"
+              label="Back to Parts"
+              icon="i-lucide-arrow-left"
+            />
+          </template>
+        </ClientOnly>
       </div>
 
       <!-- Non-first step with active parts: advancement panel -->
