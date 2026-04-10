@@ -34,7 +34,7 @@ tests/
     services/           → jobService, pathService, serialService, reconcileSteps, etc. (11 files)
     utils/              → serialization, validation, idGenerator, errors, progressBar, services, workQueueGrouping, workQueueFilters, workQueueApiGrouping (9 files)
     composables/        → useBarcode, useViewFilters, useJobForm, workQueueSearch, useWorkQueueFilters.preset (5 files)
-    components/         → SerialCreationPanel, serialNoteAdd, EndpointCard, DocsSidebar, JobEditNavigation, JobViewToolbar, WorkQueueFilterBar (7 files)
+    components/         → SerialCreationPanel, serialNoteAdd, EndpointCard, DocsSidebar, JobEditNavigation, JobViewToolbar, WorkQueueFilterBar, PartDeleteButton (8 files)
     repositories/       → hasStepDependents (1 file)
     repositories/sqlite/ → migrations (1 file)
   properties/

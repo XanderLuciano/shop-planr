@@ -595,5 +595,71 @@ describe('PartService', () => {
       expect(() => noCascadeService.deletePart('part_00001', 'admin_1')).toThrow(ValidationError)
       expect(partRepo.delete).not.toHaveBeenCalled()
     })
+
+    it('cascades in FK-safe order: cert_attachments → overrides → statuses → part', () => {
+      partRepo.create(makePart({ id: 'part_00001' }))
+      const callOrder: string[] = []
+      ;(certRepo.deleteAttachmentsByPartIds as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        callOrder.push('certs')
+      })
+      ;(partStepOverrideRepo.deleteByPartIds as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        callOrder.push('overrides')
+      })
+      ;(partStepStatusRepo.deleteByPartIds as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        callOrder.push('statuses')
+      })
+      ;(partRepo.delete as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        callOrder.push('part')
+      })
+
+      adminService.deletePart('part_00001', 'admin_1')
+
+      expect(callOrder).toEqual(['certs', 'overrides', 'statuses', 'part'])
+    })
+
+    it('deletes a completed part', () => {
+      partRepo.create(makePart({ id: 'part_00001', status: 'completed', currentStepId: null }))
+
+      const result = adminService.deletePart('part_00001', 'admin_1')
+
+      expect(result).toEqual({ deletedPartId: 'part_00001' })
+      expect(auditService.recordPartDeletion).toHaveBeenCalledWith(
+        expect.objectContaining({ metadata: { status: 'completed', currentStepId: null } }),
+      )
+    })
+
+    it('deletes a scrapped part', () => {
+      partRepo.create(makePart({ id: 'part_00001', status: 'scrapped', currentStepId: 'step_1' }))
+
+      const result = adminService.deletePart('part_00001', 'admin_1')
+
+      expect(result).toEqual({ deletedPartId: 'part_00001' })
+      expect(auditService.recordPartDeletion).toHaveBeenCalledWith(
+        expect.objectContaining({ metadata: { status: 'scrapped', currentStepId: 'step_1' } }),
+      )
+    })
+
+    it('does not record audit when transaction throws', () => {
+      partRepo.create(makePart({ id: 'part_00001' }))
+      const failDb = {
+        transaction: () => () => { throw new Error('disk full') },
+      }
+      const failService = createPartService(
+        {
+          parts: partRepo,
+          paths: pathRepo,
+          certs: certRepo,
+          users: userRepo,
+          partStepStatuses: partStepStatusRepo,
+          partStepOverrides: partStepOverrideRepo,
+          db: failDb,
+        },
+        auditService,
+        partIdGenerator,
+      )
+
+      expect(() => failService.deletePart('part_00001', 'admin_1')).toThrow('disk full')
+      expect(auditService.recordPartDeletion).not.toHaveBeenCalled()
+    })
   })
 })
