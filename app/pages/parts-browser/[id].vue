@@ -10,6 +10,10 @@ const $api = useAuthFetch()
 // Stack-based back navigation
 const { backNavigation: backNav } = useNavigationStack()
 
+// Deterministic fallback derived from shared helpers (no sessionStorage dependency)
+const fallbackPath = resolveFallbackRoute(route.path)
+const fallbackLabel = `Back to ${resolveLabel(fallbackPath)}`
+
 const {
   part,
   job,
@@ -284,17 +288,33 @@ onMounted(async () => {
 
 <template>
   <div class="p-4 space-y-4 max-w-5xl">
-    <!-- Back link -->
-    <NuxtLink
-      :to="backNav.to"
-      class="inline-flex items-center gap-1 text-xs text-(--ui-text-muted) hover:text-(--ui-text-highlighted) transition-colors"
-    >
-      <UIcon
-        name="i-lucide-arrow-left"
-        class="size-3"
-      />
-      {{ backNav.label }}
-    </NuxtLink>
+    <!-- Back link — wrapped in ClientOnly to avoid hydration mismatch
+         (server has no sessionStorage so the stack is always empty;
+          client may have a real entry from prior navigation) -->
+    <ClientOnly>
+      <NuxtLink
+        :to="backNav.to"
+        class="inline-flex items-center gap-1 text-xs text-(--ui-text-muted) hover:text-(--ui-text-highlighted) transition-colors"
+      >
+        <UIcon
+          name="i-lucide-arrow-left"
+          class="size-3"
+        />
+        {{ backNav.label }}
+      </NuxtLink>
+      <template #fallback>
+        <NuxtLink
+          :to="fallbackPath"
+          class="inline-flex items-center gap-1 text-xs text-(--ui-text-muted) hover:text-(--ui-text-highlighted) transition-colors"
+        >
+          <UIcon
+            name="i-lucide-arrow-left"
+            class="size-3"
+          />
+          {{ fallbackLabel }}
+        </NuxtLink>
+      </template>
+    </ClientOnly>
 
     <!-- Loading -->
     <div

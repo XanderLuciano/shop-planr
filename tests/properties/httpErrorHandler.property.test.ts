@@ -5,7 +5,7 @@
  * createError, isError, defineEventHandler). We stub these as globals before
  * importing the module under test.
  */
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import fc from 'fast-check'
 import { createError, isError, defineEventHandler } from 'h3'
 import type { H3Event } from 'h3'
@@ -22,6 +22,15 @@ vi.stubGlobal('defineEventHandler', defineEventHandler)
 
 // Import AFTER globals are stubbed
 const { httpError, ERROR_STATUS_MAP, STATUS_MESSAGES, defineApiHandler } = await import('~/server/utils/httpError')
+
+// Silence the noisy `[API 500]` console.error calls that httpError() emits for unknown errors
+let consoleErrorSpy: ReturnType<typeof vi.spyOn>
+beforeEach(() => {
+  consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+})
+afterEach(() => {
+  consoleErrorSpy.mockRestore()
+})
 
 // Feature: http-error-handler, Property 1: Mapped error classification preserves status and message
 describe('Property 1: Mapped error classification preserves status and message', () => {

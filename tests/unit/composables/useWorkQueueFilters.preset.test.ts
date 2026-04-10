@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 
 import { useWorkQueueFilters } from '~/app/composables/useWorkQueueFilters'
 
@@ -62,11 +62,18 @@ vi.stubGlobal('crypto', {
 })
 
 describe('useWorkQueueFilters — preset management', () => {
+  // Suppress Vue's "onMounted called outside component" warning — the composable's
+  // onMounted is a no-op in tests and doesn't affect preset logic.
+  let warnSpy: ReturnType<typeof vi.spyOn>
   beforeEach(() => {
     storageMap = {}
     uuidCounter = 0
     mockFetchGroupedWork.mockClear()
     mockReplace.mockClear()
+    warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  })
+  afterEach(() => {
+    warnSpy.mockRestore()
   })
 
   // --- savePreset ---
