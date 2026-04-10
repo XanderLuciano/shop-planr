@@ -285,7 +285,7 @@ watch(() => props.distribution, () => nextTick(computeColumns))
         <!-- Done card -->
         <div
           v-else
-          class="flex flex-col items-center justify-center shrink-0 px-2 py-1.5 rounded border border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/30 text-center"
+          class="flex flex-col items-center justify-center shrink-0 min-h-[100px] px-2 py-1.5 rounded border border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-950/30 text-center"
           :style="{ width: `${cardWidth}px` }"
         >
           <span class="text-[10px] text-(--ui-text-muted) mb-0.5">Done</span>
