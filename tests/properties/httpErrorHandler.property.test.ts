@@ -25,8 +25,12 @@ const { httpError, ERROR_STATUS_MAP, STATUS_MESSAGES, defineApiHandler } = await
 
 // Silence the noisy `[API 500]` console.error calls that httpError() emits for unknown errors
 let consoleErrorSpy: ReturnType<typeof vi.spyOn>
-beforeEach(() => { consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {}) })
-afterEach(() => { consoleErrorSpy.mockRestore() })
+beforeEach(() => {
+  consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+})
+afterEach(() => {
+  consoleErrorSpy.mockRestore()
+})
 
 // Feature: http-error-handler, Property 1: Mapped error classification preserves status and message
 describe('Property 1: Mapped error classification preserves status and message', () => {

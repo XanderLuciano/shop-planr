@@ -72,7 +72,9 @@ describe('useWorkQueueFilters — preset management', () => {
     mockReplace.mockClear()
     warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
   })
-  afterEach(() => { warnSpy.mockRestore() })
+  afterEach(() => {
+    warnSpy.mockRestore()
+  })
 
   // --- savePreset ---
 
