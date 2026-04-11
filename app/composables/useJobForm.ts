@@ -40,7 +40,7 @@ export interface ValidationResult {
 
 // ---- Helpers ----
 
-function createStepDraft(overrides?: Partial<Omit<StepDraft, '_clientId'>>): StepDraft {
+export function createStepDraft(overrides?: Partial<Omit<StepDraft, '_clientId'>>): StepDraft {
   return {
     _clientId: nanoid(),
     _existingStepId: overrides?._existingStepId,
