@@ -78,7 +78,6 @@ const CROSS_LAYER_IMPORT_FILES = [
   'app/components/JobPartsTab.vue',
   'app/components/JobCreationForm.vue',
   'app/components/CertForm.vue',
-  'app/components/PathEditor.vue',
   'app/components/ViewFilters.vue',
   'app/components/StepNoteList.vue',
   'app/components/UserForm.vue',

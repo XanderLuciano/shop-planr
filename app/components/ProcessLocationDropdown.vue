@@ -14,6 +14,8 @@ const searchQuery = ref('')
 const showNewInput = ref(false)
 const newName = ref('')
 const adding = ref(false)
+const showOverlay = ref(false)
+const containerRef = ref<HTMLElement | null>(null)
 
 const items = computed(() => {
   const list = props.type === 'process' ? processes.value : locations.value
@@ -30,6 +32,41 @@ onMounted(async () => {
   }
 })
 
+function handleInputUpdate(v: string | number) {
+  const val = String(v)
+  searchQuery.value = val
+  emit('update:modelValue', val)
+  showOverlay.value = val.trim().length > 0
+}
+
+function handleInputFocus() {
+  if (searchQuery.value.trim().length > 0 || items.value.length > 0) {
+    showOverlay.value = true
+  }
+}
+
+function selectItem(value: string) {
+  emit('update:modelValue', value)
+  searchQuery.value = ''
+  showOverlay.value = false
+  showNewInput.value = false
+}
+
+function handleClickOutside(event: MouseEvent) {
+  if (containerRef.value && !containerRef.value.contains(event.target as Node)) {
+    showOverlay.value = false
+    showNewInput.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside, true)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside, true)
+})
+
 async function handleAddNew() {
   const name = newName.value.trim()
   if (!name) return
@@ -40,9 +77,8 @@ async function handleAddNew() {
     } else {
       await addLocation(name)
     }
-    emit('update:modelValue', name)
+    selectItem(name)
     newName.value = ''
-    showNewInput.value = false
   } catch {
     // error handled by composable
   } finally {
@@ -52,62 +88,70 @@ async function handleAddNew() {
 </script>
 
 <template>
-  <div class="space-y-1">
+  <div
+    ref="containerRef"
+    class="relative"
+  >
     <UInput
       :model-value="modelValue"
       :placeholder="`Search ${type}...`"
       size="sm"
       class="w-full"
-      @update:model-value="(v: string | number) => { searchQuery = String(v); emit('update:modelValue', String(v)) }"
+      @update:model-value="handleInputUpdate"
+      @focus="handleInputFocus"
     />
 
     <div
-      v-if="searchQuery && items.length"
-      class="border border-(--ui-border) rounded-md max-h-32 overflow-y-auto"
+      v-if="showOverlay && (items.length || showNewInput)"
+      class="absolute top-full left-0 w-full z-10 mt-1 border border-(--ui-border) rounded-md bg-(--ui-bg) shadow-md max-h-48 overflow-y-auto"
     >
       <button
         v-for="item in items"
         :key="item.value"
         type="button"
         class="w-full text-left px-2 py-1.5 text-xs hover:bg-(--ui-bg-elevated)/50 text-(--ui-text-highlighted)"
-        @click="emit('update:modelValue', item.value); searchQuery = ''"
+        @click="selectItem(item.value)"
       >
         {{ item.label }}
       </button>
-    </div>
 
-    <div v-if="!showNewInput">
-      <button
-        type="button"
-        class="text-xs text-(--ui-primary) hover:underline"
-        @click="showNewInput = true; newName = searchQuery"
+      <div
+        v-if="!showNewInput"
+        class="border-t border-(--ui-border)"
       >
-        + New {{ type }}
-      </button>
-    </div>
-    <div
-      v-else
-      class="flex items-center gap-1"
-    >
-      <UInput
-        v-model="newName"
-        :placeholder="`New ${type} name`"
-        size="xs"
-        class="flex-1"
-        @keyup.enter="handleAddNew"
-      />
-      <UButton
-        size="xs"
-        label="Add"
-        :loading="adding"
-        @click="handleAddNew"
-      />
-      <UButton
-        size="xs"
-        variant="ghost"
-        label="Cancel"
-        @click="showNewInput = false"
-      />
+        <button
+          type="button"
+          class="w-full text-left px-2 py-1.5 text-xs text-(--ui-primary) hover:bg-(--ui-bg-elevated)/50"
+          @click="showNewInput = true; newName = searchQuery"
+        >
+          + New {{ type }}
+        </button>
+      </div>
+
+      <div
+        v-else
+        class="border-t border-(--ui-border) p-2 flex items-center gap-1"
+      >
+        <UInput
+          v-model="newName"
+          :placeholder="`New ${type} name`"
+          size="xs"
+          class="flex-1"
+          @keyup.enter="handleAddNew"
+        />
+        <UButton
+          size="xs"
+          label="Add"
+          :loading="adding"
+          @click="handleAddNew"
+        />
+        <UButton
+          size="xs"
+          variant="ghost"
+          label="Cancel"
+          @click="showNewInput = false"
+        />
+      </div>
     </div>
   </div>
 </template>
