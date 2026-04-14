@@ -94,48 +94,48 @@ Add a custom tagging system for production jobs. Tags are user-defined entities 
 - [x] 5. Checkpoint
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 6. Service unit tests
-  - [~] 6.1 Write unit tests for `tagService`
+- [x] 6. Service unit tests
+  - [x] 6.1 Write unit tests for `tagService`
     - Test createTag validation: empty name, name > 30 chars, duplicate name (case-insensitive), invalid color, default color
     - Test updateTag: partial update, name uniqueness excluding self, not found
     - Test deleteTag: not found
     - _Requirements: 1.1–1.6, 2.1–2.5, 3.1–3.3_
 
-  - [~] 6.2 Write unit tests for `jobService.setJobTags`
+  - [x] 6.2 Write unit tests for `jobService.setJobTags`
     - Test replace behavior, deduplication, job not found, tag not found, empty tagIds clears
     - _Requirements: 5.1–5.6_
 
-  - [~] 6.3 Write unit tests for `tagSchemas`
+  - [x] 6.3 Write unit tests for `tagSchemas`
     - Test Zod schema validation for createTag, updateTag, setJobTags
     - _Requirements: 1.3, 1.4, 1.6, 11.2, 11.6_
 
-- [ ] 7. Property-based tests
-  - [~] 7.1 Write property test CP-TAG-1: Tag Name Uniqueness
+- [x] 7. Property-based tests
+  - [x] 7.1 Write property test CP-TAG-1: Tag Name Uniqueness
     - For any sequence of createTag calls with distinct names (case-insensitive), all succeed; duplicate names always throw ValidationError
     - **Property 1: Tag Name Uniqueness**
     - **Validates: Requirements 1.5, 2.2**
 
-  - [~] 7.2 Write property test CP-TAG-2: Tag Name Length Bound
+  - [x] 7.2 Write property test CP-TAG-2: Tag Name Length Bound
     - For any string of length > 30, createTag throws; for any string 1–30 (unique), createTag succeeds
     - **Property 2: Tag Name Length Bound**
     - **Validates: Requirements 1.3, 1.4**
 
-  - [~] 7.3 Write property test CP-TAG-3: Replace Idempotence
+  - [x] 7.3 Write property test CP-TAG-3: Replace Idempotence
     - For any jobId and tagIds, calling setJobTags twice produces identical associations
     - **Property 5: Replace Idempotence**
     - **Validates: Requirements 5.1, 5.3**
 
-  - [~] 7.4 Write property test CP-TAG-4: Cascade Deletion Completeness
+  - [x] 7.4 Write property test CP-TAG-4: Cascade Deletion Completeness
     - After deleting a tag, getTagsForJobs never returns that tag for any job
     - **Property 6: Cascade Deletion Completeness**
     - **Validates: Requirements 3.2**
 
-  - [~] 7.5 Write property test CP-TAG-5: Bulk Fetch Completeness
+  - [x] 7.5 Write property test CP-TAG-5: Bulk Fetch Completeness
     - For any set of jobs with known tag assignments, getTagsForJobs returns exactly the expected tags per job
     - **Property 7: Bulk Fetch Completeness**
     - **Validates: Requirements 6.1, 6.2, 6.3**
 
-- [ ] 8. Checkpoint
+- [-] 8. Checkpoint
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 9. Frontend composables
