@@ -194,3 +194,19 @@ export interface UpdatePrioritiesInput {
 export interface CreateLibraryEntryInput {
   name: string
 }
+
+// ---- Tag ----
+
+export interface CreateTagInput {
+  name: string
+  color?: string
+}
+
+export interface UpdateTagInput {
+  name?: string
+  color?: string
+}
+
+export interface SetJobTagsInput {
+  tagIds: string[]
+}

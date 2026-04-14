@@ -299,7 +299,7 @@ describe('SQLite migration system', () => {
       const db = initDatabase(dbPath)
 
       const applied = db.prepare('SELECT version, name FROM _migrations ORDER BY version').all() as any[]
-      expect(applied).toHaveLength(12)
+      expect(applied).toHaveLength(13)
       expect(applied[0].version).toBe(1)
       expect(applied[0].name).toBe('initial_schema')
       expect(applied[1].version).toBe(2)
@@ -324,6 +324,8 @@ describe('SQLite migration system', () => {
       expect(applied[10].name).toBe('priority_not_null_resequence')
       expect(applied[11].version).toBe(12)
       expect(applied[11].name).toBe('pin_auth')
+      expect(applied[12].version).toBe(13)
+      expect(applied[12].name).toBe('add_job_tags')
 
       db.close()
     })

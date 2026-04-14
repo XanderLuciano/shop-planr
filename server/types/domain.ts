@@ -359,3 +359,13 @@ export interface LocationLibraryEntry {
   name: string
   createdAt: string
 }
+
+// ---- Tag ----
+
+export interface Tag {
+  id: string
+  name: string
+  color: string
+  createdAt: string
+  updatedAt: string
+}

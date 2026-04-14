@@ -13,3 +13,5 @@ export type { PartStepOverrideRepository, SnStepOverrideRepository } from './par
 export type { BomVersionRepository } from './bomVersionRepository'
 export type { LibraryRepository } from './libraryRepository'
 export type { CryptoKeyRepository } from './cryptoKeyRepository'
+export type { TagRepository } from './tagRepository'
+export type { JobTagRepository } from './jobTagRepository'

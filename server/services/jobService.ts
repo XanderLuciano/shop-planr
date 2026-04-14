@@ -2,7 +2,9 @@ import type { JobRepository } from '../repositories/interfaces/jobRepository'
 import type { PathRepository } from '../repositories/interfaces/pathRepository'
 import type { PartRepository } from '../repositories/interfaces/partRepository'
 import type { BomRepository } from '../repositories/interfaces/bomRepository'
-import type { Job } from '../types/domain'
+import type { JobTagRepository } from '../repositories/interfaces/jobTagRepository'
+import type { TagRepository } from '../repositories/interfaces/tagRepository'
+import type { Job, Tag } from '../types/domain'
 import type { CreateJobInput, UpdateJobInput, UpdatePrioritiesInput } from '../types/api'
 import type { JobProgress } from '../types/computed'
 import { generateId } from '../utils/idGenerator'
@@ -40,6 +42,8 @@ export function createJobService(repos: {
   paths: PathRepository
   parts: PartRepository
   bom?: BomRepository
+  jobTags?: JobTagRepository
+  tags?: TagRepository
 }) {
   return {
     createJob(input: CreateJobInput): Job {
@@ -244,6 +248,43 @@ export function createJobService(repos: {
       }
 
       return { canDelete: reasons.length === 0, reasons }
+    },
+
+    setJobTags(jobId: string, tagIds: string[]): Tag[] {
+      if (!repos.jobTags || !repos.tags) {
+        throw new Error('jobTags and tags repositories required for setJobTags')
+      }
+
+      const job = repos.jobs.getById(jobId)
+      if (!job) {
+        throw new NotFoundError('Job', jobId)
+      }
+
+      const uniqueIds = [...new Set(tagIds)]
+
+      if (uniqueIds.length > 0) {
+        const foundTags = repos.tags.getByIds(uniqueIds)
+        if (foundTags.length !== uniqueIds.length) {
+          const foundIds = new Set(foundTags.map(t => t.id))
+          const missingId = uniqueIds.find(id => !foundIds.has(id))!
+          throw new NotFoundError('Tag', missingId)
+        }
+      }
+
+      repos.jobTags.replaceJobTags(jobId, uniqueIds)
+      return repos.jobTags.getTagsByJobId(jobId)
+    },
+
+    listJobsWithTags(): (Job & { tags: Tag[] })[] {
+      if (!repos.jobTags) {
+        return repos.jobs.list().map(job => ({ ...job, tags: [] }))
+      }
+
+      const jobs = repos.jobs.list()
+      const jobIds = jobs.map(j => j.id)
+      const tagMap = repos.jobTags.getTagsForJobs(jobIds)
+
+      return jobs.map(job => ({ ...job, tags: tagMap.get(job.id) ?? [] }))
     },
   }
 }

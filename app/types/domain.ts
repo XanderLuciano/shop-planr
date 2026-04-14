@@ -28,6 +28,7 @@ export type {
   ProcessLibraryEntry,
   LocationLibraryEntry,
   StepInput,
+  Tag,
 } from '../../server/types/domain'
 
 export { toPublicUser } from '../../server/types/domain'
