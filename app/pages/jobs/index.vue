@@ -2,7 +2,7 @@
 import { h, resolveComponent } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
 import type { Row, ExpandedState } from '@tanstack/vue-table'
-import type { Job } from '~/types/domain'
+import type { Job, Tag } from '~/types/domain'
 import type { JobProgress } from '~/types/computed'
 
 const { jobs, loading, fetchJobs } = useJobs()
@@ -276,6 +276,17 @@ const columns: TableColumn<Job>[] = [
   {
     accessorKey: 'name',
     header: 'Job Name',
+  },
+  {
+    accessorKey: 'tags',
+    header: 'Tags',
+    cell: ({ row }: { row: Row<Job & { tags: Tag[] }> }) => {
+      const job = row.original as Job & { tags: Tag[] }
+      if (!job.tags?.length) return null
+      return h('div', { class: 'flex flex-wrap gap-1' },
+        job.tags.map(tag => h(resolveComponent('JobTagPill'), { tag, key: tag.id })),
+      )
+    },
   },
   {
     accessorKey: 'jiraPartNumber',

@@ -13,6 +13,7 @@ const { getPath: fetchPathDetail } = usePaths()
 const { templates, fetchTemplates, applyTemplate } = useTemplates()
 const { settings } = useSettings()
 const { pushDescriptionTable, pushCommentSummary } = useJira()
+const { tags: jobTags, fetchJobTags } = useJobTags()
 
 // Active users for step assignment dropdowns
 const activeUsers = ref<ShopUser[]>([])
@@ -295,6 +296,7 @@ onMounted(() => {
   loadJob()
   loadActiveUsers()
   fetchTemplates()
+  fetchJobTags(jobId)
 })
 </script>
 
@@ -415,6 +417,11 @@ onMounted(() => {
             <span v-if="progress.scrappedParts">{{ progress.scrappedParts }} scrapped</span>
             <span>{{ progress.totalParts }} total parts</span>
           </div>
+        </div>
+
+        <!-- Tags -->
+        <div v-if="jobTags.length" class="flex flex-wrap gap-1 mt-1">
+          <JobTagPill v-for="tag in jobTags" :key="tag.id" :tag="tag" />
         </div>
       </div>
 

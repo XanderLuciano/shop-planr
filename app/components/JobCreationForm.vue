@@ -32,6 +32,9 @@ const {
 
 const { templates, fetchTemplates } = useTemplates()
 const { users: allUsers } = useAuth()
+const { tags, fetchJobTags, setJobTags } = useJobTags()
+
+const selectedTagIds = ref<string[]>([])
 
 // Active users for assignee dropdown
 const assigneeItems = computed(() => {
@@ -67,8 +70,12 @@ const dependencyTypeOptions = [
   { label: 'Completion Gate', value: 'completion_gate' },
 ]
 
-onMounted(() => {
+onMounted(async () => {
   fetchTemplates()
+  if (props.mode === 'edit' && props.existingJob) {
+    await fetchJobTags(props.existingJob.id)
+    selectedTagIds.value = tags.value.map(t => t.id)
+  }
 })
 
 function onTemplateSelect(pathClientId: string) {
@@ -94,6 +101,11 @@ async function handleSubmit() {
 
   try {
     const jobId = await submit()
+    try {
+      await setJobTags(jobId, selectedTagIds.value)
+    } catch {
+      // tag assignment failure should not block the save
+    }
     emit('saved', jobId)
   } catch {
     // submitError is already set by the composable
@@ -157,6 +169,10 @@ function handleCancel() {
             {{ getFieldError('job.goalQuantity') }}
           </p>
         </div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-(--ui-text-highlighted) mb-1">Tags</label>
+        <TagSelector v-model="selectedTagIds" />
       </div>
     </div>
 

@@ -1,9 +1,9 @@
 import { ref, readonly } from 'vue'
-import type { Job, Path } from '~/types/domain'
+import type { Job, Path, Tag } from '~/types/domain'
 import type { JobProgress } from '~/types/computed'
 import type { CreateJobInput, UpdateJobInput } from '~/types/api'
 
-const jobs = ref<Job[]>([])
+const jobs = ref<(Job & { tags: Tag[] })[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 
@@ -14,7 +14,7 @@ export function useJobs() {
     loading.value = true
     error.value = null
     try {
-      jobs.value = await $api<Job[]>('/api/jobs')
+      jobs.value = await $api<(Job & { tags: Tag[] })[]>('/api/jobs')
     } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch jobs'
       jobs.value = []

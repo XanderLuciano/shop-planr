@@ -1,4 +1,4 @@
 export default defineApiHandler(async () => {
   const { jobService } = getServices()
-  return jobService.listJobs()
+  return jobService.listJobsWithTags()
 })

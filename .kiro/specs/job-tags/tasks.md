@@ -135,30 +135,30 @@ Add a custom tagging system for production jobs. Tags are user-defined entities 
     - **Property 7: Bulk Fetch Completeness**
     - **Validates: Requirements 6.1, 6.2, 6.3**
 
-- [-] 8. Checkpoint
+- [x] 8. Checkpoint
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 9. Frontend composables
-  - [~] 9.1 Create `app/composables/useTags.ts`
+- [x] 9. Frontend composables
+  - [x] 9.1 Create `app/composables/useTags.ts`
     - Reactive state: `tags`, `loading`, `error`
     - Methods: `fetchTags()`, `createTag(name, color)`, `updateTag(id, input)`, `deleteTag(id)`
     - Uses `useAuthFetch()` for all API calls
     - Follow `useLibrary` composable pattern
     - _Requirements: 4.1, 9.1, 9.2, 9.3_
 
-  - [~] 9.2 Create `app/composables/useJobTags.ts`
+  - [x] 9.2 Create `app/composables/useJobTags.ts`
     - Methods: `fetchJobTags(jobId)`, `setJobTags(jobId, tagIds)`
     - Returns reactive `tags` ref for the current job
     - _Requirements: 5.1, 5.4, 8.1_
 
-- [ ] 10. Vue components
-  - [~] 10.1 Create `app/components/JobTagPill.vue`
+- [x] 10. Vue components
+  - [x] 10.1 Create `app/components/JobTagPill.vue`
     - Props: `tag: Tag` (name + color)
     - Renders a small pill/badge with `tag.name` as text and `tag.color` as background
     - Use inline styles for dynamic background color with appropriate text contrast
     - _Requirements: 7.1_
 
-  - [~] 10.2 Create `app/components/TagManager.vue`
+  - [x] 10.2 Create `app/components/TagManager.vue`
     - Lists all tags with colored pill preview (using `JobTagPill`)
     - Inline create form: name input + color input (preset palette or native color picker)
     - Edit tag name and color inline
@@ -166,7 +166,7 @@ Add a custom tagging system for production jobs. Tags are user-defined entities 
     - Admin-gated operations
     - _Requirements: 9.1, 9.2, 9.3, 9.4_
 
-  - [~] 10.3 Create `app/components/TagSelector.vue`
+  - [x] 10.3 Create `app/components/TagSelector.vue`
     - Props: `modelValue: string[]` (selected tag IDs), emits `update:modelValue`
     - Multi-select dropdown listing all tags with colored pill previews
     - Selected tags shown as pills
@@ -174,29 +174,29 @@ Add a custom tagging system for production jobs. Tags are user-defined entities 
     - Uses `useTags` composable
     - _Requirements: 8.1, 8.2, 8.3_
 
-- [ ] 11. Page integration
-  - [~] 11.1 Integrate `TagManager` into Settings page
+- [x] 11. Page integration
+  - [x] 11.1 Integrate `TagManager` into Settings page
     - Add a "Tags" tab to the `tabs` array in `app/pages/settings.vue`
     - Render `TagManager` component when the Tags tab is active
     - _Requirements: 9.1, 9.2, 9.3, 9.4_
 
-  - [~] 11.2 Integrate `TagSelector` into `JobCreationForm.vue`
+  - [x] 11.2 Integrate `TagSelector` into `JobCreationForm.vue`
     - Add `TagSelector` to the job create/edit form
     - On job save, call `setJobTags` with selected tag IDs
     - On edit, pre-populate with existing job tags via `GET /api/jobs/:id/tags`
     - _Requirements: 8.1, 8.2, 8.3_
 
-  - [~] 11.3 Display `JobTagPill` on Jobs list page
+  - [x] 11.3 Display `JobTagPill` on Jobs list page
     - Extend `GET /api/jobs` response to include tags per job (use `listJobsWithTags`)
     - Render `JobTagPill` components next to job names in the table rows
     - Also render in `JobMobileCard` for mobile viewports
     - _Requirements: 7.1, 7.2, 7.4_
 
-  - [~] 11.4 Display `JobTagPill` on Job detail page (`app/pages/jobs/[id].vue`)
+  - [x] 11.4 Display `JobTagPill` on Job detail page (`app/pages/jobs/[id].vue`)
     - Fetch job tags and display pills in the job header area
     - _Requirements: 7.1, 7.3_
 
-- [ ] 12. Final checkpoint
+- [-] 12. Final checkpoint
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
