@@ -229,8 +229,65 @@ Add a custom tagging system for production jobs. Tags are user-defined entities 
     - Filtering applies to both desktop `UTable` and mobile `JobMobileCard` views
     - _Requirements: 13.1, 13.3, 13.6, 13.9_
 
-- [ ] 14. Post-filtering checkpoint
-  - Ensure all tests pass and lint is clean after tag filtering additions.
+- [ ] 14. Tag grouping on Jobs page
+  - [ ] 14.1 Add `groupByTag?: boolean` to `FilterState` in `server/types/domain.ts`
+    - Persisted to localStorage alongside other filter state
+    - `clearFilters()` resets it to `false`
+    - _Requirements: 14.4, 14.6_
+
+  - [ ] 14.2 Create `groupJobsByTag` utility in `app/utils/jobTagGrouping.ts`
+    - Accepts filtered jobs array and all tags, returns `JobTagGroup[]`
+    - Jobs with multiple tags appear in each matching group
+    - Untagged jobs go into a `{ tag: null }` group at the bottom
+    - Groups ordered by tag list order (consistent with `allTags`)
+    - Export `JobTagGroup` interface
+    - _Requirements: 14.1, 14.2, 14.3_
+
+  - [ ] 14.3 Add "Group by Tag" toggle to `ViewFilters.vue`
+    - Render a toggle button (icon `i-lucide-group`) next to the Tags dropdown, only when tags exist
+    - Active state visually indicated (e.g., `variant="soft"` when on, `variant="outline"` when off)
+    - Emits filter change with `groupByTag` toggled
+    - _Requirements: 14.4, 14.8_
+
+  - [ ] 14.4 Implement grouped view in Jobs page (`app/pages/jobs/index.vue`)
+    - Compute `jobGroups` from `filteredJobs` + `availableTags` when `filters.groupByTag` is true
+    - Render collapsible sections: colored tag pill header, job count badge, expand/collapse toggle
+    - Each section contains the same job rows (desktop table or mobile cards)
+    - "Untagged" group uses neutral styling
+    - When tag filter is active, only matching tag groups are shown
+    - Disable "Edit Priority" button when grouping is active
+    - _Requirements: 14.1, 14.2, 14.3, 14.5, 14.7, 14.8, 14.9_
+
+- [ ] 15. Tests for tag filtering and grouping (Requirements 13 & 14)
+  - [ ] 15.1 Unit tests for `useViewFilters` tag filtering
+    - Test `applyFilters` with `tagIds` accessor: single tag, multiple tags (AND logic), empty tagIds (no filter), job with no tags excluded when filter active
+    - Test `clearFilters` resets `tagIds` to empty array and `groupByTag` to false
+    - Test tag filter combines with existing filters (AND across all filter types)
+    - _Validates: Requirements 13.3, 13.5, 13.6_
+
+  - [ ] 15.2 Unit tests for `groupJobsByTag` utility
+    - Test jobs with single tag grouped correctly
+    - Test jobs with multiple tags appear in each matching group
+    - Test untagged jobs appear in "Untagged" group at bottom
+    - Test empty jobs array returns empty groups
+    - Test group ordering matches `allTags` order
+    - Test interaction with tag filter: only matching groups shown
+    - _Validates: Requirements 14.1, 14.2, 14.3_
+
+  - [ ] 15.3 Property-based test CP-TAG-6: Grouping Completeness
+    - For any set of jobs with arbitrary tag assignments, every job appears in at least one group (either a tag group or "Untagged")
+    - No job is lost during grouping
+    - **Property: Grouping Completeness**
+    - _Validates: Requirements 14.1, 14.2, 14.3_
+
+  - [ ] 15.4 Property-based test CP-TAG-7: Filter-Group Consistency
+    - For any tag filter + grouping combination, the set of jobs visible across all groups equals the set of jobs that would pass the flat filter
+    - Jobs with multiple tags may appear in multiple groups, but the union of unique job IDs across groups equals the flat filtered set
+    - **Property: Filter-Group Consistency**
+    - _Validates: Requirements 13.3, 14.5_
+
+- [ ] 16. Final checkpoint
+  - Ensure all tests pass and lint is clean after filtering, grouping, and test additions.
 
 ## Notes
 

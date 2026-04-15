@@ -172,6 +172,22 @@ Job Tags adds a custom labeling system to production jobs in Shop Planr, enablin
 8. WHEN no tags exist in the system, THE Tags dropdown SHALL not be rendered
 9. THE tag filter SHALL apply to both desktop table view and mobile card view
 
+### Requirement 14: Tag Grouping on Jobs Page
+
+**User Story:** As a shop-floor user, I want to group the jobs list by tag, so that I can see all jobs in each category organized together with visual section headers.
+
+#### Acceptance Criteria
+
+1. WHEN a user enables "Group by Tag" mode, THE Jobs page SHALL organize jobs into collapsible sections, one per tag, with a colored tag pill header and job count badge
+2. WHEN grouping is active, jobs that have multiple tags SHALL appear in each matching tag group (a job with tags A and B appears under both group A and group B)
+3. WHEN grouping is active, jobs that have no tags SHALL appear in an "Untagged" group at the bottom of the list
+4. THE group-by toggle SHALL be available in the ViewFilters bar as a segmented control or toggle button, allowing the user to switch between flat list and grouped-by-tag views
+5. WHEN grouping is active, THE tag filter SHALL still apply — only groups whose tag matches the active tag filter are shown, and within each group only jobs matching all other active filters appear
+6. THE group-by state SHALL persist to localStorage alongside existing filter state
+7. WHEN grouping is active, each group section SHALL be collapsible (expanded by default) so users can focus on specific tag categories
+8. THE grouped view SHALL work on both desktop and mobile layouts
+9. WHEN grouping is active, THE priority edit mode SHALL be disabled (grouping and priority reordering are mutually exclusive)
+
 ### Requirement 12: Security and Authorization
 
 **User Story:** As a shop manager, I want tag management restricted to admins, so that only authorized users can create or modify the tag vocabulary.

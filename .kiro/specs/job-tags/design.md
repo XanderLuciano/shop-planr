@@ -630,12 +630,13 @@ sequenceDiagram
 
 ### Changes to Existing Types
 
-`FilterState` (in `server/types/domain.ts`) gains an optional `tagIds` field:
+`FilterState` (in `server/types/domain.ts`) gains optional fields for tag filtering and grouping:
 
 ```typescript
 interface FilterState {
   // ... existing fields ...
   tagIds?: string[]
+  groupByTag?: boolean
 }
 ```
 
@@ -652,8 +653,98 @@ if (f.tagIds?.length && accessors.tagIds) {
 
 ### Component Changes
 
-- `ViewFilters.vue`: Accepts optional `availableTags: Tag[]` prop. Renders a tag dropdown button with checkbox-style tag selection, colored pill previews, and a count badge.
+- `ViewFilters.vue`: Accepts optional `availableTags: Tag[]` prop. Renders a tag dropdown button with checkbox-style tag selection, colored pill previews, and a count badge. Also renders a "Group by Tag" toggle button.
 - `Jobs page`: Fetches tags via `useTags().fetchTags()` on mount (parallel with job fetch). Passes `availableTags` to `ViewFilters`. Adds `tagIds` accessor to `applyFilters` call.
+
+## Tag Grouping on Jobs Page
+
+### Overview
+
+When "Group by Tag" is enabled, the flat job list is reorganized into collapsible sections — one per tag — with a colored tag pill header and job count badge. Jobs with multiple tags appear in each matching group. Untagged jobs appear in an "Untagged" group at the bottom. This is a purely client-side transformation of the already-fetched `filteredJobs` array.
+
+### Grouping Algorithm
+
+```typescript
+interface JobTagGroup {
+  tag: Tag | null       // null = "Untagged" group
+  jobs: (Job & { tags: Tag[] })[]
+}
+
+function groupJobsByTag(
+  jobs: (Job & { tags: Tag[] })[],
+  allTags: Tag[],
+): JobTagGroup[] {
+  const groupMap = new Map<string, (Job & { tags: Tag[] })[]>()
+  const untagged: (Job & { tags: Tag[] })[] = []
+
+  for (const job of jobs) {
+    if (!job.tags?.length) {
+      untagged.push(job)
+      continue
+    }
+    for (const tag of job.tags) {
+      const list = groupMap.get(tag.id) ?? []
+      list.push(job)
+      groupMap.set(tag.id, list)
+    }
+  }
+
+  // Build groups in the order tags appear in allTags (consistent ordering)
+  const groups: JobTagGroup[] = []
+  for (const tag of allTags) {
+    const tagJobs = groupMap.get(tag.id)
+    if (tagJobs?.length) {
+      groups.push({ tag, jobs: tagJobs })
+    }
+  }
+  if (untagged.length) {
+    groups.push({ tag: null, jobs: untagged })
+  }
+  return groups
+}
+```
+
+### Interaction with Filters
+
+When both grouping and tag filtering are active:
+- Only groups whose tag is in the selected `tagIds` are shown (plus "Untagged" if no tag filter is active)
+- Within each group, jobs still pass through all other active filters (job name, status, priority, step)
+- This means the tag filter effectively selects which groups are visible
+
+### Interaction with Priority Edit Mode
+
+Grouping and priority reordering are mutually exclusive. When the user enters priority edit mode, grouping is temporarily disabled and the flat ordered list is shown. The group-by state is preserved and restored when edit mode exits.
+
+### UI Structure (Grouped View)
+
+```
+┌─────────────────────────────────────────────┐
+│ [Tag Pill: "Long Lead"]           12 jobs ▾ │
+├─────────────────────────────────────────────┤
+│  Job row 1                                  │
+│  Job row 2                                  │
+│  ...                                        │
+└─────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────┐
+│ [Tag Pill: "Multi-Op"]             5 jobs ▾ │
+├─────────────────────────────────────────────┤
+│  Job row 3                                  │
+│  Job row 4 (also in "Long Lead" group)      │
+│  ...                                        │
+└─────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────┐
+│ Untagged                           3 jobs ▾ │
+├─────────────────────────────────────────────┤
+│  Job row 7                                  │
+│  ...                                        │
+└─────────────────────────────────────────────┘
+```
+
+### State Persistence
+
+The `groupByTag` boolean is stored in `FilterState` and persisted to localStorage alongside existing filters. The `clearFilters()` function resets it to `false`.
 
 ## Dependencies
 
