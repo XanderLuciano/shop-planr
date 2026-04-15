@@ -107,6 +107,7 @@ async function handleCreateTag() {
       <div
         v-if="open"
         class="absolute z-50 mt-1 w-56 rounded-md border border-(--ui-border) bg-(--ui-bg) shadow-lg"
+        @click.stop
       >
         <div class="max-h-48 overflow-y-auto divide-y divide-(--ui-border)">
           <div
