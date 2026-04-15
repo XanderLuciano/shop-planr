@@ -1,5 +1,6 @@
 export default defineApiHandler(async (event) => {
-  const id = getRouterParam(event, 'id')!
+  const id = getRouterParam(event, 'id')
+  if (!id) throw new ValidationError('Tag ID is required')
   const userId = getAuthUserId(event)
   const { tagService, userService } = getServices()
   const user = userService.getUser(userId)

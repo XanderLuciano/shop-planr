@@ -613,7 +613,19 @@ onMounted(() => {
           <span class="text-xs text-(--ui-text-muted)">{{ group.jobs.length }} {{ group.jobs.length === 1 ? 'job' : 'jobs' }}</span>
         </button>
         <div v-if="!isGroupCollapsed(group)">
-          <table class="w-full text-xs">
+          <table
+            class="w-full text-xs"
+            style="table-layout: fixed"
+          >
+            <colgroup>
+              <col style="width: 40px">
+              <col style="width: 50px">
+              <col>
+              <col style="width: 120px">
+              <col style="width: 80px">
+              <col style="width: 70px">
+              <col style="width: 200px">
+            </colgroup>
             <tbody>
               <template
                 v-for="job in group.jobs"
@@ -769,13 +781,34 @@ onMounted(() => {
           v-if="!isGroupCollapsed(group)"
           class="space-y-2 p-2"
         >
-          <JobMobileCard
+          <div
             v-for="job in group.jobs"
             :key="job.id"
-            :job="job"
-            :progress="progressFor(job.id)"
-            @click="navigateTo(`/jobs/${encodeURIComponent(job.id)}`)"
-          />
+          >
+            <div class="flex items-center gap-1">
+              <UButton
+                :icon="isGroupedJobExpanded(job.id) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
+                variant="ghost"
+                color="neutral"
+                size="xs"
+                @click="toggleGroupedJobExpand(job.id)"
+              />
+              <div class="flex-1 min-w-0">
+                <JobMobileCard
+                  :job="job"
+                  :progress="progressFor(job.id)"
+                  @click="navigateTo(`/jobs/${encodeURIComponent(job.id)}`)"
+                />
+              </div>
+            </div>
+            <JobExpandableRow
+              v-if="isGroupedJobExpanded(job.id)"
+              :job-id="job.id"
+              :expand-all-paths-signal="expandAllPathsSignal"
+              :collapse-all-paths-signal="collapseAllPathsSignal"
+              @paths-expanded-change="onPathsExpandedChange"
+            />
+          </div>
         </div>
       </div>
     </div>

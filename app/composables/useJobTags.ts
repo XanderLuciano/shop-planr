@@ -1,11 +1,15 @@
 import { ref, readonly } from 'vue'
 import type { Tag } from '~/types/domain'
 
-const jobTags = ref<Tag[]>([])
-const loading = ref(false)
-const error = ref<string | null>(null)
-
+/**
+ * Per-instance composable for managing tags on a specific job.
+ * Each call creates independent state — safe to use in multiple
+ * components for different jobs simultaneously.
+ */
 export function useJobTags() {
+  const jobTags = ref<Tag[]>([])
+  const loading = ref(false)
+  const error = ref<string | null>(null)
   const $api = useAuthFetch()
 
   async function fetchJobTags(jobId: string): Promise<void> {
