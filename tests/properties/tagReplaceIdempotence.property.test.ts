@@ -11,13 +11,11 @@ import fc from 'fast-check'
 import Database from 'better-sqlite3'
 import { resolve } from 'path'
 import { runMigrations } from '../../server/repositories/sqlite/index'
-import { SQLiteTagRepository } from '../../server/repositories/sqlite/tagRepository'
-import { SQLiteJobTagRepository } from '../../server/repositories/sqlite/jobTagRepository'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
 import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
-import { createTagService } from '../../server/services/tagService'
 import { createJobService } from '../../server/services/jobService'
+import { createTagServiceForTest, ADMIN_ID } from './helpers/tagTestHarness'
 
 const MIGRATIONS_DIR = resolve(__dirname, '../../server/repositories/sqlite/migrations')
 
@@ -45,18 +43,16 @@ describe('Property CP-TAG-3: Replace Idempotence', () => {
         fc.subarray(['tag_a', 'tag_b', 'tag_c']),
         (selectedKeys) => {
           db = createTestDb()
-          const tagRepo = new SQLiteTagRepository(db)
-          const jobTagRepo = new SQLiteJobTagRepository(db)
+          const { tagService, tagRepo, jobTagRepo } = createTagServiceForTest(db)
           const jobRepo = new SQLiteJobRepository(db)
           const pathRepo = new SQLitePathRepository(db)
           const partRepo = new SQLitePartRepository(db)
-          const tagService = createTagService({ tags: tagRepo, jobTags: jobTagRepo })
           const jobService = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepo, jobTags: jobTagRepo, tags: tagRepo })
 
           // Create 3 tags with fixed IDs by creating them and tracking their real IDs
-          const tagA = tagService.createTag({ name: 'Tag Alpha', color: '#ef4444' })
-          const tagB = tagService.createTag({ name: 'Tag Beta', color: '#3b82f6' })
-          const tagC = tagService.createTag({ name: 'Tag Gamma', color: '#22c55e' })
+          const tagA = tagService.createTag(ADMIN_ID, { name: 'Tag Alpha', color: '#ef4444' })
+          const tagB = tagService.createTag(ADMIN_ID, { name: 'Tag Beta', color: '#3b82f6' })
+          const tagC = tagService.createTag(ADMIN_ID, { name: 'Tag Gamma', color: '#22c55e' })
 
           const keyToId: Record<string, string> = {
             tag_a: tagA.id,

@@ -1,5 +1,6 @@
 import { ref, readonly } from 'vue'
 import type { Tag } from '~/types/domain'
+import { extractApiError } from '~/utils/apiError'
 
 const tags = ref<Tag[]>([])
 const loading = ref(false)
@@ -14,7 +15,7 @@ export function useTags() {
     try {
       tags.value = await $api<Tag[]>('/api/tags')
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch tags'
+      error.value = extractApiError(e, 'Failed to fetch tags')
     } finally {
       loading.value = false
     }
@@ -31,7 +32,7 @@ export function useTags() {
       tags.value = [...tags.value, tag]
       return tag
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to create tag'
+      error.value = extractApiError(e, 'Failed to create tag')
       throw e
     } finally {
       loading.value = false
@@ -49,21 +50,22 @@ export function useTags() {
       tags.value = tags.value.map(t => (t.id === id ? updated : t))
       return updated
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to update tag'
+      error.value = extractApiError(e, 'Failed to update tag')
       throw e
     } finally {
       loading.value = false
     }
   }
 
-  async function deleteTag(id: string): Promise<void> {
+  async function deleteTag(id: string, options: { force?: boolean } = {}): Promise<void> {
     loading.value = true
     error.value = null
     try {
-      await $api(`/api/tags/${encodeURIComponent(id)}`, { method: 'DELETE' })
+      const query = options.force ? '?force=true' : ''
+      await $api(`/api/tags/${encodeURIComponent(id)}${query}`, { method: 'DELETE' })
       tags.value = tags.value.filter(t => t.id !== id)
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to delete tag'
+      error.value = extractApiError(e, 'Failed to delete tag')
       throw e
     } finally {
       loading.value = false

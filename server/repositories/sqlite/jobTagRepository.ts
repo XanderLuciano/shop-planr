@@ -79,4 +79,9 @@ export class SQLiteJobTagRepository implements JobTagRepository {
     const row = this.db.prepare('SELECT COUNT(*) as count FROM job_tags WHERE tag_id = ?').get(tagId) as { count: number }
     return row.count
   }
+
+  getJobIdsByTagId(tagId: string): string[] {
+    const rows = this.db.prepare('SELECT job_id FROM job_tags WHERE tag_id = ?').all(tagId) as { job_id: string }[]
+    return rows.map(r => r.job_id)
+  }
 }

@@ -11,13 +11,11 @@ import fc from 'fast-check'
 import Database from 'better-sqlite3'
 import { resolve } from 'path'
 import { runMigrations } from '../../server/repositories/sqlite/index'
-import { SQLiteTagRepository } from '../../server/repositories/sqlite/tagRepository'
-import { SQLiteJobTagRepository } from '../../server/repositories/sqlite/jobTagRepository'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
 import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
-import { createTagService } from '../../server/services/tagService'
 import { createJobService } from '../../server/services/jobService'
+import { createTagServiceForTest, ADMIN_ID } from './helpers/tagTestHarness'
 
 const MIGRATIONS_DIR = resolve(__dirname, '../../server/repositories/sqlite/migrations')
 
@@ -47,12 +45,10 @@ describe('Property CP-TAG-5: Bulk Fetch Completeness', () => {
         fc.array(fc.subarray([0, 1, 2], { minLength: 0, maxLength: 3 }), { minLength: 1, maxLength: 5 }),
         (jobCount, tagCount, assignmentPattern) => {
           db = createTestDb()
-          const tagRepo = new SQLiteTagRepository(db)
-          const jobTagRepo = new SQLiteJobTagRepository(db)
+          const { tagService, tagRepo, jobTagRepo } = createTagServiceForTest(db)
           const jobRepo = new SQLiteJobRepository(db)
           const pathRepo = new SQLitePathRepository(db)
           const partRepo = new SQLitePartRepository(db)
-          const tagService = createTagService({ tags: tagRepo, jobTags: jobTagRepo })
           const jobService = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepo, jobTags: jobTagRepo, tags: tagRepo })
 
           // Create N jobs
@@ -64,7 +60,7 @@ describe('Property CP-TAG-5: Bulk Fetch Completeness', () => {
           const actualTagCount = Math.min(tagCount, 3)
           const tagNames = ['Alpha', 'Beta', 'Gamma']
           const tags = Array.from({ length: actualTagCount }, (_, i) =>
-            tagService.createTag({ name: tagNames[i], color: '#8b5cf6' }),
+            tagService.createTag(ADMIN_ID, { name: tagNames[i], color: '#8b5cf6' }),
           )
 
           // Build expected assignments: for each job, assign a subset of tags

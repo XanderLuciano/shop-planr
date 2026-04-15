@@ -46,6 +46,7 @@ app/
     docsMethodColor.ts   → getMethodColor() — maps HTTP methods to Tailwind color classes for EndpointCard badges
     workQueueFilters.ts  → applyFilters() + extractAvailableValues() — pure client-side filtering for work queue groups
     jobTagGrouping.ts    → groupJobsByTag() — groups filtered jobs by tag into collapsible sections; JobTagGroup interface
+    apiError.ts          → extractApiError(err, fallback) — unwraps Nitro `err.data.message` / `err.message` with a default
   assets/css/
     main.css             → Tailwind imports + custom violet #8750FF scale + green scale
 server/
