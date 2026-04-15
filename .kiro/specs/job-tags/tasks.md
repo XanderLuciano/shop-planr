@@ -202,6 +202,36 @@ Add a custom tagging system for production jobs. Tags are user-defined entities 
   - Pre-existing issue resolved: `jose` and `bcryptjs` were in `package.json` but not installed — `npm install --legacy-peer-deps` was required.
   - Flaky property test CP-TAG-2 fixed: arbitrary now filters to `s.trim().length > 30` to prevent whitespace-padded counterexamples.
 
+- [x] 13. Tag filtering on Jobs page
+  - [x] 13.1 Add `tagIds?: string[]` to `FilterState` in `server/types/domain.ts`
+    - Optional array of tag IDs for multi-select filtering
+    - _Requirements: 13.3, 13.7_
+
+  - [x] 13.2 Extend `useViewFilters` composable to support `tagIds` filtering
+    - Add `tagIds` accessor to `applyFilters` function signature
+    - Filter logic: when `filters.tagIds` has entries, item must have ALL selected tags (AND logic)
+    - `clearFilters()` resets `tagIds` to empty array
+    - _Requirements: 13.3, 13.5, 13.6_
+
+  - [x] 13.3 Add tag filter dropdown to `ViewFilters.vue`
+    - Accept optional `availableTags: Tag[]` prop
+    - Render "Tags" dropdown button with chevron icon, only when tags exist
+    - Dropdown panel shows all tags as checkable items with `JobTagPill` previews
+    - Button label shows selected count (e.g., "Tags (2)")
+    - Tag selection toggles individual tag IDs in `filters.tagIds`
+    - `hasActiveFilters` computed includes `tagIds` check
+    - _Requirements: 13.1, 13.2, 13.4, 13.8_
+
+  - [x] 13.4 Wire tag filtering into Jobs page (`app/pages/jobs/index.vue`)
+    - Import `useTags` composable and call `fetchTags()` on mount (parallel with `fetchJobs`)
+    - Pass `availableTags` to `ViewFilters` component via `:available-tags` prop
+    - Add `tagIds` accessor to `filteredJobs` computed: `tagIds: j => j.tags?.map(t => t.id) ?? []`
+    - Filtering applies to both desktop `UTable` and mobile `JobMobileCard` views
+    - _Requirements: 13.1, 13.3, 13.6, 13.9_
+
+- [ ] 14. Post-filtering checkpoint
+  - Ensure all tests pass and lint is clean after tag filtering additions.
+
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for faster MVP

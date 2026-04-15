@@ -601,6 +601,60 @@ const jobsWithTags = jobService.listJobsWithTags()
 - All tag API routes go through the existing JWT auth middleware
 - Tag names are trimmed and length-limited to prevent abuse
 
+## Tag Filtering on Jobs Page
+
+### Overview
+
+The Jobs page filter bar (`ViewFilters` component) is extended with a multi-select tag dropdown that filters the job list client-side. This reuses the existing `useViewFilters` composable and `FilterState` type, adding a `tagIds: string[]` field. Filtering uses AND logic: a job must have ALL selected tags to pass the filter.
+
+### Data Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant VF as ViewFilters
+    participant JP as Jobs Page
+    participant UV as useViewFilters
+    participant UT as useTags
+
+    JP->>UT: fetchTags() on mount
+    UT-->>JP: Tag[] (availableTags)
+    JP->>VF: :available-tags="availableTags"
+    U->>VF: Toggle tag in dropdown
+    VF->>JP: emit change (filters with tagIds)
+    JP->>UV: updateFilter('tagIds', [...])
+    UV->>UV: persist to localStorage
+    UV->>JP: filteredJobs recomputes
+    JP->>JP: re-render table/cards
+```
+
+### Changes to Existing Types
+
+`FilterState` (in `server/types/domain.ts`) gains an optional `tagIds` field:
+
+```typescript
+interface FilterState {
+  // ... existing fields ...
+  tagIds?: string[]
+}
+```
+
+### Filter Logic
+
+The `applyFilters` function in `useViewFilters` gains a `tagIds` accessor. When `filters.tagIds` has entries, each item must have ALL selected tags (AND logic):
+
+```typescript
+if (f.tagIds?.length && accessors.tagIds) {
+  const itemTagIds = accessors.tagIds(item)
+  if (!f.tagIds.every(id => itemTagIds.includes(id))) return false
+}
+```
+
+### Component Changes
+
+- `ViewFilters.vue`: Accepts optional `availableTags: Tag[]` prop. Renders a tag dropdown button with checkbox-style tag selection, colored pill previews, and a count badge.
+- `Jobs page`: Fetches tags via `useTags().fetchTags()` on mount (parallel with job fetch). Passes `availableTags` to `ViewFilters`. Adds `tagIds` accessor to `applyFilters` call.
+
 ## Dependencies
 
 - **Existing**: better-sqlite3, nanoid, zod, Nuxt UI (UBadge, USelectMenu, UInput, UButton)

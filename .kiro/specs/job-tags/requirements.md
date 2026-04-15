@@ -156,6 +156,22 @@ Job Tags adds a custom labeling system to production jobs in Shop Planr, enablin
 7. THE API routes for tag CRUD in Settings SHALL require admin authorization
 8. THE API routes for tag assignment on jobs SHALL require standard authentication without admin restriction
 
+### Requirement 13: Tag Filtering on Jobs Page
+
+**User Story:** As a shop-floor user, I want to filter the jobs list by tags, so that I can quickly find jobs in a specific category without scrolling through the entire list.
+
+#### Acceptance Criteria
+
+1. WHEN tags exist in the system, THE ViewFilters component SHALL display a "Tags" dropdown button in the filter bar on the Jobs page
+2. WHEN a user opens the Tags dropdown, THE ViewFilters component SHALL display all available tags as checkable options with colored pill previews
+3. WHEN a user selects one or more tags, THE Jobs page SHALL filter the displayed jobs to only those that have ALL selected tags (AND logic)
+4. WHEN a user selects tags, THE Tags dropdown button SHALL display the count of selected tags (e.g., "Tags (2)")
+5. WHEN a user clicks the "Clear" button, THE ViewFilters component SHALL reset the tag filter along with all other filters
+6. THE tag filter SHALL work in combination with existing filters (job name, status, priority, step) using AND logic — a job must match ALL active filters to appear
+7. THE tag filter state SHALL persist to localStorage alongside existing filter state
+8. WHEN no tags exist in the system, THE Tags dropdown SHALL not be rendered
+9. THE tag filter SHALL apply to both desktop table view and mobile card view
+
 ### Requirement 12: Security and Authorization
 
 **User Story:** As a shop manager, I want tag management restricted to admins, so that only authorized users can create or modify the tag vocabulary.
