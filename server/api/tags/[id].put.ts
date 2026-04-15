@@ -6,7 +6,7 @@ export default defineApiHandler(async (event) => {
   const { tagService, userService } = getServices()
   const user = userService.getUser(userId)
   if (!user.isAdmin) {
-    throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
+    throw new ForbiddenError('Admin access required')
   }
   const body = await parseBody(event, updateTagSchema)
   return tagService.updateTag(id, body)
