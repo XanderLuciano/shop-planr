@@ -23,3 +23,8 @@ export const updateTagSchema = z.object({
 export const setJobTagsSchema = z.object({
   tagIds: z.array(z.string().min(1)).max(JOB_TAGS_MAX),
 })
+
+/** Query-string schema for `DELETE /api/tags/:id`. `?force=true` cascades the removal. */
+export const deleteTagQuerySchema = z.object({
+  force: z.enum(['true', 'false']).optional().transform(v => v === 'true'),
+})

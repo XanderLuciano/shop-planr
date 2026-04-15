@@ -6,7 +6,8 @@ import type { Tag } from '../types/domain'
 import type { CreateTagInput, UpdateTagInput } from '../types/api'
 import { generateId } from '../utils/idGenerator'
 import { assertNonEmpty } from '../utils/validation'
-import { ValidationError, NotFoundError, ForbiddenError } from '../utils/errors'
+import { ValidationError, NotFoundError } from '../utils/errors'
+import { requireAdmin } from '../utils/auth'
 
 const COLOR_REGEX = /^#[0-9a-fA-F]{6}$/
 const DEFAULT_COLOR = '#8b5cf6'
@@ -19,26 +20,13 @@ export function createTagService(
   },
   auditService: AuditService,
 ) {
-  function requireAdmin(userId: string, action: string): void {
-    if (!userId) {
-      throw new ValidationError('userId is required')
-    }
-    const user = repos.users.getById(userId)
-    if (!user) {
-      throw new ValidationError(`User not found: ${userId}`)
-    }
-    if (!user.isAdmin) {
-      throw new ForbiddenError(`Admin access required to ${action} tags`)
-    }
-  }
-
   return {
     listTags(): Tag[] {
       return repos.tags.list()
     },
 
     createTag(userId: string, input: CreateTagInput): Tag {
-      requireAdmin(userId, 'create')
+      requireAdmin(repos.users, userId, 'create tags')
       assertNonEmpty(input.name, 'name')
       const trimmed = input.name.trim()
 
@@ -65,17 +53,24 @@ export function createTagService(
         updatedAt: now,
       }
 
-      return repos.tags.create(tag)
+      const created = repos.tags.create(tag)
+      auditService.recordTagCreation({
+        userId,
+        tagId: created.id,
+        metadata: { tagName: created.name, color: created.color },
+      })
+      return created
     },
 
     updateTag(userId: string, id: string, input: UpdateTagInput): Tag {
-      requireAdmin(userId, 'update')
+      requireAdmin(repos.users, userId, 'update tags')
       const existing = repos.tags.getById(id)
       if (!existing) {
         throw new NotFoundError('Tag', id)
       }
 
       const partial: Partial<Tag> = {}
+      const changes: { name?: { from: string, to: string }, color?: { from: string, to: string } } = {}
 
       if (input.name !== undefined) {
         assertNonEmpty(input.name, 'name')
@@ -90,19 +85,37 @@ export function createTagService(
           throw new ValidationError('A tag with this name already exists')
         }
 
-        partial.name = trimmed
+        if (trimmed !== existing.name) {
+          partial.name = trimmed
+          changes.name = { from: existing.name, to: trimmed }
+        }
       }
 
       if (input.color !== undefined) {
         if (!COLOR_REGEX.test(input.color)) {
           throw new ValidationError('Color must be a valid hex color (e.g. #ef4444)')
         }
-        partial.color = input.color
+        if (input.color !== existing.color) {
+          partial.color = input.color
+          changes.color = { from: existing.color, to: input.color }
+        }
       }
 
       partial.updatedAt = new Date().toISOString()
 
-      return repos.tags.update(id, partial)
+      const updated = repos.tags.update(id, partial)
+
+      // Only audit when something actually changed — avoids audit noise from
+      // no-op updates (e.g., submitting the edit form without changing anything).
+      if (changes.name || changes.color) {
+        auditService.recordTagUpdate({
+          userId,
+          tagId: updated.id,
+          metadata: { tagName: updated.name, changes },
+        })
+      }
+
+      return updated
     },
 
     /**
@@ -110,21 +123,28 @@ export function createTagService(
      * opt in with `force=true` — the assignments will be cascaded away via the
      * FK constraint and an audit entry will record the affected job IDs so
      * the removal is recoverable in principle.
+     *
+     * Throws a `ValidationError` with `code: 'TAG_IN_USE'` and
+     * `meta.affectedJobCount` when the tag is assigned and `force` is false.
      */
-    deleteTag(userId: string, id: string, options: { force?: boolean } = {}): void {
-      requireAdmin(userId, 'delete')
+    deleteTag(userId: string, id: string, force = false): void {
+      requireAdmin(repos.users, userId, 'delete tags')
       const existing = repos.tags.getById(id)
       if (!existing) {
         throw new NotFoundError('Tag', id)
       }
 
       const affectedJobIds = repos.jobTags.getJobIdsByTagId(id)
-      if (affectedJobIds.length > 0 && !options.force) {
+      if (affectedJobIds.length > 0 && !force) {
         throw new ValidationError(
           `Tag is assigned to ${affectedJobIds.length} job(s). Pass force=true to remove it from all jobs.`,
+          { code: 'TAG_IN_USE', meta: { affectedJobCount: affectedJobIds.length } },
         )
       }
 
+      repos.tags.delete(id)
+      // Audit only after the delete succeeds — if the delete throws we leave
+      // no orphan audit row describing a deletion that never happened.
       auditService.recordTagDeletion({
         userId,
         tagId: id,
@@ -134,8 +154,6 @@ export function createTagService(
           affectedJobCount: affectedJobIds.length,
         },
       })
-
-      repos.tags.delete(id)
     },
 
     getTagsByJobId(jobId: string): Tag[] {

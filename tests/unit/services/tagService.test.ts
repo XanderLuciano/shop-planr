@@ -79,7 +79,9 @@ function createMockUserRepo(): UserRepository {
 
 function createMockAuditService(): AuditService {
   return {
-    recordTagDeletion: vi.fn(() => ({ id: 'aud_1' })),
+    recordTagCreation: vi.fn(() => ({ id: 'aud_c' })),
+    recordTagUpdate: vi.fn(() => ({ id: 'aud_u' })),
+    recordTagDeletion: vi.fn(() => ({ id: 'aud_d' })),
   } as unknown as AuditService
 }
 
@@ -258,6 +260,25 @@ describe('TagService', () => {
       expect(auditService.recordTagDeletion).not.toHaveBeenCalled()
     })
 
+    it('attaches a TAG_IN_USE code and affectedJobCount to the ValidationError', () => {
+      jobTagRepo = createMockJobTagRepo({
+        getJobIdsByTagId: vi.fn(() => ['job_1', 'job_2', 'job_3']),
+      })
+      service = createTagService(
+        { tags: tagRepo, jobTags: jobTagRepo, users: userRepo },
+        auditService,
+      )
+      const tag = service.createTag(ADMIN_ID, { name: 'In Use' })
+      try {
+        service.deleteTag(ADMIN_ID, tag.id)
+        expect.fail('expected ValidationError')
+      } catch (e) {
+        expect(e).toBeInstanceOf(ValidationError)
+        expect((e as ValidationError).code).toBe('TAG_IN_USE')
+        expect((e as ValidationError).meta).toEqual({ affectedJobCount: 3 })
+      }
+    })
+
     it('deletes with force=true and audits the cascaded job ids', () => {
       jobTagRepo = createMockJobTagRepo({
         getJobIdsByTagId: vi.fn(() => ['job_1', 'job_2']),
@@ -267,7 +288,7 @@ describe('TagService', () => {
         auditService,
       )
       const tag = service.createTag(ADMIN_ID, { name: 'Forced' })
-      service.deleteTag(ADMIN_ID, tag.id, { force: true })
+      service.deleteTag(ADMIN_ID, tag.id, true)
       expect(tagRepo.delete).toHaveBeenCalledWith(tag.id)
       expect(auditService.recordTagDeletion).toHaveBeenCalledWith({
         userId: ADMIN_ID,
@@ -278,6 +299,52 @@ describe('TagService', () => {
           affectedJobCount: 2,
         },
       })
+    })
+
+    it('records the audit entry AFTER a successful delete, not before', () => {
+      // If the delete throws, no audit entry should be written — otherwise
+      // we'd leave orphan rows describing deletions that never happened.
+      const failingTagRepo = createMockTagRepo()
+      failingTagRepo.delete = vi.fn(() => {
+        throw new Error('simulated DB failure')
+      })
+      const failService = createTagService(
+        { tags: failingTagRepo, jobTags: jobTagRepo, users: userRepo },
+        auditService,
+      )
+      const tag = failService.createTag(ADMIN_ID, { name: 'Fail' })
+      expect(() => failService.deleteTag(ADMIN_ID, tag.id)).toThrow('simulated DB failure')
+      expect(auditService.recordTagDeletion).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('audit trail', () => {
+    it('records tag_created on create', () => {
+      const tag = service.createTag(ADMIN_ID, { name: 'Audited Create', color: '#123456' })
+      expect(auditService.recordTagCreation).toHaveBeenCalledWith({
+        userId: ADMIN_ID,
+        tagId: tag.id,
+        metadata: { tagName: 'Audited Create', color: '#123456' },
+      })
+    })
+
+    it('records tag_updated on a real change', () => {
+      const tag = service.createTag(ADMIN_ID, { name: 'Old', color: '#ef4444' })
+      service.updateTag(ADMIN_ID, tag.id, { name: 'New' })
+      expect(auditService.recordTagUpdate).toHaveBeenCalledWith({
+        userId: ADMIN_ID,
+        tagId: tag.id,
+        metadata: {
+          tagName: 'New',
+          changes: { name: { from: 'Old', to: 'New' } },
+        },
+      })
+    })
+
+    it('does not record tag_updated when nothing actually changes', () => {
+      const tag = service.createTag(ADMIN_ID, { name: 'Same' })
+      service.updateTag(ADMIN_ID, tag.id, { name: 'Same' })
+      expect(auditService.recordTagUpdate).not.toHaveBeenCalled()
     })
   })
 

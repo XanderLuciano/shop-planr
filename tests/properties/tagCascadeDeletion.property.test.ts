@@ -64,7 +64,7 @@ describe('Property CP-TAG-4: Cascade Deletion Completeness', () => {
           expect(tagsBefore.map(t => t.id)).toContain(tagToKeep.id)
 
           // Delete one tag — force=true because the tag is currently assigned
-          tagService.deleteTag(ADMIN_ID, tagToDelete.id, { force: true })
+          tagService.deleteTag(ADMIN_ID, tagToDelete.id, true)
 
           // Verify the deleted tag no longer appears for the job
           const tagsAfter = tagService.getTagsByJobId(job.id)
