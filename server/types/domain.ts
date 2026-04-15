@@ -162,6 +162,7 @@ export type AuditAction
     | 'bom_edited'
     | 'path_deleted'
     | 'part_deleted'
+    | 'tag_deleted'
 
 export interface AuditEntry {
   id: string

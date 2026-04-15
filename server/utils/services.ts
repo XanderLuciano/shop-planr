@@ -139,7 +139,10 @@ export function getServices(): ServiceSet {
       partService,
     })
 
-    const tagService = createTagService({ tags: repos.tags, jobTags: repos.jobTags })
+    const tagService = createTagService(
+      { tags: repos.tags, jobTags: repos.jobTags, users: repos.users },
+      auditService,
+    )
 
     services = {
       auditService,

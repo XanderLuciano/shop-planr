@@ -1,11 +1,11 @@
 /**
- * Route-level admin authorization tests for tag CRUD routes.
+ * Route-level wiring tests for tag CRUD routes.
  *
- * Validates: Requirement 12.1 (non-admin rejection), 12.2 (non-admin can assign tags)
+ * Validates: Requirement 12.1 (admin-gated CRUD), 12.2 (any auth'd user can assign tags)
  *
- * These tests verify that the admin gating logic in the route handlers
- * correctly throws ForbiddenError for non-admin users on tag CRUD,
- * while allowing any authenticated user to assign tags to jobs.
+ * Admin enforcement itself lives in `tagService` — see `tests/unit/services/tagService.test.ts`.
+ * These tests verify that the route handlers correctly forward the caller's userId to the
+ * service, and that `ForbiddenError` thrown by the service propagates through to the caller.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createError } from 'h3'
@@ -19,31 +19,27 @@ vi.stubGlobal('ForbiddenError', ForbiddenError)
 vi.stubGlobal('AuthenticationError', AuthenticationError)
 vi.stubGlobal('createError', createError)
 
-// Mock user data
-const adminUser = {
-  id: 'user_admin',
-  username: 'admin',
-  displayName: 'Admin',
-  isAdmin: true,
-  active: true,
-  createdAt: '2024-01-01T00:00:00.000Z',
-}
+const ADMIN_ID = 'user_admin'
+const REGULAR_ID = 'user_regular'
 
-const regularUser = {
-  id: 'user_regular',
-  username: 'regular',
-  displayName: 'Regular',
-  isAdmin: false,
-  active: true,
-  createdAt: '2024-01-01T00:00:00.000Z',
-}
+let currentUserId = ADMIN_ID
+let isCurrentUserAdmin = true
 
-// Mock services
+// Mock services: service throws ForbiddenError when caller is not admin —
+// mirrors the real tagService behavior under test.
 const mockTagService = {
   listTags: vi.fn(() => []),
-  createTag: vi.fn(() => ({ id: 'tag_1', name: 'Test', color: '#ef4444', createdAt: '2024-01-01', updatedAt: '2024-01-01' })),
-  updateTag: vi.fn(() => ({ id: 'tag_1', name: 'Updated', color: '#ef4444', createdAt: '2024-01-01', updatedAt: '2024-01-01' })),
-  deleteTag: vi.fn(),
+  createTag: vi.fn((userId: string) => {
+    if (!isCurrentUserAdmin) throw new ForbiddenError('Admin access required to create tags')
+    return { id: 'tag_1', name: 'Test', color: '#ef4444', createdAt: '2024-01-01', updatedAt: '2024-01-01', _userId: userId }
+  }),
+  updateTag: vi.fn((userId: string) => {
+    if (!isCurrentUserAdmin) throw new ForbiddenError('Admin access required to update tags')
+    return { id: 'tag_1', name: 'Updated', color: '#ef4444', createdAt: '2024-01-01', updatedAt: '2024-01-01', _userId: userId }
+  }),
+  deleteTag: vi.fn((_userId: string) => {
+    if (!isCurrentUserAdmin) throw new ForbiddenError('Admin access required to delete tags')
+  }),
   getTagsByJobId: vi.fn(() => []),
 }
 
@@ -51,25 +47,18 @@ const mockJobService = {
   setJobTags: vi.fn(() => []),
 }
 
-let mockCurrentUser = adminUser
-
-const mockUserService = {
-  getUser: vi.fn(() => mockCurrentUser),
-}
-
 vi.stubGlobal('getServices', () => ({
   tagService: mockTagService,
   jobService: mockJobService,
-  userService: mockUserService,
 }))
 
-vi.stubGlobal('getAuthUserId', () => mockCurrentUser.id)
-vi.stubGlobal('getRouterParam', (_event: any, _name: string) => 'tag_1')
+vi.stubGlobal('getAuthUserId', () => currentUserId)
+vi.stubGlobal('getRouterParam', (_event: unknown, _name: string) => 'tag_1')
+vi.stubGlobal('getQuery', () => ({}))
 vi.stubGlobal('setResponseStatus', vi.fn())
 vi.stubGlobal('parseBody', vi.fn(async () => ({ name: 'Test', tagIds: ['tag_1'] })))
 
-// defineApiHandler: extract the inner handler and call it directly
-vi.stubGlobal('defineApiHandler', (fn: any) => fn)
+vi.stubGlobal('defineApiHandler', (fn: unknown) => fn)
 
 // --- Import route handlers AFTER stubs ---
 
@@ -78,69 +67,72 @@ const putTagHandler = (await import('~/server/api/tags/[id].put')).default
 const deleteTagHandler = (await import('~/server/api/tags/[id].delete')).default
 const putJobTagsHandler = (await import('~/server/api/jobs/[id]/tags.put')).default
 
-// Minimal H3 event mock
 function makeFakeEvent() {
   return {
-    context: { auth: { user: { sub: mockCurrentUser.id } } },
+    context: { auth: { user: { sub: currentUserId } } },
     node: { req: {}, res: {} },
-  } as any
+  } as unknown as Parameters<typeof postTagHandler>[0]
 }
 
-describe('tag CRUD route admin gating', () => {
+function asAdmin() {
+  currentUserId = ADMIN_ID
+  isCurrentUserAdmin = true
+}
+
+function asRegular() {
+  currentUserId = REGULAR_ID
+  isCurrentUserAdmin = false
+}
+
+describe('tag CRUD route wiring', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockCurrentUser = adminUser
+    asAdmin()
   })
 
   /**
-   * Validates: Requirement 12.1
-   * Non-admin users must be rejected with ForbiddenError on POST /api/tags
+   * Validates: Requirement 12.1 — non-admin POST /api/tags rejected
    */
-  it('POST /api/tags rejects non-admin with ForbiddenError', async () => {
-    mockCurrentUser = regularUser
+  it('POST /api/tags propagates ForbiddenError thrown by tagService', async () => {
+    asRegular()
     await expect(postTagHandler(makeFakeEvent())).rejects.toThrow(ForbiddenError)
-    expect(mockTagService.createTag).not.toHaveBeenCalled()
+    // The route still calls the service — the service decides, not the route.
+    expect(mockTagService.createTag).toHaveBeenCalledWith(REGULAR_ID, expect.any(Object))
   })
 
   /**
-   * Validates: Requirement 12.1
-   * Non-admin users must be rejected with ForbiddenError on PUT /api/tags/:id
+   * Validates: Requirement 12.1 — non-admin PUT /api/tags/:id rejected
    */
-  it('PUT /api/tags/:id rejects non-admin with ForbiddenError', async () => {
-    mockCurrentUser = regularUser
+  it('PUT /api/tags/:id propagates ForbiddenError thrown by tagService', async () => {
+    asRegular()
     await expect(putTagHandler(makeFakeEvent())).rejects.toThrow(ForbiddenError)
-    expect(mockTagService.updateTag).not.toHaveBeenCalled()
+    expect(mockTagService.updateTag).toHaveBeenCalledWith(REGULAR_ID, 'tag_1', expect.any(Object))
   })
 
   /**
-   * Validates: Requirement 12.1
-   * Non-admin users must be rejected with ForbiddenError on DELETE /api/tags/:id
+   * Validates: Requirement 12.1 — non-admin DELETE /api/tags/:id rejected
    */
-  it('DELETE /api/tags/:id rejects non-admin with ForbiddenError', async () => {
-    mockCurrentUser = regularUser
+  it('DELETE /api/tags/:id propagates ForbiddenError thrown by tagService', async () => {
+    asRegular()
     await expect(deleteTagHandler(makeFakeEvent())).rejects.toThrow(ForbiddenError)
-    expect(mockTagService.deleteTag).not.toHaveBeenCalled()
+    expect(mockTagService.deleteTag).toHaveBeenCalledWith(REGULAR_ID, 'tag_1', { force: false })
   })
 
   /**
-   * Validates: Requirement 12.1 (positive case)
-   * Admin users should be able to create tags
+   * Validates: Requirement 12.1 (positive case) — admin users can create tags
    */
   it('POST /api/tags succeeds for admin user', async () => {
-    mockCurrentUser = adminUser
+    asAdmin()
     const result = await postTagHandler(makeFakeEvent())
     expect(result).toBeDefined()
-    expect(result.id).toBe('tag_1')
-    expect(mockTagService.createTag).toHaveBeenCalled()
+    expect(mockTagService.createTag).toHaveBeenCalledWith(ADMIN_ID, expect.any(Object))
   })
 
   /**
-   * Validates: Requirement 12.2
-   * Any authenticated user (including non-admin) can assign tags to jobs
+   * Validates: Requirement 12.2 — any authenticated user can assign tags to jobs
    */
   it('PUT /api/jobs/:id/tags succeeds for non-admin user', async () => {
-    mockCurrentUser = regularUser
-    // Should NOT throw — no admin check on this route
+    asRegular()
     const result = await putJobTagsHandler(makeFakeEvent())
     expect(mockJobService.setJobTags).toHaveBeenCalled()
     expect(result).toBeDefined()

@@ -1,5 +1,6 @@
 import { ref, readonly } from 'vue'
 import type { Tag } from '~/types/domain'
+import { extractApiError } from '~/utils/apiError'
 
 /**
  * Per-instance composable for managing tags on a specific job.
@@ -18,7 +19,7 @@ export function useJobTags() {
     try {
       jobTags.value = await $api<Tag[]>(`/api/jobs/${encodeURIComponent(jobId)}/tags`)
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch job tags'
+      error.value = extractApiError(e, 'Failed to fetch job tags')
     } finally {
       loading.value = false
     }
@@ -33,7 +34,7 @@ export function useJobTags() {
         body: { tagIds },
       })
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to set job tags'
+      error.value = extractApiError(e, 'Failed to set job tags')
       throw e
     } finally {
       loading.value = false

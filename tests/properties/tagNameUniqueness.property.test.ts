@@ -11,9 +11,7 @@ import fc from 'fast-check'
 import Database from 'better-sqlite3'
 import { resolve } from 'path'
 import { runMigrations } from '../../server/repositories/sqlite/index'
-import { SQLiteTagRepository } from '../../server/repositories/sqlite/tagRepository'
-import { SQLiteJobTagRepository } from '../../server/repositories/sqlite/jobTagRepository'
-import { createTagService } from '../../server/services/tagService'
+import { createTagServiceForTest, ADMIN_ID } from './helpers/tagTestHarness'
 import { ValidationError } from '../../server/utils/errors'
 
 const MIGRATIONS_DIR = resolve(__dirname, '../../server/repositories/sqlite/migrations')
@@ -45,13 +43,11 @@ describe('Property CP-TAG-1: Tag Name Uniqueness', () => {
         ),
         (distinctNames) => {
           db = createTestDb()
-          const tagRepo = new SQLiteTagRepository(db)
-          const jobTagRepo = new SQLiteJobTagRepository(db)
-          const tagService = createTagService({ tags: tagRepo, jobTags: jobTagRepo })
+          const { tagService } = createTagServiceForTest(db)
 
           // All distinct names should succeed
           for (const name of distinctNames) {
-            const tag = tagService.createTag({ name })
+            const tag = tagService.createTag(ADMIN_ID, { name })
             expect(tag.name).toBe(name.trim())
           }
 
@@ -76,19 +72,17 @@ describe('Property CP-TAG-1: Tag Name Uniqueness', () => {
         ),
         (distinctNames) => {
           db = createTestDb()
-          const tagRepo = new SQLiteTagRepository(db)
-          const jobTagRepo = new SQLiteJobTagRepository(db)
-          const tagService = createTagService({ tags: tagRepo, jobTags: jobTagRepo })
+          const { tagService } = createTagServiceForTest(db)
 
           // Create all tags with distinct names
           for (const name of distinctNames) {
-            tagService.createTag({ name })
+            tagService.createTag(ADMIN_ID, { name })
           }
 
           // Attempt to create a tag with the same name (lowercased) as the first tag
           const duplicateName = distinctNames[0].trim().toLowerCase()
           expect(() => {
-            tagService.createTag({ name: duplicateName })
+            tagService.createTag(ADMIN_ID, { name: duplicateName })
           }).toThrow(ValidationError)
 
           db.close()

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Tag } from '~/types/domain'
+import { extractApiError } from '~/utils/apiError'
 
 const props = defineProps<{
   modelValue: string[]
@@ -53,9 +54,8 @@ async function handleCreateTag() {
     newTagName.value = ''
     newTagColor.value = '#8b5cf6'
     showCreateForm.value = false
-  } catch (e: unknown) {
-    const err = e as { data?: { message?: string }, message?: string }
-    createError.value = err?.data?.message ?? err?.message ?? 'Failed to create tag'
+  } catch (e) {
+    createError.value = extractApiError(e, 'Failed to create tag')
   } finally {
     createLoading.value = false
   }

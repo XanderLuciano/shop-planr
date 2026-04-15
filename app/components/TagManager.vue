@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Tag } from '~/types/domain'
+import { extractApiError } from '~/utils/apiError'
 
 const { tags, loading, error, fetchTags, createTag, updateTag, deleteTag } = useTags()
 const { isAdmin } = useAuth()
@@ -17,6 +18,7 @@ const showDeleteModal = ref(false)
 const tagToDelete = ref<Tag | null>(null)
 const deleteLoading = ref(false)
 const deleteError = ref<string | null>(null)
+const deleteRequiresForce = ref(false)
 
 onMounted(() => fetchTags())
 
@@ -48,21 +50,26 @@ function cancelEdit() {
 function confirmDelete(tag: Tag) {
   tagToDelete.value = tag
   deleteError.value = null
+  deleteRequiresForce.value = false
   showDeleteModal.value = true
 }
 
-async function performDelete() {
+async function performDelete(force = false) {
   if (!tagToDelete.value) return
   deleteLoading.value = true
   deleteError.value = null
   try {
-    await deleteTag(tagToDelete.value.id)
+    await deleteTag(tagToDelete.value.id, { force })
     showDeleteModal.value = false
     tagToDelete.value = null
-  } catch (e: unknown) {
-    deleteError.value = (e as { data?: { message?: string }, message?: string })?.data?.message
-      ?? (e as { message?: string })?.message
-      ?? 'Failed to delete tag'
+    deleteRequiresForce.value = false
+  } catch (e) {
+    deleteError.value = extractApiError(e, 'Failed to delete tag')
+    // If the backend rejected the delete because the tag is in use, surface
+    // a second-stage "force" button rather than making the user re-open the modal.
+    if (/assigned to \d+ job/.test(deleteError.value)) {
+      deleteRequiresForce.value = true
+    }
   } finally {
     deleteLoading.value = false
   }
@@ -211,13 +218,18 @@ async function performDelete() {
               :tag="tagToDelete"
               class="mx-1"
             />?
-            This will remove the tag from all jobs.
           </p>
           <p
             v-if="deleteError"
             class="text-xs text-(--ui-error)"
           >
             {{ deleteError }}
+          </p>
+          <p
+            v-if="deleteRequiresForce"
+            class="text-xs text-(--ui-text-muted)"
+          >
+            Removing the tag will strip it from every job currently using it. This cannot be undone.
           </p>
         </div>
       </template>
@@ -231,12 +243,22 @@ async function performDelete() {
             @click="showDeleteModal = false"
           />
           <UButton
+            v-if="!deleteRequiresForce"
             color="error"
             variant="solid"
             label="Delete"
             icon="i-lucide-trash-2"
             :loading="deleteLoading"
-            @click="performDelete"
+            @click="performDelete(false)"
+          />
+          <UButton
+            v-else
+            color="error"
+            variant="solid"
+            label="Remove from all jobs and delete"
+            icon="i-lucide-trash-2"
+            :loading="deleteLoading"
+            @click="performDelete(true)"
           />
         </div>
       </template>

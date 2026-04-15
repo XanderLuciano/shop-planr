@@ -6,4 +6,5 @@ export interface JobTagRepository {
   replaceJobTags(jobId: string, tagIds: string[]): void
   removeAllTagsForJob(jobId: string): void
   countJobsByTagId(tagId: string): number
+  getJobIdsByTagId(tagId: string): string[]
 }

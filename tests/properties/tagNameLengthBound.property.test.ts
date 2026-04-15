@@ -11,9 +11,7 @@ import fc from 'fast-check'
 import Database from 'better-sqlite3'
 import { resolve } from 'path'
 import { runMigrations } from '../../server/repositories/sqlite/index'
-import { SQLiteTagRepository } from '../../server/repositories/sqlite/tagRepository'
-import { SQLiteJobTagRepository } from '../../server/repositories/sqlite/jobTagRepository'
-import { createTagService } from '../../server/services/tagService'
+import { createTagServiceForTest, ADMIN_ID } from './helpers/tagTestHarness'
 import { ValidationError } from '../../server/utils/errors'
 
 const MIGRATIONS_DIR = resolve(__dirname, '../../server/repositories/sqlite/migrations')
@@ -43,12 +41,10 @@ describe('Property CP-TAG-2: Tag Name Length Bound', () => {
         fc.string({ minLength: 31, maxLength: 100 }).filter(s => s.trim().length > 30),
         (longName) => {
           db = createTestDb()
-          const tagRepo = new SQLiteTagRepository(db)
-          const jobTagRepo = new SQLiteJobTagRepository(db)
-          const tagService = createTagService({ tags: tagRepo, jobTags: jobTagRepo })
+          const { tagService } = createTagServiceForTest(db)
 
           expect(() => {
-            tagService.createTag({ name: longName })
+            tagService.createTag(ADMIN_ID, { name: longName })
           }).toThrow(ValidationError)
 
           db.close()
@@ -65,11 +61,9 @@ describe('Property CP-TAG-2: Tag Name Length Bound', () => {
         fc.string({ minLength: 1, maxLength: 30 }).filter(s => s.trim().length >= 1 && s.trim().length <= 30),
         (validName) => {
           db = createTestDb()
-          const tagRepo = new SQLiteTagRepository(db)
-          const jobTagRepo = new SQLiteJobTagRepository(db)
-          const tagService = createTagService({ tags: tagRepo, jobTags: jobTagRepo })
+          const { tagService } = createTagServiceForTest(db)
 
-          const tag = tagService.createTag({ name: validName })
+          const tag = tagService.createTag(ADMIN_ID, { name: validName })
           expect(tag.name).toBe(validName.trim())
           expect(tag.name.length).toBeGreaterThanOrEqual(1)
           expect(tag.name.length).toBeLessThanOrEqual(30)
