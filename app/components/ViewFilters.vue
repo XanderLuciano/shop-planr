@@ -3,7 +3,7 @@ import type { FilterState, Tag } from '~/types/domain'
 
 const props = defineProps<{
   filters: FilterState
-  availableTags?: Tag[]
+  availableTags?: readonly Tag[]
 }>()
 
 const emit = defineEmits<{

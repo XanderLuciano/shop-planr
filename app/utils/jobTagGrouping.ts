@@ -2,7 +2,7 @@ import type { Job, Tag } from '~/types/domain'
 
 export interface JobTagGroup {
   tag: Tag | null // null = "Untagged" group
-  jobs: (Job & { tags: Tag[] })[]
+  jobs: (Job & { tags: readonly Tag[] })[]
 }
 
 /**
@@ -11,11 +11,11 @@ export interface JobTagGroup {
  * Groups are ordered by the `allTags` array order (consistent ordering).
  */
 export function groupJobsByTag(
-  jobs: (Job & { tags: Tag[] })[],
-  allTags: Tag[],
+  jobs: readonly (Job & { tags: readonly Tag[] })[],
+  allTags: readonly Tag[],
 ): JobTagGroup[] {
-  const groupMap = new Map<string, (Job & { tags: Tag[] })[]>()
-  const untagged: (Job & { tags: Tag[] })[] = []
+  const groupMap = new Map<string, (Job & { tags: readonly Tag[] })[]>()
+  const untagged: (Job & { tags: readonly Tag[] })[] = []
 
   for (const job of jobs) {
     if (!job.tags?.length) {

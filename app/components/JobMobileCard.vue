@@ -3,7 +3,7 @@ import type { Job, Tag } from '~/types/domain'
 import type { JobProgress } from '~/types/computed'
 
 withDefaults(defineProps<{
-  job: Job & { tags?: Tag[] }
+  job: Job & { tags?: readonly Tag[] }
   progress: JobProgress | null
   editing?: boolean
   index?: number

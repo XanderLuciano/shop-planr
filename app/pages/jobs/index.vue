@@ -102,7 +102,7 @@ const isGrouped = computed(() => !!filters.value.groupByTag && !isEditingPriorit
 
 const jobGroups = computed(() => {
   if (!isGrouped.value) return []
-  return groupJobsByTag(filteredJobs.value as (Job & { tags: Tag[] })[], availableTags.value)
+  return groupJobsByTag(filteredJobs.value, availableTags.value)
 })
 
 const expandedGroupedJobs = ref<Set<string>>(new Set())
@@ -353,8 +353,8 @@ const columns: TableColumn<Job>[] = [
   {
     accessorKey: 'tags',
     header: 'Tags',
-    cell: ({ row }: { row: Row<Job & { tags: Tag[] }> }) => {
-      const job = row.original as Job & { tags: Tag[] }
+    cell: ({ row }) => {
+      const job = row.original as Job & { tags?: readonly Tag[] }
       if (!job.tags?.length) return null
       return h('div', { class: 'flex flex-wrap gap-1' },
         job.tags.map(tag => h(resolveComponent('JobTagPill'), { tag, key: tag.id })),
