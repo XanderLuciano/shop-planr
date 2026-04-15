@@ -37,8 +37,6 @@ function isTagSelected(tagId: string) {
   return props.filters.tagIds?.includes(tagId) ?? false
 }
 
-const tagFilterOpen = ref(false)
-
 const selectedTagCount = computed(() => props.filters.tagIds?.length ?? 0)
 
 const hasActiveFilters = computed(() => {
@@ -134,34 +132,24 @@ function toggleGroupByTag() {
     />
 
     <!-- Tag filter dropdown -->
-    <div
-      v-if="availableTags?.length"
-      class="relative"
-    >
-      <UButton
-        variant="outline"
-        color="neutral"
-        size="sm"
-        icon="i-lucide-tag"
-        :trailing-icon="tagFilterOpen ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
-        :label="selectedTagCount ? `Tags (${selectedTagCount})` : 'Tags'"
-        @click="tagFilterOpen = !tagFilterOpen"
-      />
-      <div
-        v-if="tagFilterOpen"
-        class="fixed inset-0 z-40"
-        @click="tagFilterOpen = false"
-      />
-      <div
-        v-if="tagFilterOpen"
-        class="absolute z-50 mt-1 w-52 rounded-md border border-(--ui-border) bg-(--ui-bg) shadow-lg"
-        @click.stop
-      >
-        <div class="max-h-48 overflow-y-auto">
-          <div
+    <UPopover v-if="availableTags?.length">
+      <template #default="{ open }">
+        <UButton
+          variant="outline"
+          color="neutral"
+          size="sm"
+          icon="i-lucide-tag"
+          :trailing-icon="open ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
+          :label="selectedTagCount ? `Tags (${selectedTagCount})` : 'Tags'"
+        />
+      </template>
+      <template #content>
+        <div class="w-52 max-h-48 overflow-y-auto p-1">
+          <button
             v-for="tag in availableTags"
             :key="tag.id"
-            class="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-(--ui-bg-elevated) text-sm"
+            type="button"
+            class="w-full flex items-center gap-2 px-2 py-1.5 rounded-sm hover:bg-(--ui-bg-elevated) text-sm text-left"
             @click="toggleTag(tag.id)"
           >
             <UIcon
@@ -169,10 +157,10 @@ function toggleGroupByTag() {
               class="size-4 shrink-0 text-(--ui-text-muted)"
             />
             <JobTagPill :tag="tag" />
-          </div>
+          </button>
         </div>
-      </div>
-    </div>
+      </template>
+    </UPopover>
 
     <!-- Group by Tag toggle -->
     <UButton

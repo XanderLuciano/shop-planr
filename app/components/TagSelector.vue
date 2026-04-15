@@ -22,6 +22,15 @@ const createError = ref('')
 
 onMounted(() => fetchTags())
 
+// Reset the inline "create new tag" form whenever the popover closes so the
+// next open starts in a clean state.
+watch(open, (isOpen) => {
+  if (!isOpen) {
+    showCreateForm.value = false
+    createError.value = ''
+  }
+})
+
 const selectedTags = computed(() =>
   tags.value.filter(t => props.modelValue.includes(t.id)),
 )
@@ -90,7 +99,7 @@ async function handleCreateTag() {
     </div>
 
     <!-- Dropdown trigger -->
-    <div class="relative">
+    <UPopover v-model:open="open">
       <UButton
         variant="outline"
         color="neutral"
@@ -99,105 +108,94 @@ async function handleCreateTag() {
         trailing-icon="i-lucide-chevron-down"
         :label="selectedTags.length ? `${selectedTags.length} tag${selectedTags.length > 1 ? 's' : ''} selected` : 'Add tags'"
         :loading="loading"
-        @click="open = !open"
       />
-
-      <!-- Backdrop to close dropdown -->
-      <div
-        v-if="open"
-        class="fixed inset-0 z-40"
-        @click="open = false; showCreateForm = false"
-      />
-
-      <!-- Dropdown panel -->
-      <div
-        v-if="open"
-        class="absolute z-50 mt-1 w-56 rounded-md border border-(--ui-border) bg-(--ui-bg) shadow-lg"
-        @click.stop
-      >
-        <div class="max-h-48 overflow-y-auto divide-y divide-(--ui-border)">
-          <div
-            v-for="tag in tags"
-            :key="tag.id"
-            class="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-(--ui-bg-elevated) text-sm"
-            @click="toggleTag(tag)"
-          >
-            <UIcon
-              :name="isSelected(tag) ? 'i-lucide-check-square' : 'i-lucide-square'"
-              class="size-4 shrink-0 text-(--ui-text-muted)"
-            />
-            <JobTagPill :tag="tag" />
-          </div>
-          <div
-            v-if="!tags.length"
-            class="px-3 py-2 text-sm text-(--ui-text-muted)"
-          >
-            No tags available
-          </div>
-        </div>
-
-        <!-- Create new tag -->
-        <div
-          v-if="isAdmin"
-          class="border-t border-(--ui-border)"
-        >
-          <template v-if="!showCreateForm">
+      <template #content>
+        <div class="w-56">
+          <div class="max-h-48 overflow-y-auto divide-y divide-(--ui-border)">
             <button
+              v-for="tag in tags"
+              :key="tag.id"
               type="button"
-              class="w-full flex items-center gap-2 px-3 py-2 text-sm text-(--ui-text-muted) hover:bg-(--ui-bg-elevated)"
-              @click="showCreateForm = true"
+              class="w-full flex items-center gap-2 px-3 py-2 hover:bg-(--ui-bg-elevated) text-sm text-left"
+              @click="toggleTag(tag)"
             >
               <UIcon
-                name="i-lucide-plus"
-                class="size-4"
+                :name="isSelected(tag) ? 'i-lucide-check-square' : 'i-lucide-square'"
+                class="size-4 shrink-0 text-(--ui-text-muted)"
               />
-              Create new tag
+              <JobTagPill :tag="tag" />
             </button>
-          </template>
-          <template v-else>
-            <div class="p-2 space-y-2">
-              <p
-                v-if="createError"
-                class="text-xs text-(--ui-error)"
-              >
-                {{ createError }}
-              </p>
-              <div class="flex items-center gap-2">
-                <input
-                  v-model="newTagColor"
-                  type="color"
-                  class="w-7 h-7 rounded cursor-pointer border border-(--ui-border) shrink-0"
-                >
-                <UInput
-                  v-model="newTagName"
-                  placeholder="Tag name"
-                  size="xs"
-                  class="flex-1"
-                  @keyup.enter="handleCreateTag"
-                  @keyup.escape="showCreateForm = false"
-                />
-              </div>
-              <div class="flex gap-1 justify-end">
-                <UButton
-                  size="xs"
-                  variant="ghost"
-                  color="neutral"
-                  label="Cancel"
-                  @click="showCreateForm = false"
-                />
-                <UButton
-                  size="xs"
-                  variant="soft"
-                  color="primary"
-                  label="Create"
-                  :loading="createLoading"
-                  @click="handleCreateTag"
-                />
-              </div>
+            <div
+              v-if="!tags.length"
+              class="px-3 py-2 text-sm text-(--ui-text-muted)"
+            >
+              No tags available
             </div>
-          </template>
+          </div>
+
+          <!-- Create new tag -->
+          <div
+            v-if="isAdmin"
+            class="border-t border-(--ui-border)"
+          >
+            <template v-if="!showCreateForm">
+              <button
+                type="button"
+                class="w-full flex items-center gap-2 px-3 py-2 text-sm text-(--ui-text-muted) hover:bg-(--ui-bg-elevated)"
+                @click="showCreateForm = true"
+              >
+                <UIcon
+                  name="i-lucide-plus"
+                  class="size-4"
+                />
+                Create new tag
+              </button>
+            </template>
+            <template v-else>
+              <div class="p-2 space-y-2">
+                <p
+                  v-if="createError"
+                  class="text-xs text-(--ui-error)"
+                >
+                  {{ createError }}
+                </p>
+                <div class="flex items-center gap-2">
+                  <input
+                    v-model="newTagColor"
+                    type="color"
+                    class="w-7 h-7 rounded cursor-pointer border border-(--ui-border) shrink-0"
+                  >
+                  <UInput
+                    v-model="newTagName"
+                    placeholder="Tag name"
+                    size="xs"
+                    class="flex-1"
+                    @keyup.enter="handleCreateTag"
+                    @keydown.escape.stop="showCreateForm = false"
+                  />
+                </div>
+                <div class="flex gap-1 justify-end">
+                  <UButton
+                    size="xs"
+                    variant="ghost"
+                    color="neutral"
+                    label="Cancel"
+                    @click="showCreateForm = false"
+                  />
+                  <UButton
+                    size="xs"
+                    variant="soft"
+                    color="primary"
+                    label="Create"
+                    :loading="createLoading"
+                    @click="handleCreateTag"
+                  />
+                </div>
+              </div>
+            </template>
+          </div>
         </div>
-      </div>
-    </div>
+      </template>
+    </UPopover>
   </div>
 </template>
