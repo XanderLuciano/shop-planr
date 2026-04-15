@@ -294,6 +294,7 @@ export interface FilterState {
   priority?: string
   label?: string
   status?: 'active' | 'completed' | 'all'
+  tagIds?: string[]
 }
 
 // ---- Part Step Status (formerly SN Step Status) ----

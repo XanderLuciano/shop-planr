@@ -9,6 +9,7 @@ const { jobs, loading, fetchJobs } = useJobs()
 const $api = useAuthFetch()
 const { isAdmin } = useAuth()
 const { filters, updateFilter, applyFilters } = useViewFilters()
+const { tags: availableTags, fetchTags } = useTags()
 const {
   isEditingPriority,
   orderedJobs,
@@ -75,6 +76,7 @@ const filteredJobs = computed(() =>
       if (!p) return 'active'
       return p.completedParts >= p.goalQuantity && p.goalQuantity > 0 ? 'completed' : 'active'
     },
+    tagIds: j => j.tags?.map(t => t.id) ?? [],
   }),
 )
 
@@ -101,7 +103,7 @@ function onFiltersChange(f: typeof filters.value) {
 }
 
 async function loadJobs() {
-  await fetchJobs()
+  await Promise.all([fetchJobs(), fetchTags()])
   await loadAllProgress()
 }
 
@@ -366,6 +368,7 @@ onMounted(() => {
     <ViewFilters
       v-if="!isEditingPriority"
       :filters="filters"
+      :available-tags="availableTags"
       @change="onFiltersChange"
     >
       <JobViewToolbar

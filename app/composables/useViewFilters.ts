@@ -34,7 +34,7 @@ export function useViewFilters() {
   }
 
   function clearFilters() {
-    filters.value = { status: 'all' }
+    filters.value = { status: 'all', tagIds: [] }
   }
 
   /**
@@ -51,6 +51,7 @@ export function useViewFilters() {
       priority?: (item: T) => string | undefined
       label?: (item: T) => string | undefined
       status?: (item: T) => 'active' | 'completed' | undefined
+      tagIds?: (item: T) => string[]
     },
   ): T[] {
     const f = filters.value
@@ -82,6 +83,10 @@ export function useViewFilters() {
       if (f.status && f.status !== 'all' && accessors.status) {
         const val = accessors.status(item)
         if (val && val !== f.status) return false
+      }
+      if (f.tagIds?.length && accessors.tagIds) {
+        const itemTagIds = accessors.tagIds(item)
+        if (!f.tagIds.every(id => itemTagIds.includes(id))) return false
       }
       return true
     })
