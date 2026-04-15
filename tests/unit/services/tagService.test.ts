@@ -155,7 +155,6 @@ describe('TagService', () => {
 
     it('refreshes updatedAt on update', () => {
       const tag = service.createTag({ name: 'Timestamp Test' })
-      const before = tag.updatedAt
       // Small delay to ensure timestamp differs
       const updated = service.updateTag(tag.id, { name: 'Updated' })
       expect(updated.updatedAt).toBeTruthy()

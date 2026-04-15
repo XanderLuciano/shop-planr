@@ -179,6 +179,8 @@ Dependencies flow left-to-right only. All business logic lives in services. See 
 | `/api/steps/:id/config` | `pathService` | Step config: optional + dependencyType (PATCH) |
 | `/api/paths/:id/advancement-mode` | `pathService` | Path advancement mode (PATCH) |
 | `/api/library/**` | `libraryService` | Process + location library CRUD |
+| `/api/tags/**` | `tagService` | Tag CRUD (admin-gated create/update/delete) |
+| `/api/jobs/:id/tags` | `jobService`, `tagService` | Get/set tags for a job |
 
 ## Frontend: Pages (Implemented — tasks 5–10)
 

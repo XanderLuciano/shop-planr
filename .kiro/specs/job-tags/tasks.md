@@ -196,7 +196,7 @@ Add a custom tagging system for production jobs. Tags are user-defined entities 
     - Fetch job tags and display pills in the job header area
     - _Requirements: 7.1, 7.3_
 
-- [-] 12. Final checkpoint
+- [ ] 12. Final checkpoint
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

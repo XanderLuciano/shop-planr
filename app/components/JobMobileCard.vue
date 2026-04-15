@@ -75,8 +75,15 @@ defineEmits<{
       :goal="progress.goalQuantity"
       :in-progress="progress.inProgressParts"
     />
-    <div v-if="job.tags?.length" class="flex flex-wrap gap-1">
-      <JobTagPill v-for="tag in job.tags" :key="tag.id" :tag="tag" />
+    <div
+      v-if="job.tags?.length"
+      class="flex flex-wrap gap-1"
+    >
+      <JobTagPill
+        v-for="tag in job.tags"
+        :key="tag.id"
+        :tag="tag"
+      />
     </div>
   </div>
 </template>

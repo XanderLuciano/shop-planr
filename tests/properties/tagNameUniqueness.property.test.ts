@@ -6,7 +6,7 @@
  *
  * **Validates: Requirements 1.5, 2.2**
  */
-import { describe, it, afterEach } from 'vitest'
+import { describe, it, afterEach, expect } from 'vitest'
 import fc from 'fast-check'
 import Database from 'better-sqlite3'
 import { resolve } from 'path'
@@ -15,7 +15,6 @@ import { SQLiteTagRepository } from '../../server/repositories/sqlite/tagReposit
 import { SQLiteJobTagRepository } from '../../server/repositories/sqlite/jobTagRepository'
 import { createTagService } from '../../server/services/tagService'
 import { ValidationError } from '../../server/utils/errors'
-import { expect } from 'vitest'
 
 const MIGRATIONS_DIR = resolve(__dirname, '../../server/repositories/sqlite/migrations')
 

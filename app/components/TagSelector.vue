@@ -20,7 +20,7 @@ const createLoading = ref(false)
 onMounted(() => fetchTags())
 
 const selectedTags = computed(() =>
-  tags.value.filter(t => props.modelValue.includes(t.id))
+  tags.value.filter(t => props.modelValue.includes(t.id)),
 )
 
 function isSelected(tag: Tag) {
@@ -75,7 +75,10 @@ async function handleCreateTag() {
           class="hover:opacity-75 leading-none"
           @click="removeTag(tag.id)"
         >
-          <UIcon name="i-lucide-x" class="size-3" />
+          <UIcon
+            name="i-lucide-x"
+            class="size-3"
+          />
         </button>
       </span>
     </div>
@@ -134,7 +137,10 @@ async function handleCreateTag() {
               class="w-full flex items-center gap-2 px-3 py-2 text-sm text-(--ui-text-muted) hover:bg-(--ui-bg-elevated)"
               @click="showCreateForm = true"
             >
-              <UIcon name="i-lucide-plus" class="size-4" />
+              <UIcon
+                name="i-lucide-plus"
+                class="size-4"
+              />
               Create new tag
             </button>
           </template>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Tag } from '~/types/domain'
+
 defineProps<{ tag: Tag }>()
 </script>
 

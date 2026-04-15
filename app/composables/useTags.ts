@@ -38,7 +38,7 @@ export function useTags() {
     }
   }
 
-  async function updateTag(id: string, input: { name?: string; color?: string }): Promise<Tag> {
+  async function updateTag(id: string, input: { name?: string, color?: string }): Promise<Tag> {
     loading.value = true
     error.value = null
     try {

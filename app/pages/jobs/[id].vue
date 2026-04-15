@@ -420,8 +420,15 @@ onMounted(() => {
         </div>
 
         <!-- Tags -->
-        <div v-if="jobTags.length" class="flex flex-wrap gap-1 mt-1">
-          <JobTagPill v-for="tag in jobTags" :key="tag.id" :tag="tag" />
+        <div
+          v-if="jobTags.length"
+          class="flex flex-wrap gap-1 mt-1"
+        >
+          <JobTagPill
+            v-for="tag in jobTags"
+            :key="tag.id"
+            :tag="tag"
+          />
         </div>
       </div>
 

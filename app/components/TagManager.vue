@@ -60,7 +60,7 @@ async function performDelete() {
     showDeleteModal.value = false
     tagToDelete.value = null
   } catch (e: unknown) {
-    deleteError.value = (e as { data?: { message?: string }; message?: string })?.data?.message
+    deleteError.value = (e as { data?: { message?: string }, message?: string })?.data?.message
       ?? (e as { message?: string })?.message
       ?? 'Failed to delete tag'
   } finally {
@@ -87,7 +87,10 @@ async function performDelete() {
       >
         <!-- View mode -->
         <template v-if="editingId !== tag.id">
-          <JobTagPill :tag="tag" class="shrink-0" />
+          <JobTagPill
+            :tag="tag"
+            class="shrink-0"
+          />
           <span class="flex-1 text-(--ui-text-muted) font-mono text-xs">{{ tag.color }}</span>
           <div
             v-if="isAdmin"
