@@ -116,7 +116,8 @@ Add a custom tagging system for production jobs. Tags are user-defined entities 
     - **Validates: Requirements 1.5, 2.2**
 
   - [x] 7.2 Write property test CP-TAG-2: Tag Name Length Bound
-    - For any string of length > 30, createTag throws; for any string 1–30 (unique), createTag succeeds
+    - For any string whose **trimmed** length is > 30, createTag throws; for any string whose trimmed length is 1–30 (unique), createTag succeeds
+    - Arbitrary uses `.filter(s => s.trim().length > 30)` to ensure whitespace-padded strings don't produce false negatives
     - **Property 2: Tag Name Length Bound**
     - **Validates: Requirements 1.3, 1.4**
 
@@ -196,8 +197,10 @@ Add a custom tagging system for production jobs. Tags are user-defined entities 
     - Fetch job tags and display pills in the job header area
     - _Requirements: 7.1, 7.3_
 
-- [ ] 12. Final checkpoint
-  - Ensure all tests pass, ask the user if questions arise.
+- [x] 12. Final checkpoint
+  - All 1502 tests pass across 248 test files. Lint is clean (0 errors, 0 warnings).
+  - Pre-existing issue resolved: `jose` and `bcryptjs` were in `package.json` but not installed — `npm install --legacy-peer-deps` was required.
+  - Flaky property test CP-TAG-2 fixed: arbitrary now filters to `s.trim().length > 30` to prevent whitespace-padded counterexamples.
 
 ## Notes
 

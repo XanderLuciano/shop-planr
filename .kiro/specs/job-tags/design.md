@@ -576,7 +576,7 @@ const jobsWithTags = jobService.listJobsWithTags()
 **Property Test Library**: fast-check
 
 - **CP-TAG-1: Name Uniqueness** — For any sequence of createTag calls with distinct names, all succeed; duplicate names (case-insensitive) always throw ValidationError
-- **CP-TAG-2: Name Length Bound** — For any string of length > 30, createTag throws; for any string 1–30, createTag succeeds (assuming unique)
+- **CP-TAG-2: Name Length Bound** — For any string whose trimmed length is > 30, createTag throws; for any string whose trimmed length is 1–30, createTag succeeds (assuming unique). The fast-check arbitrary filters to `s.trim().length > 30` to prevent whitespace-padded strings from producing false negatives.
 - **CP-TAG-3: Replace Idempotence** — For any jobId and tagIds, calling setJobTags twice produces identical associations
 - **CP-TAG-4: Cascade Completeness** — After deleting a tag, getTagsForJobs never returns that tag for any job
 - **CP-TAG-5: Bulk Fetch Completeness** — For any set of jobs with known tag assignments, getTagsForJobs returns exactly the expected tags per job
@@ -605,3 +605,4 @@ const jobsWithTags = jobService.listJobsWithTags()
 
 - **Existing**: better-sqlite3, nanoid, zod, Nuxt UI (UBadge, USelectMenu, UInput, UButton)
 - **No new dependencies required** — color picker can use a simple preset palette or UInput with type="color"
+- **Setup note**: `jose` and `bcryptjs` must be installed (`npm install --legacy-peer-deps`) before running tests. These are existing project dependencies for PIN auth — not introduced by this feature — but were missing from `node_modules` at branch creation.
