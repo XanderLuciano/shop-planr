@@ -59,15 +59,17 @@ async function performDelete(force = false) {
   deleteLoading.value = true
   deleteError.value = null
   try {
-    await deleteTag(tagToDelete.value.id, { force })
+    await deleteTag(tagToDelete.value.id, force)
     showDeleteModal.value = false
     tagToDelete.value = null
     deleteRequiresForce.value = false
   } catch (e) {
     deleteError.value = extractApiError(e, 'Failed to delete tag')
-    // If the backend rejected the delete because the tag is in use, surface
-    // a second-stage "force" button rather than making the user re-open the modal.
-    if (/assigned to \d+ job/.test(deleteError.value)) {
+    // Surface the second-stage force button when the backend blocks an
+    // in-use delete. Keyed off the structured error code, not the message
+    // text, so wording changes don't silently break the flow.
+    const code = (e as { data?: { data?: { code?: string } } } | null | undefined)?.data?.data?.code
+    if (code === 'TAG_IN_USE') {
       deleteRequiresForce.value = true
     }
   } finally {

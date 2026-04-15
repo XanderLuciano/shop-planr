@@ -18,7 +18,8 @@ import type { AuditService } from '../services/auditService'
 import type { LifecycleService } from '../services/lifecycleService'
 import { generateId } from '../utils/idGenerator'
 import { assertPositive, assertNonEmptyArray } from '../utils/validation'
-import { NotFoundError, ValidationError, ForbiddenError } from '../utils/errors'
+import { NotFoundError, ValidationError } from '../utils/errors'
+import { requireAdmin } from '../utils/auth'
 
 export interface BatchAdvanceResult {
   partId: string
@@ -260,19 +261,7 @@ export function createPartService(
      * note. Audit entries also have no FK on `part_id`, preserving the audit trail.
      */
     deletePart(id: string, userId: string): { deletedPartId: string } {
-      if (!userId) {
-        throw new ValidationError('userId is required')
-      }
-      if (!repos.users) {
-        throw new ValidationError('User repository not available')
-      }
-      const user = repos.users.getById(userId)
-      if (!user) {
-        throw new ValidationError(`User not found: ${userId}`)
-      }
-      if (!user.isAdmin) {
-        throw new ForbiddenError('Admin access required to delete parts')
-      }
+      requireAdmin(repos.users, userId, 'delete parts')
 
       const part = repos.parts.getById(id)
       if (!part) {

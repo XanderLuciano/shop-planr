@@ -55,6 +55,7 @@ vi.stubGlobal('getServices', () => ({
 vi.stubGlobal('getAuthUserId', () => currentUserId)
 vi.stubGlobal('getRouterParam', (_event: unknown, _name: string) => 'tag_1')
 vi.stubGlobal('getQuery', () => ({}))
+vi.stubGlobal('parseQuery', (_event: unknown, _schema: unknown) => ({ force: false }))
 vi.stubGlobal('setResponseStatus', vi.fn())
 vi.stubGlobal('parseBody', vi.fn(async () => ({ name: 'Test', tagIds: ['tag_1'] })))
 
@@ -115,7 +116,7 @@ describe('tag CRUD route wiring', () => {
   it('DELETE /api/tags/:id propagates ForbiddenError thrown by tagService', async () => {
     asRegular()
     await expect(deleteTagHandler(makeFakeEvent())).rejects.toThrow(ForbiddenError)
-    expect(mockTagService.deleteTag).toHaveBeenCalledWith(REGULAR_ID, 'tag_1', { force: false })
+    expect(mockTagService.deleteTag).toHaveBeenCalledWith(REGULAR_ID, 'tag_1', false)
   })
 
   /**

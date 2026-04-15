@@ -3,10 +3,25 @@
  * Used by services and caught by API route error handlers.
  */
 
+/**
+ * Optional structured payload attached to service-layer errors. When set,
+ * `httpError()` forwards it to the client under the HTTP error's `data` field
+ * so that UI code can branch on a stable `code` instead of regex-matching the
+ * free-form message.
+ */
+export interface ErrorDetails {
+  code?: string
+  meta?: Record<string, unknown>
+}
+
 export class ValidationError extends Error {
-  constructor(message: string) {
+  public readonly code?: string
+  public readonly meta?: Record<string, unknown>
+  constructor(message: string, details?: ErrorDetails) {
     super(message)
     this.name = 'ValidationError'
+    this.code = details?.code
+    this.meta = details?.meta
   }
 }
 

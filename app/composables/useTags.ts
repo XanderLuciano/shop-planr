@@ -57,11 +57,11 @@ export function useTags() {
     }
   }
 
-  async function deleteTag(id: string, options: { force?: boolean } = {}): Promise<void> {
+  async function deleteTag(id: string, force = false): Promise<void> {
     loading.value = true
     error.value = null
     try {
-      const query = options.force ? '?force=true' : ''
+      const query = force ? '?force=true' : ''
       await $api(`/api/tags/${encodeURIComponent(id)}${query}`, { method: 'DELETE' })
       tags.value = tags.value.filter(t => t.id !== id)
     } catch (e) {
