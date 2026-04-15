@@ -39,7 +39,8 @@ describe('Property CP-TAG-2: Tag Name Length Bound', () => {
   it('createTag throws ValidationError for names longer than 30 characters after trim', () => {
     fc.assert(
       fc.property(
-        fc.string({ minLength: 31, maxLength: 100 }),
+        // Generate strings that are > 30 chars even after trimming
+        fc.string({ minLength: 31, maxLength: 100 }).filter(s => s.trim().length > 30),
         (longName) => {
           db = createTestDb()
           const tagRepo = new SQLiteTagRepository(db)

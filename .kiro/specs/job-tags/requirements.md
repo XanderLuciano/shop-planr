@@ -1,5 +1,14 @@
 # Requirements Document
 
+## Baseline Test Health
+
+Captured at branch creation (`feat/job-tags`):
+
+- **Root cause of pre-existing failures**: `jose` and `bcryptjs` were listed in `package.json` but not installed in `node_modules`. Running `npm install --legacy-peer-deps` resolved this.
+- **Passing after install**: 1502 tests across 248 files — all green.
+- **Flaky test fixed**: `CP-TAG-2` property test generated whitespace-padded strings (e.g. `"                             ! "`) that trim to ≤30 chars, causing `createTag` to succeed instead of throw. Fixed by adding `.filter(s => s.trim().length > 30)` to the arbitrary.
+- **Lint**: Clean (0 errors, 0 warnings).
+
 ## Introduction
 
 Job Tags adds a custom labeling system to production jobs in Shop Planr, enabling shop-floor users to visually identify jobs with long lead processes, multiple machine operations, or other custom categories. Tags are user-defined entities with a name and color, displayed as colored pill badges alongside job names throughout the application. Tag management lives under Settings, and tag assignment occurs on the job edit/create form via a multi-select dropdown.
