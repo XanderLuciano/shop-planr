@@ -32,6 +32,8 @@
 | `step_notes` | Defect/note records | id, step_id, part_ids (JSON), text, created_by |
 | `_migrations` | Migration tracking | version, name, applied_at, checksum |
 | `counters` | Part ID sequential counter | name='part', value |
+| `tags` | User-defined job labels | id, name (case-insensitive unique), color (hex, default #8b5cf6), created_at, updated_at |
+| `job_tags` | Many-to-many job↔tag join | job_id (FK CASCADE), tag_id (FK CASCADE), PRIMARY KEY (job_id, tag_id) |
 
 ## Key Constraints
 
@@ -41,12 +43,14 @@
 - `audit_entries` is append-only — service layer enforces no UPDATE/DELETE
 - `parts.current_step_id = NULL` means completed
 - `process_steps.removed_at IS NOT NULL` means soft-deleted (excluded from active routing)
+- `tags` has `UNIQUE INDEX idx_tags_name_lower ON tags(LOWER(name))` for case-insensitive uniqueness
+- `job_tags` has `INDEX idx_job_tags_tag_id ON job_tags(tag_id)` for reverse lookups
 
 ## Domain Types (`server/types/domain.ts`)
 
-Core interfaces: `Job`, `Path`, `ProcessStep`, `Part`, `Certificate`, `CertAttachment`, `TemplateRoute`, `TemplateStep`, `BOM`, `BomEntry`, `AuditEntry`, `ShopUser`, `StepNote`, `AppSettings`, `JiraConnectionSettings`, `JiraFieldMapping`, `PageToggles`, `FilterState`, `PartStepStatus`, `PartStepOverride`, `StepInput`
+Core interfaces: `Job`, `Path`, `ProcessStep`, `Part`, `Certificate`, `CertAttachment`, `TemplateRoute`, `TemplateStep`, `BOM`, `BomEntry`, `AuditEntry`, `ShopUser`, `StepNote`, `AppSettings`, `JiraConnectionSettings`, `JiraFieldMapping`, `PageToggles`, `FilterState`, `PartStepStatus`, `PartStepOverride`, `StepInput`, `Tag`
 
-API input types (`server/types/api.ts`): `CreateJobInput`, `UpdateJobInput`, `CreatePathInput`, `UpdatePathInput`, `BatchCreatePartsInput`, `AdvancePartInput`, `AdvanceToStepInput`, `AttachCertInput`, `CreateCertInput`, `BatchAttachCertInput`, `CreateTemplateInput`, `ApplyTemplateInput`, `CreateBomInput`, `LinkJiraInput`, `PushToJiraInput`, `ScrapPartInput`, `ForceCompleteInput`
+API input types (`server/types/api.ts`): `CreateJobInput`, `UpdateJobInput`, `CreatePathInput`, `UpdatePathInput`, `BatchCreatePartsInput`, `AdvancePartInput`, `AdvanceToStepInput`, `AttachCertInput`, `CreateCertInput`, `BatchAttachCertInput`, `CreateTemplateInput`, `ApplyTemplateInput`, `CreateBomInput`, `LinkJiraInput`, `PushToJiraInput`, `ScrapPartInput`, `ForceCompleteInput`, `CreateTagInput`, `UpdateTagInput`, `SetJobTagsInput`
 
 Computed view types (`server/types/computed.ts`): `JobProgress`, `StepDistribution`, `BomSummary`, `BomEntrySummary`, `OperatorStepView`, `OperatorPartInfo`, `EnrichedPart`, `WorkQueueJob`, `WorkQueueResponse`, `FullRouteResponse`, `FullRouteEntry`
 
