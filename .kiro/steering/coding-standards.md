@@ -1,5 +1,6 @@
 ---
-inclusion: always
+inclusion: auto
+description: "Coding standards for Shop Planr: import resolution, architecture layers, API route patterns, and quality rules."
 ---
 
 # Coding Standards

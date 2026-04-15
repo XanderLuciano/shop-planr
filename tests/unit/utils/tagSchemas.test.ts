@@ -39,6 +39,24 @@ describe('createTagSchema', () => {
     const result = createTagSchema.safeParse({ name: 'Test', color: '#gggggg' })
     expect(result.success).toBe(false)
   })
+
+  it('trims surrounding whitespace from name', () => {
+    const result = createTagSchema.safeParse({ name: '  Test  ' })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.name).toBe('Test')
+    }
+  })
+
+  it('rejects a name longer than 30 characters', () => {
+    const result = createTagSchema.safeParse({ name: 'a'.repeat(31) })
+    expect(result.success).toBe(false)
+  })
+
+  it('accepts a name exactly 30 characters', () => {
+    const result = createTagSchema.safeParse({ name: 'a'.repeat(30) })
+    expect(result.success).toBe(true)
+  })
 })
 
 describe('updateTagSchema', () => {
@@ -71,6 +89,19 @@ describe('updateTagSchema', () => {
     const result = updateTagSchema.safeParse({ color: 'blue' })
     expect(result.success).toBe(false)
   })
+
+  it('rejects a name longer than 30 characters', () => {
+    const result = updateTagSchema.safeParse({ name: 'a'.repeat(31) })
+    expect(result.success).toBe(false)
+  })
+
+  it('trims surrounding whitespace from name', () => {
+    const result = updateTagSchema.safeParse({ name: '  New  ' })
+    expect(result.success).toBe(true)
+    if (result.success) {
+      expect(result.data.name).toBe('New')
+    }
+  })
 })
 
 describe('setJobTagsSchema', () => {
@@ -92,5 +123,24 @@ describe('setJobTagsSchema', () => {
   it('rejects a non-array tagIds value', () => {
     const result = setJobTagsSchema.safeParse({ tagIds: 'not-an-array' })
     expect(result.success).toBe(false)
+  })
+
+  it('rejects an array with empty-string tag ids', () => {
+    const result = setJobTagsSchema.safeParse({ tagIds: ['tag_a', ''] })
+    expect(result.success).toBe(false)
+  })
+
+  it('rejects more than 50 tag ids', () => {
+    const result = setJobTagsSchema.safeParse({
+      tagIds: Array.from({ length: 51 }, (_, i) => `tag_${i}`),
+    })
+    expect(result.success).toBe(false)
+  })
+
+  it('accepts exactly 50 tag ids', () => {
+    const result = setJobTagsSchema.safeParse({
+      tagIds: Array.from({ length: 50 }, (_, i) => `tag_${i}`),
+    })
+    expect(result.success).toBe(true)
   })
 })

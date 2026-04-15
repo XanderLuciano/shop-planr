@@ -183,7 +183,9 @@ Dependencies flow left-to-right only. All business logic lives in services. See 
 | `/api/tags/**` | `tagService` | Tag CRUD (admin-gated create/update/delete) |
 | `/api/jobs/:id/tags` | `jobService`, `tagService` | Get/set tags for a job |
 
-## Frontend: Pages (Implemented — tasks 5–10)| Page | File | Purpose |
+## Frontend: Pages (Implemented — tasks 5–10)
+
+| Page | File | Purpose |
 |------|------|---------|
 | Dashboard | `app/pages/index.vue` | Summary cards, job progress chart, bottleneck alerts |
 | Jobs list | `app/pages/jobs/index.vue` | Expandable table: jobs → paths → steps |
