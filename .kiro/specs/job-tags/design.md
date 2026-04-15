@@ -200,7 +200,7 @@ interface TagService {
 - Name validation (non-empty, ≤ 30 characters, trimmed)
 - Duplicate name prevention (case-insensitive)
 - Color validation (valid hex color)
-- Prevent deletion of tags in use (or allow with warning)
+- Deletion with cascade (DB handles join table cleanup; UI shows usage count confirmation before calling delete)
 
 ### Component: TagManager (Vue)
 
@@ -583,9 +583,7 @@ const jobsWithTags = jobService.listJobsWithTags()
 
 ### Integration Testing Approach
 
-- Full lifecycle: create tags → assign to job → verify display → update tag → verify propagation → delete tag → verify cascade
-- Job deletion cascades job_tags entries
-- Concurrent tag assignment doesn't corrupt join table
+Integration-level behaviors (full lifecycle, cascade on job deletion, concurrent assignment) are covered by the property-based tests (CP-TAG-3 through CP-TAG-5) which exercise the real SQLite repositories in-process. No separate integration test suite is needed.
 
 ## Performance Considerations
 

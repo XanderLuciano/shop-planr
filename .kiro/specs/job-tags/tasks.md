@@ -321,6 +321,15 @@ Add a custom tagging system for production jobs. Tags are user-defined entities 
     - Test that untagged groups (where `group.tag` is null) produce `var(--ui-border)` fallback
     - _Validates: Requirement 14.11_
 
+- [x] 20. Route-level admin authorization tests (Requirement 12)
+  - [x] 20.1 Unit tests for tag CRUD route admin gating
+    - Test POST /api/tags rejects non-admin with ForbiddenError
+    - Test PUT /api/tags/:id rejects non-admin with ForbiddenError
+    - Test DELETE /api/tags/:id rejects non-admin with ForbiddenError
+    - Test POST /api/tags succeeds for admin user
+    - Test PUT /api/jobs/:id/tags succeeds for non-admin (standard auth only)
+    - _Validates: Requirements 12.1, 12.2_
+
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for faster MVP

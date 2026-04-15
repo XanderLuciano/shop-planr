@@ -156,6 +156,16 @@ Job Tags adds a custom labeling system to production jobs in Shop Planr, enablin
 7. THE API routes for tag CRUD in Settings SHALL require admin authorization
 8. THE API routes for tag assignment on jobs SHALL require standard authentication without admin restriction
 
+### Requirement 12: Security and Authorization
+
+**User Story:** As a shop manager, I want tag management restricted to admins, so that only authorized users can create or modify the tag vocabulary.
+
+#### Acceptance Criteria
+
+1. WHEN a non-admin user attempts to create, update, or delete a tag, THE API SHALL reject the request with a ForbiddenError
+2. WHEN any authenticated user attempts to assign tags to a job, THE API SHALL allow the operation
+3. THE tag API routes SHALL enforce authentication through the existing JWT auth middleware
+
 ### Requirement 13: Tag Filtering on Jobs Page
 
 **User Story:** As a shop-floor user, I want to filter the jobs list by tags, so that I can quickly find jobs in a specific category without scrolling through the entire list.
@@ -189,13 +199,3 @@ Job Tags adds a custom labeling system to production jobs in Shop Planr, enablin
 9. WHEN grouping is active, THE priority edit mode SHALL be disabled (grouping and priority reordering are mutually exclusive)
 10. WHEN grouping is active, each job row in a group SHALL support expand/collapse to show the JobExpandableRow (paths and steps), matching the behavior of the flat list view
 11. WHEN grouping is active, each tag group container SHALL have a border colored to match the tag's color; untagged groups SHALL use the default UI border color
-
-### Requirement 12: Security and Authorization
-
-**User Story:** As a shop manager, I want tag management restricted to admins, so that only authorized users can create or modify the tag vocabulary.
-
-#### Acceptance Criteria
-
-1. WHEN a non-admin user attempts to create, update, or delete a tag, THE API SHALL reject the request with a ForbiddenError
-2. WHEN any authenticated user attempts to assign tags to a job, THE API SHALL allow the operation
-3. THE tag API routes SHALL enforce authentication through the existing JWT auth middleware
