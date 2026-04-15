@@ -22,7 +22,7 @@ function update<K extends keyof FilterState>(key: K, value: FilterState[K]) {
 }
 
 function clearAll() {
-  emit('change', { status: 'all', tagIds: [] })
+  emit('change', { status: 'all', tagIds: [], groupByTag: false })
 }
 
 function toggleTag(tagId: string) {
@@ -43,8 +43,12 @@ const selectedTagCount = computed(() => props.filters.tagIds?.length ?? 0)
 
 const hasActiveFilters = computed(() => {
   const f = props.filters
-  return !!(f.jobName || f.jiraTicketKey || f.stepName || f.assignee || f.priority || f.label || (f.status && f.status !== 'all') || f.tagIds?.length)
+  return !!(f.jobName || f.jiraTicketKey || f.stepName || f.assignee || f.priority || f.label || (f.status && f.status !== 'all') || f.tagIds?.length || f.groupByTag)
 })
+
+function toggleGroupByTag() {
+  update('groupByTag', !props.filters.groupByTag)
+}
 </script>
 
 <template>
@@ -169,6 +173,17 @@ const hasActiveFilters = computed(() => {
         </div>
       </div>
     </div>
+
+    <!-- Group by Tag toggle -->
+    <UButton
+      v-if="availableTags?.length"
+      icon="i-lucide-group"
+      size="sm"
+      :variant="filters.groupByTag ? 'soft' : 'outline'"
+      :color="filters.groupByTag ? 'primary' : 'neutral'"
+      aria-label="Group by tag"
+      @click="toggleGroupByTag"
+    />
 
     <slot />
   </div>

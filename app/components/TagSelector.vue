@@ -10,12 +10,14 @@ const emit = defineEmits<{
 }>()
 
 const { tags, loading, fetchTags, createTag } = useTags()
+const { isAdmin } = useAuth()
 
 const open = ref(false)
 const newTagName = ref('')
 const newTagColor = ref('#8b5cf6')
 const showCreateForm = ref(false)
 const createLoading = ref(false)
+const createError = ref('')
 
 onMounted(() => fetchTags())
 
@@ -44,12 +46,16 @@ async function handleCreateTag() {
   const name = newTagName.value.trim()
   if (!name) return
   createLoading.value = true
+  createError.value = ''
   try {
     const tag = await createTag(name, newTagColor.value)
     emit('update:modelValue', [...props.modelValue, tag.id])
     newTagName.value = ''
     newTagColor.value = '#8b5cf6'
     showCreateForm.value = false
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string }, message?: string }
+    createError.value = err?.data?.message ?? err?.message ?? 'Failed to create tag'
   } finally {
     createLoading.value = false
   }
@@ -131,7 +137,10 @@ async function handleCreateTag() {
         </div>
 
         <!-- Create new tag -->
-        <div class="border-t border-(--ui-border)">
+        <div
+          v-if="isAdmin"
+          class="border-t border-(--ui-border)"
+        >
           <template v-if="!showCreateForm">
             <button
               type="button"
@@ -147,6 +156,12 @@ async function handleCreateTag() {
           </template>
           <template v-else>
             <div class="p-2 space-y-2">
+              <p
+                v-if="createError"
+                class="text-xs text-(--ui-error)"
+              >
+                {{ createError }}
+              </p>
               <div class="flex items-center gap-2">
                 <input
                   v-model="newTagColor"

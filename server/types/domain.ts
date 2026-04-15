@@ -295,6 +295,7 @@ export interface FilterState {
   label?: string
   status?: 'active' | 'completed' | 'all'
   tagIds?: string[]
+  groupByTag?: boolean
 }
 
 // ---- Part Step Status (formerly SN Step Status) ----

@@ -229,13 +229,13 @@ Add a custom tagging system for production jobs. Tags are user-defined entities 
     - Filtering applies to both desktop `UTable` and mobile `JobMobileCard` views
     - _Requirements: 13.1, 13.3, 13.6, 13.9_
 
-- [ ] 14. Tag grouping on Jobs page
-  - [ ] 14.1 Add `groupByTag?: boolean` to `FilterState` in `server/types/domain.ts`
+- [x] 14. Tag grouping on Jobs page
+  - [x] 14.1 Add `groupByTag?: boolean` to `FilterState` in `server/types/domain.ts`
     - Persisted to localStorage alongside other filter state
     - `clearFilters()` resets it to `false`
     - _Requirements: 14.4, 14.6_
 
-  - [ ] 14.2 Create `groupJobsByTag` utility in `app/utils/jobTagGrouping.ts`
+  - [x] 14.2 Create `groupJobsByTag` utility in `app/utils/jobTagGrouping.ts`
     - Accepts filtered jobs array and all tags, returns `JobTagGroup[]`
     - Jobs with multiple tags appear in each matching group
     - Untagged jobs go into a `{ tag: null }` group at the bottom
@@ -243,13 +243,13 @@ Add a custom tagging system for production jobs. Tags are user-defined entities 
     - Export `JobTagGroup` interface
     - _Requirements: 14.1, 14.2, 14.3_
 
-  - [ ] 14.3 Add "Group by Tag" toggle to `ViewFilters.vue`
+  - [x] 14.3 Add "Group by Tag" toggle to `ViewFilters.vue`
     - Render a toggle button (icon `i-lucide-group`) next to the Tags dropdown, only when tags exist
     - Active state visually indicated (e.g., `variant="soft"` when on, `variant="outline"` when off)
     - Emits filter change with `groupByTag` toggled
     - _Requirements: 14.4, 14.8_
 
-  - [ ] 14.4 Implement grouped view in Jobs page (`app/pages/jobs/index.vue`)
+  - [x] 14.4 Implement grouped view in Jobs page (`app/pages/jobs/index.vue`)
     - Compute `jobGroups` from `filteredJobs` + `availableTags` when `filters.groupByTag` is true
     - Render collapsible sections: colored tag pill header, job count badge, expand/collapse toggle
     - Each section contains the same job rows (desktop table or mobile cards)
@@ -258,14 +258,14 @@ Add a custom tagging system for production jobs. Tags are user-defined entities 
     - Disable "Edit Priority" button when grouping is active
     - _Requirements: 14.1, 14.2, 14.3, 14.5, 14.7, 14.8, 14.9_
 
-- [ ] 15. Tests for tag filtering and grouping (Requirements 13 & 14)
-  - [ ] 15.1 Unit tests for `useViewFilters` tag filtering
+- [x] 15. Tests for tag filtering and grouping (Requirements 13 & 14)
+  - [x] 15.1 Unit tests for `useViewFilters` tag filtering
     - Test `applyFilters` with `tagIds` accessor: single tag, multiple tags (AND logic), empty tagIds (no filter), job with no tags excluded when filter active
     - Test `clearFilters` resets `tagIds` to empty array and `groupByTag` to false
     - Test tag filter combines with existing filters (AND across all filter types)
     - _Validates: Requirements 13.3, 13.5, 13.6_
 
-  - [ ] 15.2 Unit tests for `groupJobsByTag` utility
+  - [x] 15.2 Unit tests for `groupJobsByTag` utility
     - Test jobs with single tag grouped correctly
     - Test jobs with multiple tags appear in each matching group
     - Test untagged jobs appear in "Untagged" group at bottom
@@ -274,20 +274,52 @@ Add a custom tagging system for production jobs. Tags are user-defined entities 
     - Test interaction with tag filter: only matching groups shown
     - _Validates: Requirements 14.1, 14.2, 14.3_
 
-  - [ ] 15.3 Property-based test CP-TAG-6: Grouping Completeness
+  - [x] 15.3 Property-based test CP-TAG-6: Grouping Completeness
     - For any set of jobs with arbitrary tag assignments, every job appears in at least one group (either a tag group or "Untagged")
     - No job is lost during grouping
     - **Property: Grouping Completeness**
     - _Validates: Requirements 14.1, 14.2, 14.3_
 
-  - [ ] 15.4 Property-based test CP-TAG-7: Filter-Group Consistency
+  - [x] 15.4 Property-based test CP-TAG-7: Filter-Group Consistency
     - For any tag filter + grouping combination, the set of jobs visible across all groups equals the set of jobs that would pass the flat filter
     - Jobs with multiple tags may appear in multiple groups, but the union of unique job IDs across groups equals the flat filtered set
     - **Property: Filter-Group Consistency**
     - _Validates: Requirements 13.3, 14.5_
 
-- [ ] 16. Final checkpoint
+- [x] 16. Final checkpoint
   - Ensure all tests pass and lint is clean after filtering, grouping, and test additions.
+
+- [x] 17. Fix job expansion in grouped view
+  - [x] 17.1 Add expand/collapse support to the grouped desktop table in `app/pages/jobs/index.vue`
+    - Add per-row expand state tracking for grouped view (reuse `expanded` ref or a separate grouped-expand ref)
+    - Add expand chevron button as the first column in each grouped table row
+    - Render `JobExpandableRow` component when a row is expanded (same as flat view)
+    - Wire `expandAllPathsSignal`, `collapseAllPathsSignal`, and `onPathsExpandedChange` to grouped rows
+    - Ensure `JobViewToolbar` expand/collapse-all actions work in grouped mode
+    - _Bug: Grouped view rendered plain table rows with only navigateTo on click, missing expand chevron and JobExpandableRow_
+    - _Requirements: 14.10_
+
+- [x] 18. Tag-colored group borders
+  - [x] 18.1 Apply tag color as border color on group containers in `app/pages/jobs/index.vue`
+    - Replace static `border-(--ui-border)` class with inline `borderColor` style using `group.tag?.color`
+    - Untagged groups fall back to `var(--ui-border)`
+    - Applied to both desktop and mobile grouped views
+    - _Requirements: 14.11_
+
+- [x] 19. Tests for grouped view expansion and colored borders (Requirements 14.10 & 14.11)
+  - [x] 19.1 Unit tests for grouped job expansion state management
+    - Test `expandedGroupedJobs` Set tracks expanded job IDs correctly
+    - Test `toggleGroupedJobExpand` adds/removes job IDs from the set
+    - Test `expandAllGroupedJobs` populates set with all job IDs across all groups
+    - Test `collapseAllGroupedJobs` clears the set and `jobsWithExpandedPaths`
+    - Test `hasExpandedJobs` returns true when `expandedGroupedJobs` is non-empty in grouped mode
+    - Test `expandAllJobs` / `collapseAllJobs` delegate to grouped variants when `isGrouped` is true
+    - _Validates: Requirement 14.10_
+
+  - [x] 19.2 Unit test for tag-colored group border logic
+    - Test that `group.tag?.color ?? 'var(--ui-border)'` produces the tag's hex color for tagged groups
+    - Test that untagged groups (where `group.tag` is null) produce `var(--ui-border)` fallback
+    - _Validates: Requirement 14.11_
 
 ## Notes
 

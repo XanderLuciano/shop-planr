@@ -187,6 +187,8 @@ Job Tags adds a custom labeling system to production jobs in Shop Planr, enablin
 7. WHEN grouping is active, each group section SHALL be collapsible (expanded by default) so users can focus on specific tag categories
 8. THE grouped view SHALL work on both desktop and mobile layouts
 9. WHEN grouping is active, THE priority edit mode SHALL be disabled (grouping and priority reordering are mutually exclusive)
+10. WHEN grouping is active, each job row in a group SHALL support expand/collapse to show the JobExpandableRow (paths and steps), matching the behavior of the flat list view
+11. WHEN grouping is active, each tag group container SHALL have a border colored to match the tag's color; untagged groups SHALL use the default UI border color
 
 ### Requirement 12: Security and Authorization
 

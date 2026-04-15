@@ -718,29 +718,32 @@ Grouping and priority reordering are mutually exclusive. When the user enters pr
 ### UI Structure (Grouped View)
 
 ```
-┌─────────────────────────────────────────────┐
-│ [Tag Pill: "Long Lead"]           12 jobs ▾ │
+┌─────────────────────────────────────────────┐  ← border: tag color (#ef4444)
+│ [▾] [Tag Pill: "Long Lead"]       12 jobs ▾ │
 ├─────────────────────────────────────────────┤
-│  Job row 1                                  │
-│  Job row 2                                  │
+│  [▸] #1  Job row 1                          │  ← expand chevron per row
+│  [▾] #2  Job row 2                          │
+│     └─ JobExpandableRow (paths/steps)       │
 │  ...                                        │
 └─────────────────────────────────────────────┘
 
-┌─────────────────────────────────────────────┐
-│ [Tag Pill: "Multi-Op"]             5 jobs ▾ │
+┌─────────────────────────────────────────────┐  ← border: tag color (#3b82f6)
+│ [▾] [Tag Pill: "Multi-Op"]         5 jobs ▾ │
 ├─────────────────────────────────────────────┤
-│  Job row 3                                  │
-│  Job row 4 (also in "Long Lead" group)      │
+│  [▸] #3  Job row 3                          │
+│  [▸] #4  Job row 4 (also in "Long Lead")   │
 │  ...                                        │
 └─────────────────────────────────────────────┘
 
-┌─────────────────────────────────────────────┐
-│ Untagged                           3 jobs ▾ │
+┌─────────────────────────────────────────────┐  ← border: default UI border
+│ [▾] Untagged                       3 jobs ▾ │
 ├─────────────────────────────────────────────┤
-│  Job row 7                                  │
+│  [▸] #7  Job row 7                          │
 │  ...                                        │
 └─────────────────────────────────────────────┘
 ```
+
+Each group container uses an inline `borderColor` style set to the tag's hex color (or `var(--ui-border)` for untagged groups). Each job row within a group has an expand/collapse chevron button that toggles a `JobExpandableRow` below it, providing the same path/step drill-down as the flat UTable view. The expand state is tracked via a separate `expandedGroupedJobs: Set<string>` ref (keyed by job ID), and the toolbar's "Expand All Jobs" / "Collapse All Jobs" actions work in both flat and grouped modes.
 
 ### State Persistence
 

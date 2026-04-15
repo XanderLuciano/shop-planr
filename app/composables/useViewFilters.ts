@@ -34,7 +34,7 @@ export function useViewFilters() {
   }
 
   function clearFilters() {
-    filters.value = { status: 'all', tagIds: [] }
+    filters.value = { status: 'all', tagIds: [], groupByTag: false }
   }
 
   /**
