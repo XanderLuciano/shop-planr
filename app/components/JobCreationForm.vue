@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick } from 'vue'
 import type { Job, Path } from '~/types/domain'
+import { extractApiError } from '~/utils/apiError'
 
 const props = defineProps<{
   mode: 'create' | 'edit'
@@ -33,6 +34,7 @@ const {
 const { templates, fetchTemplates } = useTemplates()
 const { users: allUsers } = useAuth()
 const { tags, fetchJobTags, setJobTags } = useJobTags()
+const toast = useToast()
 
 const selectedTagIds = ref<string[]>([])
 
@@ -103,8 +105,15 @@ async function handleSubmit() {
     const jobId = await submit()
     try {
       await setJobTags(jobId, selectedTagIds.value)
-    } catch {
-      // tag assignment failure should not block the save
+    } catch (e) {
+      // Tag assignment failing shouldn't block the job save — the job itself
+      // was created successfully. Surface the failure as a toast so the user
+      // knows to retry from the edit view, rather than silently swallowing it.
+      toast.add({
+        title: 'Tags not saved',
+        description: extractApiError(e, 'Failed to assign tags to the new job.'),
+        color: 'warning',
+      })
     }
     emit('saved', jobId)
   } catch {

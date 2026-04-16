@@ -78,16 +78,15 @@ async function handleCreateTag() {
       v-if="selectedTags.length"
       class="flex flex-wrap gap-1"
     >
-      <span
+      <JobTagPill
         v-for="tag in selectedTags"
         :key="tag.id"
-        class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium text-white"
-        :style="{ backgroundColor: tag.color }"
+        :tag="tag"
       >
-        {{ tag.name }}
         <button
           type="button"
           class="hover:opacity-75 leading-none"
+          :aria-label="`Remove tag ${tag.name}`"
           @click="removeTag(tag.id)"
         >
           <UIcon
@@ -95,7 +94,7 @@ async function handleCreateTag() {
             class="size-3"
           />
         </button>
-      </span>
+      </JobTagPill>
     </div>
 
     <!-- Dropdown trigger -->
