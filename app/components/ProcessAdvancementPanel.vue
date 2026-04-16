@@ -45,11 +45,13 @@ const forceCompleteTargetId = ref<string | null>(null)
 const advancedOpen = ref(false)
 const selectedTargetStepId = ref<string | typeof SELECT_NONE>(SELECT_NONE)
 const skipLoading = ref(false)
+const markComplete = ref(false)
 
 // Reset advanced options when step changes
 watch(() => props.job.stepId, () => {
   advancedOpen.value = false
   selectedTargetStepId.value = SELECT_NONE
+  markComplete.value = false
 })
 
 // Compute available target steps for skip-to dropdown
@@ -190,11 +192,11 @@ async function handleSkipSelectedParts() {
   skipLoading.value = true
   try {
     for (const partId of ids) {
-      await advanceToStep(partId, { targetStepId: targetId, skip: true })
+      await advanceToStep(partId, { targetStepId: targetId, skip: !markComplete.value })
     }
     toast.add({
-      title: 'Parts skipped',
-      description: `${ids.length} part${ids.length !== 1 ? 's' : ''} skipped forward`,
+      title: markComplete.value ? 'Parts advanced' : 'Parts skipped',
+      description: `${ids.length} part${ids.length !== 1 ? 's' : ''} ${markComplete.value ? 'completed and advanced' : 'skipped forward'}`,
       color: 'success',
     })
     emit('skipped')
@@ -417,6 +419,23 @@ onMounted(() => {
             class="text-amber-600 dark:text-amber-400"
           >
             ⚠ Required steps will be deferred and must be completed before final sign-off.
+          </p>
+        </div>
+
+        <!-- Mark complete checkbox -->
+        <div
+          v-if="hasTargetSelected"
+          class="flex items-start gap-2"
+        >
+          <UCheckbox
+            v-model="markComplete"
+            label="Mark this step as complete?"
+          />
+          <p class="text-xs text-(--ui-text-muted) mt-0.5">
+            {{ markComplete
+              ? 'The current step will be marked as completed before advancing.'
+              : 'The current step will be marked as skipped or deferred.'
+            }}
           </p>
         </div>
 
