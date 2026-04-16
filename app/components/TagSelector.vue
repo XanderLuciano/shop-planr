@@ -22,8 +22,6 @@ const createError = ref('')
 
 onMounted(() => fetchTags())
 
-// Reset the inline "create new tag" form whenever the popover closes so the
-// next open starts in a clean state.
 watch(open, (isOpen) => {
   if (!isOpen) {
     showCreateForm.value = false
@@ -73,31 +71,7 @@ async function handleCreateTag() {
 
 <template>
   <div class="space-y-2">
-    <!-- Selected pills -->
-    <div
-      v-if="selectedTags.length"
-      class="flex flex-wrap gap-1"
-    >
-      <JobTagPill
-        v-for="tag in selectedTags"
-        :key="tag.id"
-        :tag="tag"
-      >
-        <button
-          type="button"
-          class="hover:opacity-75 leading-none"
-          :aria-label="`Remove tag ${tag.name}`"
-          @click="removeTag(tag.id)"
-        >
-          <UIcon
-            name="i-lucide-x"
-            class="size-3"
-          />
-        </button>
-      </JobTagPill>
-    </div>
-
-    <!-- Dropdown trigger -->
+    <!-- Dropdown trigger first so pills below don't shift it -->
     <UPopover v-model:open="open">
       <UButton
         variant="outline"
@@ -118,9 +92,10 @@ async function handleCreateTag() {
               class="w-full flex items-center gap-2 px-3 py-2 hover:bg-(--ui-bg-elevated) text-sm text-left"
               @click="toggleTag(tag)"
             >
-              <UIcon
-                :name="isSelected(tag) ? 'i-lucide-square-check' : 'i-lucide-square'"
-                class="size-4 shrink-0 text-(--ui-text-muted)"
+              <UCheckbox
+                :model-value="isSelected(tag)"
+                tabindex="-1"
+                class="pointer-events-none"
               />
               <JobTagPill :tag="tag" />
             </button>
@@ -196,5 +171,29 @@ async function handleCreateTag() {
         </div>
       </template>
     </UPopover>
+
+    <!-- Selected pills below the trigger so they don't shift the popover -->
+    <div
+      v-if="selectedTags.length"
+      class="flex flex-wrap gap-1"
+    >
+      <JobTagPill
+        v-for="tag in selectedTags"
+        :key="tag.id"
+        :tag="tag"
+      >
+        <button
+          type="button"
+          class="hover:opacity-75 leading-none"
+          :aria-label="`Remove tag ${tag.name}`"
+          @click="removeTag(tag.id)"
+        >
+          <UIcon
+            name="i-lucide-x"
+            class="size-3"
+          />
+        </button>
+      </JobTagPill>
+    </div>
   </div>
 </template>
