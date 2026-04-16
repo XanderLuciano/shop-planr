@@ -60,9 +60,9 @@ describe('createTagSchema', () => {
 })
 
 describe('updateTagSchema', () => {
-  it('accepts an empty object (all fields optional)', () => {
+  it('rejects an empty object (at least one field required)', () => {
     const result = updateTagSchema.safeParse({})
-    expect(result.success).toBe(true)
+    expect(result.success).toBe(false)
   })
 
   it('accepts a name-only update', () => {

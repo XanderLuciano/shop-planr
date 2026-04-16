@@ -1,27 +1,10 @@
 import type Database from 'better-sqlite3'
 import type { Tag } from '../../types/domain'
 import type { JobTagRepository } from '../interfaces/jobTagRepository'
-
-interface TagRow {
-  id: string
-  name: string
-  color: string
-  created_at: string
-  updated_at: string
-}
+import { type TagRow, rowToTag } from './tagMapper'
 
 interface JobTagRow extends TagRow {
   job_id: string
-}
-
-function rowToTag(row: TagRow): Tag {
-  return {
-    id: row.id,
-    name: row.name,
-    color: row.color,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  }
 }
 
 export class SQLiteJobTagRepository implements JobTagRepository {
@@ -40,23 +23,31 @@ export class SQLiteJobTagRepository implements JobTagRepository {
     return rows.map(rowToTag)
   }
 
+  /** SQLite has a default limit of 999 bound parameters. Chunk large lists. */
+  private static readonly CHUNK_SIZE = 900
+
   getTagsForJobs(jobIds: string[]): Map<string, Tag[]> {
     if (jobIds.length === 0) return new Map()
 
-    const placeholders = jobIds.map(() => '?').join(', ')
-    const rows = this.db.prepare(`
-      SELECT jt.job_id, t.id, t.name, t.color, t.created_at, t.updated_at
-      FROM job_tags jt
-      JOIN tags t ON jt.tag_id = t.id
-      WHERE jt.job_id IN (${placeholders})
-    `).all(...jobIds) as JobTagRow[]
-
     const result = new Map<string, Tag[]>()
-    for (const row of rows) {
-      const { job_id, ...tagRow } = row
-      if (!result.has(job_id)) result.set(job_id, [])
-      result.get(job_id)!.push(rowToTag(tagRow))
+
+    for (let i = 0; i < jobIds.length; i += SQLiteJobTagRepository.CHUNK_SIZE) {
+      const chunk = jobIds.slice(i, i + SQLiteJobTagRepository.CHUNK_SIZE)
+      const placeholders = chunk.map(() => '?').join(', ')
+      const rows = this.db.prepare(`
+        SELECT jt.job_id, t.id, t.name, t.color, t.created_at, t.updated_at
+        FROM job_tags jt
+        JOIN tags t ON jt.tag_id = t.id
+        WHERE jt.job_id IN (${placeholders})
+      `).all(...chunk) as JobTagRow[]
+
+      for (const row of rows) {
+        const { job_id, ...tagRow } = row
+        if (!result.has(job_id)) result.set(job_id, [])
+        result.get(job_id)!.push(rowToTag(tagRow))
+      }
     }
+
     return result
   }
 

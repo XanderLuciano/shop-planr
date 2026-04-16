@@ -43,11 +43,11 @@ describe('Property CP-TAG-3: Replace Idempotence', () => {
         fc.subarray(['tag_a', 'tag_b', 'tag_c']),
         (selectedKeys) => {
           db = createTestDb()
-          const { tagService, tagRepo, jobTagRepo } = createTagServiceForTest(db)
+          const { tagService, tagRepo, jobTagRepo, userRepo } = createTagServiceForTest(db)
           const jobRepo = new SQLiteJobRepository(db)
           const pathRepo = new SQLitePathRepository(db)
           const partRepo = new SQLitePartRepository(db)
-          const jobService = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepo, jobTags: jobTagRepo, tags: tagRepo })
+          const jobService = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepo, jobTags: jobTagRepo, tags: tagRepo, users: userRepo })
 
           // Create 3 tags with fixed IDs by creating them and tracking their real IDs
           const tagA = tagService.createTag(ADMIN_ID, { name: 'Tag Alpha', color: '#ef4444' })
@@ -66,8 +66,8 @@ describe('Property CP-TAG-3: Replace Idempotence', () => {
           const job = jobService.createJob({ name: 'Test Job', goalQuantity: 10 })
 
           // Call setJobTags twice with the same tagIds
-          const result1 = jobService.setJobTags(job.id, tagIds)
-          const result2 = jobService.setJobTags(job.id, tagIds)
+          const result1 = jobService.setJobTags(ADMIN_ID, job.id, tagIds)
+          const result2 = jobService.setJobTags(ADMIN_ID, job.id, tagIds)
 
           // Both results should have the same tag IDs (order may differ)
           const ids1 = result1.map(t => t.id).sort()

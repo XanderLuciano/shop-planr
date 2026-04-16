@@ -42,11 +42,11 @@ describe('Property CP-TAG-4: Cascade Deletion Completeness', () => {
         fc.integer({ min: 1, max: 10 }),
         (goalQty) => {
           db = createTestDb()
-          const { tagService, tagRepo, jobTagRepo } = createTagServiceForTest(db)
+          const { tagService, tagRepo, jobTagRepo, userRepo } = createTagServiceForTest(db)
           const jobRepo = new SQLiteJobRepository(db)
           const pathRepo = new SQLitePathRepository(db)
           const partRepo = new SQLitePartRepository(db)
-          const jobService = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepo, jobTags: jobTagRepo, tags: tagRepo })
+          const jobService = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepo, jobTags: jobTagRepo, tags: tagRepo, users: userRepo })
 
           // Create a job
           const job = jobService.createJob({ name: 'Cascade Test Job', goalQuantity: goalQty })
@@ -56,7 +56,7 @@ describe('Property CP-TAG-4: Cascade Deletion Completeness', () => {
           const tagToKeep = tagService.createTag(ADMIN_ID, { name: 'Tag To Keep', color: '#3b82f6' })
 
           // Assign both tags to the job
-          jobService.setJobTags(job.id, [tagToDelete.id, tagToKeep.id])
+          jobService.setJobTags(ADMIN_ID, job.id, [tagToDelete.id, tagToKeep.id])
 
           // Verify both tags are assigned
           const tagsBefore = tagService.getTagsByJobId(job.id)

@@ -6,7 +6,6 @@ export default defineApiHandler(async (event) => {
   const userId = getAuthUserId(event)
   const { force } = parseQuery(event, deleteTagQuerySchema)
   const { tagService } = getServices()
-  tagService.deleteTag(userId, id, force)
-  setResponseStatus(event, 204)
-  return null
+  await tagService.deleteTag(userId, id, force)
+  return sendNoContent(event)
 })

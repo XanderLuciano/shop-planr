@@ -45,11 +45,11 @@ describe('Property CP-TAG-5: Bulk Fetch Completeness', () => {
         fc.array(fc.subarray([0, 1, 2], { minLength: 0, maxLength: 3 }), { minLength: 1, maxLength: 5 }),
         (jobCount, tagCount, assignmentPattern) => {
           db = createTestDb()
-          const { tagService, tagRepo, jobTagRepo } = createTagServiceForTest(db)
+          const { tagService, tagRepo, jobTagRepo, userRepo } = createTagServiceForTest(db)
           const jobRepo = new SQLiteJobRepository(db)
           const pathRepo = new SQLitePathRepository(db)
           const partRepo = new SQLitePartRepository(db)
-          const jobService = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepo, jobTags: jobTagRepo, tags: tagRepo })
+          const jobService = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepo, jobTags: jobTagRepo, tags: tagRepo, users: userRepo })
 
           // Create N jobs
           const jobs = Array.from({ length: jobCount }, (_, i) =>
@@ -73,7 +73,7 @@ describe('Property CP-TAG-5: Bulk Fetch Completeness', () => {
             // Filter indices to valid tag indices
             const tagIndices = pattern.filter(idx => idx < actualTagCount)
             const tagIds = [...new Set(tagIndices)].map(idx => tags[idx].id)
-            jobService.setJobTags(job.id, tagIds)
+            jobService.setJobTags(ADMIN_ID, job.id, tagIds)
             expectedAssignments.set(job.id, tagIds.sort())
           }
 

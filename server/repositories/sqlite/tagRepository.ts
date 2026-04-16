@@ -1,24 +1,7 @@
 import type Database from 'better-sqlite3'
 import type { Tag } from '../../types/domain'
 import type { TagRepository } from '../interfaces/tagRepository'
-
-interface TagRow {
-  id: string
-  name: string
-  color: string
-  created_at: string
-  updated_at: string
-}
-
-function rowToTag(row: TagRow): Tag {
-  return {
-    id: row.id,
-    name: row.name,
-    color: row.color,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  }
-}
+import { type TagRow, rowToTag } from './tagMapper'
 
 export class SQLiteTagRepository implements TagRepository {
   private db: Database.Database

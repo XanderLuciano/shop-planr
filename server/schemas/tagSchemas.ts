@@ -15,7 +15,10 @@ export const createTagSchema = z.object({
 export const updateTagSchema = z.object({
   name: z.string().trim().min(1).max(TAG_NAME_MAX).optional(),
   color: z.string().regex(HEX_COLOR_REGEX).optional(),
-})
+}).refine(
+  data => data.name !== undefined || data.color !== undefined,
+  { message: 'At least one of name or color must be provided' },
+)
 
 export const setJobTagsSchema = z.object({
   tagIds: z.array(z.string().min(1)).max(JOB_TAGS_MAX),

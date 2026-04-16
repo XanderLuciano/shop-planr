@@ -4,6 +4,7 @@ import { NotFoundError, ValidationError, ForbiddenError } from '../../../server/
 import type { TagRepository } from '../../../server/repositories/interfaces/tagRepository'
 import type { JobTagRepository } from '../../../server/repositories/interfaces/jobTagRepository'
 import type { UserRepository } from '../../../server/repositories/interfaces/userRepository'
+import type { JobRepository } from '../../../server/repositories/interfaces/jobRepository'
 import type { Tag, ShopUser } from '../../../server/types/domain'
 import type { AuditService } from '../../../server/services/auditService'
 
@@ -85,10 +86,23 @@ function createMockAuditService(): AuditService {
   } as unknown as AuditService
 }
 
+function createMockJobRepo(): JobRepository {
+  return {
+    getById: vi.fn((id: string) => (id === 'job_123' ? { id: 'job_123', name: 'Test Job' } : null)),
+    list: vi.fn(() => []),
+    create: vi.fn(),
+    createWithAutoIncPriority: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    bulkUpdatePriority: vi.fn(),
+  } as unknown as JobRepository
+}
+
 describe('TagService', () => {
   let tagRepo: TagRepository
   let jobTagRepo: JobTagRepository
   let userRepo: UserRepository
+  let jobRepo: JobRepository
   let auditService: AuditService
   let service: ReturnType<typeof createTagService>
 
@@ -96,8 +110,9 @@ describe('TagService', () => {
     tagRepo = createMockTagRepo()
     jobTagRepo = createMockJobTagRepo()
     userRepo = createMockUserRepo()
+    jobRepo = createMockJobRepo()
     auditService = createMockAuditService()
-    service = createTagService({ tags: tagRepo, jobTags: jobTagRepo, users: userRepo }, auditService)
+    service = createTagService({ tags: tagRepo, jobTags: jobTagRepo, jobs: jobRepo, users: userRepo }, auditService)
   })
 
   describe('admin gating', () => {
@@ -251,7 +266,7 @@ describe('TagService', () => {
         getJobIdsByTagId: vi.fn(() => ['job_1', 'job_2']),
       })
       service = createTagService(
-        { tags: tagRepo, jobTags: jobTagRepo, users: userRepo },
+        { tags: tagRepo, jobTags: jobTagRepo, jobs: jobRepo, users: userRepo },
         auditService,
       )
       const tag = service.createTag(ADMIN_ID, { name: 'In Use' })
@@ -265,7 +280,7 @@ describe('TagService', () => {
         getJobIdsByTagId: vi.fn(() => ['job_1', 'job_2', 'job_3']),
       })
       service = createTagService(
-        { tags: tagRepo, jobTags: jobTagRepo, users: userRepo },
+        { tags: tagRepo, jobTags: jobTagRepo, jobs: jobRepo, users: userRepo },
         auditService,
       )
       const tag = service.createTag(ADMIN_ID, { name: 'In Use' })
@@ -284,7 +299,7 @@ describe('TagService', () => {
         getJobIdsByTagId: vi.fn(() => ['job_1', 'job_2']),
       })
       service = createTagService(
-        { tags: tagRepo, jobTags: jobTagRepo, users: userRepo },
+        { tags: tagRepo, jobTags: jobTagRepo, jobs: jobRepo, users: userRepo },
         auditService,
       )
       const tag = service.createTag(ADMIN_ID, { name: 'Forced' })
@@ -309,7 +324,7 @@ describe('TagService', () => {
         throw new Error('simulated DB failure')
       })
       const failService = createTagService(
-        { tags: failingTagRepo, jobTags: jobTagRepo, users: userRepo },
+        { tags: failingTagRepo, jobTags: jobTagRepo, jobs: jobRepo, users: userRepo },
         auditService,
       )
       const tag = failService.createTag(ADMIN_ID, { name: 'Fail' })
@@ -362,9 +377,13 @@ describe('TagService', () => {
   })
 
   describe('getTagsByJobId', () => {
-    it('delegates to jobTags repository', () => {
+    it('delegates to jobTags repository for an existing job', () => {
       service.getTagsByJobId('job_123')
       expect(jobTagRepo.getTagsByJobId).toHaveBeenCalledWith('job_123')
+    })
+
+    it('throws NotFoundError when job does not exist', () => {
+      expect(() => service.getTagsByJobId('nonexistent_job')).toThrow(NotFoundError)
     })
   })
 })

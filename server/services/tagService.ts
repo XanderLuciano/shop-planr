@@ -1,5 +1,6 @@
 import type { TagRepository } from '../repositories/interfaces/tagRepository'
 import type { JobTagRepository } from '../repositories/interfaces/jobTagRepository'
+import type { JobRepository } from '../repositories/interfaces/jobRepository'
 import type { UserRepository } from '../repositories/interfaces/userRepository'
 import type { AuditService } from './auditService'
 import type { Tag } from '../types/domain'
@@ -14,6 +15,7 @@ export function createTagService(
   repos: {
     tags: TagRepository
     jobTags: JobTagRepository
+    jobs: JobRepository
     users: UserRepository
   },
   auditService: AuditService,
@@ -155,6 +157,10 @@ export function createTagService(
     },
 
     getTagsByJobId(jobId: string): Tag[] {
+      const job = repos.jobs.getById(jobId)
+      if (!job) {
+        throw new NotFoundError('Job', jobId)
+      }
       return repos.jobTags.getTagsByJobId(jobId)
     },
   }

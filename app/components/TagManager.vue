@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Tag } from '~/types/domain'
-import { extractApiError } from '~/utils/apiError'
+import { extractApiError, extractApiErrorCode } from '~/utils/apiError'
 
 const { tags, loading, error, fetchTags, createTag, updateTag, deleteTag } = useTags()
 const { isAdmin } = useAuth()
@@ -65,11 +65,7 @@ async function performDelete(force = false) {
     deleteRequiresForce.value = false
   } catch (e) {
     deleteError.value = extractApiError(e, 'Failed to delete tag')
-    // Surface the second-stage force button when the backend blocks an
-    // in-use delete. Keyed off the structured error code, not the message
-    // text, so wording changes don't silently break the flow.
-    const code = (e as { data?: { data?: { code?: string } } } | null | undefined)?.data?.data?.code
-    if (code === 'TAG_IN_USE') {
+    if (extractApiErrorCode(e) === 'TAG_IN_USE') {
       deleteRequiresForce.value = true
     }
   } finally {

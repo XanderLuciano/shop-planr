@@ -1,6 +1,7 @@
 import type Database from 'better-sqlite3'
 import { SQLiteTagRepository } from '../../../server/repositories/sqlite/tagRepository'
 import { SQLiteJobTagRepository } from '../../../server/repositories/sqlite/jobTagRepository'
+import { SQLiteJobRepository } from '../../../server/repositories/sqlite/jobRepository'
 import { SQLiteUserRepository } from '../../../server/repositories/sqlite/userRepository'
 import { SQLiteAuditRepository } from '../../../server/repositories/sqlite/auditRepository'
 import { createAuditService } from '../../../server/services/auditService'
@@ -19,6 +20,7 @@ export const ADMIN_ID = 'user_admin_test'
 export function createTagServiceForTest(db: Database.Database) {
   const tagRepo = new SQLiteTagRepository(db)
   const jobTagRepo = new SQLiteJobTagRepository(db)
+  const jobRepo = new SQLiteJobRepository(db)
   const userRepo = new SQLiteUserRepository(db)
   const auditRepo = new SQLiteAuditRepository(db)
   const auditService = createAuditService({ audit: auditRepo })
@@ -34,9 +36,9 @@ export function createTagServiceForTest(db: Database.Database) {
   })
 
   const tagService = createTagService(
-    { tags: tagRepo, jobTags: jobTagRepo, users: userRepo },
+    { tags: tagRepo, jobTags: jobTagRepo, jobs: jobRepo, users: userRepo },
     auditService,
   )
 
-  return { tagService, tagRepo, jobTagRepo, userRepo, auditService, adminId: ADMIN_ID }
+  return { tagService, tagRepo, jobTagRepo, jobRepo, userRepo, auditService, adminId: ADMIN_ID }
 }

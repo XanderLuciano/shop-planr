@@ -6,14 +6,14 @@ const STORAGE_KEY = 'shop_erp_view_filters'
 const filters = ref<FilterState>(loadFromStorage())
 
 function loadFromStorage(): FilterState {
-  if (import.meta.server) return { status: 'all' }
+  if (import.meta.server) return { status: 'all', tagIds: [], groupByTag: false }
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) return JSON.parse(raw)
   } catch {
     // ignore corrupt data
   }
-  return { status: 'all' }
+  return { status: 'all', tagIds: [], groupByTag: false }
 }
 
 function saveToStorage(state: FilterState) {
