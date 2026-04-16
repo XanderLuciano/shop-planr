@@ -37,6 +37,9 @@ const actionConfig: Record<AuditAction, { label: string, color: string, icon: st
   bom_edited: { label: 'BOM Edited', color: 'text-cyan-500', icon: 'i-lucide-table' },
   path_deleted: { label: 'Path Deleted', color: 'text-red-400', icon: 'i-lucide-folder-x' },
   part_deleted: { label: 'Part Deleted', color: 'text-red-500', icon: 'i-lucide-trash' },
+  tag_created: { label: 'Tag Created', color: 'text-teal-500', icon: 'i-lucide-tag' },
+  tag_updated: { label: 'Tag Updated', color: 'text-teal-400', icon: 'i-lucide-pencil' },
+  tag_deleted: { label: 'Tag Deleted', color: 'text-red-400', icon: 'i-lucide-tag' },
 }
 
 function formatTime(ts: string): string {

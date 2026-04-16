@@ -12,6 +12,7 @@ const tabs = [
   { label: 'Jira Connection', value: 'jira', icon: 'i-lucide-plug' },
   { label: 'Field Mappings', value: 'mappings', icon: 'i-lucide-columns-3' },
   { label: 'Process Library', value: 'libraries', icon: 'i-lucide-library' },
+  { label: 'Tags', value: 'tags', icon: 'i-lucide-tag' },
   { label: 'Page Visibility', value: 'pages', icon: 'i-lucide-eye' },
 ]
 
@@ -372,6 +373,17 @@ onMounted(async () => {
         <span class="text-sm font-medium text-(--ui-text-highlighted)">Process &amp; Location Libraries</span>
         <div class="p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50">
           <LibraryManager />
+        </div>
+      </div>
+
+      <!-- Tags tab -->
+      <div
+        v-if="activeTab === 'tags'"
+        class="space-y-3"
+      >
+        <span class="text-sm font-medium text-(--ui-text-highlighted)">Job Tags</span>
+        <div class="p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50">
+          <TagManager />
         </div>
       </div>
 

@@ -34,8 +34,8 @@ app/
   app.config.ts          → UI color config (primary: violet, neutral: neutral)
   pages/
     index.vue            → Placeholder homepage (to become dashboard)
-  components/            → 50+ components: SectionCard (reusable card wrapper), lifecycle dialogs (ScrapDialog, ForceCompleteDialog, AdvanceToStepDropdown), config panels (StepConfigPanel, AdvancementModeSelector, LibraryManager), job form (JobCreationForm), serial creation (SerialCreationPanel — first-step batch creation + advancement), page visibility (PageVisibilitySettings — toggle switches for nav pages), docs (EndpointCard MDC, DocsSidebar, DocsSearch), job view (JobViewToolbar — expand/collapse all jobs/paths buttons, JobExpandableRow — multi-path expansion with bulk signals, JobMobileCard — card-based job display for mobile viewports), work queue (WorkQueueFilterBar — group-by selector, filter dropdowns, text search, preset management), utility (BonusBadge, PathDeleteButton, PartDeleteButton, CertDetailView, TemplateEditor, etc.)
-  composables/           → 25+ composables: useAuth (session/token/user), useAuthFetch (authenticated $fetch instance), useJobForm, useLifecycle, useLibrary, useBomVersions, useAudit (with filters), usePartsView, useStepView, useOperatorWorkQueue (extended with groupBy param), useWorkQueueFilters (wraps useOperatorWorkQueue with groupBy/filter/preset/URL-sync), useAdvanceBatch (extracted advanceBatch() with client-side validation), useSettings (extended with pageToggles), useDocsNavigation, useDocsSearch, useMobileBreakpoint (matchMedia-based mobile viewport detection), useJobPriority (drag-and-drop priority editing), useNavigationStack (stack-based back navigation via sessionStorage) + existing ones
+  components/            → 50+ components: SectionCard (reusable card wrapper), lifecycle dialogs (ScrapDialog, ForceCompleteDialog, AdvanceToStepDropdown), config panels (StepConfigPanel, AdvancementModeSelector, LibraryManager), job form (JobCreationForm), serial creation (SerialCreationPanel — first-step batch creation + advancement), page visibility (PageVisibilitySettings — toggle switches for nav pages), docs (EndpointCard MDC, DocsSidebar, DocsSearch), job view (JobViewToolbar — expand/collapse all jobs/paths buttons, JobExpandableRow — multi-path expansion with bulk signals, JobMobileCard — card-based job display for mobile viewports, JobTagPill — colored pill badge for tags), job tags (TagManager — Settings CRUD with color picker + usage count, TagSelector — multi-select dropdown with inline create), work queue (WorkQueueFilterBar — group-by selector, filter dropdowns, text search, preset management), utility (BonusBadge, PathDeleteButton, PartDeleteButton, CertDetailView, TemplateEditor, ViewFilters — filter bar with tag dropdown + group-by-tag toggle, etc.)
+  composables/           → 25+ composables: useAuth (session/token/user), useAuthFetch (authenticated $fetch instance), useJobForm, useLifecycle, useLibrary, useBomVersions, useAudit (with filters), usePartsView, useStepView, useOperatorWorkQueue (extended with groupBy param), useWorkQueueFilters (wraps useOperatorWorkQueue with groupBy/filter/preset/URL-sync), useAdvanceBatch (extracted advanceBatch() with client-side validation), useSettings (extended with pageToggles), useDocsNavigation, useDocsSearch, useMobileBreakpoint (matchMedia-based mobile viewport detection), useJobPriority (drag-and-drop priority editing), useNavigationStack (stack-based back navigation via sessionStorage), useTags (singleton tag list CRUD), useJobTags (per-instance job tag assignment), useViewFilters (client-side filtering with tag + groupByTag support) + existing ones
   middleware/
     pageGuard.global.ts  → Global route middleware: blocks navigation to disabled pages, redirects to /
     stackTracker.global.ts → Global route middleware: auto-maintains navigation stack (push/pop/replace) on every client-side route change
@@ -45,6 +45,8 @@ app/
     navigationFallbacks.ts → resolveFallbackRoute(path) → deterministic parent route when nav stack is empty
     docsMethodColor.ts   → getMethodColor() — maps HTTP methods to Tailwind color classes for EndpointCard badges
     workQueueFilters.ts  → applyFilters() + extractAvailableValues() — pure client-side filtering for work queue groups
+    jobTagGrouping.ts    → groupJobsByTag() — groups filtered jobs by tag into collapsible sections; JobTagGroup interface
+    apiError.ts          → extractApiError(err, fallback) — unwraps Nitro `err.data.message` / `err.message` with a default
   assets/css/
     main.css             → Tailwind imports + custom violet #8750FF scale + green scale
 server/
@@ -52,10 +54,10 @@ server/
   middleware/
     01.rateLimit.ts      → Tiered rate limiting (login/auth/unauth tiers)
     02.auth.ts           → JWT auth: verifies token on /api/ routes, exempt list, cookie fallback for SSR
-  services/              → 13 service modules (business logic layer, including authService)
+  services/              → 14 service modules (business logic layer, including authService, tagService)
   repositories/
-    interfaces/          → 14 repository interfaces + barrel export
-    sqlite/              → 14 SQLite implementations + migration system (5 migrations)
+    interfaces/          → 16 repository interfaces + barrel export
+    sqlite/              → 16 SQLite implementations + migration system (13 migrations)
     factory.ts           → createRepositories(config) — returns RepositorySet
     types.ts             → Re-exports RepositorySet type
   utils/
@@ -179,6 +181,8 @@ Dependencies flow left-to-right only. All business logic lives in services. See 
 | `/api/steps/:id/config` | `pathService` | Step config: optional + dependencyType (PATCH) |
 | `/api/paths/:id/advancement-mode` | `pathService` | Path advancement mode (PATCH) |
 | `/api/library/**` | `libraryService` | Process + location library CRUD |
+| `/api/tags/**` | `tagService` | Tag CRUD (admin-gated create/update/delete) |
+| `/api/jobs/:id/tags` | `jobService`, `tagService` | Get/set tags for a job |
 
 ## Frontend: Pages (Implemented — tasks 5–10)
 
@@ -222,6 +226,8 @@ Core entities and relationships:
 - **ProcessLibraryEntry** / **LocationLibraryEntry** → reusable process name and location libraries
 - **ShopUser** → kiosk-mode identity with `username` (unique), `displayName`, `isAdmin`, `pinHash` (nullable — null means PIN not yet set); PIN-based auth with ES256 JWT tokens; admin flag gates UI features (job creation, job/path deletion, PIN reset); all mutation endpoints derive userId from JWT `event.context.auth.user.sub` via `getAuthUserId()` — no client-side userId override
 - **StepNote** → defect/note on serial(s) at a process step
+- **Tag** → user-defined label with name (max 30 chars, case-insensitive unique) and hex color; managed under Settings → Tags (admin-only CRUD)
+- **JobTag** → many-to-many join between Jobs and Tags via `job_tags` table; cascade deletes on both sides
 - **AppSettings** → singleton: Jira connection + field mappings + page toggles (5 default PI project mappings, 9 page visibility toggles)
 
 ## Sub-Maps (`.ai/` folder)

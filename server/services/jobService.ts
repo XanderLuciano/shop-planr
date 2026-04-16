@@ -2,11 +2,13 @@ import type { JobRepository } from '../repositories/interfaces/jobRepository'
 import type { PathRepository } from '../repositories/interfaces/pathRepository'
 import type { PartRepository } from '../repositories/interfaces/partRepository'
 import type { BomRepository } from '../repositories/interfaces/bomRepository'
-import type { Job } from '../types/domain'
+import type { JobTagRepository } from '../repositories/interfaces/jobTagRepository'
+import type { TagRepository } from '../repositories/interfaces/tagRepository'
+import type { Job, Tag } from '../types/domain'
 import type { CreateJobInput, UpdateJobInput, UpdatePrioritiesInput } from '../types/api'
 import type { JobProgress } from '../types/computed'
 import { generateId } from '../utils/idGenerator'
-import { assertPositive, assertNonEmpty } from '../utils/validation'
+import { assertPositive, assertNonEmpty, assertDefined } from '../utils/validation'
 import { NotFoundError, ValidationError } from '../utils/errors'
 
 function buildJobProgress(
@@ -40,6 +42,8 @@ export function createJobService(repos: {
   paths: PathRepository
   parts: PartRepository
   bom?: BomRepository
+  jobTags?: JobTagRepository
+  tags?: TagRepository
 }) {
   return {
     createJob(input: CreateJobInput): Job {
@@ -244,6 +248,45 @@ export function createJobService(repos: {
       }
 
       return { canDelete: reasons.length === 0, reasons }
+    },
+
+    setJobTags(_userId: string, jobId: string, tagIds: string[]): Tag[] {
+      assertDefined(repos.jobTags, 'jobTags repository')
+      assertDefined(repos.tags, 'tags repository')
+
+      const job = repos.jobs.getById(jobId)
+      if (!job) {
+        throw new NotFoundError('Job', jobId)
+      }
+
+      const uniqueIds = [...new Set(tagIds)]
+
+      if (uniqueIds.length > 0) {
+        const foundTags = repos.tags.getByIds(uniqueIds)
+        if (foundTags.length !== uniqueIds.length) {
+          const foundIds = new Set(foundTags.map(t => t.id))
+          const missingId = uniqueIds.find(id => !foundIds.has(id))!
+          throw new NotFoundError('Tag', missingId)
+        }
+      }
+
+      repos.jobTags.replaceJobTags(jobId, uniqueIds)
+      return repos.jobTags.getTagsByJobId(jobId)
+    },
+
+    /**
+     * Returns every job enriched with its tag list in a single pass, using a
+     * bulk JOIN under the hood so we never N+1. Tag repos must be wired —
+     * callers that don't wire them should use `repos.jobs.list()` directly.
+     */
+    listJobsWithTags(): (Job & { tags: Tag[] })[] {
+      assertDefined(repos.jobTags, 'jobTags repository')
+
+      const jobs = repos.jobs.list()
+      const jobIds = jobs.map(j => j.id)
+      const tagMap = repos.jobTags.getTagsForJobs(jobIds)
+
+      return jobs.map(job => ({ ...job, tags: tagMap.get(job.id) ?? [] }))
     },
   }
 }

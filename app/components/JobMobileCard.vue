@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { Job } from '~/types/domain'
+import type { Job, Tag } from '~/types/domain'
 import type { JobProgress } from '~/types/computed'
 
 withDefaults(defineProps<{
-  job: Job
+  job: Job & { tags?: readonly Tag[] }
   progress: JobProgress | null
   editing?: boolean
   index?: number
@@ -75,5 +75,15 @@ defineEmits<{
       :goal="progress.goalQuantity"
       :in-progress="progress.inProgressParts"
     />
+    <div
+      v-if="job.tags?.length"
+      class="flex flex-wrap gap-1"
+    >
+      <JobTagPill
+        v-for="tag in job.tags"
+        :key="tag.id"
+        :tag="tag"
+      />
+    </div>
   </div>
 </template>

@@ -12,6 +12,7 @@ import { createJiraService } from '../services/jiraService'
 import { createLifecycleService } from '../services/lifecycleService'
 import { createLibraryService } from '../services/libraryService'
 import { createAuthService } from '../services/authService'
+import { createTagService } from '../services/tagService'
 import { createSequentialPartIdGenerator } from '../utils/idGenerator'
 import type { AuditService } from '../services/auditService'
 import type { UserService } from '../services/userService'
@@ -27,6 +28,7 @@ import type { JiraService } from '../services/jiraService'
 import type { LifecycleService } from '../services/lifecycleService'
 import type { LibraryService } from '../services/libraryService'
 import type { AuthService } from '../services/authService'
+import type { TagService } from '../services/tagService'
 
 export interface ServiceSet {
   auditService: AuditService
@@ -43,6 +45,7 @@ export interface ServiceSet {
   lifecycleService: LifecycleService
   libraryService: LibraryService
   authService: AuthService
+  tagService: TagService
   /** @deprecated Use `partService` instead. Backward-compatible alias. */
   serialService: PartService
 }
@@ -58,7 +61,7 @@ export function getServices(): ServiceSet {
     const auditService = createAuditService({ audit: repos.audit })
     const userService = createUserService({ users: repos.users })
     const authService = createAuthService({ users: repos.users, cryptoKeys: repos.cryptoKeys })
-    const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts, bom: repos.bom })
+    const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts, bom: repos.bom, jobTags: repos.jobTags, tags: repos.tags })
     const pathService = createPathService({
       paths: repos.paths,
       parts: repos.parts,
@@ -136,6 +139,11 @@ export function getServices(): ServiceSet {
       partService,
     })
 
+    const tagService = createTagService(
+      { tags: repos.tags, jobTags: repos.jobTags, jobs: repos.jobs, users: repos.users },
+      auditService,
+    )
+
     services = {
       auditService,
       userService,
@@ -151,6 +159,7 @@ export function getServices(): ServiceSet {
       jiraService,
       lifecycleService,
       libraryService,
+      tagService,
       // Backward-compatible alias
       serialService: partService,
     }

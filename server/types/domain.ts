@@ -162,6 +162,9 @@ export type AuditAction
     | 'bom_edited'
     | 'path_deleted'
     | 'part_deleted'
+    | 'tag_created'
+    | 'tag_updated'
+    | 'tag_deleted'
 
 export interface AuditEntry {
   id: string
@@ -294,6 +297,8 @@ export interface FilterState {
   priority?: string
   label?: string
   status?: 'active' | 'completed' | 'all'
+  tagIds?: string[]
+  groupByTag?: boolean
 }
 
 // ---- Part Step Status (formerly SN Step Status) ----
@@ -358,4 +363,14 @@ export interface LocationLibraryEntry {
   id: string
   name: string
   createdAt: string
+}
+
+// ---- Tag ----
+
+export interface Tag {
+  id: string
+  name: string
+  color: string
+  createdAt: string
+  updatedAt: string
 }

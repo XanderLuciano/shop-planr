@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick } from 'vue'
 import type { Job, Path } from '~/types/domain'
+import { extractApiError } from '~/utils/apiError'
 
 const props = defineProps<{
   mode: 'create' | 'edit'
@@ -32,6 +33,10 @@ const {
 
 const { templates, fetchTemplates } = useTemplates()
 const { users: allUsers } = useAuth()
+const { tags, fetchJobTags, setJobTags } = useJobTags()
+const toast = useToast()
+
+const selectedTagIds = ref<string[]>([])
 
 // Active users for assignee dropdown
 const assigneeItems = computed(() => {
@@ -67,8 +72,12 @@ const dependencyTypeOptions = [
   { label: 'Completion Gate', value: 'completion_gate' },
 ]
 
-onMounted(() => {
+onMounted(async () => {
   fetchTemplates()
+  if (props.mode === 'edit' && props.existingJob) {
+    await fetchJobTags(props.existingJob.id)
+    selectedTagIds.value = tags.value.map(t => t.id)
+  }
 })
 
 function onTemplateSelect(pathClientId: string) {
@@ -94,6 +103,18 @@ async function handleSubmit() {
 
   try {
     const jobId = await submit()
+    try {
+      await setJobTags(jobId, selectedTagIds.value)
+    } catch (e) {
+      // Tag assignment failing shouldn't block the job save — the job itself
+      // was created successfully. Surface the failure as a toast so the user
+      // knows to retry from the edit view, rather than silently swallowing it.
+      toast.add({
+        title: 'Tags not saved',
+        description: extractApiError(e, 'Failed to assign tags to the new job.'),
+        color: 'warning',
+      })
+    }
     emit('saved', jobId)
   } catch {
     // submitError is already set by the composable
@@ -157,6 +178,10 @@ function handleCancel() {
             {{ getFieldError('job.goalQuantity') }}
           </p>
         </div>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-(--ui-text-highlighted) mb-1">Tags</label>
+        <TagSelector v-model="selectedTagIds" />
       </div>
     </div>
 

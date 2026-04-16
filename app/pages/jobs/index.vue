@@ -2,13 +2,15 @@
 import { h, resolveComponent } from 'vue'
 import type { TableColumn } from '@nuxt/ui'
 import type { Row, ExpandedState } from '@tanstack/vue-table'
-import type { Job } from '~/types/domain'
+import type { Job, Tag } from '~/types/domain'
 import type { JobProgress } from '~/types/computed'
+import { groupJobsByTag } from '~/utils/jobTagGrouping'
 
 const { jobs, loading, fetchJobs } = useJobs()
 const $api = useAuthFetch()
 const { isAdmin } = useAuth()
 const { filters, updateFilter, applyFilters } = useViewFilters()
+const { tags: availableTags, fetchTags } = useTags()
 const {
   isEditingPriority,
   orderedJobs,
@@ -31,21 +33,32 @@ const jobsWithExpandedPaths = ref<Set<string>>(new Set())
 const dragIndex = ref<number | null>(null)
 const dropTargetIndex = ref<number | null>(null)
 
-const hasExpandedJobs = computed(() =>
-  expanded.value === true || Object.keys(expanded.value).length > 0,
-)
+const hasExpandedJobs = computed(() => {
+  if (isGrouped.value) return expandedGroupedJobs.value.size > 0
+  return expanded.value === true || Object.keys(expanded.value).length > 0
+})
 
 function expandAllJobs() {
-  expanded.value = true
+  if (isGrouped.value) {
+    expandAllGroupedJobs()
+  } else {
+    expanded.value = true
+  }
 }
 
 function collapseAllJobs() {
-  expanded.value = {}
-  jobsWithExpandedPaths.value.clear()
+  if (isGrouped.value) {
+    collapseAllGroupedJobs()
+  } else {
+    expanded.value = {}
+    jobsWithExpandedPaths.value.clear()
+  }
 }
 
 async function expandAllPaths() {
-  if (expanded.value !== true) {
+  if (isGrouped.value) {
+    expandAllGroupedJobs()
+  } else if (expanded.value !== true) {
     expanded.value = true
   }
   await nextTick()
@@ -75,6 +88,7 @@ const filteredJobs = computed(() =>
       if (!p) return 'active'
       return p.completedParts >= p.goalQuantity && p.goalQuantity > 0 ? 'completed' : 'active'
     },
+    tagIds: j => j.tags?.map(t => t.id) ?? [],
   }),
 )
 
@@ -82,6 +96,76 @@ const filteredJobs = computed(() =>
 const displayedJobs = computed(() =>
   isEditingPriority.value ? [...orderedJobs.value] : filteredJobs.value,
 )
+
+/** Grouped view: organize filtered jobs by tag when groupByTag is active */
+const isGrouped = computed(() => !!filters.value.groupByTag && !isEditingPriority.value)
+
+const jobGroups = computed(() => {
+  if (!isGrouped.value) return []
+  return groupJobsByTag(filteredJobs.value, availableTags.value)
+})
+
+const expandedGroupedJobs = ref<Set<string>>(new Set())
+
+function isGroupedJobExpanded(jobId: string): boolean {
+  return expandedGroupedJobs.value.has(jobId)
+}
+
+function toggleGroupedJobExpand(jobId: string) {
+  const next = new Set(expandedGroupedJobs.value)
+  if (next.has(jobId)) {
+    next.delete(jobId)
+  } else {
+    next.add(jobId)
+  }
+  expandedGroupedJobs.value = next
+}
+
+function expandAllGroupedJobs() {
+  const allIds = new Set<string>()
+  for (const group of jobGroups.value) {
+    for (const job of group.jobs) {
+      allIds.add(job.id)
+    }
+  }
+  expandedGroupedJobs.value = allIds
+}
+
+function collapseAllGroupedJobs() {
+  expandedGroupedJobs.value = new Set()
+  jobsWithExpandedPaths.value.clear()
+}
+
+const collapsedGroups = ref<Set<string>>(new Set())
+
+// Prune stale collapsedGroups keys when the set of visible groups changes
+watch(jobGroups, (groups) => {
+  if (collapsedGroups.value.size === 0) return
+  const activeKeys = new Set(groups.map(g => groupKey(g)))
+  for (const key of collapsedGroups.value) {
+    if (!activeKeys.has(key)) {
+      collapsedGroups.value.delete(key)
+    }
+  }
+})
+
+function toggleGroupCollapse(groupKey: string) {
+  const next = new Set(collapsedGroups.value)
+  if (next.has(groupKey)) {
+    next.delete(groupKey)
+  } else {
+    next.add(groupKey)
+  }
+  collapsedGroups.value = next
+}
+
+function groupKey(group: { tag: Tag | null }): string {
+  return group.tag?.id ?? '__untagged__'
+}
+
+function isGroupCollapsed(group: { tag: Tag | null }): boolean {
+  return collapsedGroups.value.has(groupKey(group))
+}
 
 // Prune jobsWithExpandedPaths when filtered jobs change (removes stale entries for jobs no longer visible)
 watch(filteredJobs, (visibleJobs) => {
@@ -101,7 +185,7 @@ function onFiltersChange(f: typeof filters.value) {
 }
 
 async function loadJobs() {
-  await fetchJobs()
+  await Promise.all([fetchJobs(), fetchTags()])
   await loadAllProgress()
 }
 
@@ -278,6 +362,17 @@ const columns: TableColumn<Job>[] = [
     header: 'Job Name',
   },
   {
+    accessorKey: 'tags',
+    header: 'Tags',
+    cell: ({ row }) => {
+      const job = row.original as Job & { tags?: readonly Tag[] }
+      if (!job.tags?.length) return null
+      return h('div', { class: 'flex flex-wrap gap-1' },
+        job.tags.map(tag => h(resolveComponent('JobTagPill'), { tag, key: tag.id })),
+      )
+    },
+  },
+  {
     accessorKey: 'jiraPartNumber',
     header: 'Part #',
     cell: ({ row }: { row: Row<Job> }) => row.original.jiraPartNumber || '—',
@@ -338,7 +433,7 @@ onMounted(() => {
             icon="i-lucide-arrow-up-down"
             variant="outline"
             size="sm"
-            :disabled="loading || !activeJobs.length"
+            :disabled="loading || !activeJobs.length || isGrouped"
             @click="onEditPriority"
           />
           <UButton
@@ -355,6 +450,7 @@ onMounted(() => {
     <ViewFilters
       v-if="!isEditingPriority"
       :filters="filters"
+      :available-tags="availableTags"
       @change="onFiltersChange"
     >
       <JobViewToolbar
@@ -382,7 +478,14 @@ onMounted(() => {
     </div>
 
     <div
-      v-else-if="!displayedJobs.length"
+      v-else-if="!displayedJobs.length && !isGrouped"
+      class="text-sm text-(--ui-text-muted) py-8 text-center"
+    >
+      {{ jobs.length ? 'No jobs match the current filters.' : 'No jobs yet. Create your first job to get started.' }}
+    </div>
+
+    <div
+      v-else-if="isGrouped && !jobGroups.length"
       class="text-sm text-(--ui-text-muted) py-8 text-center"
     >
       {{ jobs.length ? 'No jobs match the current filters.' : 'No jobs yet. Create your first job to get started.' }}
@@ -465,9 +568,9 @@ onMounted(() => {
       </table>
     </div>
 
-    <!-- Desktop: Normal mode UTable -->
+    <!-- Desktop: Normal mode UTable (flat view) -->
     <UTable
-      v-if="!loading && displayedJobs.length && !isEditingPriority"
+      v-if="!loading && displayedJobs.length && !isEditingPriority && !isGrouped"
       v-model:expanded="expanded"
       class="hidden md:block"
       :data="displayedJobs"
@@ -488,6 +591,129 @@ onMounted(() => {
         />
       </template>
     </UTable>
+
+    <!-- Desktop: Grouped view -->
+    <div
+      v-if="!loading && isGrouped && jobGroups.length"
+      class="hidden md:block space-y-3"
+    >
+      <div
+        v-for="group in jobGroups"
+        :key="groupKey(group)"
+        class="rounded-lg border overflow-hidden"
+        :style="{ borderColor: group.tag?.color ?? 'var(--ui-border)' }"
+      >
+        <button
+          class="flex items-center justify-between w-full px-3 py-2 bg-(--ui-bg-elevated)/50 hover:bg-(--ui-bg-elevated) transition-colors text-left"
+          @click="toggleGroupCollapse(groupKey(group))"
+        >
+          <div class="flex items-center gap-2">
+            <UIcon
+              :name="isGroupCollapsed(group) ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'"
+              class="size-4 text-(--ui-text-muted)"
+            />
+            <JobTagPill
+              v-if="group.tag"
+              :tag="group.tag"
+            />
+            <span
+              v-else
+              class="text-xs font-medium text-(--ui-text-muted)"
+            >Untagged</span>
+          </div>
+          <span class="text-xs text-(--ui-text-muted)">{{ group.jobs.length }} {{ group.jobs.length === 1 ? 'job' : 'jobs' }}</span>
+        </button>
+        <div v-if="!isGroupCollapsed(group)">
+          <table
+            class="w-full text-xs"
+            style="table-layout: fixed"
+          >
+            <colgroup>
+              <col style="width: 40px">
+              <col style="width: 50px">
+              <col>
+              <col style="width: 120px">
+              <col style="width: 80px">
+              <col style="width: 70px">
+              <col style="width: 200px">
+            </colgroup>
+            <tbody>
+              <template
+                v-for="job in group.jobs"
+                :key="job.id"
+              >
+                <tr
+                  class="border-t border-(--ui-border)/50 cursor-pointer hover:bg-(--ui-bg-elevated)/50"
+                  @click="navigateTo(`/jobs/${encodeURIComponent(job.id)}`)"
+                >
+                  <td
+                    class="py-1 pl-2 w-10"
+                    @click.stop
+                  >
+                    <UButton
+                      :icon="isGroupedJobExpanded(job.id) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
+                      variant="ghost"
+                      color="neutral"
+                      size="xs"
+                      @click="toggleGroupedJobExpand(job.id)"
+                    />
+                  </td>
+                  <td class="py-1 w-12 text-(--ui-text-muted)">
+                    {{ job.priority }}
+                  </td>
+                  <td class="py-1">
+                    {{ job.name }}
+                  </td>
+                  <td class="py-1">
+                    <div
+                      v-if="job.tags?.length"
+                      class="flex flex-wrap gap-1"
+                    >
+                      <JobTagPill
+                        v-for="tag in job.tags"
+                        :key="tag.id"
+                        :tag="tag"
+                      />
+                    </div>
+                  </td>
+                  <td class="py-1">
+                    {{ job.jiraPartNumber || '—' }}
+                  </td>
+                  <td class="py-1">
+                    {{ job.goalQuantity }}
+                  </td>
+                  <td class="py-1 pr-3 w-[200px]">
+                    <ProgressBar
+                      v-if="progressFor(job.id)"
+                      :completed="progressFor(job.id)!.completedParts"
+                      :goal="progressFor(job.id)!.goalQuantity"
+                      :in-progress="progressFor(job.id)!.inProgressParts"
+                    />
+                    <span
+                      v-else
+                      class="text-(--ui-text-muted)"
+                    >—</span>
+                  </td>
+                </tr>
+                <tr v-if="isGroupedJobExpanded(job.id)">
+                  <td
+                    colspan="7"
+                    class="p-0"
+                  >
+                    <JobExpandableRow
+                      :job-id="job.id"
+                      :expand-all-paths-signal="expandAllPathsSignal"
+                      :collapse-all-paths-signal="collapseAllPathsSignal"
+                      @paths-expanded-change="onPathsExpandedChange"
+                    />
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
     <!-- Mobile: Edit mode with drag-and-drop cards -->
     <div
@@ -517,9 +743,9 @@ onMounted(() => {
       />
     </div>
 
-    <!-- Mobile: Normal mode cards -->
+    <!-- Mobile: Normal mode cards (flat view) -->
     <div
-      v-if="!loading && filteredJobs.length && !isEditingPriority"
+      v-if="!loading && filteredJobs.length && !isEditingPriority && !isGrouped"
       class="md:hidden space-y-2"
     >
       <JobMobileCard
@@ -529,6 +755,73 @@ onMounted(() => {
         :progress="progressFor(job.id)"
         @click="navigateTo(`/jobs/${encodeURIComponent(job.id)}`)"
       />
+    </div>
+
+    <!-- Mobile: Grouped view -->
+    <div
+      v-if="!loading && isGrouped && jobGroups.length"
+      class="md:hidden space-y-3"
+    >
+      <div
+        v-for="group in jobGroups"
+        :key="groupKey(group)"
+        class="rounded-lg border overflow-hidden"
+        :style="{ borderColor: group.tag?.color ?? 'var(--ui-border)' }"
+      >
+        <button
+          class="flex items-center justify-between w-full px-3 py-2 bg-(--ui-bg-elevated)/50 hover:bg-(--ui-bg-elevated) transition-colors text-left"
+          @click="toggleGroupCollapse(groupKey(group))"
+        >
+          <div class="flex items-center gap-2">
+            <UIcon
+              :name="isGroupCollapsed(group) ? 'i-lucide-chevron-right' : 'i-lucide-chevron-down'"
+              class="size-4 text-(--ui-text-muted)"
+            />
+            <JobTagPill
+              v-if="group.tag"
+              :tag="group.tag"
+            />
+            <span
+              v-else
+              class="text-xs font-medium text-(--ui-text-muted)"
+            >Untagged</span>
+          </div>
+          <span class="text-xs text-(--ui-text-muted)">{{ group.jobs.length }} {{ group.jobs.length === 1 ? 'job' : 'jobs' }}</span>
+        </button>
+        <div
+          v-if="!isGroupCollapsed(group)"
+          class="space-y-2 p-2"
+        >
+          <div
+            v-for="job in group.jobs"
+            :key="job.id"
+          >
+            <div class="flex items-center gap-1">
+              <UButton
+                :icon="isGroupedJobExpanded(job.id) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
+                variant="ghost"
+                color="neutral"
+                size="xs"
+                @click="toggleGroupedJobExpand(job.id)"
+              />
+              <div class="flex-1 min-w-0">
+                <JobMobileCard
+                  :job="job"
+                  :progress="progressFor(job.id)"
+                  @click="navigateTo(`/jobs/${encodeURIComponent(job.id)}`)"
+                />
+              </div>
+            </div>
+            <JobExpandableRow
+              v-if="isGroupedJobExpanded(job.id)"
+              :job-id="job.id"
+              :expand-all-paths-signal="expandAllPathsSignal"
+              :collapse-all-paths-signal="collapseAllPathsSignal"
+              @paths-expanded-change="onPathsExpandedChange"
+            />
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>

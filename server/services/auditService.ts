@@ -291,6 +291,42 @@ export function createAuditService(repos: { audit: AuditRepository }) {
       })
     },
 
+    recordTagCreation(params: {
+      userId: string
+      tagId: string
+      metadata: { tagName: string, color: string }
+    }): AuditEntry {
+      return createEntry('tag_created', {
+        userId: params.userId,
+        metadata: { ...params.metadata, tagId: params.tagId },
+      })
+    },
+
+    recordTagUpdate(params: {
+      userId: string
+      tagId: string
+      metadata: {
+        tagName: string
+        changes: Partial<{ name: { from: string, to: string }, color: { from: string, to: string } }>
+      }
+    }): AuditEntry {
+      return createEntry('tag_updated', {
+        userId: params.userId,
+        metadata: { ...params.metadata, tagId: params.tagId },
+      })
+    },
+
+    recordTagDeletion(params: {
+      userId: string
+      tagId: string
+      metadata: { tagName: string, affectedJobIds: string[], affectedJobCount: number }
+    }): AuditEntry {
+      return createEntry('tag_deleted', {
+        userId: params.userId,
+        metadata: { ...params.metadata, tagId: params.tagId },
+      })
+    },
+
     recordBomEdited(params: {
       userId: string
       metadata: { bomId: string, changeDescription: string, versionNumber: number }

@@ -6,14 +6,14 @@ const STORAGE_KEY = 'shop_erp_view_filters'
 const filters = ref<FilterState>(loadFromStorage())
 
 function loadFromStorage(): FilterState {
-  if (import.meta.server) return { status: 'all' }
+  if (import.meta.server) return { status: 'all', tagIds: [], groupByTag: false }
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) return JSON.parse(raw)
   } catch {
     // ignore corrupt data
   }
-  return { status: 'all' }
+  return { status: 'all', tagIds: [], groupByTag: false }
 }
 
 function saveToStorage(state: FilterState) {
@@ -34,7 +34,7 @@ export function useViewFilters() {
   }
 
   function clearFilters() {
-    filters.value = { status: 'all' }
+    filters.value = { status: 'all', tagIds: [], groupByTag: false }
   }
 
   /**
@@ -51,6 +51,7 @@ export function useViewFilters() {
       priority?: (item: T) => string | undefined
       label?: (item: T) => string | undefined
       status?: (item: T) => 'active' | 'completed' | undefined
+      tagIds?: (item: T) => string[]
     },
   ): T[] {
     const f = filters.value
@@ -82,6 +83,10 @@ export function useViewFilters() {
       if (f.status && f.status !== 'all' && accessors.status) {
         const val = accessors.status(item)
         if (val && val !== f.status) return false
+      }
+      if (f.tagIds?.length && accessors.tagIds) {
+        const itemTagIds = accessors.tagIds(item)
+        if (!f.tagIds.every(id => itemTagIds.includes(id))) return false
       }
       return true
     })

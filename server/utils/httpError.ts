@@ -57,10 +57,14 @@ export function httpError(error: unknown): never {
 
   for (const entry of ERROR_STATUS_MAP) {
     if (error instanceof entry.errorClass) {
+      const data = error instanceof ValidationError && error.code
+        ? { code: error.code, ...(error.meta ?? {}) }
+        : undefined
       throw createError({
         statusCode: entry.statusCode,
         statusMessage: STATUS_MESSAGES[entry.statusCode] ?? 'Unknown Error',
         message: (error as Error).message,
+        ...(data && { data }),
       })
     }
   }

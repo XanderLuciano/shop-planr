@@ -12,7 +12,8 @@ import type { CreatePathInput, UpdatePathInput } from '../types/api'
 import type { StepDistribution } from '../types/computed'
 import { generateId } from '../utils/idGenerator'
 import { assertNonEmpty, assertNonEmptyArray, assertPositive } from '../utils/validation'
-import { NotFoundError, ValidationError, ForbiddenError } from '../utils/errors'
+import { NotFoundError, ValidationError } from '../utils/errors'
+import { requireAdmin } from '../utils/auth'
 
 // Re-export StepInput for backward compatibility with existing tests
 export type { StepInput } from '../types/domain'
@@ -183,19 +184,7 @@ export function createPathService(repos: {
     },
 
     deletePath(id: string, userId: string): { deletedPartIds: string[], deletedPartCount: number } {
-      if (!userId) {
-        throw new ValidationError('userId is required')
-      }
-      if (!repos.users) {
-        throw new ValidationError('User repository not available')
-      }
-      const user = repos.users.getById(userId)
-      if (!user) {
-        throw new ValidationError(`User not found: ${userId}`)
-      }
-      if (!user.isAdmin) {
-        throw new ForbiddenError('Admin access required to delete paths')
-      }
+      requireAdmin(repos.users, userId, 'delete paths')
 
       const existing = repos.paths.getById(id)
       if (!existing) {
