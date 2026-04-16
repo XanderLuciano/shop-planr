@@ -9,9 +9,10 @@ export function readableForeground(hexColor: string): '#fff' | '#000' {
   const m = /^#([0-9a-f]{6})$/i.exec(hexColor)
   if (!m) return '#fff'
 
-  const r = parseInt(m[1].slice(0, 2), 16) / 255
-  const g = parseInt(m[1].slice(2, 4), 16) / 255
-  const b = parseInt(m[1].slice(4, 6), 16) / 255
+  const hex = m[1] as string
+  const r = parseInt(hex.slice(0, 2), 16) / 255
+  const g = parseInt(hex.slice(2, 4), 16) / 255
+  const b = parseInt(hex.slice(4, 6), 16) / 255
 
   // WCAG 2.1 relative luminance
   const channel = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4)
