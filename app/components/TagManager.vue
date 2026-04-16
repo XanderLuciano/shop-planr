@@ -6,7 +6,7 @@ const { tags, loading, error, fetchTags, createTag, updateTag, deleteTag } = use
 const { isAdmin } = useAuth()
 
 const newName = ref('')
-const newColor = ref('#8b5cf6')
+const newColor = ref(randomTagColor())
 
 // Edit state
 const editingId = ref<string | null>(null)
@@ -27,7 +27,7 @@ async function handleCreate() {
   if (!name) return
   await createTag(name, newColor.value)
   newName.value = ''
-  newColor.value = '#8b5cf6'
+  newColor.value = randomTagColor()
 }
 
 function startEdit(tag: Tag) {

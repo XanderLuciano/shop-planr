@@ -21,3 +21,27 @@ export function readableForeground(hexColor: string): '#fff' | '#000' {
   // Threshold ~0.5 balances contrast for both very light and very dark backgrounds.
   return L > 0.5 ? '#000' : '#fff'
 }
+
+/**
+ * Generate a random tag color with a random hue but fixed saturation (70%)
+ * and lightness (55%). This produces vibrant, visually consistent colors
+ * that look good as pill backgrounds with white text.
+ */
+export function randomTagColor(): string {
+  const h = Math.floor(Math.random() * 360)
+  const s = 70
+  const l = 55
+  return hslToHex(h, s, l)
+}
+
+function hslToHex(h: number, s: number, l: number): string {
+  const sN = s / 100
+  const lN = l / 100
+  const a = sN * Math.min(lN, 1 - lN)
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12
+    const color = lN - a * Math.max(Math.min(k - 3, 9 - k, 1), -1)
+    return Math.round(255 * color).toString(16).padStart(2, '0')
+  }
+  return `#${f(0)}${f(8)}${f(4)}`
+}

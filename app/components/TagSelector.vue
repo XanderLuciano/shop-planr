@@ -15,7 +15,7 @@ const { isAdmin } = useAuth()
 
 const open = ref(false)
 const newTagName = ref('')
-const newTagColor = ref('#8b5cf6')
+const newTagColor = ref(randomTagColor())
 const showCreateForm = ref(false)
 const createLoading = ref(false)
 const createError = ref('')
@@ -59,7 +59,7 @@ async function handleCreateTag() {
     const tag = await createTag(name, newTagColor.value)
     emit('update:modelValue', [...props.modelValue, tag.id])
     newTagName.value = ''
-    newTagColor.value = '#8b5cf6'
+    newTagColor.value = randomTagColor()
     showCreateForm.value = false
   } catch (e) {
     createError.value = extractApiError(e, 'Failed to create tag')
