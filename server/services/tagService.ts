@@ -8,9 +8,7 @@ import { generateId } from '../utils/idGenerator'
 import { assertNonEmpty } from '../utils/validation'
 import { ValidationError, NotFoundError } from '../utils/errors'
 import { requireAdmin } from '../utils/auth'
-
-const COLOR_REGEX = /^#[0-9a-fA-F]{6}$/
-const DEFAULT_COLOR = '#8b5cf6'
+import { TAG_NAME_MAX, HEX_COLOR_REGEX, DEFAULT_TAG_COLOR } from '../constants/tag'
 
 export function createTagService(
   repos: {
@@ -30,12 +28,12 @@ export function createTagService(
       assertNonEmpty(input.name, 'name')
       const trimmed = input.name.trim()
 
-      if (trimmed.length > 30) {
-        throw new ValidationError('Tag name must be 30 characters or fewer')
+      if (trimmed.length > TAG_NAME_MAX) {
+        throw new ValidationError(`Tag name must be ${TAG_NAME_MAX} characters or fewer`)
       }
 
-      const color = input.color ?? DEFAULT_COLOR
-      if (!COLOR_REGEX.test(color)) {
+      const color = input.color ?? DEFAULT_TAG_COLOR
+      if (!HEX_COLOR_REGEX.test(color)) {
         throw new ValidationError('Color must be a valid hex color (e.g. #ef4444)')
       }
 
@@ -76,8 +74,8 @@ export function createTagService(
         assertNonEmpty(input.name, 'name')
         const trimmed = input.name.trim()
 
-        if (trimmed.length > 30) {
-          throw new ValidationError('Tag name must be 30 characters or fewer')
+        if (trimmed.length > TAG_NAME_MAX) {
+          throw new ValidationError(`Tag name must be ${TAG_NAME_MAX} characters or fewer`)
         }
 
         const duplicate = repos.tags.findByName(trimmed)
@@ -92,7 +90,7 @@ export function createTagService(
       }
 
       if (input.color !== undefined) {
-        if (!COLOR_REGEX.test(input.color)) {
+        if (!HEX_COLOR_REGEX.test(input.color)) {
           throw new ValidationError('Color must be a valid hex color (e.g. #ef4444)')
         }
         if (input.color !== existing.color) {

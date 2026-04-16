@@ -5,19 +5,16 @@
  * receive correctly-typed inputs.
  */
 import { z } from 'zod'
-
-const TAG_NAME_MAX = 30
-const JOB_TAGS_MAX = 50
-const HEX_COLOR = /^#[0-9a-fA-F]{6}$/
+import { TAG_NAME_MAX, JOB_TAGS_MAX, HEX_COLOR_REGEX } from '../constants/tag'
 
 export const createTagSchema = z.object({
   name: z.string().trim().min(1).max(TAG_NAME_MAX),
-  color: z.string().regex(HEX_COLOR).optional(),
+  color: z.string().regex(HEX_COLOR_REGEX).optional(),
 })
 
 export const updateTagSchema = z.object({
   name: z.string().trim().min(1).max(TAG_NAME_MAX).optional(),
-  color: z.string().regex(HEX_COLOR).optional(),
+  color: z.string().regex(HEX_COLOR_REGEX).optional(),
 })
 
 export const setJobTagsSchema = z.object({

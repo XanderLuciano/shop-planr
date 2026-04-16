@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import type { Tag } from '~/types/domain'
+import { readableForeground } from '~/utils/tagColor'
 
-defineProps<{ tag: Tag }>()
+const props = defineProps<{ tag: Tag }>()
+
+const fg = computed(() => readableForeground(props.tag.color))
 </script>
 
 <template>
   <span
-    class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium text-white"
-    :style="{ backgroundColor: tag.color }"
-  >{{ tag.name }}</span>
+    class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
+    :style="{ backgroundColor: tag.color, color: fg }"
+  >
+    {{ tag.name }}
+    <slot />
+  </span>
 </template>

@@ -8,7 +8,7 @@ import type { Job, Tag } from '../types/domain'
 import type { CreateJobInput, UpdateJobInput, UpdatePrioritiesInput } from '../types/api'
 import type { JobProgress } from '../types/computed'
 import { generateId } from '../utils/idGenerator'
-import { assertPositive, assertNonEmpty } from '../utils/validation'
+import { assertPositive, assertNonEmpty, assertDefined } from '../utils/validation'
 import { NotFoundError, ValidationError } from '../utils/errors'
 
 function buildJobProgress(
@@ -251,9 +251,8 @@ export function createJobService(repos: {
     },
 
     setJobTags(jobId: string, tagIds: string[]): Tag[] {
-      if (!repos.jobTags || !repos.tags) {
-        throw new Error('jobTags and tags repositories required for setJobTags')
-      }
+      assertDefined(repos.jobTags, 'jobTags repository')
+      assertDefined(repos.tags, 'tags repository')
 
       const job = repos.jobs.getById(jobId)
       if (!job) {
@@ -275,10 +274,13 @@ export function createJobService(repos: {
       return repos.jobTags.getTagsByJobId(jobId)
     },
 
+    /**
+     * Returns every job enriched with its tag list in a single pass, using a
+     * bulk JOIN under the hood so we never N+1. Tag repos must be wired —
+     * callers that don't wire them should use `repos.jobs.list()` directly.
+     */
     listJobsWithTags(): (Job & { tags: Tag[] })[] {
-      if (!repos.jobTags) {
-        return repos.jobs.list().map(job => ({ ...job, tags: [] }))
-      }
+      assertDefined(repos.jobTags, 'jobTags repository')
 
       const jobs = repos.jobs.list()
       const jobIds = jobs.map(j => j.id)
