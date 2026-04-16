@@ -80,8 +80,34 @@ function getStepErrors(stepIndex: number): { field: string; message: string }[] 
         <span class="flex-1 min-w-0">Process</span>
         <span class="flex-1 min-w-0">Location</span>
         <span class="w-36 shrink-0">Assignee</span>
-        <span class="w-8 shrink-0 text-center">Opt</span>
-        <span class="w-36 shrink-0">Dependency</span>
+        <span class="w-8 shrink-0 text-center flex items-center justify-center gap-0.5">
+          Opt
+          <UTooltip
+            text="When checked, this step can be skipped without blocking part completion."
+            :ui="{ content: 'h-auto py-2 px-3', text: 'whitespace-normal' }"
+          >
+            <UIcon
+              name="i-lucide-info"
+              class="size-3 text-(--ui-text-dimmed) cursor-help"
+            />
+          </UTooltip>
+        </span>
+        <span class="w-36 shrink-0 flex items-center gap-0.5">
+          Dependency
+          <UTooltip :ui="{ content: 'h-auto py-2 px-3', text: 'whitespace-normal' }">
+            <UIcon
+              name="i-lucide-info"
+              class="size-3 text-(--ui-text-dimmed) cursor-help"
+            />
+            <template #content>
+              <div class="text-xs space-y-1 max-w-64">
+                <p><span class="font-semibold">Physical:</span> Previous step must complete first.</p>
+                <p><span class="font-semibold">Preferred:</span> Recommended order, but skippable in flexible mode.</p>
+                <p><span class="font-semibold">Completion Gate:</span> Must complete before part finishes, but can be deferred.</p>
+              </div>
+            </template>
+          </UTooltip>
+        </span>
         <span class="w-14 shrink-0 text-center">↕</span>
         <span class="w-7 shrink-0 text-center">✕</span>
       </div>
