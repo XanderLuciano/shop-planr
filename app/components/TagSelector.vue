@@ -79,10 +79,10 @@ async function handleCreateTag() {
         size="sm"
         icon="i-lucide-tag"
         trailing-icon="i-lucide-chevron-down"
-        :label="selectedTags.length ? `Tags (${selectedTags.length})` : 'Tags'"
         :loading="loading"
-        class="w-28"
-      />
+      >
+        <span class="inline-block w-14 text-left">{{ selectedTags.length ? `Tags (${selectedTags.length})` : 'Tags' }}</span>
+      </UButton>
       <template #content>
         <div class="w-56">
           <div class="max-h-48 overflow-y-auto divide-y divide-(--ui-border)">
