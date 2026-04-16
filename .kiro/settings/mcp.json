@@ -11,7 +11,8 @@
       "type": "http",
       "url": "https://ui.nuxt.com/mcp",
       "autoApprove": [
-        "get-component"
+        "get-component",
+        "search-icons"
       ]
     },
     "sqlite": {

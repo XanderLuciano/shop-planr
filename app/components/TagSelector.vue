@@ -119,7 +119,7 @@ async function handleCreateTag() {
               @click="toggleTag(tag)"
             >
               <UIcon
-                :name="isSelected(tag) ? 'i-lucide-check-square' : 'i-lucide-square'"
+                :name="isSelected(tag) ? 'i-lucide-square-check' : 'i-lucide-square'"
                 class="size-4 shrink-0 text-(--ui-text-muted)"
               />
               <JobTagPill :tag="tag" />

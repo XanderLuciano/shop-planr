@@ -153,7 +153,7 @@ function toggleGroupByTag() {
             @click="toggleTag(tag.id)"
           >
             <UIcon
-              :name="isTagSelected(tag.id) ? 'i-lucide-check-square' : 'i-lucide-square'"
+              :name="isTagSelected(tag.id) ? 'i-lucide-square-check' : 'i-lucide-square'"
               class="size-4 shrink-0 text-(--ui-text-muted)"
             />
             <JobTagPill :tag="tag" />
