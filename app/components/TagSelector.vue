@@ -79,9 +79,25 @@ async function handleCreateTag() {
         size="sm"
         icon="i-lucide-tag"
         trailing-icon="i-lucide-chevron-down"
-        :label="selectedTags.length ? `${selectedTags.length} tag${selectedTags.length > 1 ? 's' : ''} selected` : 'Add tags'"
+        label="Tags"
         :loading="loading"
-      />
+      >
+        <template
+          v-if="selectedTags.length"
+          #trailing
+        >
+          <UBadge
+            variant="subtle"
+            size="sm"
+            :label="String(selectedTags.length)"
+            class="ml-0.5"
+          />
+          <UIcon
+            name="i-lucide-chevron-down"
+            class="size-4 shrink-0"
+          />
+        </template>
+      </UButton>
       <template #content>
         <div class="w-56">
           <div class="max-h-48 overflow-y-auto divide-y divide-(--ui-border)">
@@ -172,11 +188,8 @@ async function handleCreateTag() {
       </template>
     </UPopover>
 
-    <!-- Selected pills below the trigger so they don't shift the popover -->
-    <div
-      v-if="selectedTags.length"
-      class="flex flex-wrap gap-1"
-    >
+    <!-- Selected pills — always reserve a line so adding the first tag doesn't shift layout -->
+    <div class="flex flex-wrap gap-1 min-h-6">
       <JobTagPill
         v-for="tag in selectedTags"
         :key="tag.id"
@@ -194,6 +207,10 @@ async function handleCreateTag() {
           />
         </button>
       </JobTagPill>
+      <span
+        v-if="!selectedTags.length"
+        class="text-xs text-(--ui-text-dimmed) leading-6"
+      >No tags selected</span>
     </div>
   </div>
 </template>
