@@ -79,25 +79,10 @@ async function handleCreateTag() {
         size="sm"
         icon="i-lucide-tag"
         trailing-icon="i-lucide-chevron-down"
-        label="Tags"
+        :label="selectedTags.length ? `Tags (${selectedTags.length})` : 'Tags'"
         :loading="loading"
-      >
-        <template
-          v-if="selectedTags.length"
-          #trailing
-        >
-          <UBadge
-            variant="subtle"
-            size="sm"
-            :label="String(selectedTags.length)"
-            class="ml-0.5"
-          />
-          <UIcon
-            name="i-lucide-chevron-down"
-            class="size-4 shrink-0"
-          />
-        </template>
-      </UButton>
+        class="w-28"
+      />
       <template #content>
         <div class="w-56">
           <div class="max-h-48 overflow-y-auto divide-y divide-(--ui-border)">
