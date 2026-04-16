@@ -4,14 +4,12 @@ import type { PartRepository } from '../repositories/interfaces/partRepository'
 import type { BomRepository } from '../repositories/interfaces/bomRepository'
 import type { JobTagRepository } from '../repositories/interfaces/jobTagRepository'
 import type { TagRepository } from '../repositories/interfaces/tagRepository'
-import type { UserRepository } from '../repositories/interfaces/userRepository'
 import type { Job, Tag } from '../types/domain'
 import type { CreateJobInput, UpdateJobInput, UpdatePrioritiesInput } from '../types/api'
 import type { JobProgress } from '../types/computed'
 import { generateId } from '../utils/idGenerator'
 import { assertPositive, assertNonEmpty, assertDefined } from '../utils/validation'
 import { NotFoundError, ValidationError } from '../utils/errors'
-import { requireAdmin } from '../utils/auth'
 
 function buildJobProgress(
   job: Job,
@@ -46,7 +44,6 @@ export function createJobService(repos: {
   bom?: BomRepository
   jobTags?: JobTagRepository
   tags?: TagRepository
-  users?: UserRepository
 }) {
   return {
     createJob(input: CreateJobInput): Job {
@@ -253,8 +250,7 @@ export function createJobService(repos: {
       return { canDelete: reasons.length === 0, reasons }
     },
 
-    setJobTags(userId: string, jobId: string, tagIds: string[]): Tag[] {
-      requireAdmin(repos.users, userId, 'assign tags to jobs')
+    setJobTags(_userId: string, jobId: string, tagIds: string[]): Tag[] {
       assertDefined(repos.jobTags, 'jobTags repository')
       assertDefined(repos.tags, 'tags repository')
 

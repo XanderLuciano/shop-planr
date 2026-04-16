@@ -22,9 +22,15 @@ export class SQLiteTagRepository implements TagRepository {
 
   getByIds(ids: string[]): Tag[] {
     if (ids.length === 0) return []
-    const placeholders = ids.map(() => '?').join(', ')
-    const rows = this.db.prepare(`SELECT * FROM tags WHERE id IN (${placeholders})`).all(...ids) as TagRow[]
-    return rows.map(rowToTag)
+
+    const results: Tag[] = []
+    for (let i = 0; i < ids.length; i += SQLiteTagRepository.CHUNK_SIZE) {
+      const chunk = ids.slice(i, i + SQLiteTagRepository.CHUNK_SIZE)
+      const placeholders = chunk.map(() => '?').join(', ')
+      const rows = this.db.prepare(`SELECT * FROM tags WHERE id IN (${placeholders})`).all(...chunk) as TagRow[]
+      results.push(...rows.map(rowToTag))
+    }
+    return results
   }
 
   create(tag: Tag): Tag {
@@ -35,6 +41,8 @@ export class SQLiteTagRepository implements TagRepository {
     return tag
   }
 
+  private static readonly CHUNK_SIZE = 900
+
   update(id: string, partial: Partial<Tag>): Tag {
     const existing = this.getById(id)
     if (!existing) throw new Error(`Tag not found: ${id}`)
@@ -43,6 +51,7 @@ export class SQLiteTagRepository implements TagRepository {
       ...existing,
       ...partial,
       id, // ensure id is not overwritten
+      createdAt: existing.createdAt, // never allow createdAt to be overwritten
     }
 
     this.db.prepare(`

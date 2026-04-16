@@ -6,8 +6,7 @@ import type { PathRepository } from '../../../server/repositories/interfaces/pat
 import type { PartRepository } from '../../../server/repositories/interfaces/partRepository'
 import type { JobTagRepository } from '../../../server/repositories/interfaces/jobTagRepository'
 import type { TagRepository } from '../../../server/repositories/interfaces/tagRepository'
-import type { UserRepository } from '../../../server/repositories/interfaces/userRepository'
-import type { Job, Tag, ShopUser } from '../../../server/types/domain'
+import type { Job, Tag } from '../../../server/types/domain'
 
 function createMockJobRepo(): JobRepository {
   const store = new Map<string, Job>()
@@ -110,26 +109,7 @@ function createMockJobTagRepo(): JobTagRepository {
   }
 }
 
-const adminUser: ShopUser = {
-  id: 'user_admin',
-  username: 'admin',
-  displayName: 'Admin',
-  department: '',
-  active: true,
-  isAdmin: true,
-  pinHash: null,
-  createdAt: new Date().toISOString(),
-}
-
-function createMockUserRepo(): UserRepository {
-  return {
-    getById: vi.fn((id: string) => (id === adminUser.id ? adminUser : null)),
-    list: vi.fn(() => [adminUser]),
-    create: vi.fn(),
-    update: vi.fn(),
-    findByUsername: vi.fn(),
-  } as unknown as UserRepository
-}
+const CALLER_ID = 'user_any'
 
 function makeTag(id: string, name: string): Tag {
   return { id, name, color: '#8b5cf6', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
@@ -141,7 +121,6 @@ describe('JobService.setJobTags', () => {
   let partRepo: PartRepository
   let jobTagRepo: JobTagRepository
   let tagRepo: TagRepository
-  let userRepo: UserRepository
   let service: ReturnType<typeof createJobService>
 
   const tagA = makeTag('tag_a', 'Alpha')
@@ -154,42 +133,40 @@ describe('JobService.setJobTags', () => {
     partRepo = createMockPartRepo()
     tagRepo = createMockTagRepo([tagA, tagB, tagC])
     jobTagRepo = createMockJobTagRepo()
-    userRepo = createMockUserRepo()
-    service = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepo, jobTags: jobTagRepo, tags: tagRepo, users: userRepo })
+    service = createJobService({ jobs: jobRepo, paths: pathRepo, parts: partRepo, jobTags: jobTagRepo, tags: tagRepo })
   })
 
   it('replaces tags for a job', () => {
     const job = service.createJob({ name: 'Job A', goalQuantity: 10 })
-    service.setJobTags(adminUser.id, job.id, ['tag_a', 'tag_b'])
+    service.setJobTags(CALLER_ID, job.id, ['tag_a', 'tag_b'])
     expect(jobTagRepo.replaceJobTags).toHaveBeenCalledWith(job.id, ['tag_a', 'tag_b'])
   })
 
   it('deduplicates tagIds before replacing', () => {
     const job = service.createJob({ name: 'Job B', goalQuantity: 5 })
-    service.setJobTags(adminUser.id, job.id, ['tag_a', 'tag_b', 'tag_a'])
+    service.setJobTags(CALLER_ID, job.id, ['tag_a', 'tag_b', 'tag_a'])
     expect(jobTagRepo.replaceJobTags).toHaveBeenCalledWith(job.id, ['tag_a', 'tag_b'])
   })
 
   it('clears all tags when tagIds is empty', () => {
     const job = service.createJob({ name: 'Job C', goalQuantity: 5 })
-    service.setJobTags(adminUser.id, job.id, [])
+    service.setJobTags(CALLER_ID, job.id, [])
     expect(jobTagRepo.replaceJobTags).toHaveBeenCalledWith(job.id, [])
   })
 
   it('throws NotFoundError when job does not exist', () => {
-    expect(() => service.setJobTags(adminUser.id, 'nonexistent_job', ['tag_a'])).toThrow(NotFoundError)
+    expect(() => service.setJobTags(CALLER_ID, 'nonexistent_job', ['tag_a'])).toThrow(NotFoundError)
   })
 
   it('throws NotFoundError when a tag does not exist', () => {
     const job = service.createJob({ name: 'Job D', goalQuantity: 5 })
-    expect(() => service.setJobTags(adminUser.id, job.id, ['tag_a', 'tag_missing'])).toThrow(NotFoundError)
+    expect(() => service.setJobTags(CALLER_ID, job.id, ['tag_a', 'tag_missing'])).toThrow(NotFoundError)
   })
 
   it('returns the resulting Tag[] after replacement', () => {
     const job = service.createJob({ name: 'Job E', goalQuantity: 5 })
-    // jobTagRepo.getTagsByJobId is called after replaceJobTags; mock it to return the set tags
     vi.mocked(jobTagRepo.getTagsByJobId).mockReturnValue([tagA, tagB])
-    const result = service.setJobTags(adminUser.id, job.id, ['tag_a', 'tag_b'])
+    const result = service.setJobTags(CALLER_ID, job.id, ['tag_a', 'tag_b'])
     expect(result).toEqual([tagA, tagB])
   })
 })

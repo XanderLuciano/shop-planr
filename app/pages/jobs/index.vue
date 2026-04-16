@@ -138,6 +138,17 @@ function collapseAllGroupedJobs() {
 
 const collapsedGroups = ref<Set<string>>(new Set())
 
+// Prune stale collapsedGroups keys when the set of visible groups changes
+watch(jobGroups, (groups) => {
+  if (collapsedGroups.value.size === 0) return
+  const activeKeys = new Set(groups.map(g => groupKey(g)))
+  for (const key of collapsedGroups.value) {
+    if (!activeKeys.has(key)) {
+      collapsedGroups.value.delete(key)
+    }
+  }
+})
+
 function toggleGroupCollapse(groupKey: string) {
   const next = new Set(collapsedGroups.value)
   if (next.has(groupKey)) {

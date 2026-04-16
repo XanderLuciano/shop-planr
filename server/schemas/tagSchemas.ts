@@ -26,5 +26,10 @@ export const setJobTagsSchema = z.object({
 
 /** Query-string schema for `DELETE /api/tags/:id`. `?force=true` cascades the removal. */
 export const deleteTagQuerySchema = z.object({
-  force: z.enum(['true', 'false']).optional().transform(v => v === 'true'),
+  force: z.preprocess(
+    v => (typeof v === 'string' ? v.toLowerCase() : v),
+    z.enum(['true', 'false', '1', '0', 'yes', 'no']).optional().transform((v) => {
+      return v === 'true' || v === '1' || v === 'yes'
+    }),
+  ),
 })

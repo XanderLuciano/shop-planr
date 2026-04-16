@@ -101,19 +101,19 @@ export function createTagService(
         }
       }
 
-      partial.updatedAt = new Date().toISOString()
+      // Short-circuit: nothing actually changed — return existing without touching DB
+      if (!changes.name && !changes.color) {
+        return existing
+      }
 
+      partial.updatedAt = new Date().toISOString()
       const updated = repos.tags.update(id, partial)
 
-      // Only audit when something actually changed — avoids audit noise from
-      // no-op updates (e.g., submitting the edit form without changing anything).
-      if (changes.name || changes.color) {
-        auditService.recordTagUpdate({
-          userId,
-          tagId: updated.id,
-          metadata: { tagName: updated.name, changes },
-        })
-      }
+      auditService.recordTagUpdate({
+        userId,
+        tagId: updated.id,
+        metadata: { tagName: updated.name, changes },
+      })
 
       return updated
     },

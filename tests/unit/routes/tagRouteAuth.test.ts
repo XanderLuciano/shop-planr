@@ -45,7 +45,7 @@ const mockTagService = {
 
 const mockJobService = {
   setJobTags: vi.fn((_userId: string) => {
-    if (!isCurrentUserAdmin) throw new ForbiddenError('Admin access required to assign tags to jobs')
+    // Tag assignment is open to any authenticated user (Requirement 12.2)
     return []
   }),
 }
@@ -134,16 +134,17 @@ describe('tag CRUD route wiring', () => {
   })
 
   /**
-   * Validates: tag assignment is admin-gated (consistent with tag CRUD)
+   * Validates: Requirement 12.2 — any auth'd user can assign tags to jobs
    */
-  it('PUT /api/jobs/:id/tags propagates ForbiddenError for non-admin user', async () => {
+  it('PUT /api/jobs/:id/tags succeeds for non-admin user', async () => {
     asRegular()
-    await expect(putJobTagsHandler(makeFakeEvent())).rejects.toThrow(ForbiddenError)
+    const result = await putJobTagsHandler(makeFakeEvent())
     expect(mockJobService.setJobTags).toHaveBeenCalledWith(REGULAR_ID, 'tag_1', expect.any(Array))
+    expect(result).toBeDefined()
   })
 
   /**
-   * Validates: admin users can assign tags to jobs
+   * Validates: admin users can also assign tags to jobs
    */
   it('PUT /api/jobs/:id/tags succeeds for admin user', async () => {
     asAdmin()

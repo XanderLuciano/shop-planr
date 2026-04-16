@@ -61,7 +61,7 @@ export function getServices(): ServiceSet {
     const auditService = createAuditService({ audit: repos.audit })
     const userService = createUserService({ users: repos.users })
     const authService = createAuthService({ users: repos.users, cryptoKeys: repos.cryptoKeys })
-    const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts, bom: repos.bom, jobTags: repos.jobTags, tags: repos.tags, users: repos.users })
+    const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts, bom: repos.bom, jobTags: repos.jobTags, tags: repos.tags })
     const pathService = createPathService({
       paths: repos.paths,
       parts: repos.parts,

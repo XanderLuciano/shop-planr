@@ -39,7 +39,11 @@ describe('Property CP-TAG-1: Tag Name Uniqueness', () => {
       fc.property(
         fc.uniqueArray(
           fc.string({ minLength: 1, maxLength: 30 }).filter(s => s.trim().length > 0 && s.trim().length <= 30),
-          { minLength: 2, maxLength: 5 },
+          {
+            minLength: 2,
+            maxLength: 5,
+            comparator: (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase(),
+          },
         ),
         (distinctNames) => {
           db = createTestDb()
@@ -68,7 +72,11 @@ describe('Property CP-TAG-1: Tag Name Uniqueness', () => {
       fc.property(
         fc.uniqueArray(
           fc.string({ minLength: 1, maxLength: 30 }).filter(s => s.trim().length > 0 && s.trim().length <= 30),
-          { minLength: 2, maxLength: 5 },
+          {
+            minLength: 2,
+            maxLength: 5,
+            comparator: (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase(),
+          },
         ),
         (distinctNames) => {
           db = createTestDb()
