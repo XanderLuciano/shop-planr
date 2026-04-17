@@ -1,19 +1,19 @@
 import { RateLimiterMemory } from 'rate-limiter-flexible'
 
 // Login tier (tightest — brute-force protection)
-const loginLimiter15s = new RateLimiterMemory({ points: 3, duration: 15, keyPrefix: 'login_15s' })
-const loginLimiter1m = new RateLimiterMemory({ points: 10, duration: 60, keyPrefix: 'login_1m' })
-const loginLimiter1h = new RateLimiterMemory({ points: 30, duration: 3600, keyPrefix: 'login_1h' })
+const loginLimiter15s = new RateLimiterMemory({ points: 6, duration: 15, keyPrefix: 'login_15s' })
+const loginLimiter1m = new RateLimiterMemory({ points: 20, duration: 60, keyPrefix: 'login_1m' })
+const loginLimiter1h = new RateLimiterMemory({ points: 60, duration: 3600, keyPrefix: 'login_1h' })
 
 // Unauthenticated tier
-const unauthLimiter15s = new RateLimiterMemory({ points: 10, duration: 15, keyPrefix: 'unauth_15s' })
-const unauthLimiter1m = new RateLimiterMemory({ points: 30, duration: 60, keyPrefix: 'unauth_1m' })
-const unauthLimiter1h = new RateLimiterMemory({ points: 300, duration: 3600, keyPrefix: 'unauth_1h' })
+const unauthLimiter15s = new RateLimiterMemory({ points: 20, duration: 15, keyPrefix: 'unauth_15s' })
+const unauthLimiter1m = new RateLimiterMemory({ points: 60, duration: 60, keyPrefix: 'unauth_1m' })
+const unauthLimiter1h = new RateLimiterMemory({ points: 600, duration: 3600, keyPrefix: 'unauth_1h' })
 
 // Authenticated tier (highest — supports bulk part advancement)
-const authLimiter15s = new RateLimiterMemory({ points: 60, duration: 15, keyPrefix: 'auth_15s' })
-const authLimiter1m = new RateLimiterMemory({ points: 300, duration: 60, keyPrefix: 'auth_1m' })
-const authLimiter1h = new RateLimiterMemory({ points: 10000, duration: 3600, keyPrefix: 'auth_1h' })
+const authLimiter15s = new RateLimiterMemory({ points: 500, duration: 15, keyPrefix: 'auth_15s' })
+const authLimiter1m = new RateLimiterMemory({ points: 1000, duration: 60, keyPrefix: 'auth_1m' })
+const authLimiter1h = new RateLimiterMemory({ points: 25000, duration: 3600, keyPrefix: 'auth_1h' })
 
 function getLimiters(path: string, isAuthenticated: boolean): RateLimiterMemory[] {
   if (path.startsWith('/api/auth/login') || path.startsWith('/api/auth/setup-pin')) {
