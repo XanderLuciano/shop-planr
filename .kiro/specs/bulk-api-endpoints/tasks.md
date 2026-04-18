@@ -12,7 +12,7 @@ Introduce five new bulk API endpoints with Zod validation to replace N+1 HTTP ca
     - Export as `batchDistributionsSchema`
     - _Requirements: 5.2_
 
-  - [ ] 1.2 Create `POST /api/paths/distributions.post.ts` route
+  - [ ] 1.2 Create `POST /api/paths/batch-distributions.post.ts` route
     - Validate body with `parseBody(event, batchDistributionsSchema)`
     - Loop over `pathIds`, call `pathService.getStepDistribution()` and `pathService.getPathCompletedCount()` per path
     - Omit missing paths (try/catch per path)
@@ -20,13 +20,13 @@ Introduce five new bulk API endpoints with Zod validation to replace N+1 HTTP ca
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
   - [ ] 1.3 Update `JobExpandableRow.vue` to use bulk distributions endpoint
-    - Replace the batched `Promise.allSettled` loop (CONCURRENCY=3) with a single `POST /api/paths/distributions` call
+    - Replace the batched `Promise.allSettled` loop (CONCURRENCY=3) with a single `POST /api/paths/batch-distributions` call
     - Populate `pathDistributions` and `pathCompletedCounts` from the bulk response
     - Remove the `loadingPathIds` per-path tracking (all load at once now)
     - _Requirements: 10.1, 10.3_
 
   - [ ] 1.4 Update `jobs/[id].vue` `loadAllDistributions()` to use bulk distributions endpoint
-    - Replace `Promise.allSettled` with individual `fetchPathDetail` calls with a single `POST /api/paths/distributions` call
+    - Replace `Promise.allSettled` with individual `fetchPathDetail` calls with a single `POST /api/paths/batch-distributions` call
     - Populate `distributions` and `pathCompletedCounts` from the bulk response
     - _Requirements: 10.2, 10.3_
 
@@ -75,7 +75,7 @@ Introduce five new bulk API endpoints with Zod validation to replace N+1 HTTP ca
     - Export as `batchStepStatusesSchema`
     - _Requirements: 4.2_
 
-  - [ ] 3.2 Create `POST /api/parts/step-statuses/batch.post.ts` route
+  - [ ] 3.2 Create `POST /api/parts/batch-step-statuses.post.ts` route
     - Validate body with `parseBody(event, batchStepStatusesSchema)`
     - Loop over `partIds`, call `lifecycleService.getStepStatuses()` per part
     - Omit missing parts (try/catch per part)
@@ -83,7 +83,7 @@ Introduce five new bulk API endpoints with Zod validation to replace N+1 HTTP ca
     - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
   - [ ] 3.3 Update `parts/step/[stepId].vue` `fetchDeferredSteps()` to use bulk endpoint
-    - Replace `Promise.allSettled` with individual `getStepStatuses` calls with a single `POST /api/parts/step-statuses/batch` call
+    - Replace `Promise.allSettled` with individual `getStepStatuses` calls with a single `POST /api/parts/batch-step-statuses` call
     - Filter the returned map for parts with deferred steps
     - _Requirements: 9.1, 9.2_
 

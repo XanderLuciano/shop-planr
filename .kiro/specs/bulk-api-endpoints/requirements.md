@@ -60,7 +60,7 @@ The Shop Planr frontend currently has several pages and components that make N s
 
 #### Acceptance Criteria
 
-1. THE system SHALL expose `POST /api/parts/step-statuses/batch` accepting a JSON body with `partIds` (string[], 1–500)
+1. THE system SHALL expose `POST /api/parts/batch-step-statuses` accepting a JSON body with `partIds` (string[], 1–500)
 2. THE endpoint SHALL validate the request body with a Zod schema and return 400 on validation failure
 3. THE endpoint SHALL return a `Record<string, PartStepStatusView[]>` mapping each partId to its step statuses
 4. IF a partId does not exist, THE endpoint SHALL omit it from the result (no error for missing parts)
@@ -72,7 +72,7 @@ The Shop Planr frontend currently has several pages and components that make N s
 
 #### Acceptance Criteria
 
-1. THE system SHALL expose `POST /api/paths/distributions` accepting a JSON body with `pathIds` (string[], 1–100)
+1. THE system SHALL expose `POST /api/paths/batch-distributions` accepting a JSON body with `pathIds` (string[], 1–100)
 2. THE endpoint SHALL validate the request body with a Zod schema and return 400 on validation failure
 3. THE endpoint SHALL return a `Record<string, { distribution: StepDistribution[], completedCount: number }>` mapping each pathId to its distribution data
 4. IF a pathId does not exist, THE endpoint SHALL omit it from the result (no error for missing paths)
@@ -113,7 +113,7 @@ The Shop Planr frontend currently has several pages and components that make N s
 
 #### Acceptance Criteria
 
-1. THE `parts/step/[stepId].vue` `fetchDeferredSteps()` function SHALL call `POST /api/parts/step-statuses/batch` with all part IDs instead of `Promise.allSettled` with individual calls
+1. THE `parts/step/[stepId].vue` `fetchDeferredSteps()` function SHALL call `POST /api/parts/batch-step-statuses` with all part IDs instead of `Promise.allSettled` with individual calls
 2. THE function SHALL filter the returned map for parts with deferred steps, same as current logic
 
 ### Requirement 10: Frontend — Path Distributions Uses Bulk Endpoint
@@ -122,6 +122,6 @@ The Shop Planr frontend currently has several pages and components that make N s
 
 #### Acceptance Criteria
 
-1. THE `JobExpandableRow.vue` bulk expand logic SHALL call `POST /api/paths/distributions` with all uncached path IDs instead of batched `Promise.allSettled` with individual `GET /api/paths/:id` calls
-2. THE `jobs/[id].vue` `loadAllDistributions()` SHALL call `POST /api/paths/distributions` with all path IDs instead of `Promise.allSettled` with individual calls
+1. THE `JobExpandableRow.vue` bulk expand logic SHALL call `POST /api/paths/batch-distributions` with all uncached path IDs instead of batched `Promise.allSettled` with individual `GET /api/paths/:id` calls
+2. THE `jobs/[id].vue` `loadAllDistributions()` SHALL call `POST /api/paths/batch-distributions` with all path IDs instead of `Promise.allSettled` with individual calls
 3. THE callers SHALL populate their local distribution caches from the bulk response

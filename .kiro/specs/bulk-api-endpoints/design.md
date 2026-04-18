@@ -23,8 +23,8 @@ graph TD
         BPO["POST /api/jobs/:id/paths/batch"]
         BAT["POST /api/parts/advance-to"]
         BNP["GET /api/notes/path/:pathId"]
-        BSS["POST /api/parts/step-statuses/batch"]
-        BPD["POST /api/paths/distributions"]
+        BSS["POST /api/parts/batch-step-statuses"]
+        BPD["POST /api/paths/batch-distributions"]
     end
 
     subgraph "Existing Services"
@@ -204,11 +204,11 @@ export default defineApiHandler(async (event) => {
 })
 ```
 
-### Route 4: `POST /api/parts/step-statuses/batch.post.ts`
+### Route 4: `POST /api/parts/batch-step-statuses.post.ts`
 
 ```typescript
-// server/api/parts/step-statuses/batch.post.ts
-import { batchStepStatusesSchema } from '../../../schemas/partSchemas'
+// server/api/parts/batch-step-statuses.post.ts
+import { batchStepStatusesSchema } from '../../schemas/partSchemas'
 
 export default defineApiHandler(async (event) => {
   const body = await parseBody(event, batchStepStatusesSchema)
@@ -228,10 +228,10 @@ export default defineApiHandler(async (event) => {
 })
 ```
 
-### Route 5: `POST /api/paths/distributions.post.ts`
+### Route 5: `POST /api/paths/batch-distributions.post.ts`
 
 ```typescript
-// server/api/paths/distributions.post.ts
+// server/api/paths/batch-distributions.post.ts
 import { batchDistributionsSchema } from '../../schemas/pathSchemas'
 
 export default defineApiHandler(async (event) => {
@@ -432,7 +432,7 @@ async function fetchDeferredSteps() {
 
   const statusMap = new Map<string, PartStepStatusView[]>()
   const result = await $api<Record<string, PartStepStatusView[]>>(
-    '/api/parts/step-statuses/batch',
+    '/api/parts/batch-step-statuses',
     { method: 'POST', body: { partIds: job.value.partIds } },
   )
 
@@ -453,7 +453,7 @@ const uncachedIds = allPathIds.filter(id => !pathDistributions.value[id])
 if (uncachedIds.length === 0) return
 
 const result = await $api<Record<string, { distribution: StepDist[], completedCount: number }>>(
-  '/api/paths/distributions',
+  '/api/paths/batch-distributions',
   { method: 'POST', body: { pathIds: uncachedIds } },
 )
 
