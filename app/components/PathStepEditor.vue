@@ -80,7 +80,7 @@ function getStepErrors(stepIndex: number): { field: string, message: string }[] 
         <span class="flex-1 min-w-0">Process</span>
         <span class="flex-1 min-w-0">Location</span>
         <span class="w-36 shrink-0">Assignee</span>
-        <span class="w-8 shrink-0 text-center flex items-center justify-center gap-0.5">
+        <span class="w-12 shrink-0 text-center flex items-center justify-center gap-0.5">
           Opt
           <UTooltip
             text="When checked, this step can be skipped without blocking part completion."
@@ -153,7 +153,7 @@ function getStepErrors(stepIndex: number): { field: string, message: string }[] 
           />
 
           <!-- Optional checkbox -->
-          <div class="w-8 shrink-0 flex items-center justify-center h-8">
+          <div class="w-12 shrink-0 flex items-center justify-center h-8">
             <input
               :checked="step.optional"
               type="checkbox"
