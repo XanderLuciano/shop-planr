@@ -14,6 +14,7 @@ graph TD
         JF[useJobForm.ts]
         PAP[ProcessAdvancementPanel.vue]
         SS[skipStep.ts]
+        ATD[AdvanceToStepDropdown.vue]
         JD["jobs/[id].vue"]
         SV["parts/step/[stepId].vue"]
         JER[JobExpandableRow.vue]
@@ -36,6 +37,7 @@ graph TD
     JF --> BPO --> PS
     PAP --> BAT --> LS
     SS --> BAT
+    ATD --> BAT
     JD --> BNP --> NS
     SV --> BSS --> LS
     JER --> BPD --> PS
@@ -408,6 +410,30 @@ export async function executeSkip(params: SkipStepParams): Promise<SkipStepResul
 ```
 
 Note: The `SkipStepParams` interface changes — `advanceToStep` (single-part) is replaced by `batchAdvanceToStep` (bulk). Callers of `executeSkip` must be updated.
+
+### Change 4b: `AdvanceToStepDropdown.vue` — Use `batchAdvanceToStep()`
+
+```typescript
+const { batchAdvanceToStep, loading, error } = useLifecycle()
+
+async function handleAdvance() {
+  validationError.value = null
+  if (!selectedStepId.value) {
+    validationError.value = 'No target step selected'
+    return
+  }
+
+  try {
+    await batchAdvanceToStep({
+      partIds: [props.partId],
+      targetStepId: selectedStepId.value,
+    })
+    emit('advanced')
+  } catch {
+    // error is set by composable
+  }
+}
+```
 
 ### Change 5: `jobs/[id].vue` — Use bulk notes endpoint
 

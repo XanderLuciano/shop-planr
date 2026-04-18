@@ -128,14 +128,19 @@ Introduce five new bulk API endpoints with Zod validation to replace N+1 HTTP ca
     - Update all callers of `executeSkip()` to pass the new parameter
     - _Requirements: 7.2_
 
-  - [ ] 5.6 Write unit tests for `batchAdvanceToSchema` and the advance-to route
+  - [ ] 5.6 Update `AdvanceToStepDropdown.vue` to use `batchAdvanceToStep()`
+    - Replace `advanceToStep(props.partId, { targetStepId })` with `batchAdvanceToStep({ partIds: [props.partId], targetStepId })`
+    - Destructure `batchAdvanceToStep` from `useLifecycle()` instead of `advanceToStep`
+    - _Requirements: 7.5_
+
+  - [ ] 5.7 Write unit tests for `batchAdvanceToSchema` and the advance-to route
     - Test schema accepts valid input with partIds, targetStepId, optional skip
     - Test schema rejects missing targetStepId, empty partIds, exceeding max 100
     - Test route collects per-part results (success and failure)
     - Test `advanced + failed === partIds.length` invariant
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-  - [ ] 5.7 Update existing frontend tests for `skipStep.ts` and `ProcessAdvancementPanel`
+  - [ ] 5.8 Update existing frontend tests for `skipStep.ts` and `ProcessAdvancementPanel`
     - Update `tests/unit/components/skipValidation.test.ts`: change mock from per-part `advanceToStep` to bulk `batchAdvanceToStep` matching the new `SkipStepParams` interface
     - Update `tests/properties/skipFlagInversion.property.test.ts` if the skip flag derivation logic changed
     - Update `tests/unit/components/skipStepCompletionToggle.test.ts` toast description tests if the message format changed to show advanced/failed counts

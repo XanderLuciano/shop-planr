@@ -97,6 +97,7 @@ The Shop Planr frontend currently has several pages and components that make N s
 2. THE `skipStep.ts` `executeSkip()` SHALL call `POST /api/parts/advance-to` with all part IDs instead of looping `advanceToStep()` per part
 3. THE `useLifecycle.ts` composable SHALL expose a new `batchAdvanceToStep()` method that calls the bulk endpoint
 4. THE UI SHALL report the count of advanced and failed parts from the batch response
+5. THE `AdvanceToStepDropdown.vue` `handleAdvance()` SHALL call `batchAdvanceToStep()` with a single-item `partIds` array instead of the single-part `advanceToStep()`
 
 ### Requirement 8: Frontend — Path Notes Uses Bulk Endpoint
 
