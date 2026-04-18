@@ -279,21 +279,23 @@ function getStepErrors(stepIndex: number): { field: string, message: string }[] 
         </div>
 
         <!-- Optional + Dependency row -->
-        <div class="flex items-center gap-2">
-          <input
-            :checked="step.optional"
-            type="checkbox"
-            class="rounded"
-            @change="onFieldInput(stepIndex, 'optional', step._clientId, 'optional', !step.optional)"
-          >
-          <span class="text-xs text-(--ui-text-muted)">Optional</span>
-          <USelect
-            :model-value="step.dependencyType"
-            :items="dependencyTypeOptions"
-            size="sm"
-            class="flex-1"
-            @update:model-value="(v: string) => onFieldInput(stepIndex, 'dependencyType', step._clientId, 'dependencyType', v)"
-          />
+        <div>
+          <div class="flex items-center gap-2">
+            <input
+              :checked="step.optional"
+              type="checkbox"
+              class="rounded"
+              @change="onFieldInput(stepIndex, 'optional', step._clientId, 'optional', !step.optional)"
+            >
+            <span class="text-xs text-(--ui-text-muted)">Optional</span>
+            <USelect
+              :model-value="step.dependencyType"
+              :items="dependencyTypeOptions"
+              size="sm"
+              class="flex-1"
+              @update:model-value="(v: string) => onFieldInput(stepIndex, 'dependencyType', step._clientId, 'dependencyType', v)"
+            />
+          </div>
           <p
             v-if="getFieldError?.(stepIndex, 'dependencyType')"
             class="text-xs text-(--ui-error) mt-0.5"

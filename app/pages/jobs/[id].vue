@@ -58,12 +58,21 @@ const newPathName = ref('')
 const newGoalQty = ref(1)
 const newPathSteps = ref<StepDraft[]>([createStepDraft()])
 
+function closeAllEditors() {
+  editingPathId.value = null
+  showNewPath.value = false
+  showTemplateApply.value = false
+  saving.value = false
+  saveError.value = null
+  applyError.value = ''
+}
+
 function startEditPath(path: Path) {
+  closeAllEditors()
   editingPathId.value = path.id
   editPathName.value = path.name
   editGoalQty.value = path.goalQuantity
   editSteps.value = toStepDrafts(path.steps as ProcessStep[])
-  saveError.value = null
 }
 
 function cancelEdit() {
@@ -71,14 +80,27 @@ function cancelEdit() {
   saveError.value = null
 }
 
+function validatePathForm(name: string, goalQty: number, steps: StepDraft[]): string | null {
+  if (!name.trim()) return 'Path name is required'
+  if (goalQty < 1) return 'Goal quantity must be at least 1'
+  const validSteps = steps.filter(s => s.name.trim())
+  if (!validSteps.length) return 'At least one step with a name is required'
+  return null
+}
+
 async function savePathEdit() {
+  const validationError = validatePathForm(editPathName.value, editGoalQty.value, editSteps.value)
+  if (validationError) {
+    saveError.value = validationError
+    return
+  }
   saving.value = true
   saveError.value = null
   try {
     await updatePath(editingPathId.value!, {
       name: editPathName.value.trim(),
       goalQuantity: editGoalQty.value,
-      steps: toStepPayload(editSteps.value),
+      steps: toStepPayload(editSteps.value.filter(s => s.name.trim())),
     })
     editingPathId.value = null
     await loadJob()
@@ -91,6 +113,11 @@ async function savePathEdit() {
 }
 
 async function saveNewPath() {
+  const validationError = validatePathForm(newPathName.value, newGoalQty.value, newPathSteps.value)
+  if (validationError) {
+    saveError.value = validationError
+    return
+  }
   saving.value = true
   saveError.value = null
   try {
@@ -98,7 +125,7 @@ async function saveNewPath() {
       jobId,
       name: newPathName.value.trim(),
       goalQuantity: newGoalQty.value,
-      steps: toStepPayload(newPathSteps.value),
+      steps: toStepPayload(newPathSteps.value.filter(s => s.name.trim())),
     })
     showNewPath.value = false
     newPathName.value = ''
@@ -595,7 +622,7 @@ onMounted(() => {
               variant="soft"
               color="neutral"
               label="From Template"
-              @click="showTemplateApply = true; applyGoalQty = job?.goalQuantity ?? 1"
+              @click="closeAllEditors(); showTemplateApply = true; applyGoalQty = job?.goalQuantity ?? 1"
             />
             <UButton
               v-if="!showNewPath && !showTemplateApply"
@@ -603,7 +630,7 @@ onMounted(() => {
               size="xs"
               variant="soft"
               label="Add Path"
-              @click="showNewPath = true; newGoalQty = job?.goalQuantity ?? 1"
+              @click="closeAllEditors(); showNewPath = true; newGoalQty = job?.goalQuantity ?? 1"
             />
           </div>
         </div>
