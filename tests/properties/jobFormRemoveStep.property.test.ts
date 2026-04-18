@@ -15,6 +15,7 @@ import fc from 'fast-check'
 import { useJobForm } from '~/app/composables/useJobForm'
 
 // Stub auto-imported composables
+vi.stubGlobal('useAuthFetch', () => vi.fn())
 vi.stubGlobal('useJobs', () => ({
   createJob: vi.fn(),
   updateJob: vi.fn(),

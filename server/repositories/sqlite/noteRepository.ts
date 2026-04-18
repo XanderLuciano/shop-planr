@@ -85,6 +85,13 @@ export class SQLiteNoteRepository implements NoteRepository {
     return rows.map(rowToDomain)
   }
 
+  listByPathId(pathId: string): StepNote[] {
+    const rows = this.db.prepare(
+      'SELECT * FROM step_notes WHERE path_id = ? ORDER BY created_at DESC',
+    ).all(pathId) as NoteRow[]
+    return rows.map(rowToDomain)
+  }
+
   deleteByStepIds(stepIds: string[]): number {
     if (stepIds.length === 0) return 0
     const placeholders = stepIds.map(() => '?').join(',')

@@ -99,9 +99,8 @@ export function computePathChanges(originalPaths: Path[], currentDrafts: PathDra
 // ---- Main Composable ----
 
 export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths: Path[] }) {
+  const $api = useAuthFetch()
   const { createJob, updateJob } = useJobs()
-  const { createPath, updatePath, deletePath } = usePaths()
-  const { authenticatedUser } = useAuth()
 
   // ---- State ----
   const jobDraft = ref<JobDraft>(
@@ -256,19 +255,24 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
       goalQuantity: jobDraft.value.goalQuantity,
     })
 
-    for (const draft of pathDrafts.value) {
-      await createPath({
-        jobId: job.id,
-        name: draft.name.trim(),
-        goalQuantity: draft.goalQuantity,
-        advancementMode: draft.advancementMode,
-        steps: draft.steps.map(s => ({
-          name: s.name.trim(),
-          location: s.location.trim() || undefined,
-          assignedTo: s.assignedTo || undefined,
-          optional: s.optional,
-          dependencyType: s.dependencyType,
-        })),
+    // Single bulk call replaces N sequential createPath calls
+    if (pathDrafts.value.length > 0) {
+      await $api(`/api/jobs/${job.id}/paths/batch`, {
+        method: 'POST',
+        body: {
+          create: pathDrafts.value.map(draft => ({
+            name: draft.name.trim(),
+            goalQuantity: draft.goalQuantity,
+            advancementMode: draft.advancementMode,
+            steps: draft.steps.map(s => ({
+              name: s.name.trim(),
+              location: s.location.trim() || undefined,
+              assignedTo: s.assignedTo || undefined,
+              optional: s.optional,
+              dependencyType: s.dependencyType,
+            })),
+          })),
+        },
       })
     }
 
@@ -287,46 +291,39 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
 
     const changes = computePathChanges(originalPaths, pathDrafts.value)
 
-    if (!authenticatedUser.value) {
-      throw new Error('Authentication required — please sign in again')
-    }
-
-    // Deletes first
-    for (const path of changes.toDelete) {
-      await deletePath(path.id)
-    }
-
-    // Then updates
-    for (const draft of changes.toUpdate) {
-      await updatePath(draft._existingId!, {
-        name: draft.name.trim(),
-        goalQuantity: draft.goalQuantity,
-        advancementMode: draft.advancementMode,
-        steps: draft.steps.map(s => ({
-          id: s._existingStepId,
-          name: s.name.trim(),
-          location: s.location.trim() || undefined,
-          assignedTo: s.assignedTo ? s.assignedTo : (s._existingStepId ? null : undefined),
-          optional: s.optional,
-          dependencyType: s.dependencyType,
-        })),
-      })
-    }
-
-    // Then creates
-    for (const draft of changes.toCreate) {
-      await createPath({
-        jobId,
-        name: draft.name.trim(),
-        goalQuantity: draft.goalQuantity,
-        advancementMode: draft.advancementMode,
-        steps: draft.steps.map(s => ({
-          name: s.name.trim(),
-          location: s.location.trim() || undefined,
-          assignedTo: s.assignedTo || undefined,
-          optional: s.optional,
-          dependencyType: s.dependencyType,
-        })),
+    const hasChanges = changes.toDelete.length + changes.toUpdate.length + changes.toCreate.length > 0
+    if (hasChanges) {
+      await $api(`/api/jobs/${jobId}/paths/batch`, {
+        method: 'POST',
+        body: {
+          delete: changes.toDelete.map(p => p.id),
+          update: changes.toUpdate.map(draft => ({
+            pathId: draft._existingId!,
+            name: draft.name.trim(),
+            goalQuantity: draft.goalQuantity,
+            advancementMode: draft.advancementMode,
+            steps: draft.steps.map(s => ({
+              id: s._existingStepId,
+              name: s.name.trim(),
+              location: s.location.trim() || undefined,
+              assignedTo: s.assignedTo ? s.assignedTo : (s._existingStepId ? null : undefined),
+              optional: s.optional,
+              dependencyType: s.dependencyType,
+            })),
+          })),
+          create: changes.toCreate.map(draft => ({
+            name: draft.name.trim(),
+            goalQuantity: draft.goalQuantity,
+            advancementMode: draft.advancementMode,
+            steps: draft.steps.map(s => ({
+              name: s.name.trim(),
+              location: s.location.trim() || undefined,
+              assignedTo: s.assignedTo || undefined,
+              optional: s.optional,
+              dependencyType: s.dependencyType,
+            })),
+          })),
+        },
       })
     }
 

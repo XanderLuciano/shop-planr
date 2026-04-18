@@ -51,3 +51,35 @@ export const updateStepConfigSchema = z.object({
   data => Object.values(data).some(v => v !== undefined),
   { message: 'No valid fields to update' },
 )
+
+export const batchDistributionsSchema = z.object({
+  pathIds: z.array(z.string().min(1))
+    .min(1, 'At least one path ID is required')
+    .max(100, 'Cannot fetch more than 100 paths at once'),
+})
+
+// ── Batch path operations ──
+
+const batchPathCreateSchema = z.object({
+  name: z.string().min(1, 'name is required'),
+  goalQuantity: z.number().int().positive('goalQuantity must be a positive integer'),
+  advancementMode: advancementModeEnum.optional(),
+  steps: z.array(stepInputSchema).min(1, 'At least one step is required'),
+})
+
+const batchPathUpdateSchema = z.object({
+  pathId: z.string().min(1, 'pathId is required'),
+  name: z.string().min(1).optional(),
+  goalQuantity: z.number().int().positive().optional(),
+  advancementMode: advancementModeEnum.optional(),
+  steps: z.array(stepInputSchema).min(1).optional(),
+})
+
+export const batchPathOperationsSchema = z.object({
+  create: z.array(batchPathCreateSchema).default([]),
+  update: z.array(batchPathUpdateSchema).default([]),
+  delete: z.array(z.string().min(1)).default([]),
+}).refine(
+  data => data.create.length + data.update.length + data.delete.length > 0,
+  { message: 'At least one operation (create, update, or delete) is required' },
+)

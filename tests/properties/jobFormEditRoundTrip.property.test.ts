@@ -18,6 +18,7 @@ import type { Job, Path, ProcessStep } from '~/server/types/domain'
 import { useJobForm } from '~/app/composables/useJobForm'
 
 // Stub auto-imported composables
+vi.stubGlobal('useAuthFetch', () => vi.fn())
 vi.stubGlobal('useJobs', () => ({
   createJob: vi.fn(),
   updateJob: vi.fn(),

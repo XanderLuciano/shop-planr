@@ -60,10 +60,10 @@ describe('Skip step completion toggle', () => {
  * Tests pure extractions of the toast title and description logic
  * from ProcessAdvancementPanel.vue.
  * - Toast title reflects markComplete state
- * - Toast description reflects markComplete state
+ * - Toast description shows advanced/failed counts from bulk response
  * - Singular/plural "part(s)" in description
  *
- * Validates: Requirements 5.1, 5.2
+ * Validates: Requirements 5.1, 5.2, 7.4
  */
 
 /**
@@ -75,9 +75,12 @@ function getToastTitle(markComplete: boolean): string {
 
 /**
  * Pure extraction of toast description logic from ProcessAdvancementPanel.vue.
+ *
+ * After the bulk API migration, the toast description shows the advanced count
+ * and optionally the failed count, regardless of markComplete state.
  */
-function getToastDescription(markComplete: boolean, count: number): string {
-  return `${count} part${count !== 1 ? 's' : ''} ${markComplete ? 'completed and advanced' : 'skipped forward'}`
+function getToastDescription(advanced: number, failed: number): string {
+  return `${advanced} part${advanced !== 1 ? 's' : ''} processed${failed ? `, ${failed} failed` : ''}`
 }
 
 describe('Toast message variants', () => {
@@ -92,22 +95,24 @@ describe('Toast message variants', () => {
   })
 
   describe('getToastDescription', () => {
-    it('contains "completed and advanced" when markComplete is true', () => {
-      expect(getToastDescription(true, 3)).toContain('completed and advanced')
+    it('shows "processed" for all advanced parts with no failures', () => {
+      expect(getToastDescription(3, 0)).toBe('3 parts processed')
     })
 
-    it('contains "skipped forward" when markComplete is false', () => {
-      expect(getToastDescription(false, 3)).toContain('skipped forward')
+    it('appends failed count when some parts fail', () => {
+      expect(getToastDescription(2, 1)).toBe('2 parts processed, 1 failed')
     })
 
-    it('uses singular "part" when count is 1', () => {
-      const desc = getToastDescription(true, 1)
-      expect(desc).toBe('1 part completed and advanced')
+    it('uses singular "part" when advanced count is 1', () => {
+      expect(getToastDescription(1, 0)).toBe('1 part processed')
     })
 
-    it('uses plural "parts" when count is greater than 1', () => {
-      const desc = getToastDescription(false, 2)
-      expect(desc).toBe('2 parts skipped forward')
+    it('uses plural "parts" when advanced count is greater than 1', () => {
+      expect(getToastDescription(5, 0)).toBe('5 parts processed')
+    })
+
+    it('shows both advanced and failed counts', () => {
+      expect(getToastDescription(4, 2)).toBe('4 parts processed, 2 failed')
     })
   })
 })

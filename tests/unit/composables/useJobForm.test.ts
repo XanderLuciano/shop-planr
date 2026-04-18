@@ -12,7 +12,9 @@ const mockUpdateJob = vi.fn()
 const mockCreatePath = vi.fn()
 const mockUpdatePath = vi.fn()
 const mockDeletePath = vi.fn()
+const mockApi = vi.fn()
 
+vi.stubGlobal('useAuthFetch', () => mockApi)
 vi.stubGlobal('useJobs', () => ({
   createJob: mockCreateJob,
   updateJob: mockUpdateJob,
@@ -100,10 +102,10 @@ describe('useJobForm', () => {
   // ---- Test 2: Submit in create mode calls createJob then createPath sequentially (Req 12.1) ----
 
   describe('create mode submission', () => {
-    it('calls createJob then createPath for each path draft sequentially', async () => {
+    it('calls createJob then batch endpoint for all paths', async () => {
       const createdJob = makeJob({ id: 'new-job-id' })
       mockCreateJob.mockResolvedValue(createdJob)
-      mockCreatePath.mockResolvedValue({})
+      mockApi.mockResolvedValue({ created: [], updated: [], deleted: [] })
 
       const { jobDraft, pathDrafts, addPath, submit } = useJobForm('create')
 
@@ -124,23 +126,35 @@ describe('useJobForm', () => {
         callOrder.push('createJob')
         return createdJob
       })
-      mockCreatePath.mockImplementation(async () => {
-        callOrder.push('createPath')
-        return {}
+      mockApi.mockImplementation(async () => {
+        callOrder.push('batchPaths')
+        return { created: [], updated: [], deleted: [] }
       })
 
       const jobId = await submit()
 
       expect(jobId).toBe('new-job-id')
-      expect(callOrder).toEqual(['createJob', 'createPath', 'createPath'])
+      expect(callOrder).toEqual(['createJob', 'batchPaths'])
       expect(mockCreateJob).toHaveBeenCalledWith({
         name: 'My Job',
         goalQuantity: 50,
       })
-      // Both createPath calls should use the returned job id
-      expect(mockCreatePath).toHaveBeenCalledTimes(2)
-      expect(mockCreatePath.mock.calls[0][0].jobId).toBe('new-job-id')
-      expect(mockCreatePath.mock.calls[1][0].jobId).toBe('new-job-id')
+      // Single batch call instead of N createPath calls
+      expect(mockApi).toHaveBeenCalledTimes(1)
+      expect(mockApi).toHaveBeenCalledWith(
+        '/api/jobs/new-job-id/paths/batch',
+        expect.objectContaining({
+          method: 'POST',
+          body: {
+            create: expect.arrayContaining([
+              expect.objectContaining({ name: 'Path A' }),
+              expect.objectContaining({ name: 'Path B' }),
+            ]),
+          },
+        }),
+      )
+      // createPath should NOT be called
+      expect(mockCreatePath).not.toHaveBeenCalled()
     })
   })
 
@@ -226,7 +240,7 @@ describe('useJobForm', () => {
   // ---- Test 5: Edit submit with path deletion, update, and creation (Req 13.1, 13.2, 13.3) ----
 
   describe('edit mode submission with path changes', () => {
-    it('calls deletePath, updatePath, and createPath in correct order', async () => {
+    it('calls batch endpoint with delete, update, and create arrays', async () => {
       const existingPaths: Path[] = [
         makePath('job-1', { id: 'path-keep', name: 'Keep Path', steps: [makeStep({ id: 's1', name: 'Step 1' })] }),
         makePath('job-1', { id: 'path-remove', name: 'Remove Path', steps: [makeStep({ id: 's2', name: 'Step 2' })] }),
@@ -234,20 +248,7 @@ describe('useJobForm', () => {
       const existingJob = makeExistingJob({ id: 'job-1', name: 'Edit Job', goalQuantity: 50 }, existingPaths)
 
       mockUpdateJob.mockResolvedValue({})
-      mockDeletePath.mockResolvedValue(undefined)
-      mockUpdatePath.mockResolvedValue({})
-      mockCreatePath.mockResolvedValue({})
-
-      const callOrder: string[] = []
-      mockDeletePath.mockImplementation(async () => {
-        callOrder.push('deletePath')
-      })
-      mockUpdatePath.mockImplementation(async () => {
-        callOrder.push('updatePath')
-      })
-      mockCreatePath.mockImplementation(async () => {
-        callOrder.push('createPath')
-      })
+      mockApi.mockResolvedValue({ created: [], updated: [], deleted: [] })
 
       const { pathDrafts, submit } = useJobForm('edit', existingJob)
 
@@ -272,16 +273,28 @@ describe('useJobForm', () => {
       expect(jobId).toBe('job-1')
       expect(mockUpdateJob).toHaveBeenCalledWith('job-1', { name: 'Edit Job', goalQuantity: 50 })
 
-      // Order: deletes first, then updates, then creates
-      expect(callOrder).toEqual(['deletePath', 'updatePath', 'createPath'])
+      // Single batch call instead of individual deletePath/updatePath/createPath calls
+      expect(mockApi).toHaveBeenCalledTimes(1)
+      expect(mockApi).toHaveBeenCalledWith(
+        '/api/jobs/job-1/paths/batch',
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.objectContaining({
+            delete: ['path-remove'],
+            update: expect.arrayContaining([
+              expect.objectContaining({ pathId: 'path-keep', name: 'Updated Path' }),
+            ]),
+            create: expect.arrayContaining([
+              expect.objectContaining({ name: 'New Path', advancementMode: 'flexible' }),
+            ]),
+          }),
+        }),
+      )
 
-      expect(mockDeletePath).toHaveBeenCalledWith('path-remove')
-      expect(mockUpdatePath).toHaveBeenCalledWith('path-keep', expect.objectContaining({ name: 'Updated Path' }))
-      expect(mockCreatePath).toHaveBeenCalledWith(expect.objectContaining({
-        jobId: 'job-1',
-        name: 'New Path',
-        advancementMode: 'flexible',
-      }))
+      // Individual path methods should NOT be called
+      expect(mockDeletePath).not.toHaveBeenCalled()
+      expect(mockUpdatePath).not.toHaveBeenCalled()
+      expect(mockCreatePath).not.toHaveBeenCalled()
     })
   })
 
@@ -299,6 +312,7 @@ describe('useJobForm', () => {
       expect(mockUpdateJob).not.toHaveBeenCalled()
       expect(mockUpdatePath).not.toHaveBeenCalled()
       expect(mockDeletePath).not.toHaveBeenCalled()
+      expect(mockApi).not.toHaveBeenCalled()
     })
 
     it('rejects when a path has an empty name', async () => {

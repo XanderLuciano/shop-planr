@@ -1,14 +1,18 @@
 /**
  * Pure skip-step logic extracted from the Step View page.
  *
- * Validates inputs and dispatches advanceToStep calls for each part.
+ * Validates inputs and dispatches a single batchAdvanceToStep call for all parts.
  * Placed in `app/utils/` for Nuxt auto-import and testability.
  */
 
 export interface SkipStepParams {
   partIds: string[]
   nextStepId: string | undefined
-  advanceToStep: (partId: string, input: { targetStepId: string, skip?: boolean }) => Promise<unknown>
+  batchAdvanceToStep: (input: {
+    partIds: string[]
+    targetStepId: string
+    skip?: boolean
+  }) => Promise<{ advanced: number, failed: number, results: { partId: string, success: boolean, error?: string }[] }>
 }
 
 export interface SkipStepResult {
@@ -18,18 +22,17 @@ export interface SkipStepResult {
 }
 
 export async function executeSkip(params: SkipStepParams): Promise<SkipStepResult> {
-  const { partIds, nextStepId, advanceToStep } = params
+  const { partIds, nextStepId, batchAdvanceToStep } = params
 
   if (!nextStepId) {
     return { skipped: false, count: 0, error: 'No next step' }
   }
 
-  for (const partId of partIds) {
-    await advanceToStep(partId, {
-      targetStepId: nextStepId,
-      skip: true,
-    })
-  }
+  const result = await batchAdvanceToStep({
+    partIds,
+    targetStepId: nextStepId,
+    skip: true,
+  })
 
-  return { skipped: true, count: partIds.length }
+  return { skipped: true, count: result.advanced }
 }
