@@ -63,29 +63,11 @@ vi.stubGlobal('AuthenticationError', AuthenticationError)
 vi.stubGlobal('createError', (await import('h3')).createError)
 
 const mockLifecycleService = {
-  getStepStatuses: vi.fn(),
-}
-
-const mockPartsRepo = {
-  getById: vi.fn(),
-}
-
-const mockPathsRepo = {
-  getById: vi.fn(),
-}
-
-const mockPartStepOverridesRepo = {
-  listByPartId: vi.fn().mockReturnValue([]),
+  getStepStatusViews: vi.fn(),
 }
 
 vi.stubGlobal('getServices', () => ({
   lifecycleService: mockLifecycleService,
-}))
-
-vi.stubGlobal('getRepositories', () => ({
-  parts: mockPartsRepo,
-  paths: mockPathsRepo,
-  partStepOverrides: mockPartStepOverridesRepo,
 }))
 
 vi.stubGlobal('parseBody', vi.fn())
@@ -102,53 +84,35 @@ function makeFakeEvent() {
 describe('POST /api/parts/batch-step-statuses route', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockPartStepOverridesRepo.listByPartId.mockReturnValue([])
   })
 
   /**
    * Validates: Requirement 4.1, 4.3
-   * Route returns correct step statuses for valid parts.
+   * Route returns correct step statuses for valid parts via lifecycleService.getStepStatusViews.
    */
   it('returns step statuses for each valid part', async () => {
-    const rawStatusesA = [
-      { stepId: 's1', status: 'completed', sequenceNumber: 1 },
-      { stepId: 's2', status: 'pending', sequenceNumber: 1 },
+    const viewsA = [
+      { stepId: 's1', stepName: 'Cut', stepOrder: 0, status: 'completed', optional: false, dependencyType: 'preferred', hasOverride: false },
+      { stepId: 's2', stepName: 'Weld', stepOrder: 1, status: 'pending', optional: false, dependencyType: 'preferred', hasOverride: false },
     ]
-    const rawStatusesB = [
-      { stepId: 's3', status: 'in_progress', sequenceNumber: 1 },
+    const viewsB = [
+      { stepId: 's3', stepName: 'Paint', stepOrder: 0, status: 'in_progress', optional: false, dependencyType: 'preferred', hasOverride: false },
     ]
 
-    mockLifecycleService.getStepStatuses
+    mockLifecycleService.getStepStatusViews
       .mockImplementation((id: string) => {
-        if (id === 'part_a') return rawStatusesA
-        if (id === 'part_b') return rawStatusesB
+        if (id === 'part_a') return viewsA
+        if (id === 'part_b') return viewsB
         throw new NotFoundError('Part', id)
       })
-
-    mockPartsRepo.getById.mockImplementation((id: string) => {
-      if (id === 'part_a') return { id: 'part_a', pathId: 'path_a' }
-      if (id === 'part_b') return { id: 'part_b', pathId: 'path_b' }
-      return null
-    })
-
-    mockPathsRepo.getById.mockImplementation((id: string) => {
-      if (id === 'path_a') return { id: 'path_a', steps: [{ id: 's1', name: 'Cut', order: 0, optional: false, dependencyType: 'preferred' }, { id: 's2', name: 'Weld', order: 1, optional: false, dependencyType: 'preferred' }] }
-      if (id === 'path_b') return { id: 'path_b', steps: [{ id: 's3', name: 'Paint', order: 0, optional: false, dependencyType: 'preferred' }] }
-      return null
-    })
 
     vi.mocked(globalThis.parseBody as any).mockResolvedValue({ partIds: ['part_a', 'part_b'] })
 
     const result = await handler(makeFakeEvent())
 
     expect(result).toEqual({
-      part_a: [
-        { stepId: 's1', stepName: 'Cut', stepOrder: 0, status: 'completed', optional: false, dependencyType: 'preferred', hasOverride: false },
-        { stepId: 's2', stepName: 'Weld', stepOrder: 1, status: 'pending', optional: false, dependencyType: 'preferred', hasOverride: false },
-      ],
-      part_b: [
-        { stepId: 's3', stepName: 'Paint', stepOrder: 0, status: 'in_progress', optional: false, dependencyType: 'preferred', hasOverride: false },
-      ],
+      part_a: viewsA,
+      part_b: viewsB,
     })
   })
 
@@ -157,35 +121,21 @@ describe('POST /api/parts/batch-step-statuses route', () => {
    * Missing parts are omitted from the result (no error).
    */
   it('omits missing parts from the result', async () => {
-    const rawStatusesA = [
-      { stepId: 's1', status: 'completed', sequenceNumber: 1 },
+    const viewsA = [
+      { stepId: 's1', stepName: 'Cut', stepOrder: 0, status: 'completed', optional: false, dependencyType: 'preferred', hasOverride: false },
     ]
 
-    mockLifecycleService.getStepStatuses
+    mockLifecycleService.getStepStatusViews
       .mockImplementation((id: string) => {
-        if (id === 'part_a') return rawStatusesA
+        if (id === 'part_a') return viewsA
         throw new NotFoundError('Part', id)
       })
-
-    mockPartsRepo.getById.mockImplementation((id: string) => {
-      if (id === 'part_a') return { id: 'part_a', pathId: 'path_a' }
-      return null
-    })
-
-    mockPathsRepo.getById.mockImplementation((id: string) => {
-      if (id === 'path_a') return { id: 'path_a', steps: [{ id: 's1', name: 'Cut', order: 0, optional: false, dependencyType: 'preferred' }] }
-      return null
-    })
 
     vi.mocked(globalThis.parseBody as any).mockResolvedValue({ partIds: ['part_a', 'part_missing'] })
 
     const result = await handler(makeFakeEvent())
 
-    expect(result).toEqual({
-      part_a: [
-        { stepId: 's1', stepName: 'Cut', stepOrder: 0, status: 'completed', optional: false, dependencyType: 'preferred', hasOverride: false },
-      ],
-    })
+    expect(result).toEqual({ part_a: viewsA })
     expect(result).not.toHaveProperty('part_missing')
   })
 
@@ -194,7 +144,7 @@ describe('POST /api/parts/batch-step-statuses route', () => {
    * Returns empty object when all parts are missing.
    */
   it('returns empty object when all parts are missing', async () => {
-    mockLifecycleService.getStepStatuses.mockImplementation((id: string) => {
+    mockLifecycleService.getStepStatusViews.mockImplementation((id: string) => {
       throw new NotFoundError('Part', id)
     })
 

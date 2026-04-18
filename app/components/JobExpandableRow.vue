@@ -38,6 +38,7 @@ const expandedPathIds = ref<Set<string>>(new Set())
 const pathDistributions = ref<Record<string, StepDist[]>>({})
 const pathCompletedCounts = ref<Record<string, number>>({})
 const loadingDistributions = ref(false)
+const loadingDistributionsCount = ref(0)
 const failedPathIds = ref<Set<string>>(new Set())
 const fetchPathsPromise = ref<Promise<void> | null>(null)
 const $api = useAuthFetch()
@@ -61,6 +62,7 @@ async function fetchDistributions(pathIds: string[]) {
 
   for (const id of uncachedIds) failedPathIds.value.delete(id)
 
+  loadingDistributionsCount.value++
   loadingDistributions.value = true
   try {
     const result = await $api<Record<string, { distribution: StepDist[], completedCount: number }>>(
@@ -86,7 +88,8 @@ async function fetchDistributions(pathIds: string[]) {
       failedPathIds.value.add(id)
     }
   } finally {
-    loadingDistributions.value = false
+    loadingDistributionsCount.value--
+    loadingDistributions.value = loadingDistributionsCount.value > 0
   }
 }
 

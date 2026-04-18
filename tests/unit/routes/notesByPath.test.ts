@@ -163,6 +163,24 @@ describe('GET /api/notes/path/:pathId route', () => {
     expect(mockPathService.getPath).toHaveBeenCalledWith('path_xyz')
     expect(mockNoteService.getNotesForPath).toHaveBeenCalledWith('path_xyz')
   })
+
+  /**
+   * Validates: Zod param validation
+   * Route throws ValidationError when path ID is empty or missing.
+   */
+  it('throws ValidationError when path ID is empty', async () => {
+    vi.mocked(globalThis.getRouterParam as any).mockReturnValue('')
+
+    await expect(handler(makeFakeEvent())).rejects.toThrow(ValidationError)
+    expect(mockPathService.getPath).not.toHaveBeenCalled()
+  })
+
+  it('throws ValidationError when path ID is undefined', async () => {
+    vi.mocked(globalThis.getRouterParam as any).mockReturnValue(undefined)
+
+    await expect(handler(makeFakeEvent())).rejects.toThrow(ValidationError)
+    expect(mockPathService.getPath).not.toHaveBeenCalled()
+  })
 })
 
 // ── Helpers ──

@@ -9,6 +9,14 @@ import { z } from 'zod'
 const dependencyTypeEnum = z.enum(['physical', 'preferred', 'completion_gate'])
 const advancementModeEnum = z.enum(['strict', 'flexible', 'per_step'])
 
+/**
+ * Validates the `id` route param for single-path endpoints.
+ */
+export const pathIdParamSchema = z.object({
+  id: z.string({ error: 'Path id is required' })
+    .min(1, { error: 'Path id is required' }),
+})
+
 // ── Step schemas ──
 
 const stepInputSchema = z.object({
