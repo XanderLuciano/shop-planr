@@ -37,6 +37,11 @@ Introduce five new bulk API endpoints with Zod validation to replace N+1 HTTP ca
     - Test route omits missing paths from result
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
 
+  - [ ] 1.6 Verify existing `JobExpandableRow` integration tests still pass
+    - `tests/integration/jobViewUtilities.test.ts` tests the path expansion state logic as pure functions — verify it still passes after the component changes
+    - `tests/properties/jobViewBulkExpand.property.test.ts` tests the bulk expand orchestration — update if the batched `Promise.allSettled` logic was extracted as a testable function
+    - _Requirements: 10.1_
+
 - [ ] 2. Bulk Notes by Path Endpoint (read-only, simple)
   - [ ] 2.1 Add `listByPathId()` to `NoteRepository` interface and SQLite implementation
     - Add method signature to `server/repositories/interfaces/noteRepository.ts`
@@ -130,6 +135,13 @@ Introduce five new bulk API endpoints with Zod validation to replace N+1 HTTP ca
     - Test `advanced + failed === partIds.length` invariant
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
+  - [ ] 5.7 Update existing frontend tests for `skipStep.ts` and `ProcessAdvancementPanel`
+    - Update `tests/unit/components/skipValidation.test.ts`: change mock from per-part `advanceToStep` to bulk `batchAdvanceToStep` matching the new `SkipStepParams` interface
+    - Update `tests/properties/skipFlagInversion.property.test.ts` if the skip flag derivation logic changed
+    - Update `tests/unit/components/skipStepCompletionToggle.test.ts` toast description tests if the message format changed to show advanced/failed counts
+    - Verify `tests/unit/components/ProcessAdvancementPanelAddNote.test.ts` still passes (Add Note logic is unchanged)
+    - _Requirements: 7.1, 7.2, 7.4_
+
 - [ ] 6. Batch Path Operations Endpoint (write, highest risk)
   - [ ] 6.1 Add `batchPathOperationsSchema` to `server/schemas/pathSchemas.ts`
     - Add Zod schema with `create` (array of path create objects), `update` (array with pathId + update fields), `delete` (array of pathId strings), all defaulting to empty arrays
@@ -162,6 +174,12 @@ Introduce five new bulk API endpoints with Zod validation to replace N+1 HTTP ca
     - Test route processes deletes before updates before creates
     - Test route returns correct created/updated/deleted arrays
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8_
+
+  - [ ] 6.6 Update existing frontend tests for `useJobForm`
+    - Update `tests/unit/composables/useJobForm.test.ts` if it tests `submitCreate`/`submitEdit` directly — mock the batch endpoint instead of individual path endpoints
+    - Verify property tests still pass: `jobFormRemovePath`, `jobFormZeroSteps`, `jobFormErrorClearing`, `jobFormEditRoundTrip`, `jobFormMoveStep`, `jobFormRemoveStep`, `jobFormEditDiff` — these test pure validation/draft logic and should be unaffected, but confirm
+    - Verify `tests/integration/fkSafePathUpdate.test.ts` still passes (tests server-side path update, not the composable)
+    - _Requirements: 6.1, 6.2, 6.3_
 
 - [ ] 7. Final checkpoint — Ensure all tests pass
   - Run `npm run test`, `npm run lint`, and `npx nuxt typecheck` to verify everything works end-to-end.
