@@ -21,9 +21,6 @@ const {
   submitError,
   addPath,
   removePath,
-  addStep,
-  removeStep,
-  moveStep,
   applyTemplate,
   validate,
   submit,
@@ -46,16 +43,6 @@ const assigneeItems = computed(() => {
     .map(u => ({ label: u.displayName, value: u.id }))
   return [unassigned, ...userOptions]
 })
-
-/** Map step.assignedTo ('' = unassigned) to USelect value (SELECT_UNASSIGNED sentinel) */
-function assigneeToSelect(assignedTo: string): string {
-  return assignedTo || SELECT_UNASSIGNED
-}
-
-/** Map USelect value back to step.assignedTo ('' for unassigned) */
-function selectToAssignee(value: string): string {
-  return value === SELECT_UNASSIGNED ? '' : value
-}
 
 // Per-path template selection state
 const templateSelections = ref<Record<string, string>>({})
@@ -314,139 +301,14 @@ function handleCancel() {
           {{ getFieldError(`paths[${pathIndex}].steps`) }}
         </p>
 
-        <!-- Step rows -->
-        <div class="space-y-2">
-          <div class="text-xs font-medium text-(--ui-text-muted) grid grid-cols-[2rem_1fr_1fr_1fr_5rem_9rem_4.5rem_2rem] gap-2 px-1">
-            <span>#</span>
-            <span>Process</span>
-            <span>Location</span>
-            <span>Assignee</span>
-            <span class="flex items-center gap-0.5">
-              Optional
-              <UTooltip
-                text="When checked, this step can be skipped without blocking part completion."
-                :ui="{ content: 'h-auto py-2 px-3', text: 'whitespace-normal' }"
-              >
-                <UIcon
-                  name="i-lucide-info"
-                  class="size-3 text-(--ui-text-dimmed) cursor-help"
-                />
-              </UTooltip>
-            </span>
-            <span class="flex items-center gap-0.5">
-              Dependency
-              <UTooltip :ui="{ content: 'h-auto py-2 px-3', text: 'whitespace-normal' }">
-                <UIcon
-                  name="i-lucide-info"
-                  class="size-3 text-(--ui-text-dimmed) cursor-help"
-                />
-                <template #content>
-                  <div class="text-xs space-y-1 max-w-64">
-                    <p><span class="font-semibold">Physical:</span> Previous step must complete first.</p>
-                    <p><span class="font-semibold">Preferred:</span> Recommended order, but skippable in flexible mode.</p>
-                    <p><span class="font-semibold">Completion Gate:</span> Must complete before part finishes, but can be deferred.</p>
-                  </div>
-                </template>
-              </UTooltip>
-            </span>
-            <span>Move</span>
-            <span />
-          </div>
-
-          <div
-            v-for="(step, stepIndex) in path.steps"
-            :key="step._clientId"
-            class="grid grid-cols-[2rem_1fr_1fr_1fr_5rem_9rem_4.5rem_2rem] gap-2 items-start"
-          >
-            <!-- Step order number -->
-            <span class="text-sm text-(--ui-text-muted) pt-1.5 text-center">{{ stepIndex + 1 }}</span>
-
-            <!-- Process name -->
-            <div>
-              <ProcessLocationDropdown
-                :model-value="step.name"
-                type="process"
-                @update:model-value="(v: string) => { step.name = v; clearFieldError(`paths[${pathIndex}].steps[${stepIndex}].name`) }"
-              />
-              <p
-                v-if="getFieldError(`paths[${pathIndex}].steps[${stepIndex}].name`)"
-                data-error
-                class="text-xs text-(--ui-error) mt-0.5"
-              >
-                {{ getFieldError(`paths[${pathIndex}].steps[${stepIndex}].name`) }}
-              </p>
-            </div>
-
-            <!-- Location -->
-            <div>
-              <ProcessLocationDropdown
-                :model-value="step.location"
-                type="location"
-                @update:model-value="(v: string) => { step.location = v }"
-              />
-            </div>
-
-            <!-- Assignee -->
-            <USelect
-              :model-value="assigneeToSelect(step.assignedTo)"
-              :items="assigneeItems"
-              size="sm"
-              @update:model-value="(v: string) => { step.assignedTo = selectToAssignee(v) }"
-            />
-
-            <!-- Optional checkbox -->
-            <div class="flex items-center justify-center pt-1.5">
-              <input
-                v-model="step.optional"
-                type="checkbox"
-                class="rounded"
-              >
-            </div>
-
-            <!-- Dependency type -->
-            <USelect
-              v-model="step.dependencyType"
-              :items="dependencyTypeOptions"
-              size="sm"
-            />
-
-            <!-- Move up/down -->
-            <div class="flex items-center gap-0.5">
-              <UButton
-                icon="i-lucide-arrow-up"
-                variant="ghost"
-                size="xs"
-                :disabled="stepIndex === 0"
-                @click="moveStep(path._clientId, step._clientId, -1)"
-              />
-              <UButton
-                icon="i-lucide-arrow-down"
-                variant="ghost"
-                size="xs"
-                :disabled="stepIndex === path.steps.length - 1"
-                @click="moveStep(path._clientId, step._clientId, 1)"
-              />
-            </div>
-
-            <!-- Remove step -->
-            <UButton
-              icon="i-lucide-x"
-              variant="ghost"
-              color="error"
-              size="xs"
-              :disabled="path.steps.length <= 1"
-              @click="removeStep(path._clientId, step._clientId)"
-            />
-          </div>
-        </div>
-
-        <!-- Add Step button -->
-        <UButton
-          icon="i-lucide-plus"
-          label="Add Step"
-          variant="outline"
-          size="xs"
-          @click="addStep(path._clientId)"
+        <!-- Step grid — delegated to PathStepEditor -->
+        <PathStepEditor
+          :steps="path.steps"
+          :assignee-items="assigneeItems"
+          :dependency-type-options="dependencyTypeOptions"
+          :get-field-error="(stepIdx: number, field: string) => getFieldError(`paths[${pathIndex}].steps[${stepIdx}].${field}`)"
+          :clear-field-error="(stepIdx: number, field: string) => clearFieldError(`paths[${pathIndex}].steps[${stepIdx}].${field}`)"
+          @update:steps="path.steps = $event"
         />
       </div>
     </div>

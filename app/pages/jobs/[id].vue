@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import type { Job, Path, ShopUser, StepNote, ProcessStep } from '~/types/domain'
 import type { JobProgress, StepDistribution } from '~/types/computed'
+import { toStepDrafts, toStepPayload } from '~/utils/stepDraftHelpers'
+import { createStepDraft } from '~/composables/useJobForm'
+import type { StepDraft } from '~/composables/useJobForm'
 
 const route = useRoute()
 const jobId = route.params.id as string
 
 const $api = useAuthFetch()
 const { getJob, updateJob, deleteJob } = useJobs()
-const { isAdmin } = useAuth()
+const { isAdmin, users: allUsers } = useAuth()
 const toast = useToast()
-const { getPath: fetchPathDetail } = usePaths()
+const { getPath: fetchPathDetail, createPath, updatePath } = usePaths()
 const { templates, fetchTemplates, applyTemplate } = useTemplates()
 const { settings } = useSettings()
 const { pushDescriptionTable, pushCommentSummary } = useJira()
@@ -23,6 +26,117 @@ async function loadActiveUsers() {
     activeUsers.value = await $api<ShopUser[]>('/api/users')
   } catch {
     activeUsers.value = []
+  }
+}
+
+// Assignee items for PathStepEditor
+const assigneeItems = computed(() => {
+  const unassigned = { label: 'Unassigned', value: SELECT_UNASSIGNED }
+  const userOptions = allUsers.value
+    .filter(u => u.active)
+    .map(u => ({ label: u.displayName, value: u.id }))
+  return [unassigned, ...userOptions]
+})
+
+const dependencyTypeOptions = [
+  { label: 'Physical', value: 'physical' },
+  { label: 'Preferred', value: 'preferred' },
+  { label: 'Completion Gate', value: 'completion_gate' },
+]
+
+// Edit path state
+const editingPathId = ref<string | null>(null)
+const editPathName = ref('')
+const editGoalQty = ref(1)
+const editSteps = ref<StepDraft[]>([])
+const saving = ref(false)
+const saveError = ref<string | null>(null)
+
+// New path state
+const showNewPath = ref(false)
+const newPathName = ref('')
+const newGoalQty = ref(1)
+const newPathSteps = ref<StepDraft[]>([createStepDraft()])
+
+function closeAllEditors() {
+  editingPathId.value = null
+  showNewPath.value = false
+  showTemplateApply.value = false
+  saving.value = false
+  saveError.value = null
+  applyError.value = ''
+}
+
+function startEditPath(path: Path) {
+  closeAllEditors()
+  editingPathId.value = path.id
+  editPathName.value = path.name
+  editGoalQty.value = path.goalQuantity
+  editSteps.value = toStepDrafts(path.steps as ProcessStep[])
+}
+
+function cancelEdit() {
+  editingPathId.value = null
+  saveError.value = null
+}
+
+function validatePathForm(name: string, goalQty: number, steps: StepDraft[]): string | null {
+  if (!name.trim()) return 'Path name is required'
+  if (goalQty < 1) return 'Goal quantity must be at least 1'
+  const validSteps = steps.filter(s => s.name.trim())
+  if (!validSteps.length) return 'At least one step with a name is required'
+  return null
+}
+
+async function savePathEdit() {
+  const validationError = validatePathForm(editPathName.value, editGoalQty.value, editSteps.value)
+  if (validationError) {
+    saveError.value = validationError
+    return
+  }
+  saving.value = true
+  saveError.value = null
+  try {
+    await updatePath(editingPathId.value!, {
+      name: editPathName.value.trim(),
+      goalQuantity: editGoalQty.value,
+      steps: toStepPayload(editSteps.value.filter(s => s.name.trim())),
+    })
+    editingPathId.value = null
+    await loadJob()
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string }, message?: string }
+    saveError.value = err?.data?.message || err?.message || 'Failed to save path'
+  } finally {
+    saving.value = false
+  }
+}
+
+async function saveNewPath() {
+  const validationError = validatePathForm(newPathName.value, newGoalQty.value, newPathSteps.value)
+  if (validationError) {
+    saveError.value = validationError
+    return
+  }
+  saving.value = true
+  saveError.value = null
+  try {
+    await createPath({
+      jobId,
+      name: newPathName.value.trim(),
+      goalQuantity: newGoalQty.value,
+      steps: toStepPayload(newPathSteps.value.filter(s => s.name.trim())),
+    })
+    showNewPath.value = false
+    newPathName.value = ''
+    newGoalQty.value = 1
+    newPathSteps.value = [createStepDraft()]
+    await loadJob()
+  } catch (e: unknown) {
+    const err = e as { data?: { message?: string }, message?: string }
+    saveError.value = err?.data?.message || err?.message || 'Failed to create path'
+  } finally {
+    saving.value = false
   }
 }
 
@@ -53,8 +167,6 @@ const configStepId = ref<string | null>(null)
 const configStep = ref<ProcessStep | null>(null)
 
 // UI state
-const showPathEditor = ref(false)
-const editingPathId = ref<string | null>(null)
 const showTemplateApply = ref(false)
 const applyingTemplate = ref(false)
 const applyError = ref('')
@@ -195,19 +307,8 @@ async function saveGoalQty() {
   }
 }
 
-function onPathSaved() {
-  showPathEditor.value = false
-  editingPathId.value = null
-  loadJob()
-}
-
 function onPathDeleted() {
   loadJob()
-}
-
-function startEditPath(pathId: string) {
-  editingPathId.value = pathId
-  showPathEditor.value = false
 }
 
 function onAdvancementModeUpdated() {
@@ -515,21 +616,21 @@ onMounted(() => {
           </h2>
           <div class="flex gap-1.5">
             <UButton
-              v-if="!showTemplateApply && !showPathEditor && templates.length"
+              v-if="!showTemplateApply && !showNewPath && templates.length"
               icon="i-lucide-copy"
               size="xs"
               variant="soft"
               color="neutral"
               label="From Template"
-              @click="showTemplateApply = true; applyGoalQty = job?.goalQuantity ?? 1"
+              @click="closeAllEditors(); showTemplateApply = true; applyGoalQty = job?.goalQuantity ?? 1"
             />
             <UButton
-              v-if="!showPathEditor && !showTemplateApply"
+              v-if="!showNewPath && !showTemplateApply"
               icon="i-lucide-plus"
               size="xs"
               variant="soft"
               label="Add Path"
-              @click="showPathEditor = true"
+              @click="closeAllEditors(); showNewPath = true; newGoalQty = job?.goalQuantity ?? 1"
             />
           </div>
         </div>
@@ -588,16 +689,66 @@ onMounted(() => {
         </div>
 
         <!-- New path editor -->
-        <PathEditor
-          v-if="showPathEditor"
-          :job-id="jobId"
-          @save="onPathSaved"
-          @cancel="showPathEditor = false"
-        />
+        <div
+          v-if="showNewPath"
+          class="p-3 space-y-3 border border-(--ui-border) rounded-md"
+        >
+          <div class="text-xs font-semibold text-(--ui-text-highlighted)">
+            New Path
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs text-(--ui-text-muted) mb-0.5">Path Name</label>
+              <UInput
+                v-model="newPathName"
+                size="sm"
+                placeholder="e.g. Standard Route"
+              />
+            </div>
+            <div>
+              <label class="block text-xs text-(--ui-text-muted) mb-0.5">Goal Qty</label>
+              <UInput
+                v-model.number="newGoalQty"
+                type="number"
+                size="sm"
+                :min="1"
+              />
+            </div>
+          </div>
+
+          <PathStepEditor
+            :steps="newPathSteps"
+            :assignee-items="assigneeItems"
+            :dependency-type-options="dependencyTypeOptions"
+            @update:steps="newPathSteps = $event"
+          />
+
+          <p
+            v-if="saveError && showNewPath"
+            class="text-xs text-red-500"
+          >
+            {{ saveError }}
+          </p>
+
+          <div class="flex gap-2 justify-end">
+            <UButton
+              variant="ghost"
+              size="xs"
+              label="Cancel"
+              @click="showNewPath = false; saveError = null"
+            />
+            <UButton
+              size="xs"
+              label="Create Path"
+              :loading="saving"
+              @click="saveNewPath"
+            />
+          </div>
+        </div>
 
         <!-- No paths -->
         <p
-          v-if="!paths.length && !showPathEditor"
+          v-if="!paths.length && !showNewPath"
           class="text-xs text-(--ui-text-muted) py-2"
         >
           No paths defined yet. Add a path to start routing parts.
@@ -634,14 +785,55 @@ onMounted(() => {
           <!-- Path editing -->
           <div
             v-if="editingPathId === p.id"
-            class="p-2"
+            class="p-3 space-y-3"
           >
-            <PathEditor
-              :job-id="jobId"
-              :path="p"
-              @save="onPathSaved"
-              @cancel="editingPathId = null"
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-xs text-(--ui-text-muted) mb-0.5">Path Name</label>
+                <UInput
+                  v-model="editPathName"
+                  size="sm"
+                />
+              </div>
+              <div>
+                <label class="block text-xs text-(--ui-text-muted) mb-0.5">Goal Qty</label>
+                <UInput
+                  v-model.number="editGoalQty"
+                  type="number"
+                  size="sm"
+                  :min="1"
+                />
+              </div>
+            </div>
+
+            <PathStepEditor
+              :steps="editSteps"
+              :assignee-items="assigneeItems"
+              :dependency-type-options="dependencyTypeOptions"
+              @update:steps="editSteps = $event"
             />
+
+            <p
+              v-if="saveError && editingPathId === p.id"
+              class="text-xs text-red-500"
+            >
+              {{ saveError }}
+            </p>
+
+            <div class="flex gap-2 justify-end">
+              <UButton
+                variant="ghost"
+                size="xs"
+                label="Cancel"
+                @click="cancelEdit"
+              />
+              <UButton
+                size="xs"
+                label="Save"
+                :loading="saving"
+                @click="savePathEdit"
+              />
+            </div>
           </div>
 
           <template v-else>
@@ -664,7 +856,7 @@ onMounted(() => {
                   size="xs"
                   variant="ghost"
                   color="neutral"
-                  @click="startEditPath(p.id)"
+                  @click="startEditPath(p)"
                 />
               </div>
             </div>
