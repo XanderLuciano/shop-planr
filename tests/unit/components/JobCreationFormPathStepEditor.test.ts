@@ -50,8 +50,8 @@ const MockPathStepEditor = defineComponent({
   name: 'PathStepEditor',
   props: {
     steps: { type: Array as PropType<StepDraft[]>, required: true },
-    assigneeItems: { type: Array as PropType<{ label: string; value: string }[]>, default: () => [] },
-    dependencyTypeOptions: { type: Array as PropType<{ label: string; value: string }[]>, default: () => [] },
+    assigneeItems: { type: Array as PropType<{ label: string, value: string }[]>, default: () => [] },
+    dependencyTypeOptions: { type: Array as PropType<{ label: string, value: string }[]>, default: () => [] },
     getFieldError: { type: Function, default: undefined },
     clearFieldError: { type: Function, default: undefined },
   },

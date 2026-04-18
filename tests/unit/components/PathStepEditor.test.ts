@@ -9,7 +9,7 @@
  * Feature: unified-path-editor
  * Requirements: 6.1, 6.2, 6.3, 7.1, 7.2, 7.5, 7.6, 8.1
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { defineComponent, ref, h, type PropType } from 'vue'
 import { nanoid } from 'nanoid'
@@ -46,8 +46,8 @@ const PathStepEditor = defineComponent({
   name: 'PathStepEditor',
   props: {
     steps: { type: Array as PropType<StepDraft[]>, required: true },
-    assigneeItems: { type: Array as PropType<{ label: string; value: string }[]>, default: () => [] },
-    dependencyTypeOptions: { type: Array as PropType<{ label: string; value: string }[]>, default: () => [] },
+    assigneeItems: { type: Array as PropType<{ label: string, value: string }[]>, default: () => [] },
+    dependencyTypeOptions: { type: Array as PropType<{ label: string, value: string }[]>, default: () => [] },
     getFieldError: { type: Function as PropType<(stepIndex: number, field: string) => string | undefined>, default: undefined },
     clearFieldError: { type: Function as PropType<(stepIndex: number, field: string) => void>, default: undefined },
   },
@@ -257,8 +257,8 @@ const PathStepEditor = defineComponent({
 // ── Mount helper ──
 function mountEditor(props: Partial<{
   steps: StepDraft[]
-  assigneeItems: { label: string; value: string }[]
-  dependencyTypeOptions: { label: string; value: string }[]
+  assigneeItems: { label: string, value: string }[]
+  dependencyTypeOptions: { label: string, value: string }[]
 }> = {}) {
   return mount(PathStepEditor, {
     props: {

@@ -69,7 +69,6 @@ const MockPathStepEditor = defineComponent({
   },
 })
 
-
 // ── Minimal reproduction of jobs/[id].vue editing logic ──
 
 /**

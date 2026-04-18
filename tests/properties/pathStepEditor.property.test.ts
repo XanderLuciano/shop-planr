@@ -58,7 +58,7 @@ function arbStepDraft(): fc.Arbitrary<StepDraft> {
 /**
  * Arbitrary for a non-empty StepDraft[] with unique _clientId values.
  */
-function arbStepDraftArray(opts?: { minLength?: number; maxLength?: number }): fc.Arbitrary<StepDraft[]> {
+function arbStepDraftArray(opts?: { minLength?: number, maxLength?: number }): fc.Arbitrary<StepDraft[]> {
   const min = opts?.minLength ?? 1
   const max = opts?.maxLength ?? 15
   return fc.array(arbStepDraft(), { minLength: min, maxLength: max })
@@ -314,14 +314,12 @@ describe('Property 10: _clientId uniqueness across all operations', () => {
           for (const op of ops) {
             if (op === 'add') {
               steps = addStep(steps)
-            }
-            else if (op === 'remove') {
+            } else if (op === 'remove') {
               if (steps.length >= 2) {
                 // Remove the first step
                 steps = removeStep(steps, steps[0]!._clientId)
               }
-            }
-            else {
+            } else {
               // move
               if (steps.length >= 2) {
                 const idx = op.direction === 1 ? 0 : steps.length - 1

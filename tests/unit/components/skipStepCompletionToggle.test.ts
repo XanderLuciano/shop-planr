@@ -54,7 +54,6 @@ describe('Skip step completion toggle', () => {
   })
 })
 
-
 /**
  * Unit tests for toast message variants in the skip step completion toggle.
  *

@@ -4,8 +4,8 @@ import { createStepDraft } from '~/composables/useJobForm'
 
 interface PathStepEditorProps {
   steps: StepDraft[]
-  assigneeItems: { label: string; value: string }[]
-  dependencyTypeOptions: { label: string; value: string }[]
+  assigneeItems: { label: string, value: string }[]
+  dependencyTypeOptions: { label: string, value: string }[]
   getFieldError?: (stepIndex: number, field: string) => string | undefined
   clearFieldError?: (stepIndex: number, field: string) => void
 }
@@ -59,8 +59,8 @@ function onFieldInput(stepIndex: number, field: string, clientId: string, fieldK
   handleFieldChange(clientId, fieldKey, value)
 }
 
-function getStepErrors(stepIndex: number): { field: string; message: string }[] {
-  const errors: { field: string; message: string }[] = []
+function getStepErrors(stepIndex: number): { field: string, message: string }[] {
+  const errors: { field: string, message: string }[] = []
   if (!props.getFieldError) return errors
   for (const field of ['name', 'location', 'assignedTo', 'dependencyType']) {
     const msg = props.getFieldError(stepIndex, field)

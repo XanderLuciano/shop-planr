@@ -182,8 +182,7 @@ describe('Property 8: toStepPayload conversion correctness', () => {
         const trimmed = draft.location.trim()
         if (trimmed === '') {
           expect(payload.location).toBeUndefined()
-        }
-        else {
+        } else {
           expect(payload.location).toBe(trimmed)
         }
       }),
@@ -208,12 +207,10 @@ describe('Property 8: toStepPayload conversion correctness', () => {
         if (draft.assignedTo) {
           // truthy → preserved as-is
           expect(payload.assignedTo).toBe(draft.assignedTo)
-        }
-        else if (draft._existingStepId) {
+        } else if (draft._existingStepId) {
           // falsy + existing step → null (explicit unassign)
           expect(payload.assignedTo).toBeNull()
-        }
-        else {
+        } else {
           // falsy + new step → undefined (omit)
           expect(payload.assignedTo).toBeUndefined()
         }

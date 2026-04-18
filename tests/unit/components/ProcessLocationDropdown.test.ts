@@ -147,54 +147,57 @@ const ProcessLocationDropdown = defineComponent({
         // Floating overlay
         showOverlay.value && (items.value.length || showNewInput.value)
           ? h('div', {
-            class: 'absolute top-full left-0 w-full z-10 mt-1 border rounded-md shadow-md max-h-48 overflow-y-auto',
-            'data-testid': 'overlay',
-          }, [
+              class: 'absolute top-full left-0 w-full z-10 mt-1 border rounded-md shadow-md max-h-48 overflow-y-auto',
+              'data-testid': 'overlay',
+            }, [
             // Suggestion items
-            ...items.value.map((item: { label: string, value: string }) =>
-              h('button', {
-                key: item.value,
-                type: 'button',
-                class: 'w-full text-left px-2 py-1.5 text-xs suggestion-item',
-                'data-testid': `suggestion-${item.value}`,
-                onClick: () => selectItem(item.value),
-              }, item.label),
-            ),
+              ...items.value.map((item: { label: string, value: string }) =>
+                h('button', {
+                  key: item.value,
+                  type: 'button',
+                  class: 'w-full text-left px-2 py-1.5 text-xs suggestion-item',
+                  'data-testid': `suggestion-${item.value}`,
+                  onClick: () => selectItem(item.value),
+                }, item.label),
+              ),
 
-            // "New" button or input
-            !showNewInput.value
-              ? h('div', { class: 'border-t' }, [
-                h('button', {
-                  type: 'button',
-                  class: 'w-full text-left px-2 py-1.5 text-xs',
-                  'data-testid': 'new-button',
-                  onClick: () => { showNewInput.value = true; newName.value = searchQuery.value },
-                }, `+ New ${props.type}`),
-              ])
-              : h('div', {
-                class: 'border-t p-2 flex items-center gap-1',
-                'data-testid': 'new-input-row',
-              }, [
-                h('input', {
-                  value: newName.value,
-                  placeholder: `New ${props.type} name`,
-                  class: 'flex-1',
-                  'data-testid': 'new-name-input',
-                  onInput: (e: Event) => { newName.value = (e.target as HTMLInputElement).value },
-                  onKeyup: (e: KeyboardEvent) => { if (e.key === 'Enter') handleAddNew() },
-                }),
-                h('button', {
-                  type: 'button',
-                  'data-testid': 'add-button',
-                  onClick: () => handleAddNew(),
-                }, 'Add'),
-                h('button', {
-                  type: 'button',
-                  'data-testid': 'cancel-new-button',
-                  onClick: () => { showNewInput.value = false },
-                }, 'Cancel'),
-              ]),
-          ])
+              // "New" button or input
+              !showNewInput.value
+                ? h('div', { class: 'border-t' }, [
+                    h('button', {
+                      type: 'button',
+                      class: 'w-full text-left px-2 py-1.5 text-xs',
+                      'data-testid': 'new-button',
+                      onClick: () => {
+                        showNewInput.value = true
+                        newName.value = searchQuery.value
+                      },
+                    }, `+ New ${props.type}`),
+                  ])
+                : h('div', {
+                    class: 'border-t p-2 flex items-center gap-1',
+                    'data-testid': 'new-input-row',
+                  }, [
+                    h('input', {
+                      value: newName.value,
+                      placeholder: `New ${props.type} name`,
+                      class: 'flex-1',
+                      'data-testid': 'new-name-input',
+                      onInput: (e: Event) => { newName.value = (e.target as HTMLInputElement).value },
+                      onKeyup: (e: KeyboardEvent) => { if (e.key === 'Enter') handleAddNew() },
+                    }),
+                    h('button', {
+                      type: 'button',
+                      'data-testid': 'add-button',
+                      onClick: () => handleAddNew(),
+                    }, 'Add'),
+                    h('button', {
+                      type: 'button',
+                      'data-testid': 'cancel-new-button',
+                      onClick: () => { showNewInput.value = false },
+                    }, 'Cancel'),
+                  ]),
+            ])
           : null,
       ])
   },
