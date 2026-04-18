@@ -31,7 +31,6 @@ graph TD
         PS[pathService]
         LS[lifecycleService]
         NS[noteService]
-        PAS[partService]
     end
 
     JF --> BPO --> PS
@@ -116,7 +115,7 @@ Note: `GET /api/notes/path/:pathId` uses a route param (no request body), so no 
 
 ```typescript
 // server/api/jobs/[id]/paths/batch.post.ts
-import { batchPathOperationsSchema } from '../../../schemas/pathSchemas'
+import { batchPathOperationsSchema } from '../../../../schemas/pathSchemas'
 
 export default defineApiHandler(async (event) => {
   const jobId = getRouterParam(event, 'id')!
