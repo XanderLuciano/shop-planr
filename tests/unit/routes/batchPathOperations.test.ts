@@ -206,9 +206,7 @@ vi.stubGlobal('AuthenticationError', AuthenticationError)
 vi.stubGlobal('createError', (await import('h3')).createError)
 
 const mockPathService = {
-  createPath: vi.fn(),
-  updatePath: vi.fn(),
-  deletePath: vi.fn(),
+  batchPathOperations: vi.fn(),
 }
 
 const mockJobService = {
@@ -247,6 +245,9 @@ describe('POST /api/jobs/:id/paths/batch route', () => {
     vi.mocked(globalThis.parseBody as any).mockResolvedValue({
       create: [], update: [], delete: [],
     })
+    mockPathService.batchPathOperations.mockReturnValue({
+      created: [], updated: [], deleted: [],
+    })
 
     await handler(makeFakeEvent())
 
@@ -264,6 +265,9 @@ describe('POST /api/jobs/:id/paths/batch route', () => {
     vi.mocked(globalThis.parseBody as any).mockResolvedValue({
       create: [], update: [], delete: [],
     })
+    mockPathService.batchPathOperations.mockReturnValue({
+      created: [], updated: [], deleted: [],
+    })
 
     await handler(makeFakeEvent())
 
@@ -272,103 +276,41 @@ describe('POST /api/jobs/:id/paths/batch route', () => {
 
   /**
    * Validates: Requirement 1.7
-   * Route returns correct created/updated/deleted arrays.
+   * Route delegates to pathService.batchPathOperations with correct input.
    */
-  it('returns created, updated, and deleted arrays', async () => {
-    const createdPath = { id: 'path_new', name: 'New Path' }
-    const updatedPath = { id: 'path_2', name: 'Updated Path' }
+  it('delegates to pathService.batchPathOperations with correct input', async () => {
+    const batchResult = {
+      created: [{ id: 'path_new', name: 'New Path' }],
+      updated: [{ id: 'path_2', name: 'Updated Path' }],
+      deleted: ['path_99'],
+    }
+    mockPathService.batchPathOperations.mockReturnValue(batchResult)
 
-    mockPathService.deletePath.mockReturnValue({ deletedPartIds: [], deletedPartCount: 0 })
-    mockPathService.updatePath.mockReturnValue(updatedPath)
-    mockPathService.createPath.mockReturnValue(createdPath)
-
-    vi.mocked(globalThis.parseBody as any).mockResolvedValue({
+    const body = {
       create: [{ name: 'New Path', goalQuantity: 5, steps: [{ name: 'Step 1' }] }],
       update: [{ pathId: 'path_2', name: 'Updated Path' }],
       delete: ['path_99'],
-    })
+    }
+    vi.mocked(globalThis.parseBody as any).mockResolvedValue(body)
 
     const result = await handler(makeFakeEvent())
 
-    expect(result).toEqual({
-      created: [createdPath],
-      updated: [updatedPath],
-      deleted: ['path_99'],
-    })
-  })
-
-  /**
-   * Validates: Requirement 1.6
-   * Route processes deletes before updates before creates.
-   */
-  it('processes deletes → updates → creates in order', async () => {
-    const callOrder: string[] = []
-
-    mockPathService.deletePath.mockImplementation(() => {
-      callOrder.push('delete')
-      return { deletedPartIds: [], deletedPartCount: 0 }
-    })
-    mockPathService.updatePath.mockImplementation(() => {
-      callOrder.push('update')
-      return { id: 'path_2', name: 'Updated' }
-    })
-    mockPathService.createPath.mockImplementation(() => {
-      callOrder.push('create')
-      return { id: 'path_new', name: 'Created' }
-    })
-
-    vi.mocked(globalThis.parseBody as any).mockResolvedValue({
-      create: [{ name: 'New', goalQuantity: 1, steps: [{ name: 'S1' }] }],
-      update: [{ pathId: 'path_2', name: 'Updated' }],
-      delete: ['path_99'],
-    })
-
-    await handler(makeFakeEvent())
-
-    expect(callOrder).toEqual(['delete', 'update', 'create'])
-  })
-
-  /**
-   * Validates: Requirement 1.6
-   * Route passes correct arguments to pathService methods.
-   */
-  it('passes correct arguments to service methods', async () => {
-    mockPathService.deletePath.mockReturnValue({ deletedPartIds: [], deletedPartCount: 0 })
-    mockPathService.updatePath.mockReturnValue({ id: 'path_2', name: 'Updated' })
-    mockPathService.createPath.mockReturnValue({ id: 'path_new', name: 'New' })
-
-    vi.mocked(globalThis.parseBody as any).mockResolvedValue({
-      create: [{ name: 'New', goalQuantity: 5, steps: [{ name: 'S1' }] }],
-      update: [{ pathId: 'path_2', name: 'Updated', goalQuantity: 20 }],
-      delete: ['path_99'],
-    })
-
-    await handler(makeFakeEvent())
-
-    // deletePath receives (pathId, userId)
-    expect(mockPathService.deletePath).toHaveBeenCalledWith('path_99', 'user_1')
-
-    // updatePath receives (pathId, updateData without pathId)
-    expect(mockPathService.updatePath).toHaveBeenCalledWith('path_2', {
-      name: 'Updated',
-      goalQuantity: 20,
-    })
-
-    // createPath receives ({ ...op, jobId })
-    expect(mockPathService.createPath).toHaveBeenCalledWith({
-      name: 'New',
-      goalQuantity: 5,
-      steps: [{ name: 'S1' }],
+    expect(mockPathService.batchPathOperations).toHaveBeenCalledWith({
       jobId: 'job_1',
+      userId: 'user_1',
+      create: body.create,
+      update: body.update,
+      delete: body.delete,
     })
+    expect(result).toEqual(batchResult)
   })
 
   /**
    * Validates: Requirement 1.8
-   * If any operation fails, the error propagates (no partial results).
+   * If the service method fails, the error propagates (transaction rollback).
    */
-  it('propagates errors from service methods', async () => {
-    mockPathService.deletePath.mockImplementation(() => {
+  it('propagates errors from batchPathOperations', async () => {
+    mockPathService.batchPathOperations.mockImplementation(() => {
       throw new NotFoundError('Path', 'path_missing')
     })
 
@@ -397,7 +339,7 @@ describe('POST /api/jobs/:id/paths/batch route', () => {
     })
 
     await expect(handler(makeFakeEvent())).rejects.toThrow('Job not found')
-    expect(mockPathService.createPath).not.toHaveBeenCalled()
+    expect(mockPathService.batchPathOperations).not.toHaveBeenCalled()
   })
 
   /**
@@ -405,8 +347,12 @@ describe('POST /api/jobs/:id/paths/batch route', () => {
    * Route handles create-only operations correctly.
    */
   it('handles create-only operations', async () => {
-    const createdPath = { id: 'path_new', name: 'New Path' }
-    mockPathService.createPath.mockReturnValue(createdPath)
+    const batchResult = {
+      created: [{ id: 'path_new', name: 'New Path' }],
+      updated: [],
+      deleted: [],
+    }
+    mockPathService.batchPathOperations.mockReturnValue(batchResult)
 
     vi.mocked(globalThis.parseBody as any).mockResolvedValue({
       create: [{ name: 'New Path', goalQuantity: 5, steps: [{ name: 'S1' }] }],
@@ -416,13 +362,7 @@ describe('POST /api/jobs/:id/paths/batch route', () => {
 
     const result = await handler(makeFakeEvent())
 
-    expect(result).toEqual({
-      created: [createdPath],
-      updated: [],
-      deleted: [],
-    })
-    expect(mockPathService.deletePath).not.toHaveBeenCalled()
-    expect(mockPathService.updatePath).not.toHaveBeenCalled()
+    expect(result).toEqual(batchResult)
   })
 
   /**
@@ -430,7 +370,12 @@ describe('POST /api/jobs/:id/paths/batch route', () => {
    * Route handles delete-only operations correctly.
    */
   it('handles delete-only operations', async () => {
-    mockPathService.deletePath.mockReturnValue({ deletedPartIds: [], deletedPartCount: 0 })
+    const batchResult = {
+      created: [],
+      updated: [],
+      deleted: ['path_1', 'path_2'],
+    }
+    mockPathService.batchPathOperations.mockReturnValue(batchResult)
 
     vi.mocked(globalThis.parseBody as any).mockResolvedValue({
       create: [],
@@ -440,12 +385,6 @@ describe('POST /api/jobs/:id/paths/batch route', () => {
 
     const result = await handler(makeFakeEvent())
 
-    expect(result).toEqual({
-      created: [],
-      updated: [],
-      deleted: ['path_1', 'path_2'],
-    })
-    expect(mockPathService.createPath).not.toHaveBeenCalled()
-    expect(mockPathService.updatePath).not.toHaveBeenCalled()
+    expect(result).toEqual(batchResult)
   })
 })

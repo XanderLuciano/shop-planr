@@ -8,7 +8,7 @@ import type { PartStepStatusRepository } from '../repositories/interfaces/partSt
 import type { AuditService } from './auditService'
 import type { Database } from 'better-sqlite3'
 import type { Path, ProcessStep, StepInput } from '../types/domain'
-import type { CreatePathInput, UpdatePathInput } from '../types/api'
+import type { CreatePathInput, UpdatePathInput, BatchPathOperationsInput, BatchPathOperationsResult } from '../types/api'
 import type { StepDistribution } from '../types/computed'
 import { generateId } from '../utils/idGenerator'
 import { assertNonEmpty, assertNonEmptyArray, assertPositive } from '../utils/validation'
@@ -339,6 +339,46 @@ export function createPathService(repos: {
         throw new NotFoundError('ProcessStep', stepId)
       }
       return repos.paths.updateStep(stepId, partial)
+    },
+
+    /**
+     * Atomic batch path operations: deletes, updates, and creates all run
+     * inside a single DB transaction. If any operation fails, all changes
+     * are rolled back — no partial commits.
+     */
+    batchPathOperations(input: BatchPathOperationsInput): BatchPathOperationsResult {
+      if (!repos.db) {
+        throw new ValidationError('Database connection required for batch operations')
+      }
+
+      const execute = repos.db.transaction(() => {
+        const deleted: string[] = []
+        const updated: Path[] = []
+        const created: Path[] = []
+
+        // Deletes first
+        for (const pathId of input.delete) {
+          this.deletePath(pathId, input.userId)
+          deleted.push(pathId)
+        }
+
+        // Then updates
+        for (const op of input.update) {
+          const { pathId, ...updateData } = op
+          const result = this.updatePath(pathId, updateData)
+          updated.push(result)
+        }
+
+        // Then creates
+        for (const op of input.create) {
+          const result = this.createPath({ ...op, jobId: input.jobId })
+          created.push(result)
+        }
+
+        return { created, updated, deleted }
+      })
+
+      return execute()
     },
   }
 }
