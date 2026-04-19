@@ -37,7 +37,8 @@ const loading = ref(false)
 const expandedPathIds = ref<Set<string>>(new Set())
 const pathDistributions = ref<Record<string, StepDist[]>>({})
 const pathCompletedCounts = ref<Record<string, number>>({})
-const loadingPathIds = ref<Set<string>>(new Set())
+const loadingDistributions = ref(false)
+const loadingDistributionsCount = ref(0)
 const failedPathIds = ref<Set<string>>(new Set())
 const fetchPathsPromise = ref<Promise<void> | null>(null)
 const $api = useAuthFetch()
@@ -55,6 +56,43 @@ async function fetchPaths() {
   }
 }
 
+async function fetchDistributions(pathIds: string[]) {
+  const uncachedIds = pathIds.filter(id => !pathDistributions.value[id] || failedPathIds.value.has(id))
+  if (uncachedIds.length === 0) return
+
+  for (const id of uncachedIds) failedPathIds.value.delete(id)
+
+  loadingDistributionsCount.value++
+  loadingDistributions.value = true
+  try {
+    const result = await $api<Record<string, { distribution: StepDist[], completedCount: number }>>(
+      '/api/paths/batch-distributions',
+      { method: 'POST', body: { pathIds: uncachedIds } },
+    )
+    for (const [pathId, data] of Object.entries(result)) {
+      pathDistributions.value[pathId] = data.distribution ?? []
+      pathCompletedCounts.value[pathId] = data.completedCount ?? 0
+    }
+    // Mark paths not in the response as failed (missing on server)
+    for (const id of uncachedIds) {
+      if (!result[id]) {
+        pathDistributions.value[id] = []
+        failedPathIds.value.add(id)
+      }
+    }
+  } catch {
+    for (const id of uncachedIds) {
+      if (!pathDistributions.value[id]) {
+        pathDistributions.value[id] = []
+      }
+      failedPathIds.value.add(id)
+    }
+  } finally {
+    loadingDistributionsCount.value--
+    loadingDistributions.value = loadingDistributionsCount.value > 0
+  }
+}
+
 async function togglePath(pathId: string) {
   if (expandedPathIds.value.has(pathId)) {
     expandedPathIds.value.delete(pathId)
@@ -66,22 +104,7 @@ async function togglePath(pathId: string) {
   expandedPathIds.value = new Set(expandedPathIds.value)
   emit('paths-expanded-change', { jobId: props.jobId, hasExpandedPaths: true })
 
-  if (!pathDistributions.value[pathId] || failedPathIds.value.has(pathId)) {
-    failedPathIds.value.delete(pathId)
-    loadingPathIds.value.add(pathId)
-    loadingPathIds.value = new Set(loadingPathIds.value)
-    try {
-      const detail = await $api<{ distribution: StepDist[], completedCount?: number }>(`/api/paths/${pathId}`)
-      pathDistributions.value[pathId] = detail.distribution ?? []
-      pathCompletedCounts.value[pathId] = detail.completedCount ?? 0
-    } catch {
-      pathDistributions.value[pathId] = []
-      failedPathIds.value.add(pathId)
-    } finally {
-      loadingPathIds.value.delete(pathId)
-      loadingPathIds.value = new Set(loadingPathIds.value)
-    }
-  }
+  await fetchDistributions([pathId])
 }
 
 async function onExpandAllPaths() {
@@ -99,30 +122,7 @@ async function onExpandAllPaths() {
     expandedPathIds.value = new Set(allPathIds)
     emit('paths-expanded-change', { jobId: props.jobId, hasExpandedPaths: allPathIds.length > 0 })
 
-    const uncachedIds = allPathIds.filter(id => !pathDistributions.value[id])
-    if (uncachedIds.length === 0) return
-
-    const CONCURRENCY = 3
-    for (let i = 0; i < uncachedIds.length; i += CONCURRENCY) {
-      const batch = uncachedIds.slice(i, i + CONCURRENCY)
-      const results = await Promise.allSettled(
-        batch.map(async (pathId) => {
-          loadingPathIds.value.add(pathId)
-          loadingPathIds.value = new Set(loadingPathIds.value)
-          const detail = await $api<{ distribution: StepDist[], completedCount?: number }>(`/api/paths/${pathId}`)
-          pathDistributions.value[pathId] = detail.distribution ?? []
-          pathCompletedCounts.value[pathId] = detail.completedCount ?? 0
-        }),
-      )
-      for (let j = 0; j < batch.length; j++) {
-        if (results[j]!.status === 'rejected' && !pathDistributions.value[batch[j]!]) {
-          pathDistributions.value[batch[j]!] = []
-          failedPathIds.value.add(batch[j]!)
-        }
-        loadingPathIds.value.delete(batch[j]!)
-      }
-      loadingPathIds.value = new Set(loadingPathIds.value)
-    }
+    await fetchDistributions(allPathIds)
   }
 
   bulkExpandPromise = run()
@@ -257,7 +257,7 @@ onUnmounted(() => {
             >
               <div class="pl-6 pr-2 py-2 bg-(--ui-bg-elevated)/30">
                 <div
-                  v-if="loadingPathIds.has(path.id)"
+                  v-if="loadingDistributions && !pathDistributions[path.id]"
                   class="flex items-center gap-2 text-xs text-(--ui-text-muted) py-1"
                 >
                   <UIcon

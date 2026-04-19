@@ -11,7 +11,7 @@ const emit = defineEmits<{
   advanced: []
 }>()
 
-const { advanceToStep, loading, error } = useLifecycle()
+const { batchAdvanceToStep, loading, error } = useLifecycle()
 
 // Find the current step to determine its order
 const currentStep = computed(() =>
@@ -56,7 +56,8 @@ async function handleAdvance() {
   }
 
   try {
-    await advanceToStep(props.partId, {
+    await batchAdvanceToStep({
+      partIds: [props.partId],
       targetStepId: selectedStepId.value,
     })
     emit('advanced')

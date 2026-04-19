@@ -20,7 +20,7 @@ const {
 } = useStepView(stepId)
 
 const { advanceBatch } = useAdvanceBatch()
-const { getStepStatuses } = useLifecycle()
+const $api = useAuthFetch()
 const { users } = useAuth()
 
 const advanceLoading = ref(false)
@@ -45,22 +45,23 @@ async function fetchDeferredSteps() {
     partStepStatuses.value = new Map()
     return
   }
-  const statusMap = new Map<string, PartStepStatusView[]>()
-  const results = await Promise.allSettled(
-    job.value.partIds.map(async (partId) => {
-      const statuses = await getStepStatuses(partId)
-      return { partId, statuses }
-    }),
-  )
-  for (const result of results) {
-    if (result.status === 'fulfilled') {
-      const { partId, statuses } = result.value
+
+  try {
+    const statusMap = new Map<string, PartStepStatusView[]>()
+    const result = await $api<Record<string, PartStepStatusView[]>>(
+      '/api/parts/batch-step-statuses',
+      { method: 'POST', body: { partIds: job.value.partIds } },
+    )
+
+    for (const [partId, statuses] of Object.entries(result)) {
       if (statuses.some(s => s.status === 'deferred')) {
         statusMap.set(partId, statuses)
       }
     }
+    partStepStatuses.value = statusMap
+  } catch {
+    // Preserve previous data on failure so the page remains usable
   }
-  partStepStatuses.value = statusMap
 }
 
 async function handleDeferredStepChanged() {

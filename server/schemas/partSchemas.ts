@@ -27,3 +27,25 @@ export const batchAdvanceSchema = z.object({
     .min(1, { error: 'At least one part ID is required' })
     .max(100, { error: 'Cannot advance more than 100 parts at once' }),
 })
+
+/**
+ * Validates the request body for `POST /api/parts/batch-step-statuses`.
+ * Accepts an array of 1–500 non-empty part ID strings.
+ */
+export const batchStepStatusesSchema = z.object({
+  partIds: z.array(z.string().min(1))
+    .min(1, 'At least one part ID is required')
+    .max(500, 'Cannot fetch more than 500 parts at once'),
+})
+
+/**
+ * Validates the request body for `POST /api/parts/advance-to`.
+ * Accepts an array of 1–100 part IDs, a target step ID, and an optional skip flag.
+ */
+export const batchAdvanceToSchema = z.object({
+  partIds: z.array(z.string().min(1))
+    .min(1, 'At least one part ID is required')
+    .max(100, 'Cannot advance more than 100 parts at once'),
+  targetStepId: z.string().min(1, 'targetStepId is required'),
+  skip: z.boolean().optional(),
+})

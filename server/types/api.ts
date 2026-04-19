@@ -42,6 +42,20 @@ export interface UpdatePathInput {
   steps?: { id?: string, name: string, location?: string, optional?: boolean, dependencyType?: 'physical' | 'preferred' | 'completion_gate' }[]
 }
 
+export interface BatchPathOperationsInput {
+  jobId: string
+  userId: string
+  create: Omit<CreatePathInput, 'jobId'>[]
+  update: { pathId: string, name?: string, goalQuantity?: number, advancementMode?: 'strict' | 'flexible' | 'per_step', steps?: UpdatePathInput['steps'] }[]
+  delete: string[]
+}
+
+export interface BatchPathOperationsResult {
+  created: import('./domain').Path[]
+  updated: import('./domain').Path[]
+  deleted: string[]
+}
+
 // ---- Parts (formerly Serial Numbers) ----
 
 export interface BatchCreatePartsInput {

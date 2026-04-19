@@ -52,6 +52,10 @@ export function createNoteService(repos: { notes: NoteRepository }, auditService
     getNotesForJob(jobId: string): StepNote[] {
       return repos.notes.listByJobId(jobId)
     },
+
+    getNotesForPath(pathId: string): StepNote[] {
+      return repos.notes.listByPathId(pathId)
+    },
   }
 }
 

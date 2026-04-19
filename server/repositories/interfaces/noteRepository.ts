@@ -6,5 +6,6 @@ export interface NoteRepository {
   listByPartId(partId: string): StepNote[]
   listByStepId(stepId: string): StepNote[]
   listByJobId(jobId: string): StepNote[]
+  listByPathId(pathId: string): StepNote[]
   deleteByStepIds(stepIds: string[]): number
 }

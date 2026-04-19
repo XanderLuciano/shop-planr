@@ -145,6 +145,26 @@ export function useLifecycle() {
     }
   }
 
+  async function batchAdvanceToStep(input: {
+    partIds: string[]
+    targetStepId: string
+    skip?: boolean
+  }): Promise<{ advanced: number, failed: number, results: { partId: string, success: boolean, error?: string }[] }> {
+    loading.value = true
+    error.value = null
+    try {
+      return await $api('/api/parts/advance-to', {
+        method: 'POST',
+        body: input,
+      })
+    } catch (e) {
+      error.value = e?.data?.message ?? e?.message ?? 'Failed to advance parts'
+      throw e
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function canComplete(partId: string): Promise<{ canComplete: boolean, blockers: string[] }> {
     loading.value = true
     error.value = null
@@ -169,6 +189,7 @@ export function useLifecycle() {
     createStepOverride,
     reverseStepOverride,
     getStepStatuses,
+    batchAdvanceToStep,
     canComplete,
   }
 }

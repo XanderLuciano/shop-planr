@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { WorkQueueJob } from '~/types/computed'
 import type { StepNote } from '~/types/domain'
+import { extractApiError } from '~/utils/apiError'
 
 const props = defineProps<{
   job: WorkQueueJob
@@ -17,7 +18,7 @@ const emit = defineEmits<{
 }>()
 
 const { isAdmin, users } = useAuth()
-const { advanceToStep } = useLifecycle()
+const { batchAdvanceToStep } = useLifecycle()
 const toast = useToast()
 
 const localPartIds = ref<string[]>([...props.job.partIds])
@@ -191,20 +192,21 @@ async function handleSkipSelectedParts() {
   const ids = localPartIds.value.filter((id: string) => selectedParts.value.has(id))
   skipLoading.value = true
   try {
-    for (const partId of ids) {
-      await advanceToStep(partId, { targetStepId: targetId, skip: !markComplete.value })
-    }
+    const result = await batchAdvanceToStep({
+      partIds: ids,
+      targetStepId: targetId,
+      skip: !markComplete.value,
+    })
     toast.add({
       title: markComplete.value ? 'Parts advanced' : 'Parts skipped',
-      description: `${ids.length} part${ids.length !== 1 ? 's' : ''} ${markComplete.value ? 'completed and advanced' : 'skipped forward'}`,
-      color: 'success',
+      description: `${result.advanced} part${result.advanced !== 1 ? 's' : ''} processed${result.failed ? `, ${result.failed} failed` : ''}`,
+      color: result.failed ? 'warning' : 'success',
     })
     emit('skipped')
   } catch (e: unknown) {
-    const err = e as { data?: { message?: string }, message?: string }
     toast.add({
-      title: 'Skip failed',
-      description: err?.data?.message ?? err?.message ?? 'An error occurred',
+      title: 'Error',
+      description: extractApiError(e, 'Failed to skip parts'),
       color: 'error',
     })
   } finally {

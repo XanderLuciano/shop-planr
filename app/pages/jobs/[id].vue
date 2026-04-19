@@ -12,7 +12,7 @@ const $api = useAuthFetch()
 const { getJob, updateJob, deleteJob } = useJobs()
 const { isAdmin, users: allUsers } = useAuth()
 const toast = useToast()
-const { getPath: fetchPathDetail, createPath, updatePath } = usePaths()
+const { createPath, updatePath } = usePaths()
 const { templates, fetchTemplates, applyTemplate } = useTemplates()
 const { settings } = useSettings()
 const { pushDescriptionTable, pushCommentSummary } = useJira()
@@ -242,35 +242,33 @@ async function loadJob() {
 }
 
 async function loadAllDistributions() {
-  const results = await Promise.allSettled(
-    paths.value.map(p =>
-      fetchPathDetail(p.id).then(d => ({ id: p.id, distribution: d.distribution, completedCount: d.completedCount })),
-    ),
-  )
-  const map: Record<string, StepDistribution[]> = {}
-  const counts: Record<string, number> = {}
-  for (const r of results) {
-    if (r.status === 'fulfilled') {
-      map[r.value.id] = r.value.distribution
-      counts[r.value.id] = r.value.completedCount
+  if (!paths.value.length) return
+  const pathIds = paths.value.map(p => p.id)
+  try {
+    const result = await $api<Record<string, { distribution: StepDistribution[], completedCount: number }>>(
+      '/api/paths/batch-distributions',
+      { method: 'POST', body: { pathIds } },
+    )
+    const map: Record<string, StepDistribution[]> = {}
+    const counts: Record<string, number> = {}
+    for (const [pathId, data] of Object.entries(result)) {
+      map[pathId] = data.distribution ?? []
+      counts[pathId] = data.completedCount ?? 0
     }
+    distributions.value = map
+    pathCompletedCounts.value = counts
+  } catch {
+    // silently skip — distributions are non-critical
   }
-  distributions.value = map
-  pathCompletedCounts.value = counts
 }
 
 async function loadPathNotes(pathId: string) {
-  const path = paths.value.find(p => p.id === pathId)
-  if (!path) return
-  const allNotes: StepNote[] = []
-  for (const step of path.steps) {
-    try {
-      const notes = await $api<StepNote[]>(`/api/notes/step/${step.id}`)
-      allNotes.push(...notes)
-    } catch { /* skip */ }
+  try {
+    const notes = await $api<StepNote[]>(`/api/notes/path/${encodeURIComponent(pathId)}`)
+    pathNotes.value = { ...pathNotes.value, [pathId]: notes }
+  } catch {
+    // silently skip
   }
-  allNotes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-  pathNotes.value = { ...pathNotes.value, [pathId]: allNotes }
 }
 
 function togglePathNotes(pathId: string) {

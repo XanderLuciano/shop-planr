@@ -6,7 +6,7 @@ import type { PartStepOverrideRepository } from '../repositories/interfaces/part
 import type { AuditService } from './auditService'
 import type { PartStepStatus, PartStepOverride, Part, ProcessStep } from '../types/domain'
 import type { ScrapPartInput, AdvanceToStepInput, ForceCompleteInput, WaiveStepInput } from '../types/api'
-import type { AdvancementResult } from '../types/computed'
+import type { AdvancementResult, PartStepStatusView } from '../types/computed'
 import { generateId } from '../utils/idGenerator'
 import { NotFoundError, ValidationError } from '../utils/errors'
 
@@ -44,6 +44,60 @@ export function createLifecycleService(repos: {
    */
   function getStepStatuses(partId: string): PartStepStatus[] {
     return repos.partStepStatuses.listByPartId(partId)
+  }
+
+  /**
+   * Returns the latest step status view for each step in a part's path.
+   * Deduplicates by stepId (keeping highest sequenceNumber), enriches with
+   * step metadata from the path, and flags active overrides.
+   *
+   * If the part is not found, throws NotFoundError.
+   * If the path is missing (orphaned part), returns raw statuses with empty metadata.
+   */
+  function getStepStatusViews(partId: string): PartStepStatusView[] {
+    const allStatuses = repos.partStepStatuses.listByPartId(partId)
+
+    // Deduplicate by stepId, keeping the latest (highest sequenceNumber)
+    const latestByStep = new Map<string, PartStepStatus>()
+    for (const s of allStatuses) {
+      const existing = latestByStep.get(s.stepId)
+      if (!existing || s.sequenceNumber > existing.sequenceNumber) {
+        latestByStep.set(s.stepId, s)
+      }
+    }
+
+    const part = repos.parts.getById(partId)
+    if (!part) throw new NotFoundError('Part', partId)
+
+    const path = repos.paths.getById(part.pathId)
+    if (!path) {
+      // Orphaned part — return raw statuses with empty metadata
+      return [...latestByStep.values()].map(s => ({
+        stepId: s.stepId,
+        stepName: '',
+        stepOrder: 0,
+        status: s.status as PartStepStatusView['status'],
+        optional: false,
+        dependencyType: 'preferred' as const,
+        hasOverride: false,
+      }))
+    }
+
+    const overrides = repos.partStepOverrides.listByPartId(partId)
+    const activeOverrideStepIds = new Set(overrides.filter(o => o.active).map(o => o.stepId))
+
+    return path.steps.map((step) => {
+      const latest = latestByStep.get(step.id)
+      return {
+        stepId: step.id,
+        stepName: step.name,
+        stepOrder: step.order,
+        status: (latest?.status ?? 'pending') as PartStepStatusView['status'],
+        optional: step.optional,
+        dependencyType: step.dependencyType,
+        hasOverride: activeOverrideStepIds.has(step.id),
+      }
+    })
   }
 
   /**
@@ -87,6 +141,7 @@ export function createLifecycleService(repos: {
   return {
     initializeStepStatuses,
     getStepStatuses,
+    getStepStatusViews,
     canComplete,
 
     scrapPart(partId: string, input: ScrapPartInput): Part {
