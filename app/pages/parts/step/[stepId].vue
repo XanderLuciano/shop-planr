@@ -46,18 +46,22 @@ async function fetchDeferredSteps() {
     return
   }
 
-  const statusMap = new Map<string, PartStepStatusView[]>()
-  const result = await $api<Record<string, PartStepStatusView[]>>(
-    '/api/parts/batch-step-statuses',
-    { method: 'POST', body: { partIds: job.value.partIds } },
-  )
+  try {
+    const statusMap = new Map<string, PartStepStatusView[]>()
+    const result = await $api<Record<string, PartStepStatusView[]>>(
+      '/api/parts/batch-step-statuses',
+      { method: 'POST', body: { partIds: job.value.partIds } },
+    )
 
-  for (const [partId, statuses] of Object.entries(result)) {
-    if (statuses.some(s => s.status === 'deferred')) {
-      statusMap.set(partId, statuses)
+    for (const [partId, statuses] of Object.entries(result)) {
+      if (statuses.some(s => s.status === 'deferred')) {
+        statusMap.set(partId, statuses)
+      }
     }
+    partStepStatuses.value = statusMap
+  } catch {
+    // Preserve previous data on failure so the page remains usable
   }
-  partStepStatuses.value = statusMap
 }
 
 async function handleDeferredStepChanged() {

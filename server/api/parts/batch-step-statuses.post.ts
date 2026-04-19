@@ -1,5 +1,6 @@
 import { batchStepStatusesSchema } from '../../schemas/partSchemas'
 import type { PartStepStatusView } from '../../types/computed'
+import { NotFoundError } from '../../utils/errors'
 
 export default defineApiHandler(async (event) => {
   const body = await parseBody(event, batchStepStatusesSchema)
@@ -10,8 +11,9 @@ export default defineApiHandler(async (event) => {
   for (const partId of body.partIds) {
     try {
       result[partId] = lifecycleService.getStepStatusViews(partId)
-    } catch {
-      // Omit missing parts — no error
+    } catch (err) {
+      if (err instanceof NotFoundError) continue
+      throw err
     }
   }
 

@@ -356,15 +356,25 @@ export function createPathService(repos: {
         const updated: Path[] = []
         const created: Path[] = []
 
-        // Deletes first
+        // Deletes first — verify each path belongs to this job
         for (const pathId of input.delete) {
+          const path = repos.paths.getById(pathId)
+          if (!path) throw new NotFoundError('Path', pathId)
+          if (path.jobId !== input.jobId) {
+            throw new ValidationError(`Path ${pathId} does not belong to job ${input.jobId}`)
+          }
           this.deletePath(pathId, input.userId)
           deleted.push(pathId)
         }
 
-        // Then updates
+        // Then updates — verify each path belongs to this job
         for (const op of input.update) {
           const { pathId, ...updateData } = op
+          const path = repos.paths.getById(pathId)
+          if (!path) throw new NotFoundError('Path', pathId)
+          if (path.jobId !== input.jobId) {
+            throw new ValidationError(`Path ${pathId} does not belong to job ${input.jobId}`)
+          }
           const result = this.updatePath(pathId, updateData)
           updated.push(result)
         }

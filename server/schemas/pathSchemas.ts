@@ -14,7 +14,7 @@ const advancementModeEnum = z.enum(['strict', 'flexible', 'per_step'])
  */
 export const pathIdParamSchema = z.object({
   id: z.string({ error: 'Path id is required' })
-    .min(1, { error: 'Path id is required' }),
+    .min(1, 'Path id is required'),
 })
 
 // ── Step schemas ──
