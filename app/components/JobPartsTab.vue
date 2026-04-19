@@ -93,14 +93,14 @@ function onScrapped() {
   loadParts()
 }
 
-async function handleQuickAdvance(partId: string) {
+const { execute: handleQuickAdvance, loading: advanceLoading } = useGuardedAction(async (partId: string) => {
   try {
     await $api('/api/parts/advance', { method: 'POST', body: { partIds: [partId] } })
     await loadParts()
   } catch {
-    // silent
+    // silent — inline quick-advance intentionally swallows errors
   }
-}
+})
 
 onMounted(() => {
   loadParts()
@@ -253,6 +253,7 @@ onMounted(() => {
                   variant="ghost"
                   icon="i-lucide-arrow-right"
                   title="Advance"
+                  :loading="advanceLoading"
                   @click="handleQuickAdvance(s.id)"
                 />
                 <UButton
@@ -324,6 +325,7 @@ onMounted(() => {
             variant="ghost"
             icon="i-lucide-arrow-right"
             label="Advance"
+            :loading="advanceLoading"
             @click="handleQuickAdvance(s.id)"
           />
           <UButton

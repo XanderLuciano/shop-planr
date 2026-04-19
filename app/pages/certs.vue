@@ -6,7 +6,6 @@ const { authenticatedUser } = useAuth()
 
 // UI state
 const showForm = ref(false)
-const formSaving = ref(false)
 const formError = ref('')
 
 // Batch attach state
@@ -20,16 +19,17 @@ const batchSuccess = ref('')
 // Detail view state
 const selectedCertId = ref<string | null>(null)
 
-async function onCreateCert(data: { type: 'material' | 'process', name: string, metadata?: Record<string, unknown> }) {
+const { execute: onCreateCertInner } = useGuardedAction(async (data: { type: 'material' | 'process', name: string, metadata?: Record<string, unknown> }) => {
   formError.value = ''
-  formSaving.value = true
+  await createCert(data)
+  showForm.value = false
+})
+
+async function onCreateCert(data: { type: 'material' | 'process', name: string, metadata?: Record<string, unknown> }) {
   try {
-    await createCert(data)
-    showForm.value = false
+    await onCreateCertInner(data)
   } catch (e) {
     formError.value = e?.data?.message ?? e?.message ?? 'Failed to create certificate'
-  } finally {
-    formSaving.value = false
   }
 }
 

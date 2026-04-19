@@ -17,7 +17,6 @@ const open = ref(false)
 const newTagName = ref('')
 const newTagColor = ref(randomTagColor())
 const showCreateForm = ref(false)
-const createLoading = ref(false)
 const createError = ref('')
 
 onMounted(() => fetchTags())
@@ -50,21 +49,22 @@ function removeTag(tagId: string) {
   emit('update:modelValue', props.modelValue.filter(id => id !== tagId))
 }
 
-async function handleCreateTag() {
+const { execute: handleCreateTagInner, loading: createLoading } = useGuardedAction(async () => {
   const name = newTagName.value.trim()
   if (!name) return
-  createLoading.value = true
   createError.value = ''
+  const tag = await createTag(name, newTagColor.value)
+  emit('update:modelValue', [...props.modelValue, tag.id])
+  newTagName.value = ''
+  newTagColor.value = randomTagColor()
+  showCreateForm.value = false
+})
+
+async function handleCreateTag() {
   try {
-    const tag = await createTag(name, newTagColor.value)
-    emit('update:modelValue', [...props.modelValue, tag.id])
-    newTagName.value = ''
-    newTagColor.value = randomTagColor()
-    showCreateForm.value = false
+    await handleCreateTagInner()
   } catch (e) {
     createError.value = extractApiError(e, 'Failed to create tag')
-  } finally {
-    createLoading.value = false
   }
 }
 </script>
