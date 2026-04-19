@@ -29,7 +29,7 @@ const canPushToJira = computed(() =>
   !!props.jiraTicketKey && !!props.jiraPushEnabled,
 )
 
-async function onSubmit() {
+const { execute: submitNote, loading: submitting } = useGuardedAction(async () => {
   const trimmed = text.value.trim()
   if (!trimmed) return
 
@@ -40,37 +40,42 @@ async function onSubmit() {
     localError.value = 'Authentication required — please sign in again'
     return
   }
-  try {
-    const note = await createNote({
-      jobId: props.jobId,
-      pathId: props.pathId,
-      stepId: props.stepId,
-      partIds: props.partIds,
-      text: trimmed,
-    })
 
-    // Push to Jira if checked
-    if (pushToJira.value && canPushToJira.value) {
-      pushingToJira.value = true
-      try {
-        const result = await pushNoteAsComment(props.jobId, note.id)
-        if (result.success) {
-          jiraPushResult.value = 'Pushed to Jira'
-        } else {
-          jiraPushResult.value = result.error ?? 'Jira push failed'
-          jiraPushIsError.value = true
-        }
-      } catch (e) {
-        jiraPushResult.value = e?.data?.message ?? e?.message ?? 'Jira push failed'
+  const note = await createNote({
+    jobId: props.jobId,
+    pathId: props.pathId,
+    stepId: props.stepId,
+    partIds: props.partIds,
+    text: trimmed,
+  })
+
+  // Push to Jira if checked
+  if (pushToJira.value && canPushToJira.value) {
+    pushingToJira.value = true
+    try {
+      const result = await pushNoteAsComment(props.jobId, note.id)
+      if (result.success) {
+        jiraPushResult.value = 'Pushed to Jira'
+      } else {
+        jiraPushResult.value = result.error ?? 'Jira push failed'
         jiraPushIsError.value = true
-      } finally {
-        pushingToJira.value = false
       }
+    } catch (e) {
+      jiraPushResult.value = e?.data?.message ?? e?.message ?? 'Jira push failed'
+      jiraPushIsError.value = true
+    } finally {
+      pushingToJira.value = false
     }
+  }
 
-    text.value = ''
-    pushToJira.value = false
-    emit('created', note)
+  text.value = ''
+  pushToJira.value = false
+  emit('created', note)
+})
+
+async function onSubmit() {
+  try {
+    await submitNote()
   } catch (e) {
     localError.value = e?.data?.message ?? e?.message ?? 'Failed to create note'
   }
@@ -119,7 +124,7 @@ async function onSubmit() {
           size="xs"
           label="Add Note"
           icon="i-lucide-message-square-plus"
-          :loading="loading || pushingToJira"
+          :loading="submitting || pushingToJira"
           :disabled="!text.trim()"
           @click="onSubmit"
         />

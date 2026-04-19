@@ -22,13 +22,13 @@ const deleteRequiresForce = ref(false)
 
 onMounted(() => fetchTags())
 
-async function handleCreate() {
+const { execute: handleCreate } = useGuardedAction(async () => {
   const name = newName.value.trim()
   if (!name) return
   await createTag(name, newColor.value)
   newName.value = ''
   newColor.value = randomTagColor()
-}
+})
 
 function startEdit(tag: Tag) {
   editingId.value = tag.id
@@ -36,12 +36,12 @@ function startEdit(tag: Tag) {
   editColor.value = tag.color
 }
 
-async function saveEdit(id: string) {
+const { execute: saveEdit } = useGuardedAction(async (id: string) => {
   const name = editName.value.trim()
   if (!name) return
   await updateTag(id, { name, color: editColor.value })
   editingId.value = null
-}
+})
 
 function cancelEdit() {
   editingId.value = null

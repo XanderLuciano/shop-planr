@@ -93,14 +93,10 @@ function onScrapped() {
   loadParts()
 }
 
-async function handleQuickAdvance(partId: string) {
-  try {
-    await $api('/api/parts/advance', { method: 'POST', body: { partIds: [partId] } })
-    await loadParts()
-  } catch {
-    // silent
-  }
-}
+const { execute: handleQuickAdvance, loading: advanceLoading } = useGuardedAction(async (partId: string) => {
+  await $api('/api/parts/advance', { method: 'POST', body: { partIds: [partId] } })
+  await loadParts()
+})
 
 onMounted(() => {
   loadParts()

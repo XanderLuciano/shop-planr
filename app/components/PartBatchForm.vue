@@ -16,7 +16,6 @@ const $api = useAuthFetch()
 
 const quantity = ref(1)
 const selectedCertId = ref<string | SelectNone>(SELECT_NONE)
-const saving = ref(false)
 const error = ref('')
 
 const certs = ref<Certificate[]>([])
@@ -38,7 +37,7 @@ const certOptions = computed(() => [
   ...certs.value.map(c => ({ label: `${c.name} (${c.type})`, value: c.id })),
 ])
 
-async function onSubmit() {
+const { execute: onSubmitInner, loading: saving } = useGuardedAction(async () => {
   error.value = ''
   if (!authenticatedUser.value) {
     error.value = 'Authentication required — please sign in again'
@@ -49,21 +48,22 @@ async function onSubmit() {
     return
   }
 
-  saving.value = true
+  const parts = await batchCreateParts({
+    jobId: props.jobId,
+    pathId: props.pathId,
+    quantity: quantity.value,
+    certId: selectedOrUndefined(selectedCertId.value),
+  })
+  quantity.value = 1
+  selectedCertId.value = SELECT_NONE
+  emit('created', parts)
+})
+
+async function onSubmit() {
   try {
-    const parts = await batchCreateParts({
-      jobId: props.jobId,
-      pathId: props.pathId,
-      quantity: quantity.value,
-      certId: selectedOrUndefined(selectedCertId.value),
-    })
-    quantity.value = 1
-    selectedCertId.value = SELECT_NONE
-    emit('created', parts)
+    await onSubmitInner()
   } catch (e) {
     error.value = e?.data?.message ?? e?.message ?? 'Failed to create parts'
-  } finally {
-    saving.value = false
   }
 }
 

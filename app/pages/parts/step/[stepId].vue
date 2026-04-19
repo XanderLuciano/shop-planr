@@ -23,7 +23,6 @@ const { advanceBatch } = useAdvanceBatch()
 const $api = useAuthFetch()
 const { users } = useAuth()
 
-const advanceLoading = ref(false)
 const editing = ref(false)
 const toast = useToast()
 
@@ -84,47 +83,48 @@ function handleEditCancel() {
   editing.value = false
 }
 
-async function handleAdvance(payload: { partIds: string[], note?: string }) {
+const { execute: handleAdvanceInner, loading: advanceLoading } = useGuardedAction(async (payload: { partIds: string[], note?: string }) => {
   if (!job.value) return
 
-  advanceLoading.value = true
-  try {
-    const result = await advanceBatch({
-      partIds: payload.partIds,
-      jobId: job.value.jobId,
-      pathId: job.value.pathId,
-      stepId: job.value.stepId,
-      availablePartCount: job.value.partCount,
-      note: payload.note,
+  const result = await advanceBatch({
+    partIds: payload.partIds,
+    jobId: job.value.jobId,
+    pathId: job.value.pathId,
+    stepId: job.value.stepId,
+    availablePartCount: job.value.partCount,
+    note: payload.note,
+  })
+
+  const dest = job.value.isFinalStep ? 'Completed' : (job.value.nextStepName ?? 'next step')
+
+  if (result.failed > 0) {
+    toast.add({
+      title: 'Partial advancement',
+      description: `${result.advanced} part${result.advanced !== 1 ? 's' : ''} moved to ${dest}, ${result.failed} failed`,
+      color: 'warning',
     })
+  } else {
+    toast.add({
+      title: 'Parts advanced',
+      description: `${result.advanced} part${result.advanced !== 1 ? 's' : ''} moved to ${dest}`,
+      color: 'success',
+    })
+  }
 
-    const dest = job.value.isFinalStep ? 'Completed' : (job.value.nextStepName ?? 'next step')
+  // Refresh step data
+  await fetchStep()
+  await fetchDeferredSteps()
+})
 
-    if (result.failed > 0) {
-      toast.add({
-        title: 'Partial advancement',
-        description: `${result.advanced} part${result.advanced !== 1 ? 's' : ''} moved to ${dest}, ${result.failed} failed`,
-        color: 'warning',
-      })
-    } else {
-      toast.add({
-        title: 'Parts advanced',
-        description: `${result.advanced} part${result.advanced !== 1 ? 's' : ''} moved to ${dest}`,
-        color: 'success',
-      })
-    }
-
-    // Refresh step data
-    await fetchStep()
-    await fetchDeferredSteps()
+async function handleAdvance(payload: { partIds: string[], note?: string }) {
+  try {
+    await handleAdvanceInner(payload)
   } catch (e) {
     toast.add({
       title: 'Advancement failed',
       description: e?.message ?? 'An error occurred',
       color: 'error',
     })
-  } finally {
-    advanceLoading.value = false
   }
 }
 
