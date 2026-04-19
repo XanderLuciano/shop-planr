@@ -1,22 +1,18 @@
 <script setup lang="ts">
+import type { AdvancementMode } from '~/types/domain'
+
 const props = defineProps<{
   pathId: string
-  currentMode: 'strict' | 'flexible' | 'per_step'
+  currentMode: AdvancementMode
 }>()
 
 const emit = defineEmits<{
-  updated: [mode: 'strict' | 'flexible' | 'per_step']
+  updated: [mode: AdvancementMode]
 }>()
 
 const loading = ref(false)
 const error = ref<string | null>(null)
 const $api = useAuthFetch()
-
-const modeOptions = [
-  { label: 'Strict', value: 'strict', description: 'Sequential only — N → N+1' },
-  { label: 'Flexible', value: 'flexible', description: 'Any future step with warnings' },
-  { label: 'Per Step', value: 'per_step', description: 'Based on step dependency types' },
-]
 
 const selected = ref(props.currentMode)
 
@@ -25,7 +21,7 @@ watch(() => props.currentMode, (v) => {
 })
 
 async function handleChange(value: string) {
-  const mode = value as 'strict' | 'flexible' | 'per_step'
+  const mode = value as AdvancementMode
   loading.value = true
   error.value = null
   try {
@@ -49,7 +45,7 @@ async function handleChange(value: string) {
     <label class="text-xs font-medium text-(--ui-text-muted) shrink-0">Advancement:</label>
     <USelect
       :model-value="selected"
-      :items="modeOptions"
+      :items="ADVANCEMENT_MODE_OPTIONS"
       value-key="value"
       label-key="label"
       :disabled="loading"

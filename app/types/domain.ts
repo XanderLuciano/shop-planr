@@ -1,6 +1,7 @@
 export type {
   Job,
   Path,
+  AdvancementMode,
   ProcessStep,
   Part,
   SerialNumber,

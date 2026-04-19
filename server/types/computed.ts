@@ -5,7 +5,7 @@
  * for display in the frontend. They are not persisted directly.
  */
 
-import type { Part, PartStepStatusValue, StepNote } from './domain'
+import type { AdvancementMode, Part, PartStepStatusValue, StepNote } from './domain'
 
 // ---- Full Route ----
 
@@ -145,7 +145,7 @@ export interface WorkQueueJob {
   jobPriority: number
   goalQuantity?: number
   completedCount?: number
-  pathAdvancementMode?: 'strict' | 'flexible' | 'per_step'
+  pathAdvancementMode?: AdvancementMode
   pathSteps?: readonly { id: string, name: string, order: number, location?: string, optional: boolean }[]
 }
 

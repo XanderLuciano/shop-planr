@@ -24,13 +24,15 @@ export interface Job {
 
 // ---- Path ----
 
+export type AdvancementMode = 'strict' | 'flexible' | 'per_step'
+
 export interface Path {
   id: string
   jobId: string
   name: string
   goalQuantity: number
   steps: readonly ProcessStep[]
-  advancementMode: 'strict' | 'flexible' | 'per_step'
+  advancementMode: AdvancementMode
   createdAt: string
   updatedAt: string
 }

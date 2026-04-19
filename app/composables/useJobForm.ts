@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { nanoid } from 'nanoid'
-import type { Job, Path, TemplateRoute } from '~/types/domain'
+import type { AdvancementMode, Job, Path, TemplateRoute } from '~/types/domain'
 
 // ---- Exported Interfaces ----
 
@@ -19,7 +19,7 @@ export interface PathDraft {
   _existingId?: string
   name: string
   goalQuantity: number
-  advancementMode: 'strict' | 'flexible' | 'per_step'
+  advancementMode: AdvancementMode
   steps: StepDraft[]
 }
 
