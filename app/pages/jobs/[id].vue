@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Job, Path, ShopUser, StepNote, ProcessStep } from '~/types/domain'
+import type { AdvancementMode, Job, Path, ShopUser, StepNote, ProcessStep } from '~/types/domain'
 import type { JobProgress, StepDistribution } from '~/types/computed'
 import { toStepDrafts, toStepPayload } from '~/utils/stepDraftHelpers'
 import { createStepDraft } from '~/composables/useJobForm'
@@ -44,10 +44,13 @@ const dependencyTypeOptions = [
   { label: 'Completion Gate', value: 'completion_gate' },
 ]
 
+// Advancement mode options (shared constant, auto-imported from app/utils/)
+
 // Edit path state
 const editingPathId = ref<string | null>(null)
 const editPathName = ref('')
 const editGoalQty = ref(1)
+const editAdvancementMode = ref<AdvancementMode>('strict')
 const editSteps = ref<StepDraft[]>([])
 const saving = ref(false)
 const saveError = ref<string | null>(null)
@@ -56,6 +59,7 @@ const saveError = ref<string | null>(null)
 const showNewPath = ref(false)
 const newPathName = ref('')
 const newGoalQty = ref(1)
+const newAdvancementMode = ref<AdvancementMode>('strict')
 const newPathSteps = ref<StepDraft[]>([createStepDraft()])
 
 function closeAllEditors() {
@@ -72,6 +76,7 @@ function startEditPath(path: Path) {
   editingPathId.value = path.id
   editPathName.value = path.name
   editGoalQty.value = path.goalQuantity
+  editAdvancementMode.value = path.advancementMode
   editSteps.value = toStepDrafts(path.steps as ProcessStep[])
 }
 
@@ -100,6 +105,7 @@ async function savePathEdit() {
     await updatePath(editingPathId.value!, {
       name: editPathName.value.trim(),
       goalQuantity: editGoalQty.value,
+      advancementMode: editAdvancementMode.value,
       steps: toStepPayload(editSteps.value.filter(s => s.name.trim())),
     })
     editingPathId.value = null
@@ -125,11 +131,13 @@ async function saveNewPath() {
       jobId,
       name: newPathName.value.trim(),
       goalQuantity: newGoalQty.value,
+      advancementMode: newAdvancementMode.value,
       steps: toStepPayload(newPathSteps.value.filter(s => s.name.trim())),
     })
     showNewPath.value = false
     newPathName.value = ''
     newGoalQty.value = 1
+    newAdvancementMode.value = 'strict'
     newPathSteps.value = [createStepDraft()]
     await loadJob()
   } catch (e: unknown) {
@@ -694,7 +702,7 @@ onMounted(() => {
           <div class="text-xs font-semibold text-(--ui-text-highlighted)">
             New Path
           </div>
-          <div class="grid grid-cols-2 gap-2">
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
             <div>
               <label class="block text-xs text-(--ui-text-muted) mb-0.5">Path Name</label>
               <UInput
@@ -712,6 +720,7 @@ onMounted(() => {
                 :min="1"
               />
             </div>
+            <AdvancementModeField v-model="newAdvancementMode" />
           </div>
 
           <PathStepEditor
@@ -785,7 +794,7 @@ onMounted(() => {
             v-if="editingPathId === p.id"
             class="p-3 space-y-3"
           >
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
               <div>
                 <label class="block text-xs text-(--ui-text-muted) mb-0.5">Path Name</label>
                 <UInput
@@ -802,6 +811,7 @@ onMounted(() => {
                   :min="1"
                 />
               </div>
+              <AdvancementModeField v-model="editAdvancementMode" />
             </div>
 
             <PathStepEditor

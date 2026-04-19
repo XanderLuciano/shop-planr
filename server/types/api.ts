@@ -5,7 +5,7 @@
  * API routes parse incoming data into these types before delegating to services.
  */
 
-import type { ScrapReason } from './domain'
+import type { AdvancementMode, ScrapReason } from './domain'
 
 // ---- Job ----
 
@@ -31,14 +31,14 @@ export interface CreatePathInput {
   jobId: string
   name: string
   goalQuantity: number
-  advancementMode?: 'strict' | 'flexible' | 'per_step'
+  advancementMode?: AdvancementMode
   steps: { name: string, location?: string, assignedTo?: string | null, optional?: boolean, dependencyType?: 'physical' | 'preferred' | 'completion_gate' }[]
 }
 
 export interface UpdatePathInput {
   name?: string
   goalQuantity?: number
-  advancementMode?: 'strict' | 'flexible' | 'per_step'
+  advancementMode?: AdvancementMode
   steps?: { id?: string, name: string, location?: string, optional?: boolean, dependencyType?: 'physical' | 'preferred' | 'completion_gate' }[]
 }
 
@@ -46,7 +46,7 @@ export interface BatchPathOperationsInput {
   jobId: string
   userId: string
   create: Omit<CreatePathInput, 'jobId'>[]
-  update: { pathId: string, name?: string, goalQuantity?: number, advancementMode?: 'strict' | 'flexible' | 'per_step', steps?: UpdatePathInput['steps'] }[]
+  update: { pathId: string, name?: string, goalQuantity?: number, advancementMode?: AdvancementMode, steps?: UpdatePathInput['steps'] }[]
   delete: string[]
 }
 
@@ -194,7 +194,7 @@ export interface EditBomInput {
 // ---- Path Advancement Mode ----
 
 export interface UpdateAdvancementModeInput {
-  advancementMode: 'strict' | 'flexible' | 'per_step'
+  advancementMode: AdvancementMode
 }
 
 // ---- Job Priority ----

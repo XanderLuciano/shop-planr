@@ -47,12 +47,6 @@ const assigneeItems = computed(() => {
 // Per-path template selection state
 const templateSelections = ref<Record<string, string>>({})
 
-const advancementModeOptions = [
-  { label: 'Strict', value: 'strict' },
-  { label: 'Flexible', value: 'flexible' },
-  { label: 'Per Step', value: 'per_step' },
-]
-
 const dependencyTypeOptions = [
   { label: 'Physical', value: 'physical' },
   { label: 'Preferred', value: 'preferred' },
@@ -244,30 +238,7 @@ function handleCancel() {
                 {{ getFieldError(`paths[${pathIndex}].goalQuantity`) }}
               </p>
             </div>
-            <div>
-              <label class="block text-xs font-medium text-(--ui-text-muted) mb-1 flex items-center gap-1">
-                Advancement Mode
-                <UTooltip :ui="{ content: 'h-auto py-2 px-3', text: 'whitespace-normal' }">
-                  <UIcon
-                    name="i-lucide-info"
-                    class="size-3.5 text-(--ui-text-dimmed) cursor-help"
-                  />
-                  <template #content>
-                    <div class="text-xs space-y-1 max-w-64">
-                      <p><span class="font-semibold">Strict:</span> Parts must follow steps in exact order.</p>
-                      <p><span class="font-semibold">Flexible:</span> Parts can skip ahead, but skipped steps become deferred.</p>
-                      <p><span class="font-semibold">Per Step:</span> Each step's dependency type controls advancement.</p>
-                    </div>
-                  </template>
-                </UTooltip>
-              </label>
-              <USelect
-                v-model="path.advancementMode"
-                :items="advancementModeOptions"
-                size="sm"
-                class="w-full"
-              />
-            </div>
+            <AdvancementModeField v-model="path.advancementMode" />
           </div>
           <UButton
             icon="i-lucide-trash-2"
