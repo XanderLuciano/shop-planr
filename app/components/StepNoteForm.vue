@@ -14,7 +14,7 @@ const emit = defineEmits<{
   created: [note: StepNote]
 }>()
 
-const { createNote, loading, error } = useNotes()
+const { createNote, error } = useNotes()
 const { pushNoteAsComment } = useJira()
 const { authenticatedUser } = useAuth()
 

@@ -19,7 +19,7 @@ const batchSuccess = ref('')
 // Detail view state
 const selectedCertId = ref<string | null>(null)
 
-const { execute: onCreateCertInner, loading: formSaving } = useGuardedAction(async (data: { type: 'material' | 'process', name: string, metadata?: Record<string, unknown> }) => {
+const { execute: onCreateCertInner } = useGuardedAction(async (data: { type: 'material' | 'process', name: string, metadata?: Record<string, unknown> }) => {
   formError.value = ''
   await createCert(data)
   showForm.value = false
