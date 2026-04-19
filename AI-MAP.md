@@ -103,7 +103,7 @@ tests/
     services/            → 10 test files (one per service)
     composables/         → 4 test files (useBarcode, useViewFilters, useJobForm, workQueueSearch)
     components/          → 6 test files (SerialCreationPanel, serialNoteAdd, EndpointCard, DocsSidebar, JobEditNavigation, JobViewToolbar)
-    routes/              → 4 test files (batchDistributions, notesByPath, batchStepStatuses, batchAdvanceTo, batchPathOperations)
+    routes/              → 6 test files (batchDistributions, notesByPath, batchStepStatuses, batchAdvanceTo, batchPathOperations, tagRouteAuth)
     repositories/sqlite/ → 1 test file (migrations)
   properties/            → property-based tests (fast-check properties; see tests/properties for full list)
   integration/           → 16 files: helpers + 14 end-to-end lifecycle tests + jobViewUtilities integration tests
