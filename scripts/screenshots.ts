@@ -9,8 +9,9 @@
  *   2. Run this script:       npm run screenshots
  *
  * Env vars:
- *   BASE_URL     defaults to http://localhost:3000
- *   VIEWPORTS    comma-separated subset of {desktop,tablet,mobile} to limit output
+ *   BASE_URL        defaults to http://localhost:3000
+ *   VIEWPORTS       comma-separated subset of {desktop,tablet,mobile} to limit output
+ *   SCREENSHOT_PIN  PIN for an existing user (default: 0000; auto-set on first run)
  *
  * Output: docs/screenshots/<viewport>/<name>.png
  */
@@ -20,6 +21,57 @@ import { resolve } from 'node:path'
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000'
 const OUTPUT_DIR = resolve(import.meta.dirname, '..', 'docs', 'screenshots')
+const DEFAULT_PIN = process.env.SCREENSHOT_PIN || '0000'
+const AUTH_COOKIE = 'shop-planr-auth-token'
+
+interface PublicUser {
+  id: string
+  username: string
+  displayName: string
+  isAdmin: boolean
+  hasPin: boolean
+}
+
+/**
+ * Authenticate against the running dev server and return a JWT.
+ *
+ * Strategy:
+ *   1. GET /api/users → pick the first admin (or first user)
+ *   2. If the user has no PIN yet → POST /api/auth/setup-pin (sets DEFAULT_PIN)
+ *   3. If the user already has a PIN → POST /api/auth/login with DEFAULT_PIN
+ */
+async function authenticate(): Promise<string> {
+  const res = await fetch(`${BASE_URL}/api/users`)
+  if (!res.ok) throw new Error(`Failed to fetch users: ${res.status}`)
+  const users: PublicUser[] = await res.json()
+  if (!users.length) throw new Error('No users found — run `npm run seed` first')
+
+  const user = users.find(u => u.isAdmin) ?? users[0]!
+  console.log(`🔑  Authenticating as ${user.displayName} (${user.username})`)
+
+  let authRes: Response
+  if (!user.hasPin) {
+    authRes = await fetch(`${BASE_URL}/api/auth/setup-pin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user.id, pin: DEFAULT_PIN }),
+    })
+  } else {
+    authRes = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: user.username, pin: DEFAULT_PIN }),
+    })
+  }
+
+  if (!authRes.ok) {
+    const body = await authRes.text()
+    throw new Error(`Auth failed (${authRes.status}): ${body}`)
+  }
+
+  const { token } = await authRes.json() as { token: string }
+  return token
+}
 
 interface ScreenshotSpec {
   name: string
@@ -128,7 +180,20 @@ async function updateReadmeScreenshots() {
 
 async function main() {
   const targets = selectedViewports()
+  const token = await authenticate()
   const browser = await puppeteer.launch({ headless: true })
+
+  // Build the cookie object once — reused for every page
+  const baseUrl = new URL(BASE_URL)
+  const authCookie = {
+    name: AUTH_COOKIE,
+    value: token,
+    domain: baseUrl.hostname,
+    path: '/',
+    httpOnly: false,
+    secure: baseUrl.protocol === 'https:',
+    sameSite: 'Lax' as const,
+  }
 
   try {
     for (const vp of targets) {
@@ -137,6 +202,7 @@ async function main() {
 
       const page = await browser.newPage()
       await page.setViewport(vp.viewport)
+      await page.setCookie(authCookie)
 
       for (const spec of pages) {
         const url = `${BASE_URL}${spec.path}`
