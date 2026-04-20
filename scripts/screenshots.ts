@@ -63,12 +63,14 @@ const pages: ScreenshotSpec[] = [
 function selectedViewports(): ViewportSpec[] {
   const filter = process.env.VIEWPORTS?.split(',').map(s => s.trim()).filter(Boolean)
   if (!filter?.length) return viewports
-  const allowed = new Set(filter)
-  const chosen = viewports.filter(v => allowed.has(v.name))
-  if (!chosen.length) {
-    throw new Error(`VIEWPORTS="${process.env.VIEWPORTS}" matched none of: ${viewports.map(v => v.name).join(', ')}`)
+
+  const knownNames = new Set(viewports.map(v => v.name))
+  const unknown = filter.filter(f => !knownNames.has(f))
+  if (unknown.length) {
+    throw new Error(`VIEWPORTS contains unknown viewport(s): ${unknown.join(', ')}. Valid: ${viewports.map(v => v.name).join(', ')}`)
   }
-  return chosen
+
+  return viewports.filter(v => new Set(filter).has(v.name))
 }
 
 const README_START = '<!-- SCREENSHOTS:START -->'
