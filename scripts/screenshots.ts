@@ -105,8 +105,7 @@ async function updateReadmeScreenshots() {
       const rightCap = `${right.label} — ${right.description}`
       rows.push(`| ${leftImg} | ${rightImg} |`)
       rows.push(`| ${leftCap} | ${rightCap} |`)
-    }
-    else {
+    } else {
       rows.push(`| ${leftImg} | |`)
       rows.push(`| ${leftCap} | |`)
     }
