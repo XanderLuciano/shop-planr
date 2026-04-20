@@ -15,7 +15,7 @@
  * Output: docs/screenshots/<viewport>/<name>.png
  */
 import puppeteer, { type Viewport } from 'puppeteer'
-import { mkdir } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000'
@@ -24,6 +24,12 @@ const OUTPUT_DIR = resolve(import.meta.dirname, '..', 'docs', 'screenshots')
 interface ScreenshotSpec {
   name: string
   path: string
+  /** Label shown in the README screenshot grid */
+  label: string
+  /** Short description for the README caption */
+  description?: string
+  /** Whether to include in the README screenshot grid (default: true) */
+  readme?: boolean
   /** Optional delay (ms) after navigation to let async data load */
   waitMs?: number
 }
@@ -40,18 +46,18 @@ const viewports: ViewportSpec[] = [
 ]
 
 const pages: ScreenshotSpec[] = [
-  { name: 'dashboard', path: '/' },
-  { name: 'jobs-list', path: '/jobs' },
-  { name: 'jobs-new', path: '/jobs/new' },
-  { name: 'parts', path: '/parts' },
-  { name: 'parts-browser', path: '/parts-browser' },
-  { name: 'queue', path: '/queue' },
-  { name: 'templates', path: '/templates' },
-  { name: 'bom', path: '/bom' },
-  { name: 'audit', path: '/audit' },
-  { name: 'certs', path: '/certs' },
-  { name: 'jira', path: '/jira' },
-  { name: 'settings', path: '/settings' },
+  { name: 'dashboard', path: '/', label: 'Dashboard', description: 'Summary cards, job progress, bottleneck alerts' },
+  { name: 'jobs-list', path: '/jobs', label: 'Jobs List', description: 'Expandable table with paths and steps' },
+  { name: 'jobs-new', path: '/jobs/new', label: 'New Job', description: 'Job creation form', readme: false },
+  { name: 'parts', path: '/parts', label: 'Parts View', description: 'Active parts grouped by job/step' },
+  { name: 'parts-browser', path: '/parts-browser', label: 'Parts Browser', description: 'Searchable/filterable part list' },
+  { name: 'queue', path: '/queue', label: 'Work Queue', description: 'Grouped by operator/assignee' },
+  { name: 'templates', path: '/templates', label: 'Templates', description: 'Reusable route template CRUD' },
+  { name: 'bom', path: '/bom', label: 'BOM', description: 'Bill of materials roll-ups', readme: false },
+  { name: 'audit', path: '/audit', label: 'Audit Trail', description: 'Filterable event log' },
+  { name: 'certs', path: '/certs', label: 'Certificates', description: 'Certificate management', readme: false },
+  { name: 'jira', path: '/jira', label: 'Jira', description: 'Jira ticket dashboard', readme: false },
+  { name: 'settings', path: '/settings', label: 'Settings', description: 'Users, Jira, libraries' },
 ]
 
 function selectedViewports(): ViewportSpec[] {
@@ -63,6 +69,60 @@ function selectedViewports(): ViewportSpec[] {
     throw new Error(`VIEWPORTS="${process.env.VIEWPORTS}" matched none of: ${viewports.map(v => v.name).join(', ')}`)
   }
   return chosen
+}
+
+const README_START = '<!-- SCREENSHOTS:START -->'
+const README_END = '<!-- SCREENSHOTS:END -->'
+
+/**
+ * Regenerate the screenshot grid in README.md between marker comments.
+ * Uses the `pages` array as the single source of truth — no manual sync needed.
+ */
+async function updateReadmeScreenshots() {
+  const readmePath = resolve(import.meta.dirname, '..', 'README.md')
+  const content = await readFile(readmePath, 'utf-8')
+
+  const startIdx = content.indexOf(README_START)
+  const endIdx = content.indexOf(README_END)
+  if (startIdx === -1 || endIdx === -1) {
+    console.warn('⚠️  README.md missing screenshot markers, skipping update')
+    return
+  }
+
+  const readmePages = pages.filter(p => p.readme !== false)
+  const rows: string[] = []
+
+  // Build 2-column grid
+  for (let i = 0; i < readmePages.length; i += 2) {
+    const left = readmePages[i]!
+    const right = readmePages[i + 1]
+
+    const leftImg = `![${left.label}](docs/screenshots/desktop/${left.name}.png)`
+    const leftCap = `${left.label} — ${left.description}`
+
+    if (right) {
+      const rightImg = `![${right.label}](docs/screenshots/desktop/${right.name}.png)`
+      const rightCap = `${right.label} — ${right.description}`
+      rows.push(`| ${leftImg} | ${rightImg} |`)
+      rows.push(`| ${leftCap} | ${rightCap} |`)
+    }
+    else {
+      rows.push(`| ${leftImg} | |`)
+      rows.push(`| ${leftCap} | |`)
+    }
+  }
+
+  const table = [
+    '| | |',
+    '|---|---|',
+    ...rows,
+  ].join('\n')
+
+  const generated = `${README_START}\n${table}\n${README_END}`
+  const updated = content.slice(0, startIdx) + generated + content.slice(endIdx + README_END.length)
+
+  await writeFile(readmePath, updated, 'utf-8')
+  console.log(`📝  Updated README.md screenshot grid (${readmePages.length} pages)`)
 }
 
 async function main() {
@@ -99,6 +159,8 @@ async function main() {
 
   const total = targets.length * pages.length
   console.log(`\n✅  ${total} screenshots saved to docs/screenshots/ (${targets.map(v => v.name).join(', ')})`)
+
+  await updateReadmeScreenshots()
 }
 
 main().catch((err) => {
