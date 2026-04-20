@@ -9,9 +9,10 @@
  *   2. Run this script:       npm run screenshots
  *
  * Env vars:
- *   BASE_URL        defaults to http://localhost:3000
- *   VIEWPORTS       comma-separated subset of {desktop,tablet,mobile} to limit output
- *   SCREENSHOT_PIN  PIN for an existing user (default: 0000; auto-set on first run)
+ *   BASE_URL         defaults to http://localhost:3000
+ *   VIEWPORTS        comma-separated subset of {desktop,tablet,mobile} to limit output
+ *   SCREENSHOT_USER  username to authenticate as (default: SAMPLE-Sarah)
+ *   SCREENSHOT_PIN   4-digit PIN for that user (default: 0000; auto-set if user has no PIN)
  *
  * Output: docs/screenshots/<viewport>/<name>.png
  */
@@ -21,7 +22,8 @@ import { resolve } from 'node:path'
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000'
 const OUTPUT_DIR = resolve(import.meta.dirname, '..', 'docs', 'screenshots')
-const DEFAULT_PIN = process.env.SCREENSHOT_PIN || '0000'
+const SCREENSHOT_USER = process.env.SCREENSHOT_USER || 'SAMPLE-Sarah'
+const SCREENSHOT_PIN = process.env.SCREENSHOT_PIN || '0000'
 const AUTH_COOKIE = 'shop-planr-auth-token'
 
 interface PublicUser {
@@ -35,10 +37,9 @@ interface PublicUser {
 /**
  * Authenticate against the running dev server and return a JWT.
  *
- * Strategy:
- *   1. GET /api/users → pick the first admin (or first user)
- *   2. If the user has no PIN yet → POST /api/auth/setup-pin (sets DEFAULT_PIN)
- *   3. If the user already has a PIN → POST /api/auth/login with DEFAULT_PIN
+ * Looks up the user specified by SCREENSHOT_USER, then:
+ *   - If the user has no PIN → sets it to SCREENSHOT_PIN via setup-pin
+ *   - If the user already has a PIN → logs in with SCREENSHOT_PIN
  */
 async function authenticate(): Promise<string> {
   const res = await fetch(`${BASE_URL}/api/users`)
@@ -46,26 +47,35 @@ async function authenticate(): Promise<string> {
   const users: PublicUser[] = await res.json()
   if (!users.length) throw new Error('No users found — run `npm run seed` first')
 
-  const user = users.find(u => u.isAdmin) ?? users[0]!
+  const user = users.find(u => u.username === SCREENSHOT_USER)
+  if (!user) {
+    const available = users.map(u => u.username).join(', ')
+    throw new Error(`User "${SCREENSHOT_USER}" not found. Available: ${available}\nSet SCREENSHOT_USER to one of these.`)
+  }
+
   console.log(`🔑  Authenticating as ${user.displayName} (${user.username})`)
 
   let authRes: Response
   if (!user.hasPin) {
+    console.log(`    PIN not set — initializing with SCREENSHOT_PIN`)
     authRes = await fetch(`${BASE_URL}/api/auth/setup-pin`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: user.id, pin: DEFAULT_PIN }),
+      body: JSON.stringify({ userId: user.id, pin: SCREENSHOT_PIN }),
     })
   } else {
     authRes = await fetch(`${BASE_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: user.username, pin: DEFAULT_PIN }),
+      body: JSON.stringify({ username: user.username, pin: SCREENSHOT_PIN }),
     })
   }
 
   if (!authRes.ok) {
     const body = await authRes.text()
+    if (authRes.status === 401) {
+      throw new Error(`Auth failed — wrong PIN for "${SCREENSHOT_USER}". Set SCREENSHOT_PIN to the correct value.`)
+    }
     throw new Error(`Auth failed (${authRes.status}): ${body}`)
   }
 
