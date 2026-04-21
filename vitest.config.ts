@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig, configDefaults } from 'vitest/config'
 import { resolve } from 'path'
 import type { Plugin } from 'vite'
 
@@ -31,7 +31,7 @@ export default defineConfig({
     // Exclude Playwright e2e specs — they use a different runner and import
     // `@playwright/test`, which refuses to load under vitest. Run with
     // `npm run test:e2e` instead.
-    exclude: ['**/node_modules/**', 'tests/e2e/**'],
+    exclude: [...configDefaults.exclude, 'tests/e2e/**'],
     env: {
       TZ: 'UTC',
     },

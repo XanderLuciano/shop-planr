@@ -55,7 +55,10 @@ export default defineConfig({
     // warming up, but the Nitro server answers API routes as soon as it's
     // ready, which is what the tests actually need.
     url: `${BASE_URL}/api/users`,
-    reuseExistingServer: !process.env.CI,
+    // Default to launching a fresh server so we guarantee the test DB/env.
+    // Set REUSE_E2E_SERVER=true to skip startup when you've already started
+    // the server with the correct e2e env (DB_PATH, RATE_LIMIT_DISABLED, etc).
+    reuseExistingServer: process.env.REUSE_E2E_SERVER === 'true',
     timeout: 120_000,
     stdout: 'pipe',
     stderr: 'pipe',

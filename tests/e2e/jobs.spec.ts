@@ -42,26 +42,30 @@ test.describe('jobs', () => {
   test('admin adds a second path to an existing job', async ({ adminPage, baseURL }) => {
     // Use the API for setup — we're testing the add-path flow, not creation.
     const api = await apiAs(baseURL!, 'admin')
-    const job = await createJob(api, { name: `E2E Multipath ${Date.now()}`, goalQuantity: 10 })
+    try {
+      const job = await createJob(api, { name: `E2E Multipath ${Date.now()}`, goalQuantity: 10 })
 
-    await adminPage.goto(`/jobs/${job.id}`)
-    await expect(adminPage.getByRole('heading', { name: job.name })).toBeVisible()
+      await adminPage.goto(`/jobs/${job.id}`)
+      await expect(adminPage.getByRole('heading', { name: job.name })).toBeVisible()
 
-    // Open the "New Path" editor.
-    await adminPage.getByRole('button', { name: 'Add Path' }).click()
+      // Open the "New Path" editor.
+      await adminPage.getByRole('button', { name: 'Add Path' }).click()
 
-    // Fill the new-path form. The UInput with placeholder "e.g. Standard Route"
-    // is the path name; we rely on placeholder text since this editor is
-    // lightweight and lives on the job detail page (not in JobCreationForm).
-    await adminPage.getByPlaceholder('e.g. Standard Route').fill('Expedited')
+      // Fill the new-path form. The UInput with placeholder "e.g. Standard Route"
+      // is the path name; we rely on placeholder text since this editor is
+      // lightweight and lives on the job detail page (not in JobCreationForm).
+      await adminPage.getByPlaceholder('e.g. Standard Route').fill('Expedited')
 
-    const processInput = adminPage.getByTestId('process-location-input-process').first()
-    await processInput.fill('Inspection')
-    await adminPage.keyboard.press('Escape')
+      const processInput = adminPage.getByTestId('process-location-input-process').first()
+      await processInput.fill('Inspection')
+      await adminPage.keyboard.press('Escape')
 
-    await adminPage.getByRole('button', { name: 'Create Path', exact: true }).click()
+      await adminPage.getByRole('button', { name: 'Create Path', exact: true }).click()
 
-    // The new path now appears in the paths list on the job page.
-    await expect(adminPage.getByText('Expedited')).toBeVisible({ timeout: 10_000 })
+      // The new path now appears in the paths list on the job page.
+      await expect(adminPage.getByText('Expedited')).toBeVisible({ timeout: 10_000 })
+    } finally {
+      await api.dispose()
+    }
   })
 })

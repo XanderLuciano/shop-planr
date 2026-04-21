@@ -35,8 +35,9 @@ export default defineEventHandler(async (event) => {
 
   // Escape hatch for e2e test runs: set RATE_LIMIT_DISABLED=true in the
   // webServer env to bypass brute-force protection while driving the UI.
-  // Never set this in production.
-  if (process.env.RATE_LIMIT_DISABLED === 'true') {
+  // Gated behind import.meta.dev so it's dead-code-eliminated in production
+  // builds — even if the env var leaks, it can never disable rate limiting.
+  if (import.meta.dev && process.env.RATE_LIMIT_DISABLED === 'true') {
     return
   }
 

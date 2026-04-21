@@ -25,16 +25,20 @@ test.describe('access control', () => {
 
   test('non-admin does not see the "Delete Part" button on part detail', async ({ operatorPage, baseURL }) => {
     const api = await apiAs(baseURL!, 'admin')
-    const { parts } = await seedJobWithParts(api, {
-      jobName: `E2E Guard-Part ${Date.now()}`,
-      partQuantity: 1,
-    })
-    const partId = parts[0]!.id
+    try {
+      const { parts } = await seedJobWithParts(api, {
+        jobName: `E2E Guard-Part ${Date.now()}`,
+        partQuantity: 1,
+      })
+      const partId = parts[0]!.id
 
-    await operatorPage.goto(`/parts-browser/${partId}`)
-    await expect(operatorPage.getByRole('heading', { name: partId })).toBeVisible({ timeout: 10_000 })
-    await operatorPage.waitForLoadState('networkidle')
+      await operatorPage.goto(`/parts-browser/${partId}`)
+      await expect(operatorPage.getByRole('heading', { name: partId })).toBeVisible({ timeout: 10_000 })
+      await operatorPage.waitForLoadState('networkidle')
 
-    await expect(operatorPage.getByRole('button', { name: 'Delete Part', exact: true })).toHaveCount(0)
+      await expect(operatorPage.getByRole('button', { name: 'Delete Part', exact: true })).toHaveCount(0)
+    } finally {
+      await api.dispose()
+    }
   })
 })

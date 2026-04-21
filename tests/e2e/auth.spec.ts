@@ -36,12 +36,15 @@ test.describe('authentication', () => {
 
   test('existing user logs in with PIN', async ({ page, context, request }) => {
     // Ensure Sarah has a PIN (idempotent — may already be set by a fixture).
-    const users = await (await request.get('/api/users')).json()
+    const usersRes = await request.get('/api/users')
+    expect(usersRes.ok(), `GET /api/users failed: ${usersRes.status()} ${await usersRes.text()}`).toBe(true)
+    const users = await usersRes.json()
     const sarah = users.find((u: { username: string, hasPin: boolean }) => u.username === TEST_USERS.admin.username)
     if (sarah && !sarah.hasPin) {
-      await request.post('/api/auth/setup-pin', {
+      const pinRes = await request.post('/api/auth/setup-pin', {
         data: { userId: sarah.id, pin: TEST_USERS.admin.pin },
       })
+      expect(pinRes.ok(), `POST /api/auth/setup-pin failed: ${pinRes.status()} ${await pinRes.text()}`).toBe(true)
     }
 
     await context.clearCookies()
