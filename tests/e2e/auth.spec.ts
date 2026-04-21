@@ -25,8 +25,7 @@ async function waitForAuthAndNavigate(
   page: import('@playwright/test').Page,
   context: import('@playwright/test').BrowserContext,
 ) {
-  // The reload fires asynchronously — give it a moment to set the cookie.
-  await page.waitForTimeout(1_000)
+  // The reload fires asynchronously — poll until the cookie appears.
   await expect(async () => {
     const cookies = await context.cookies()
     expect(cookies.some(c => c.name === AUTH_COOKIE && c.value)).toBe(true)
