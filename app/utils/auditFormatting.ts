@@ -5,6 +5,7 @@
  * No Vue/Nuxt dependencies — just input-in, output-out.
  */
 import type { AuditEntry, AuditAction } from '~/types/domain'
+import { formatShortDate } from './dateFormatting'
 
 export interface ActionConfig {
   label: string
@@ -62,11 +63,7 @@ export function formatRelativeTime(iso: string, now: Date = new Date()): string 
   if (diffHr < 24) return `${diffHr}h ago`
   const diffDay = Math.floor(diffHr / 24)
   if (diffDay < 7) return `${diffDay}d ago`
-  return then.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: then.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
-  })
+  return formatShortDate(iso, now)
 }
 
 /**

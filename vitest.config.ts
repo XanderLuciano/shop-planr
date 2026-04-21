@@ -28,6 +28,9 @@ export default defineConfig({
     environment: 'happy-dom',
     globals: true,
     pool: 'threads',
+    env: {
+      TZ: 'UTC',
+    },
     poolOptions: {
       threads: {
         maxThreads: 4,

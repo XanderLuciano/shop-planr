@@ -31,16 +31,7 @@ const partLabel = computed(() => {
   return ''
 })
 
-const absoluteTime = computed(() => {
-  const d = new Date(props.entry.timestamp)
-  return d.toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  })
-})
+const absoluteTime = computed(() => formatDateTime(props.entry.timestamp))
 
 /**
  * Extra rows to show when expanded: every non-empty ID/metadata field.

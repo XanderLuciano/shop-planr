@@ -13,10 +13,6 @@ onMounted(() => {
 const sortedNotes = computed(() =>
   [...notes.value].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
 )
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString()
-}
 </script>
 
 <template>
@@ -57,7 +53,7 @@ function formatDate(iso: string): string {
       >
         <div class="flex items-center justify-between">
           <span class="text-xs font-medium text-(--ui-text-muted)">{{ note.createdBy }}</span>
-          <span class="text-xs text-(--ui-text-muted)">{{ formatDate(note.createdAt) }}</span>
+          <span class="text-xs text-(--ui-text-muted)">{{ formatDateTime(note.createdAt) }}</span>
         </div>
         <p class="text-sm text-(--ui-text-highlighted)">
           {{ note.text }}

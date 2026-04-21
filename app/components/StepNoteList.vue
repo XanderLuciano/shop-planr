@@ -4,24 +4,6 @@ import type { StepNote } from '~/types/domain'
 defineProps<{
   notes: readonly StepNote[]
 }>()
-
-function formatTime(ts: string): string {
-  const d = new Date(ts)
-  const now = new Date()
-  const diffMs = now.getTime() - d.getTime()
-  const diffMin = Math.floor(diffMs / 60000)
-  if (diffMin < 1) return 'just now'
-  if (diffMin < 60) return `${diffMin}m ago`
-  const diffHr = Math.floor(diffMin / 60)
-  if (diffHr < 24) return `${diffHr}h ago`
-  const diffDay = Math.floor(diffHr / 24)
-  if (diffDay < 7) return `${diffDay}d ago`
-  return d.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
-  })
-}
 </script>
 
 <template>
@@ -42,7 +24,7 @@ function formatTime(ts: string): string {
     >
       <div class="flex items-center justify-between gap-2">
         <span class="font-medium text-(--ui-text-highlighted)">{{ note.createdBy }}</span>
-        <span class="text-(--ui-text-muted) whitespace-nowrap">{{ formatTime(note.createdAt) }}</span>
+        <span class="text-(--ui-text-muted) whitespace-nowrap">{{ formatRelativeTime(note.createdAt) }}</span>
       </div>
       <p class="text-(--ui-text) whitespace-pre-wrap break-words">
         {{ note.text }}

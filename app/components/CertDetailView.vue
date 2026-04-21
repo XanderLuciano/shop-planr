@@ -26,10 +26,6 @@ onMounted(async () => {
     loading.value = false
   }
 })
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString()
-}
 </script>
 
 <template>
@@ -59,7 +55,7 @@ function formatDate(iso: string): string {
           >
             {{ cert.type }}
           </UBadge>
-          <span class="text-xs text-(--ui-text-muted)">Created {{ formatDate(cert.createdAt) }}</span>
+          <span class="text-xs text-(--ui-text-muted)">Created {{ formatDateTime(cert.createdAt) }}</span>
         </div>
       </div>
 
@@ -108,7 +104,7 @@ function formatDate(iso: string): string {
               {{ att.partId }}
             </NuxtLink>
             <span class="text-xs text-(--ui-text-muted)">
-              {{ formatDate(att.attachedAt) }} by {{ att.attachedBy }}
+              {{ formatDateTime(att.attachedAt) }} by {{ att.attachedBy }}
             </span>
           </div>
         </div>

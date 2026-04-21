@@ -16,10 +16,6 @@ watch(() => props.bomId, (id) => {
 const sortedVersions = computed(() =>
   [...versions.value].sort((a, b) => b.versionNumber - a.versionNumber),
 )
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString()
-}
 </script>
 
 <template>
@@ -60,7 +56,7 @@ function formatDate(iso: string): string {
             Version {{ version.versionNumber }}
           </span>
           <span class="text-xs text-(--ui-text-muted)">
-            {{ formatDate(version.createdAt) }}
+            {{ formatDateTime(version.createdAt) }}
           </span>
         </div>
         <p class="text-xs text-(--ui-text-muted)">
