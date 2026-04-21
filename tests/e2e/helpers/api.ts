@@ -7,8 +7,12 @@
  * behavior and makes the suite fast.
  *
  * Usage:
- *   const api = await apiAs(request, baseURL, 'admin')
- *   const { job, path, parts } = await seedJobWithParts(api, { ... })
+ *   const api = await apiAs(baseURL, 'admin')
+ *   try {
+ *     const { job, path, parts } = await seedJobWithParts(api, { ... })
+ *   } finally {
+ *     await api.dispose()
+ *   }
  */
 import { request as pwRequest, type APIRequestContext } from '@playwright/test'
 import { acquireToken, TEST_USERS, type TestUser } from './auth'
@@ -16,6 +20,8 @@ import { acquireToken, TEST_USERS, type TestUser } from './auth'
 export interface ApiClient {
   request: APIRequestContext
   token: string
+  /** Dispose the underlying APIRequestContext to avoid handle leaks. */
+  dispose: () => Promise<void>
 }
 
 /**
@@ -32,7 +38,7 @@ export async function apiAs(baseURL: string, user: TestUser = 'admin'): Promise<
     baseURL,
     extraHTTPHeaders: { Authorization: `Bearer ${token}` },
   })
-  return { request, token }
+  return { request, token, dispose: () => request.dispose() }
 }
 
 // ── Domain helpers ──
