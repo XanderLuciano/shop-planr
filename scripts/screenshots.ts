@@ -9,8 +9,10 @@
  *   2. Run this script:       npm run screenshots
  *
  * Env vars:
- *   BASE_URL     defaults to http://localhost:3000
- *   VIEWPORTS    comma-separated subset of {desktop,tablet,mobile} to limit output
+ *   BASE_URL         defaults to http://localhost:3000
+ *   VIEWPORTS        comma-separated subset of {desktop,tablet,mobile} to limit output
+ *   SCREENSHOT_USER  username to authenticate as (default: SAMPLE-Sarah)
+ *   SCREENSHOT_PIN   4-digit PIN for that user (default: 0000; auto-set if user has no PIN)
  *
  * Output: docs/screenshots/<viewport>/<name>.png
  */
@@ -20,6 +22,66 @@ import { resolve } from 'node:path'
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000'
 const OUTPUT_DIR = resolve(import.meta.dirname, '..', 'docs', 'screenshots')
+const SCREENSHOT_USER = process.env.SCREENSHOT_USER || 'SAMPLE-Sarah'
+const SCREENSHOT_PIN = process.env.SCREENSHOT_PIN || '0000'
+const AUTH_COOKIE = 'shop-planr-auth-token'
+
+interface PublicUser {
+  id: string
+  username: string
+  displayName: string
+  isAdmin: boolean
+  hasPin: boolean
+}
+
+/**
+ * Authenticate against the running dev server and return a JWT.
+ *
+ * Looks up the user specified by SCREENSHOT_USER, then:
+ *   - If the user has no PIN → sets it to SCREENSHOT_PIN via setup-pin
+ *   - If the user already has a PIN → logs in with SCREENSHOT_PIN
+ */
+async function authenticate(): Promise<string> {
+  const res = await fetch(`${BASE_URL}/api/users`)
+  if (!res.ok) throw new Error(`Failed to fetch users: ${res.status}`)
+  const users: PublicUser[] = await res.json()
+  if (!users.length) throw new Error('No users found — run `npm run seed` first')
+
+  const user = users.find(u => u.username === SCREENSHOT_USER)
+  if (!user) {
+    const available = users.map(u => u.username).join(', ')
+    throw new Error(`User "${SCREENSHOT_USER}" not found. Available: ${available}\nSet SCREENSHOT_USER to one of these.`)
+  }
+
+  console.log(`🔑  Authenticating as ${user.displayName} (${user.username})`)
+
+  let authRes: Response
+  if (!user.hasPin) {
+    console.log(`    PIN not set — initializing with SCREENSHOT_PIN`)
+    authRes = await fetch(`${BASE_URL}/api/auth/setup-pin`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user.id, pin: SCREENSHOT_PIN }),
+    })
+  } else {
+    authRes = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: user.username, pin: SCREENSHOT_PIN }),
+    })
+  }
+
+  if (!authRes.ok) {
+    const body = await authRes.text()
+    if (authRes.status === 401) {
+      throw new Error(`Auth failed — wrong PIN for "${SCREENSHOT_USER}". Set SCREENSHOT_PIN to the correct value.`)
+    }
+    throw new Error(`Auth failed (${authRes.status}): ${body}`)
+  }
+
+  const { token } = await authRes.json() as { token: string }
+  return token
+}
 
 interface ScreenshotSpec {
   name: string
@@ -128,7 +190,20 @@ async function updateReadmeScreenshots() {
 
 async function main() {
   const targets = selectedViewports()
+  const token = await authenticate()
   const browser = await puppeteer.launch({ headless: true })
+
+  // Build the cookie object once — reused for every page
+  const baseUrl = new URL(BASE_URL)
+  const authCookie = {
+    name: AUTH_COOKIE,
+    value: token,
+    domain: baseUrl.hostname,
+    path: '/',
+    httpOnly: false,
+    secure: baseUrl.protocol === 'https:',
+    sameSite: 'Lax' as const,
+  }
 
   try {
     for (const vp of targets) {
@@ -137,6 +212,7 @@ async function main() {
 
       const page = await browser.newPage()
       await page.setViewport(vp.viewport)
+      await page.setCookie(authCookie)
 
       for (const spec of pages) {
         const url = `${BASE_URL}${spec.path}`
