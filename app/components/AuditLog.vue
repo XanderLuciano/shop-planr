@@ -1,59 +1,30 @@
 <script setup lang="ts">
-import type { AuditEntry, AuditAction } from '~/types/domain'
+import type { AuditEntry } from '~/types/domain'
 
 defineProps<{
   entries: readonly AuditEntry[]
 }>()
 
 const { users } = useAuth()
+const { isMobile } = useMobileBreakpoint()
 
-const userDisplayMap = computed(() => {
-  const map = new Map<string, string>()
+const userMap = computed(() => {
+  const map = new Map<string, { username: string, displayName: string }>()
   for (const u of users.value) {
-    map.set(u.id, u.username)
+    map.set(u.id, { username: u.username, displayName: u.displayName })
   }
   return map
 })
 
-function resolveUser(userId?: string | null): string {
+function resolveUser(userId?: string | null) {
+  if (!userId) return null
+  return userMap.value.get(userId) ?? null
+}
+
+function resolveUserLabel(userId?: string | null): string {
   if (!userId) return '—'
-  return userDisplayMap.value.get(userId) ?? userId
-}
-
-const actionConfig: Record<AuditAction, { label: string, color: string, icon: string }> = {
-  cert_attached: { label: 'Cert Attached', color: 'text-blue-500', icon: 'i-lucide-paperclip' },
-  part_created: { label: 'Part Created', color: 'text-green-500', icon: 'i-lucide-plus-circle' },
-  part_advanced: { label: 'Advanced', color: 'text-violet-500', icon: 'i-lucide-arrow-right' },
-  part_completed: { label: 'Completed', color: 'text-emerald-500', icon: 'i-lucide-check-circle' },
-  note_created: { label: 'Note', color: 'text-amber-500', icon: 'i-lucide-message-square' },
-  part_scrapped: { label: 'Scrapped', color: 'text-red-500', icon: 'i-lucide-trash-2' },
-  part_force_completed: { label: 'Force Completed', color: 'text-amber-500', icon: 'i-lucide-shield-check' },
-  step_override_created: { label: 'Override Created', color: 'text-blue-400', icon: 'i-lucide-shuffle' },
-  step_override_reversed: { label: 'Override Reversed', color: 'text-slate-400', icon: 'i-lucide-undo-2' },
-  step_skipped: { label: 'Step Skipped', color: 'text-slate-400', icon: 'i-lucide-skip-forward' },
-  step_deferred: { label: 'Step Deferred', color: 'text-orange-400', icon: 'i-lucide-clock' },
-  deferred_step_completed: { label: 'Deferred Completed', color: 'text-green-400', icon: 'i-lucide-check-circle-2' },
-  step_waived: { label: 'Step Waived', color: 'text-purple-400', icon: 'i-lucide-circle-slash' },
-  bom_edited: { label: 'BOM Edited', color: 'text-cyan-500', icon: 'i-lucide-table' },
-  path_deleted: { label: 'Path Deleted', color: 'text-red-400', icon: 'i-lucide-folder-x' },
-  part_deleted: { label: 'Part Deleted', color: 'text-red-500', icon: 'i-lucide-trash' },
-  tag_created: { label: 'Tag Created', color: 'text-teal-500', icon: 'i-lucide-tag' },
-  tag_updated: { label: 'Tag Updated', color: 'text-teal-400', icon: 'i-lucide-pencil' },
-  tag_deleted: { label: 'Tag Deleted', color: 'text-red-400', icon: 'i-lucide-tag' },
-}
-
-function formatTime(ts: string): string {
-  const d = new Date(ts)
-  const now = new Date()
-  const diffMs = now.getTime() - d.getTime()
-  const diffMin = Math.floor(diffMs / 60000)
-  if (diffMin < 1) return 'just now'
-  if (diffMin < 60) return `${diffMin}m ago`
-  const diffHr = Math.floor(diffMin / 60)
-  if (diffHr < 24) return `${diffHr}h ago`
-  const diffDay = Math.floor(diffHr / 24)
-  if (diffDay < 7) return `${diffDay}d ago`
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: d.getFullYear() !== now.getFullYear() ? 'numeric' : undefined })
+  const u = userMap.value.get(userId)
+  return u?.displayName || u?.username || truncateId(userId, 10)
 }
 </script>
 
@@ -64,9 +35,25 @@ function formatTime(ts: string): string {
   >
     No audit entries found.
   </div>
+
+  <!-- Mobile: card list -->
+  <div
+    v-else-if="isMobile"
+    data-testid="audit-card-list"
+  >
+    <AuditEntryCard
+      v-for="entry in entries"
+      :key="entry.id"
+      :entry="entry"
+      :user="resolveUser(entry.userId)"
+    />
+  </div>
+
+  <!-- Desktop: full table -->
   <table
     v-else
     class="w-full text-xs"
+    data-testid="audit-table"
   >
     <thead>
       <tr class="text-(--ui-text-muted) border-b border-(--ui-border-muted)">
@@ -97,22 +84,22 @@ function formatTime(ts: string): string {
         class="border-b border-(--ui-border-muted) last:border-0 hover:bg-(--ui-bg-elevated)/50"
       >
         <td class="py-1 px-2 text-(--ui-text-muted) whitespace-nowrap">
-          {{ formatTime(entry.timestamp) }}
+          {{ formatRelativeTime(entry.timestamp) }}
         </td>
         <td class="py-1 px-2 whitespace-nowrap">
           <span
             class="inline-flex items-center gap-1"
-            :class="actionConfig[entry.action]?.color"
+            :class="actionConfigFor(entry.action).color"
           >
             <UIcon
-              :name="actionConfig[entry.action]?.icon"
+              :name="actionConfigFor(entry.action).icon"
               class="size-3"
             />
-            {{ actionConfig[entry.action]?.label ?? entry.action }}
+            {{ actionConfigFor(entry.action).label }}
           </span>
         </td>
         <td class="py-1 px-2 text-(--ui-text-highlighted)">
-          {{ resolveUser(entry.userId) }}
+          {{ resolveUserLabel(entry.userId) }}
         </td>
         <td class="py-1 px-2 font-mono">
           {{ entry.partId || (entry.batchQuantity ? `×${entry.batchQuantity}` : '—') }}
@@ -121,7 +108,7 @@ function formatTime(ts: string): string {
           {{ entry.certId || '—' }}
         </td>
         <td class="py-1 px-2 text-(--ui-text-muted)">
-          <span v-if="entry.fromStepId && entry.toStepId">{{ entry.fromStepId }} → {{ entry.toStepId }}</span>
+          <span v-if="hasTransition(entry)">{{ entry.fromStepId }} → {{ entry.toStepId }}</span>
           <span v-else-if="entry.stepId">at {{ entry.stepId }}</span>
           <span v-else-if="entry.jobId">job {{ entry.jobId }}</span>
           <span v-else>—</span>

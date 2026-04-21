@@ -31,6 +31,23 @@ const jobId = ref('')
 const startDate = ref('')
 const endDate = ref('')
 
+const { isMobile } = useMobileBreakpoint()
+// On mobile the panel collapses to a button until tapped; desktop stays open.
+const expanded = ref(false)
+
+const activeFilterCount = computed(() => {
+  let n = 0
+  if (selectedAction.value !== SELECT_ALL) n++
+  if (userId.value.trim()) n++
+  if (partId.value.trim()) n++
+  if (jobId.value.trim()) n++
+  if (startDate.value) n++
+  if (endDate.value) n++
+  return n
+})
+
+const panelVisible = computed(() => !isMobile.value || expanded.value)
+
 function emitFilters() {
   const filters: AuditFilters = {}
   if (selectedAction.value && selectedAction.value !== SELECT_ALL) filters.action = selectedAction.value as AuditAction
@@ -56,74 +73,121 @@ watch([selectedAction, userId, partId, jobId, startDate, endDate], emitFilters)
 </script>
 
 <template>
-  <div class="flex flex-wrap items-end gap-3 p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/30">
-    <div>
-      <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Action Type</label>
-      <USelect
-        v-model="selectedAction"
-        :items="actionTypes"
-        value-key="value"
-        label-key="label"
-        size="xs"
-        class="w-44"
+  <div class="space-y-2">
+    <!-- Mobile toggle header -->
+    <div
+      v-if="isMobile"
+      class="flex items-center justify-between gap-2"
+    >
+      <UButton
+        variant="soft"
+        color="neutral"
+        size="sm"
+        icon="i-lucide-sliders-horizontal"
+        :label="expanded ? 'Hide Filters' : 'Filters'"
+        data-testid="audit-filters-toggle"
+        @click="expanded = !expanded"
+      >
+        <template
+          v-if="activeFilterCount > 0"
+          #trailing
+        >
+          <UBadge
+            :label="String(activeFilterCount)"
+            size="sm"
+            color="primary"
+            variant="solid"
+          />
+        </template>
+      </UButton>
+      <UButton
+        v-if="activeFilterCount > 0"
+        variant="ghost"
+        size="sm"
+        color="neutral"
+        label="Clear"
+        icon="i-lucide-x"
+        data-testid="audit-filters-clear-mobile"
+        @click="clearFilters"
       />
     </div>
 
-    <div>
-      <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">User</label>
-      <UInput
-        v-model="userId"
-        placeholder="User ID..."
+    <!-- Filter panel -->
+    <div
+      v-if="panelVisible"
+      class="p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/30 grid gap-3 sm:grid-cols-2 md:flex md:flex-wrap md:items-end"
+      data-testid="audit-filters-panel"
+    >
+      <div>
+        <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Action Type</label>
+        <USelect
+          v-model="selectedAction"
+          :items="actionTypes"
+          value-key="value"
+          label-key="label"
+          size="xs"
+          class="w-full md:w-44"
+        />
+      </div>
+
+      <div>
+        <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">User</label>
+        <UInput
+          v-model="userId"
+          placeholder="User ID..."
+          size="xs"
+          class="w-full md:w-32"
+        />
+      </div>
+
+      <div>
+        <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Part</label>
+        <UInput
+          v-model="partId"
+          placeholder="Part ID..."
+          size="xs"
+          class="w-full md:w-32"
+        />
+      </div>
+
+      <div>
+        <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Job</label>
+        <UInput
+          v-model="jobId"
+          placeholder="Job ID..."
+          size="xs"
+          class="w-full md:w-32"
+        />
+      </div>
+
+      <div>
+        <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Start Date</label>
+        <UInput
+          v-model="startDate"
+          type="date"
+          size="xs"
+          class="w-full md:w-36"
+        />
+      </div>
+
+      <div>
+        <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">End Date</label>
+        <UInput
+          v-model="endDate"
+          type="date"
+          size="xs"
+          class="w-full md:w-36"
+        />
+      </div>
+
+      <UButton
+        v-if="!isMobile"
         size="xs"
-        class="w-32"
+        variant="ghost"
+        label="Clear"
+        data-testid="audit-filters-clear-desktop"
+        @click="clearFilters"
       />
     </div>
-
-    <div>
-      <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Part</label>
-      <UInput
-        v-model="partId"
-        placeholder="Part ID..."
-        size="xs"
-        class="w-32"
-      />
-    </div>
-
-    <div>
-      <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Job</label>
-      <UInput
-        v-model="jobId"
-        placeholder="Job ID..."
-        size="xs"
-        class="w-32"
-      />
-    </div>
-
-    <div>
-      <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">Start Date</label>
-      <UInput
-        v-model="startDate"
-        type="date"
-        size="xs"
-        class="w-36"
-      />
-    </div>
-
-    <div>
-      <label class="text-xs font-medium text-(--ui-text-muted) block mb-1">End Date</label>
-      <UInput
-        v-model="endDate"
-        type="date"
-        size="xs"
-        class="w-36"
-      />
-    </div>
-
-    <UButton
-      size="xs"
-      variant="ghost"
-      label="Clear"
-      @click="clearFilters"
-    />
   </div>
 </template>

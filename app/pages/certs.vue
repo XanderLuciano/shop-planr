@@ -41,10 +41,6 @@ function metadataPreview(cert: Certificate): string {
     .join(', ')
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-}
-
 const certOptions = computed(() =>
   certs.value.map(c => ({ label: `${c.name} (${c.type})`, value: c.id })),
 )

@@ -379,7 +379,7 @@ onMounted(async () => {
             v-if="part.scrappedAt"
             class="text-xs mt-0.5"
           >
-            {{ part.scrappedBy ? `By ${part.scrappedBy}` : '' }} on {{ new Date(part.scrappedAt).toLocaleString() }}
+            {{ part.scrappedBy ? `By ${part.scrappedBy}` : '' }} on {{ formatDateTime(part.scrappedAt) }}
           </div>
         </div>
       </div>
@@ -400,7 +400,7 @@ onMounted(async () => {
             v-if="part.forceCompletedAt"
             class="text-xs mt-0.5"
           >
-            {{ part.forceCompletedBy ? `By ${part.forceCompletedBy}` : '' }} on {{ new Date(part.forceCompletedAt).toLocaleString() }}
+            {{ part.forceCompletedBy ? `By ${part.forceCompletedBy}` : '' }} on {{ formatDateTime(part.forceCompletedAt) }}
           </div>
         </div>
       </div>
@@ -598,7 +598,7 @@ onMounted(async () => {
                 class="px-3 py-2 flex items-center justify-between text-sm"
               >
                 <span class="font-mono text-(--ui-text-highlighted)">{{ att.certId }}</span>
-                <span class="text-xs text-(--ui-text-muted)">{{ new Date(att.attachedAt).toLocaleString() }} by {{ att.attachedBy }}</span>
+                <span class="text-xs text-(--ui-text-muted)">{{ formatDateTime(att.attachedAt) }} by {{ att.attachedBy }}</span>
               </div>
             </div>
           </div>
@@ -746,7 +746,7 @@ onMounted(async () => {
                   </UBadge>
                 </td>
                 <td class="px-3 py-2 text-(--ui-text-muted)">
-                  {{ new Date(sib.createdAt).toLocaleDateString() }}
+                  {{ formatDate(sib.createdAt) }}
                 </td>
               </tr>
               <tr v-if="sortedSiblings.length === 0">

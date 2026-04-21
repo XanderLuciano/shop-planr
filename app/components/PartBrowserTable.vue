@@ -118,7 +118,7 @@ function statusColor(status: string) {
             >Unassigned</span>
           </td>
           <td class="px-3 py-2 text-(--ui-text-muted)">
-            {{ new Date(s.createdAt).toLocaleDateString() }}
+            {{ formatDate(s.createdAt) }}
           </td>
         </tr>
         <tr v-if="parts.length === 0">

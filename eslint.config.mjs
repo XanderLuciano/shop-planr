@@ -28,6 +28,18 @@ export default withNuxt({
     // '@typescript-eslint/consistent-type-imports': ['warn', { prefer: 'type-imports' }],
   },
 }, {
+  // Ban inline toLocaleString/toLocaleDateString/toLocaleTimeString in app + server code.
+  // Use the shared helpers in app/utils/dateFormatting.ts instead — they are auto-imported.
+  // The dateFormatting.ts file itself is excluded since it's the canonical implementation.
+  files: ['app/**/*.{ts,vue}', 'server/**/*.ts'],
+  ignores: ['app/utils/dateFormatting.ts'],
+  rules: {
+    'no-restricted-syntax': ['error', {
+      selector: 'CallExpression[callee.property.name=/^toLocale(Date)?String$|^toLocaleTimeString$/]',
+      message: 'Use formatDate(), formatDateTime(), or formatShortDate() from app/utils/dateFormatting.ts instead of inline toLocale*String() calls.',
+    }],
+  },
+}, {
   // Relax strict rules for test files — tests legitimately use any/delete for mocking
   files: ['tests/**/*.ts', 'tests/**/*.test.ts'],
   rules: {
