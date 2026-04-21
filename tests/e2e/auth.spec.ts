@@ -40,8 +40,9 @@ test.describe('authentication', () => {
   test('new user sets up a PIN and lands signed in', async ({ page, context }) => {
     await context.clearCookies()
     await page.goto('/')
+    await page.waitForLoadState('networkidle')
 
-    // Users are fetched client-side after mount — wait for the avatar grid.
+    // Users are SSR-rendered — wait for hydration (networkidle) before clicking.
     const tonyAvatar = page.locator(`[data-testid="avatar-picker-user"][data-username="${UNREGISTERED_USERNAME}"]`)
     await expect(tonyAvatar).toBeVisible({ timeout: 15_000 })
     await tonyAvatar.click()
@@ -74,6 +75,7 @@ test.describe('authentication', () => {
 
     await context.clearCookies()
     await page.goto('/')
+    await page.waitForLoadState('networkidle')
 
     const sarahAvatar = page.locator(`[data-testid="avatar-picker-user"][data-username="${TEST_USERS.admin.username}"]`)
     await expect(sarahAvatar).toBeVisible()

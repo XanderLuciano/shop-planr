@@ -90,6 +90,19 @@ Optional property tests (skipped for MVP):
 - CP-9: BOM Roll-Up Consistency (`bomRollUp.property.test.ts`)
 - CP-13: Jira Ticket Filtering (`jiraFiltering.property.test.ts`)
 
+## E2E Tests (Playwright)
+
+| Command | What it does |
+|---------|-------------|
+| `npm run test:e2e` | Playwright business-critical flows (auth, CRUD, advancement) |
+| `npm run test:e2e:ui` | Playwright interactive UI mode |
+
+### Hydration-Aware Interactions
+
+SSR renders interactive elements (buttons, links) in the initial HTML before Vue attaches event handlers during hydration. If a test clicks an SSR-rendered element before hydration completes, the click is swallowed.
+
+**Rule:** Always `await page.waitForLoadState('networkidle')` after `goto()` before clicking any interactive element. Never work around this by making plugins/data-fetching client-only — that causes UI flashes and degrades real-user UX.
+
 ## Property Test Pattern
 
 Each property test uses `fast-check` with minimum 100 iterations:

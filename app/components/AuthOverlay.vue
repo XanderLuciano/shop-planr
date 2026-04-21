@@ -21,8 +21,11 @@ watch(() => showOverlay.value, (visible) => {
   }
 })
 
+// Users are fetched globally by plugins/users.ts on app startup.
+// The watch above handles refreshing when the overlay re-opens (e.g. user switch).
+// Safety net: if the plugin fetch failed or hasn't run, ensure we have users.
 onMounted(() => {
-  fetchUsers()
+  if (!users.value.length) fetchUsers()
 })
 
 function handleUserSelect(user: PublicUser) {

@@ -143,6 +143,7 @@ tests/
 | Service singleton | `server/utils/services.ts` → `getServices()` |
 | Repository singleton | `server/utils/db.ts` → `getRepositories()` |
 | Auth plugin | `app/plugins/auth.ts` → provides `$authFetch` via `nuxtApp.provide` |
+| Users plugin | `app/plugins/users.ts` → fetches user list once on app startup (global init) |
 | Auth composable | `app/composables/useAuth.ts` → session state, token, user |
 | Auth fetch | `app/composables/useAuthFetch.ts` → `useAuthFetch()` returns authenticated `$fetch` |
 | Auth middleware | `server/middleware/02.auth.ts` → JWT verification on `/api/` routes |
@@ -259,6 +260,9 @@ Core entities and relationships:
 - Primary color is `violet` with custom `#8750FF` CSS scale in `:root` variables.
 - The CSS has a custom green color scale from the Nuxt starter template — not used by the app.
 - `Dockerfile` copies pre-built `.output/` — you must `npm run build` before `docker build`.
+- Operator identity is the authenticated user from `useAuth()`. The user list is fetched once globally by `app/plugins/users.ts` on app startup — individual pages/components should NOT call `fetchUsers()` for initialization, only for post-mutation refresh.
+- Prefer SSR data fetching over client-only rendering to avoid UI flashes. If SSR-rendered elements appear before hydration, e2e tests must `waitForLoadState('networkidle')` after `goto()` before interacting — never skip hydration by making plugins client-only.
+- Global data plugins (`settings.ts`, `users.ts`) should `await` the fetch so SSR includes the data in the hydration payload. On the client, guard with `if (!data.value.length)` to skip the duplicate request when `useState` already transferred the SSR data. Components that consume plugin-fetched data should still include an `onMounted` safety net (`if (!data.value.length) fetch()`) in case the plugin failed silently.
 - `deploy.sh` has placeholder `SERVER="user@your-server.local"` — needs real values.
 - Jira integration is optional and off by default. Two independent toggles: global enable + push enable.
 - Serial numbers use sequential format `SN-00001` with a DB-persisted counter (counters table).
