@@ -94,6 +94,7 @@ async function handleAddNew() {
   >
     <UInput
       :model-value="modelValue"
+      :data-testid="`process-location-input-${type}`"
       :placeholder="`Search ${type}...`"
       size="sm"
       class="w-full"

@@ -21,6 +21,8 @@ function getFirstName(displayName: string): string {
       :key="user.id"
       type="button"
       class="flex flex-col items-center gap-2 rounded-lg p-3 cursor-pointer transition-transform duration-150 hover:scale-110 hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary-500"
+      data-testid="avatar-picker-user"
+      :data-username="user.username"
       @click="emit('select', user)"
     >
       <UserAvatar

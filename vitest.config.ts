@@ -28,6 +28,10 @@ export default defineConfig({
     environment: 'happy-dom',
     globals: true,
     pool: 'threads',
+    // Exclude Playwright e2e specs — they use a different runner and import
+    // `@playwright/test`, which refuses to load under vitest. Run with
+    // `npm run test:e2e` instead.
+    exclude: ['**/node_modules/**', 'tests/e2e/**'],
     env: {
       TZ: 'UTC',
     },

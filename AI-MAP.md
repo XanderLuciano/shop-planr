@@ -108,6 +108,7 @@ tests/
     repositories/sqlite/ → 1 test file (migrations)
   properties/            → property-based tests (fast-check properties; see tests/properties for full list)
   integration/           → 16 files: helpers + 14 end-to-end lifecycle tests + jobViewUtilities integration tests
+  e2e/                   → Playwright business-critical flows (auth, job/path/part CRUD, advance/skip, deletion, admin guards). See TESTING.md for standards.
 ```
 
 ## Run Commands
@@ -117,8 +118,10 @@ tests/
 | Dev server | `npm run dev` | Nuxt dev with HMR |
 | Build | `npm run build` | Production build to `.output/` |
 | Preview | `npm run preview` | Preview production build locally |
-| Test | `npm run test` | `vitest run` |
+| Test | `npm run test` | `vitest run` (unit + integration + properties) |
 | Test watch | `npm run test:watch` | `vitest` in watch mode |
+| E2E test | `npm run test:e2e` | Playwright business-critical flows (see TESTING.md) |
+| E2E UI | `npm run test:e2e:ui` | Playwright interactive UI mode |
 | Lint | `npm run lint` | ESLint with Nuxt config |
 | Typecheck | `npm run typecheck` | `nuxt typecheck` |
 | Docker build | `docker build -t shop-erp .` | Requires `npm run build` first |

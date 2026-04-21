@@ -33,6 +33,13 @@ export default defineEventHandler(async (event) => {
     return
   }
 
+  // Escape hatch for e2e test runs: set RATE_LIMIT_DISABLED=true in the
+  // webServer env to bypass brute-force protection while driving the UI.
+  // Never set this in production.
+  if (process.env.RATE_LIMIT_DISABLED === 'true') {
+    return
+  }
+
   // Determine auth status from Authorization header (runs before auth middleware)
   const authHeader = getHeader(event, 'authorization')
   const isAuthenticated = !!authHeader?.startsWith('Bearer ')
