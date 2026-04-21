@@ -8,17 +8,23 @@ defineProps<{
 const { users } = useAuth()
 const { isMobile } = useMobileBreakpoint()
 
-const userDisplayMap = computed(() => {
-  const map = new Map<string, string>()
+const userMap = computed(() => {
+  const map = new Map<string, { username: string, displayName: string }>()
   for (const u of users.value) {
-    map.set(u.id, u.username)
+    map.set(u.id, { username: u.username, displayName: u.displayName })
   }
   return map
 })
 
-function resolveUser(userId?: string | null): string {
+function resolveUser(userId?: string | null) {
+  if (!userId) return null
+  return userMap.value.get(userId) ?? null
+}
+
+function resolveUserLabel(userId?: string | null): string {
   if (!userId) return '—'
-  return userDisplayMap.value.get(userId) ?? truncateId(userId, 10)
+  const u = userMap.value.get(userId)
+  return u?.displayName || u?.username || truncateId(userId, 10)
 }
 </script>
 
@@ -39,7 +45,7 @@ function resolveUser(userId?: string | null): string {
       v-for="entry in entries"
       :key="entry.id"
       :entry="entry"
-      :user-display="resolveUser(entry.userId)"
+      :user="resolveUser(entry.userId)"
     />
   </div>
 
@@ -93,7 +99,7 @@ function resolveUser(userId?: string | null): string {
           </span>
         </td>
         <td class="py-1 px-2 text-(--ui-text-highlighted)">
-          {{ resolveUser(entry.userId) }}
+          {{ resolveUserLabel(entry.userId) }}
         </td>
         <td class="py-1 px-2 font-mono">
           {{ entry.partId || (entry.batchQuantity ? `×${entry.batchQuantity}` : '—') }}

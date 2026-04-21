@@ -2,8 +2,10 @@
  * Unit tests for AuditLog component.
  *
  * Tests responsive rendering: table layout on desktop, card layout on mobile,
- * empty state, user resolution via the user display map, and
- * field fallback behavior (part batch quantity, em-dash for missing user).
+ * empty state, user resolution via the user display map (passes user info
+ * down to AuditEntryCard on mobile; flattens to a display string for the
+ * desktop table), and field fallback behavior (part batch quantity,
+ * em-dash for missing user).
  *
  * Feature: audit-mobile-redesign
  */
@@ -22,6 +24,7 @@ import {
 interface UserLike {
   id: string
   username: string
+  displayName: string
 }
 
 /**
@@ -37,15 +40,21 @@ const AuditLog = defineComponent({
     isMobile: { type: Boolean, required: true },
   },
   setup(props) {
-    const userDisplayMap = computed(() => {
-      const map = new Map<string, string>()
-      for (const u of props.users) map.set(u.id, u.username)
+    const userMap = computed(() => {
+      const map = new Map<string, { username: string, displayName: string }>()
+      for (const u of props.users) map.set(u.id, { username: u.username, displayName: u.displayName })
       return map
     })
 
-    function resolveUser(userId?: string | null): string {
+    function resolveUser(userId?: string | null) {
+      if (!userId) return null
+      return userMap.value.get(userId) ?? null
+    }
+
+    function resolveUserLabel(userId?: string | null): string {
       if (!userId) return '—'
-      return userDisplayMap.value.get(userId) ?? truncateId(userId, 10)
+      const u = userMap.value.get(userId)
+      return u?.displayName || u?.username || truncateId(userId, 10)
     }
 
     return () => {
@@ -57,14 +66,28 @@ const AuditLog = defineComponent({
         return h(
           'div',
           { 'data-testid': 'audit-card-list' },
-          props.entries.map(entry =>
-            h('div', { key: entry.id, class: 'audit-card', 'data-testid': 'audit-card' }, [
-              h('span', { class: 'action' }, actionConfigFor(entry.action).label),
-              h('span', { class: 'time' }, formatRelativeTime(entry.timestamp)),
-              h('span', { class: 'user' }, resolveUser(entry.userId)),
-              h('span', { class: 'summary' }, buildDetailsSummary(entry)),
-            ]),
-          ),
+          props.entries.map((entry) => {
+            const user = resolveUser(entry.userId)
+            return h(
+              'div',
+              {
+                key: entry.id,
+                class: 'audit-card',
+                'data-testid': 'audit-card',
+                'data-has-user': user ? 'true' : 'false',
+              },
+              [
+                h('span', { class: 'action' }, actionConfigFor(entry.action).label),
+                h('span', { class: 'time' }, formatRelativeTime(entry.timestamp)),
+                h(
+                  'span',
+                  { class: 'user' },
+                  user?.displayName || user?.username || (entry.userId || '—'),
+                ),
+                h('span', { class: 'summary' }, buildDetailsSummary(entry)),
+              ],
+            )
+          }),
         )
       }
 
@@ -73,7 +96,7 @@ const AuditLog = defineComponent({
           h('tr', { key: entry.id, 'data-testid': 'audit-row' }, [
             h('td', { class: 'time' }, formatRelativeTime(entry.timestamp)),
             h('td', { class: 'action' }, actionConfigFor(entry.action).label),
-            h('td', { class: 'user' }, resolveUser(entry.userId)),
+            h('td', { class: 'user' }, resolveUserLabel(entry.userId)),
             h('td', { class: 'part' }, entry.partId || (entry.batchQuantity ? `×${entry.batchQuantity}` : '—')),
             h('td', { class: 'cert' }, entry.certId || '—'),
             h('td', { class: 'details' },
@@ -99,8 +122,8 @@ const makeTs = (minutesAgo: number) =>
   new Date(now.getTime() - minutesAgo * 60_000).toISOString()
 
 const baseUsers: UserLike[] = [
-  { id: 'user_xander', username: 'xander' },
-  { id: 'user_2', username: 'alice' },
+  { id: 'user_xander', username: 'xander', displayName: 'Xander R' },
+  { id: 'user_2', username: 'alice', displayName: 'Alice M' },
 ]
 
 const entries: AuditEntry[] = [
@@ -160,13 +183,13 @@ describe('AuditLog', () => {
       expect(wrapper.findAll('[data-testid="audit-row"]')).toHaveLength(2)
     })
 
-    it('resolves userId to username via the users list', () => {
+    it('resolves userId to displayName via the users list', () => {
       const wrapper = mount(AuditLog, {
         props: { entries, users: baseUsers, isMobile: false },
       })
       const userCells = wrapper.findAll('[data-testid="audit-row"] .user')
-      expect(userCells[0].text()).toBe('xander')
-      expect(userCells[1].text()).toBe('alice')
+      expect(userCells[0].text()).toBe('Xander R')
+      expect(userCells[1].text()).toBe('Alice M')
     })
 
     it('truncates unknown user IDs', () => {
@@ -179,7 +202,6 @@ describe('AuditLog', () => {
       const wrapper = mount(AuditLog, {
         props: { entries: [entryUnknown], users: baseUsers, isMobile: false },
       })
-      // `truncateId(id, 10)` → keep first 10 chars + ellipsis
       expect(wrapper.find('[data-testid="audit-row"] .user').text()).toBe('user_unkno…')
     })
 
@@ -240,12 +262,34 @@ describe('AuditLog', () => {
       expect(wrapper.findAll('[data-testid="audit-card"]')).toHaveLength(2)
     })
 
-    it('resolves userId to username in cards', () => {
+    it('passes a resolved user object to each card', () => {
+      const wrapper = mount(AuditLog, {
+        props: { entries, users: baseUsers, isMobile: true },
+      })
+      const cards = wrapper.findAll('[data-testid="audit-card"]')
+      expect(cards[0].attributes('data-has-user')).toBe('true')
+      expect(cards[1].attributes('data-has-user')).toBe('true')
+    })
+
+    it('passes null user when the userId is unknown', () => {
+      const entryUnknown: AuditEntry = {
+        id: 'audit_x',
+        action: 'part_created',
+        userId: 'user_not_in_list',
+        timestamp: makeTs(1),
+      }
+      const wrapper = mount(AuditLog, {
+        props: { entries: [entryUnknown], users: baseUsers, isMobile: true },
+      })
+      expect(wrapper.find('[data-testid="audit-card"]').attributes('data-has-user')).toBe('false')
+    })
+
+    it('renders the resolved displayName in the card', () => {
       const wrapper = mount(AuditLog, {
         props: { entries, users: baseUsers, isMobile: true },
       })
       const users = wrapper.findAll('[data-testid="audit-card"] .user')
-      expect(users[0].text()).toBe('xander')
+      expect(users[0].text()).toBe('Xander R')
     })
   })
 
