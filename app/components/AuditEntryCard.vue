@@ -70,7 +70,7 @@ function onKey(e: KeyboardEvent) {
 
 <template>
   <div
-    class="audit-card p-3 border-b border-(--ui-border-muted) last:border-0 space-y-1 cursor-pointer select-none hover:bg-(--ui-bg-elevated)/30"
+    class="audit-card p-3 border-b border-(--ui-border-muted) last:border-0 space-y-1 cursor-pointer hover:bg-(--ui-bg-elevated)/30"
     data-testid="audit-card"
     role="button"
     tabindex="0"
@@ -78,7 +78,7 @@ function onKey(e: KeyboardEvent) {
     @click="toggleExpanded"
     @keydown="onKey"
   >
-    <div class="flex items-start gap-3">
+    <div class="flex items-start gap-3 select-none">
       <UserAvatar
         v-if="avatarUser"
         :username="avatarUser.username"
@@ -162,7 +162,7 @@ function onKey(e: KeyboardEvent) {
     <!-- Expanded details -->
     <div
       v-if="expanded"
-      class="pt-2 border-t border-(--ui-border-muted) space-y-1.5 text-xs"
+      class="pt-2 border-t border-(--ui-border-muted) space-y-1.5 text-xs select-text"
       data-testid="audit-card-expanded"
       @click.stop
     >
