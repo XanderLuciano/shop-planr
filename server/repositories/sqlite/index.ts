@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3'
 import { createHash } from 'crypto'
-import { existsSync, readdirSync, readFileSync } from 'fs'
-import { join, resolve } from 'path'
+import { existsSync, mkdirSync, readdirSync, readFileSync } from 'fs'
+import { dirname, join, resolve } from 'path'
 import { fileURLToPath } from 'url'
 import { SQLiteJobRepository } from './jobRepository'
 import { SQLitePathRepository } from './pathRepository'
@@ -168,6 +168,11 @@ export function runMigrations(db: Database.Database, migrationsDir?: string): vo
  * Initialize a SQLite database with WAL mode, foreign keys, and run all migrations.
  */
 export function initDatabase(dbPath: string, migrationsDir?: string): Database.Database {
+  // Ensure the parent directory exists — better-sqlite3 won't create it.
+  const dir = dirname(dbPath)
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true })
+  }
   const db = new Database(dbPath)
   db.pragma('journal_mode = WAL')
   db.pragma('foreign_keys = ON')
