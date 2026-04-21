@@ -129,6 +129,7 @@ function handleCancel() {
           <label class="block text-sm font-medium text-(--ui-text-highlighted) mb-1">Job Name</label>
           <UInput
             v-model="jobDraft.name"
+            data-testid="job-name-input"
             placeholder="Enter job name"
             :color="getFieldError('job.name') ? 'error' : undefined"
             @update:model-value="clearFieldError('job.name')"
@@ -145,6 +146,7 @@ function handleCancel() {
           <label class="block text-sm font-medium text-(--ui-text-highlighted) mb-1">Goal Quantity</label>
           <UInput
             v-model.number="jobDraft.goalQuantity"
+            data-testid="job-goal-qty-input"
             type="number"
             :min="1"
             placeholder="1"
@@ -207,6 +209,7 @@ function handleCancel() {
               <label class="block text-xs font-medium text-(--ui-text-muted) mb-1">Path Name</label>
               <UInput
                 v-model="path.name"
+                :data-testid="`path-name-input-${pathIndex}`"
                 placeholder="Path name"
                 size="sm"
                 :color="getFieldError(`paths[${pathIndex}].name`) ? 'error' : undefined"
@@ -287,6 +290,7 @@ function handleCancel() {
     <!-- Submit / Cancel -->
     <div class="flex items-center gap-3 pt-4 border-t border-(--ui-border)">
       <UButton
+        data-testid="job-submit-btn"
         :label="mode === 'create' ? 'Create Job' : 'Save Changes'"
         :loading="submitting"
         :disabled="submitting"

@@ -24,7 +24,10 @@ const items: DropdownMenuItem[][] = [
     v-if="authenticatedUser"
     :items="items"
   >
-    <button class="flex items-center gap-2 cursor-pointer">
+    <button
+      class="flex items-center gap-2 cursor-pointer"
+      data-testid="user-menu-trigger"
+    >
       <UserAvatar
         :username="authenticatedUser.username"
         :display-name="authenticatedUser.displayName"
