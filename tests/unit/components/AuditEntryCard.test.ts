@@ -137,7 +137,6 @@ const AuditEntryCard = defineComponent({
                 formatRelativeTime(props.entry.timestamp),
               ),
               h('div', { 'data-testid': 'audit-card-meta' }, [
-                h('span', { class: 'user', 'data-testid': 'audit-card-user' }, userName.value),
                 partLabel.value
                   ? h('span', { class: 'part', 'data-testid': 'audit-card-part' }, partLabel.value)
                   : null,
@@ -148,6 +147,7 @@ const AuditEntryCard = defineComponent({
                       truncateId(props.entry.certId, 10),
                     )
                   : null,
+                h('span', { class: 'user', 'data-testid': 'audit-card-user' }, userName.value),
               ]),
               summary.value && !expanded.value
                 ? h(
@@ -308,6 +308,38 @@ describe('AuditEntryCard', () => {
     it('omits the cert section when certId is missing', () => {
       const wrapper = mount(AuditEntryCard, { props: { entry: baseEntry, user: userXander } })
       expect(wrapper.find('[data-testid="audit-card-cert"]').exists()).toBe(false)
+    })
+  })
+
+  describe('meta row order', () => {
+    it('renders part before the user so the user trails at the end', () => {
+      const wrapper = mount(AuditEntryCard, { props: { entry: baseEntry, user: userXander } })
+      const children = wrapper.find('[data-testid="audit-card-meta"]').findAll('span')
+      const partIdx = children.findIndex(c => c.attributes('data-testid') === 'audit-card-part')
+      const userIdx = children.findIndex(c => c.attributes('data-testid') === 'audit-card-user')
+      expect(partIdx).toBeGreaterThan(-1)
+      expect(userIdx).toBeGreaterThan(partIdx)
+    })
+
+    it('renders cert before the user when present', () => {
+      const entry: AuditEntry = { ...baseEntry, certId: 'cert_AbCdEfGhIjKl' }
+      const wrapper = mount(AuditEntryCard, { props: { entry, user: userXander } })
+      const children = wrapper.find('[data-testid="audit-card-meta"]').findAll('span')
+      const certIdx = children.findIndex(c => c.attributes('data-testid') === 'audit-card-cert')
+      const userIdx = children.findIndex(c => c.attributes('data-testid') === 'audit-card-user')
+      expect(certIdx).toBeGreaterThan(-1)
+      expect(userIdx).toBeGreaterThan(certIdx)
+    })
+
+    it('still renders the user when there is no part or cert', () => {
+      const entry: AuditEntry = {
+        ...baseEntry,
+        partId: undefined,
+        batchQuantity: undefined,
+      }
+      const wrapper = mount(AuditEntryCard, { props: { entry, user: userXander } })
+      expect(wrapper.find('[data-testid="audit-card-part"]').exists()).toBe(false)
+      expect(wrapper.find('[data-testid="audit-card-user"]').text()).toBe('Xander R')
     })
   })
 

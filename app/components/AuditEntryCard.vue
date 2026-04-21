@@ -129,15 +129,7 @@ function onKey(e: KeyboardEvent) {
           class="flex items-center gap-2 text-xs text-(--ui-text-highlighted) flex-wrap"
           data-testid="audit-card-meta"
         >
-          <span
-            class="truncate"
-            data-testid="audit-card-user"
-          >{{ userName }}</span>
           <template v-if="partLabel">
-            <span
-              class="text-(--ui-text-muted)"
-              aria-hidden="true"
-            >·</span>
             <span
               class="font-mono truncate"
               data-testid="audit-card-part"
@@ -145,6 +137,7 @@ function onKey(e: KeyboardEvent) {
           </template>
           <template v-if="entry.certId">
             <span
+              v-if="partLabel"
               class="text-(--ui-text-muted)"
               aria-hidden="true"
             >·</span>
@@ -153,6 +146,10 @@ function onKey(e: KeyboardEvent) {
               data-testid="audit-card-cert"
             >{{ truncateId(entry.certId, 10) }}</span>
           </template>
+          <span
+            class="truncate ml-auto"
+            data-testid="audit-card-user"
+          >{{ userName }}</span>
         </div>
 
         <div
