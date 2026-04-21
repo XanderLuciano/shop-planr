@@ -9,8 +9,32 @@ import { TEST_USERS, AUTH_COOKIE, UNREGISTERED_USERNAME } from './helpers/auth'
 
 async function enterPin(page: import('@playwright/test').Page, pin: string) {
   for (let i = 0; i < 4; i++) {
-    await page.getByLabel(`PIN digit ${i + 1}`).fill(pin[i]!)
+    const input = page.getByLabel(`PIN digit ${i + 1}`)
+    await input.click()
+    await input.pressSequentially(pin[i]!)
   }
+}
+
+/**
+ * After login/setupPin the app calls window.location.reload(). The Teleport-
+ * based overlay can sometimes persist through the hydration cycle, so we
+ * wait for the cookie to appear (proving the auth API succeeded) and then
+ * do a clean navigation to let SSR render the authenticated state.
+ */
+async function waitForAuthAndNavigate(
+  page: import('@playwright/test').Page,
+  context: import('@playwright/test').BrowserContext,
+) {
+  // The reload fires asynchronously — give it a moment to set the cookie.
+  await page.waitForTimeout(1_000)
+  await expect(async () => {
+    const cookies = await context.cookies()
+    expect(cookies.some(c => c.name === AUTH_COOKIE && c.value)).toBe(true)
+  }).toPass({ timeout: 10_000 })
+
+  // Fresh navigation ensures clean SSR with the auth cookie.
+  await page.goto('/')
+  await page.waitForLoadState('networkidle')
 }
 
 test.describe('authentication', () => {
@@ -26,6 +50,8 @@ test.describe('authentication', () => {
     // PinSetup renders two sequential PinEntry instances (create then confirm).
     await enterPin(page, '1234')
     await enterPin(page, '1234')
+
+    await waitForAuthAndNavigate(page, context)
 
     await expect(page.getByTestId('user-menu-trigger')).toBeVisible({ timeout: 10_000 })
     await expect(page.getByTestId('user-menu-trigger')).toContainText(UNREGISTERED_USERNAME)
@@ -55,6 +81,8 @@ test.describe('authentication', () => {
     await sarahAvatar.click()
     await expect(page.getByText(/enter your pin/i)).toBeVisible()
     await enterPin(page, TEST_USERS.admin.pin)
+
+    await waitForAuthAndNavigate(page, context)
 
     await expect(page.getByTestId('user-menu-trigger')).toBeVisible({ timeout: 10_000 })
   })

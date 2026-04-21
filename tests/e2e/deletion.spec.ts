@@ -29,7 +29,9 @@ test.describe('deletion', () => {
       await adminPage.getByRole('button', { name: 'Delete path' }).first().click()
       await adminPage.getByRole('button', { name: 'Yes', exact: true }).click()
 
-      await expect(adminPage.getByText(path.name)).not.toBeVisible({ timeout: 10_000 })
+      // After deletion the path name should no longer appear in the path list.
+      // Use exact match to avoid matching the delete confirmation text.
+      await expect(adminPage.getByText(path.name, { exact: true })).not.toBeVisible({ timeout: 10_000 })
     } finally {
       await api.dispose()
     }
@@ -58,7 +60,7 @@ test.describe('deletion', () => {
       await deleteBtn.click()
 
       // Path list re-renders — the former path name is gone from the page.
-      await expect(adminPage.getByText(path.name)).toHaveCount(0, { timeout: 10_000 })
+      await expect(adminPage.getByText(path.name, { exact: true })).toHaveCount(0, { timeout: 10_000 })
     } finally {
       await api.dispose()
     }
