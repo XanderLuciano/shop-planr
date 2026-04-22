@@ -19,20 +19,20 @@ Revisions are treated as a property of the Job, not of a path. When a customer s
 
 ## Glossary
 
-- **Revision / Rev** — *[free-form string, e.g. "A", "B", "1", "A02". Job-owned concept: a single rev value refers to one conceptual revision regardless of how many paths express it.]*
-- **Rev Catalog** — *[`Job.revisions[]`, the authoritative list of revs that exist for a job; grows over time as new revs are introduced]*
-- **Rev Tag** — *[the per-part label showing which catalog rev that part expresses]*
-- **Path Lineage** — *[grouping container for paths representing the same physical workflow across revs]*
-- **Path Rev (Path Revision)** — *[an individual Path within a lineage; today's `Path` entity, now associated with a specific rev from the catalog]*
-- **Express a Rev** — *[a path is said to "express" a rev when its `revision` field references that catalog entry; paths receive revs, they do not own them]*
-- **Rev-Up Event** — *[planner action that either introduces a new rev to the catalog or propagates an existing rev to additional lineages]*
-- **Introduce Rev** — *[sub-type of Rev-Up: the typed rev value is not in the catalog → adds it and applies to selected lineages]*
-- **Propagate Rev** — *[sub-type of Rev-Up: the typed rev value is already in the catalog → no catalog change, clones selected lineages to express that existing rev]*
-- **Active Rev** — *[the latest rev in a lineage that has open in-progress work]*
-- **Muted Rev** — *[a rev in a lineage with no remaining active parts and a successor rev in the same lineage]*
-- **Lineage Grouping** — *[UI rendering of a multi-rev lineage as a container with rev sub-cards]*
-- **Single-Rev Job** — *[job whose catalog has exactly one entry]*
-- **Multi-Rev Job** — *[job whose catalog has two or more entries]*
+- **Revision / Rev** — A free-form string (e.g. "A", "B", "1", "A02") representing one conceptual revision of a Job. Job-owned — a single rev value refers to one conceptual revision regardless of how many Paths express it.
+- **Rev Catalog** — `Job.revisions[]`, the authoritative list of rev values that exist for a Job. Grows over time as new revs are introduced; append-only (no removal).
+- **Rev Tag** — The per-Part label showing which catalog rev that Part expresses. Inherited from the Path at creation; not user-editable post-hoc.
+- **Path Lineage** — A grouping container for Paths representing the same physical workflow across revs. Exists for every Path from day one (always-exists rule). Named by the planner; defaults to the creating Path's name.
+- **Path Rev (Path Revision)** — An individual Path within a Lineage. In code this is the existing `Path` entity, now associated with a specific rev from the Job catalog via its `revision` field.
+- **Express a Rev** — A Path is said to "express" a rev when its `revision` field references that catalog entry. Paths receive revs; they do not own them.
+- **Rev-Up Event** — A planner-initiated operation that either introduces a new rev to the catalog or propagates an existing rev to additional Lineages.
+- **Introduce Rev** — A sub-type of Rev-Up: the typed rev value is not in the catalog. Adds the value to `Job.revisions[]` and applies the downstream mechanics to selected Lineages.
+- **Propagate Rev** — A sub-type of Rev-Up: the typed rev value is already in the catalog. Leaves the catalog unchanged and clones the selected Lineages to express the existing rev.
+- **Active Rev** — The latest rev in a Lineage (by creation timestamp); the one that accepts new Parts.
+- **Muted Rev** — A Path within a Lineage that has zero non-completed non-scrapped Parts AND is not the latest in its Lineage. Always computed, never stored.
+- **Lineage Grouping** — The UI rendering of a multi-rev Lineage as a container with expandable per-rev sub-cards. Invisible for single-rev Lineages.
+- **Single-Rev Job** — A Job whose `revisions[]` catalog has exactly one entry.
+- **Multi-Rev Job** — A Job whose `revisions[]` catalog has two or more entries.
 
 ## Requirements
 
