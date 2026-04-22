@@ -76,6 +76,22 @@ function toggleVersions(bomId: string) {
   showVersionsId.value = showVersionsId.value === bomId ? null : bomId
 }
 
+const jobMap = computed(() => {
+  const map: Record<string, { id: string, name: string }> = {}
+  for (const j of jobs.value) {
+    map[j.id] = { id: j.id, name: j.name }
+  }
+  return map
+})
+
+function getContributingJobs(bom: BOM, partType: string): { id: string, name: string }[] {
+  const entry = bom.entries.find(e => e.partType === partType)
+  if (!entry) return []
+  return entry.contributingJobIds
+    .map(id => jobMap.value[id])
+    .filter((j): j is { id: string, name: string } => !!j)
+}
+
 onMounted(async () => {
   await Promise.all([fetchBoms(), fetchJobs()])
 })
@@ -237,30 +253,54 @@ onMounted(async () => {
               </tr>
             </thead>
             <tbody>
-              <tr
+              <template
                 v-for="entry in summaries[b.id]!.entries"
                 :key="entry.partType"
-                class="border-b border-(--ui-border-muted) last:border-0"
               >
-                <td class="py-1 text-(--ui-text-highlighted)">
-                  {{ entry.partType }}
-                </td>
-                <td class="py-1 text-right">
-                  {{ entry.requiredQuantityPerBuild }}
-                </td>
-                <td class="py-1 text-right text-green-500">
-                  {{ entry.totalCompleted }}
-                </td>
-                <td class="py-1 text-right text-blue-500">
-                  {{ entry.totalInProgress }}
-                </td>
-                <td
-                  class="py-1 text-right"
-                  :class="entry.totalOutstanding > 0 ? 'text-amber-500' : 'text-(--ui-text-muted)'"
+                <tr class="border-b border-(--ui-border-muted) last:border-0">
+                  <td class="py-1 text-(--ui-text-highlighted)">
+                    {{ entry.partType }}
+                  </td>
+                  <td class="py-1 text-right">
+                    {{ entry.requiredQuantityPerBuild }}
+                  </td>
+                  <td class="py-1 text-right text-green-500">
+                    {{ entry.totalCompleted }}
+                  </td>
+                  <td class="py-1 text-right text-blue-500">
+                    {{ entry.totalInProgress }}
+                  </td>
+                  <td
+                    class="py-1 text-right"
+                    :class="entry.totalOutstanding > 0 ? 'text-amber-500' : 'text-(--ui-text-muted)'"
+                  >
+                    {{ entry.totalOutstanding }}
+                  </td>
+                </tr>
+                <tr
+                  v-if="getContributingJobs(b, entry.partType).length"
+                  class="border-b border-(--ui-border-muted) last:border-0"
                 >
-                  {{ entry.totalOutstanding }}
-                </td>
-              </tr>
+                  <td
+                    colspan="5"
+                    class="py-1 pl-3"
+                  >
+                    <span class="text-(--ui-text-muted)">Jobs: </span>
+                    <template
+                      v-for="(job, idx) in getContributingJobs(b, entry.partType)"
+                      :key="job.id"
+                    >
+                      <NuxtLink
+                        :to="`/jobs/${job.id}`"
+                        class="text-(--ui-primary) hover:underline"
+                      >
+                        {{ job.name }}
+                      </NuxtLink>
+                      <span v-if="idx < getContributingJobs(b, entry.partType).length - 1">, </span>
+                    </template>
+                  </td>
+                </tr>
+              </template>
             </tbody>
           </table>
           <div
