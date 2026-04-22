@@ -10,7 +10,7 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-const { users, fetchUsers } = useAuth()
+const { users } = useAuth()
 const { locations, fetchLocations } = useLibrary()
 const toast = useToast()
 const $api = useAuthFetch()
@@ -38,8 +38,7 @@ const locationItems = computed(() =>
 )
 
 onMounted(async () => {
-  // Fetch users and locations if not already cached
-  if (!users.value.length) await fetchUsers()
+  // Users are fetched globally by plugins/users.ts; locations still need per-component fetch
   if (!locations.value.length) await fetchLocations()
 })
 
