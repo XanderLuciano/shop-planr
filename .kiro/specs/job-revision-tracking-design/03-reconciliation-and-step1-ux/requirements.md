@@ -34,9 +34,12 @@
 
 #### Acceptance Criteria
 *[TODO:
-- Per rev R in `Job.revisions[]`: compute `demand(R)` = sum of breakdown-mode milestone quantities for R + share of total-mode milestones (definition of "share" = TBD in design doc)
+- Per rev R in `Job.revisions[]`: compute `demand(R)` = sum of breakdown-mode milestone quantities for R (Total-Mode milestones do NOT contribute to per-rev demand — they form a separate rev-agnostic demand figure)
+- Rev-agnostic demand: sum of Total-Mode milestone quantities across the job
 - Per rev R: compute `supply(R)` = sum of `path.goalQuantity` for paths in this job with `path.revision = R`
+- Total supply: sum of `path.goalQuantity` across all paths in the job
 - Compute `gap(R) = demand(R) − supply(R)` (positive = shortfall, zero or negative = covered)
+- Rev-agnostic gap = `revAgnosticDemand − totalSupply` (but showing this is tricky if per-rev revs are already using some of that supply; design-doc detail)
 - Recomputed on read (no stored aggregate); cheap because of bounded job size
 - Single-rev jobs: gauge not displayed (per progressive disclosure)]*
 
@@ -46,10 +49,11 @@
 
 #### Acceptance Criteria
 *[TODO:
-- Visible only on multi-rev jobs (`Job.revisions.length > 1`)
-- Shows per-rev row: `Rev A: supply 10 / demand 12 (short 2)`; `Rev B: supply 20 / demand 18 (covered)`
+- Visible only on multi-rev jobs (`Job.revisions.length > 1`) OR on single-rev jobs with at least one Total-Mode milestone
+- Shows per-rev rows: `Rev A: supply 10 / demand 12 (short 2)`; `Rev B: supply 20 / demand 18 (covered)`
+- Shows one additional rev-agnostic row when Total-Mode milestones exist: `Total-Mode demand: 15 (covered by total supply 30)` — distinct visual treatment from per-rev rows
 - Color: green (covered, gap ≤ 0), yellow (shortfall ≤ 20% of demand), red (shortfall > 20%)
-- Click on a row opens the Reconciliation Prompt for that rev]*
+- Click on a row opens the Reconciliation Prompt for that rev (rev-agnostic row click opens a "raise any path goal" prompt — design detail)]*
 
 ### Requirement 3: Reconciliation Prompt — Demand Exceeds Supply
 
@@ -155,6 +159,9 @@
 
 *[TODO:]*
 
-- *[Placeholder: how does Total-Mode milestone demand get apportioned across revs for the per-rev demand calculation? Options: (a) doesn't count toward any rev's demand (only adds to a "rev-agnostic demand" bucket shown separately), (b) apportioned proportionally to `Job.revisions[]` distribution, (c) all attributed to the latest active rev. My lean: (a) — Total-Mode demand is rev-agnostic and shown as its own line, not folded into per-rev numbers.]*
 - *[Placeholder: when multiple lineages produce the same rev (in-house Rev A + outsource Rev A), how does the reconciliation prompt let the planner split the goal increase? Default = first lineage absorbs all, with a "Split across lineages" advanced option? My lean: yes.]*
 - *[Placeholder: should the demand-vs-supply gauge appear on the Jobs list page (compact form) or only on the Job detail page? My lean: detail page only; jobs list stays clean.]*
+
+### Resolved During Requirements Discussion
+
+- **Total-Mode milestone demand is rev-agnostic**: it does not contribute to any rev's per-rev demand figure. The gauge shows per-rev supply/demand on separate rows plus one additional "rev-agnostic demand" row aggregating Total-Mode milestones. Planners reading the gauge see "Rev A short by 2, Rev B covered, Rev-agnostic 15 covered by total supply 30" clearly. Captured in R1 and R2.

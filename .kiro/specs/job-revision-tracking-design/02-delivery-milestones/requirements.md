@@ -148,6 +148,7 @@
 - Each milestone shows: name (if any), quantity, due date, current fill (X of N), per-rev fill if breakdown mode
 - Visual state: not started / in progress / met / overdue (computed from current date + fill state)
 - Met milestones can collapse but remain visible
+- **Shortfall warning on retired rev lines**: when a Breakdown-Mode milestone has a rev line for which no more parts will ever be produced (rev fully retired — no active paths expressing it, no in-progress parts), the milestone shows a visible "Rev X: no supply" warning. The milestone stays unmet; planner must explicitly edit or delete the rev line to resolve. System never auto-converts or auto-drops.
 - Aggregated milestone roll-up appears on the BOM view across contributing jobs (existing BOM mechanism extended)]*
 
 ### Requirement 11: Audit Trail for Milestones
@@ -190,5 +191,8 @@
 *[TODO:]*
 
 - *[Placeholder: should milestone names be required or optional? My lean: optional, with auto-name "Milestone 1, 2, 3..." if blank.]*
-- *[Placeholder: when a Rev gets fully retired (all its parts complete + lineage muted), what happens to its line items in open Breakdown-Mode milestones? Drop, leave with red shortfall warning, or convert to Total Mode? My lean: leave with shortfall warning; planner decides.]*
 - *[Placeholder: BOM aggregation — should milestones from contributing jobs aggregate by date (showing "delivery this week from 3 jobs") or by job? Likely a design detail, but flagging here.]*
+
+### Resolved During Requirements Discussion
+
+- **Retired rev in a Breakdown-Mode milestone**: the milestone stays unmet with a visible shortfall warning indicating the unfilled rev line has no supply. The planner explicitly edits or deletes the line to resolve. No auto-convert to Total Mode, no auto-drop of the rev line — consistent with the no-behind-your-back-actions principle. Captured as acceptance criterion under R10 (Milestone Display).

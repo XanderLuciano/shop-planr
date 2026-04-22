@@ -17,30 +17,35 @@
 
 *[TODO: define each term used below.]*
 
-- **Revision / Rev** — *[free-form string, e.g. "A", "B", "1", "A02"]*
-- **Rev Tag** — *[the per-part label]*
-- **Job Revision** — *[the job's current revision pointer]*
+- **Revision / Rev** — *[free-form string, e.g. "A", "B", "1", "A02". Job-owned concept: a single rev value refers to one conceptual revision regardless of how many paths express it.]*
+- **Rev Catalog** — *[`Job.revisions[]`, the authoritative list of revs that exist for a job; grows over time as new revs are introduced]*
+- **Rev Tag** — *[the per-part label showing which catalog rev that part expresses]*
 - **Path Lineage** — *[grouping container for paths representing the same physical workflow across revs]*
-- **Path Rev** — *[an individual Path within a lineage; today's `Path` entity, now associated with a specific rev]*
-- **Rev-Up Event** — *[planner action that introduces a new revision for a job]*
+- **Path Rev (Path Revision)** — *[an individual Path within a lineage; today's `Path` entity, now associated with a specific rev from the catalog]*
+- **Express a Rev** — *[a path is said to "express" a rev when its `revision` field references that catalog entry; paths receive revs, they do not own them]*
+- **Rev-Up Event** — *[planner action that either introduces a new rev to the catalog or propagates an existing rev to additional lineages]*
+- **Introduce Rev** — *[sub-type of Rev-Up: the typed rev value is not in the catalog → adds it and applies to selected lineages]*
+- **Propagate Rev** — *[sub-type of Rev-Up: the typed rev value is already in the catalog → no catalog change, clones selected lineages to express that existing rev]*
 - **Active Rev** — *[the latest rev in a lineage that has open in-progress work]*
-- **Muted Rev** — *[an older rev in a lineage with no remaining active parts and a successor rev]*
+- **Muted Rev** — *[a rev in a lineage with no remaining active parts and a successor rev in the same lineage]*
 - **Lineage Grouping** — *[UI rendering of a multi-rev lineage as a container with rev sub-cards]*
-- **Single-Rev Job** — *[job with only one distinct rev across its lineages]*
-- **Multi-Rev Job** — *[job with two or more distinct revs across one or more lineages]*
+- **Single-Rev Job** — *[job whose catalog has exactly one entry]*
+- **Multi-Rev Job** — *[job whose catalog has two or more entries]*
 
 ## Requirements
 
-### Requirement 1: Revision Tagging on Parts and Jobs
+### Requirement 1: Job-Owned Rev Catalog; Paths and Parts Reference It
 
-**User Story:** As a planner, I want every part to carry a revision tag inherited from its job, so that even single-rev jobs are forward-compatible with future rev changes without backfilling data.
+**User Story:** As a planner, I want revisions to be a property of the Job (not of individual paths or parts), so that a rev value means the same thing across every lineage in the job and the same Rev B can be expressed by in-house, outsource, or any other lineage without ambiguity.
 
 #### Acceptance Criteria
 *[TODO: WHEN/THEN bullets covering:
-- Part inherits Job's current revision at creation time
-- Job has a revision field, default "A", free-form string (no constraints)
-- Job has a `revisions[]` array tracking all revs introduced over time
-- Revision values are unique within a job's history (no rev "A" twice)]*
+- `Job.revisions[]` is the authoritative catalog; every rev value used anywhere in the job must appear here
+- Catalog starts with one entry ("A" by default) at job creation; planner can override the initial value
+- Rev values are free-form strings; uniqueness enforced only within a single job's catalog (no duplicate catalog entries)
+- A path's `revision` field references one entry in its job's catalog (FK-like semantics, enforced at write)
+- A part inherits its path's revision at creation; parts do not independently choose a rev
+- Paths receive revs; they do not own them — two paths in different lineages can express the same catalog rev (e.g. in-house Rev B and outsource Rev B are the SAME Rev B)]*
 
 ### Requirement 2: Path Lineage Always-Exists
 
@@ -111,16 +116,19 @@
 - Per-lineage goal split and scrap-in-progress option configurable independently
 - Submit applies all changes atomically; rollback on any error]*
 
-### Requirement 8: Sequential Rev-Ups within a Lineage
+### Requirement 8: Rev-Up — Introduce New Rev or Propagate Existing Rev
 
-**User Story:** As a planner, when a lineage has already been rev'd from A to B, I want a subsequent rev-up (B to C) to clone from the most recent rev (B), so that the new C path takes over from where B left off.
+**User Story:** As a planner, I want one Rev-Up flow that handles both introducing a brand-new rev to the job and propagating an already-existing rev to a lineage that hasn't caught up yet (e.g., outsource lineage catching up to an in-house Rev B later), so I don't have to remember which button does which.
 
 #### Acceptance Criteria
 *[TODO:
-- Rev-Up always clones from the latest rev in the lineage
-- Older revs in the lineage are not affected by a new rev-up
-- A lineage can accumulate any number of revs over time
-- Rev value validation: new rev cannot duplicate any existing rev already used in the lineage]*
+- Rev-Up modal: planner types a rev value
+- System classifies automatically: if value is NOT in `Job.revisions[]` → Introduce (adds to catalog, applies to selected lineages); if value IS in catalog → Propagate (no catalog change, clones selected lineages to express the existing rev)
+- Both sub-types follow the same downstream mechanics: per-lineage clone-with-goal-split, scrap-in-progress option, milestone review prompt
+- Introduce validation: new rev value must not already be in catalog (detected = propagation instead)
+- Propagate validation: target lineage must not already express the chosen rev (would produce duplicate path in same lineage — blocked)
+- Sequential rev-ups within a lineage always clone from the latest rev in that lineage
+- Audit trail distinguishes introduce vs propagate in metadata]*
 
 ### Requirement 9: Rev Pill and Lineage Grouping Display Rules
 
@@ -189,7 +197,7 @@
 - **CP-3: Rev inheritance at creation** — a Part's revision equals the (lineage's path's) revision active at the moment of part creation.
 - **CP-4: Rev pill visibility rule** — the rev pill is shown on a Job's children iff the Job has >1 distinct revision in its `revisions[]` array.
 - **CP-5: Single-rev UI parity** — for any single-rev Job, the Job detail view renders zero rev-related visual elements (no pills, no grouping, no rev-up affordances beyond the "Rev Up Job" action).
-- **CP-6: Lineage rev uniqueness** — within a single PathLineage, no two Paths have the same revision value.
+- **CP-6: Lineage rev uniqueness** — within a single PathLineage, no two Paths have the same revision value. (Across lineages, the same rev value may appear freely — it's one catalog rev expressed in multiple lineages.)
 - **CP-7: Rev-up clones latest** — a Rev-Up on a lineage always clones from the lineage's latest rev (highest creation timestamp), never from an older one.
 - **CP-8: Muted-rev computation** — a rev is muted iff (zero in-progress parts on its path) AND (a later rev exists in the same lineage). No manual state.
 - **CP-9: Scrap-in-progress completeness** — when the scrap-in-progress option is checked, every non-completed non-scrapped part on the source path is scrapped exactly once with the rev-up explanation.
@@ -201,4 +209,7 @@
 
 - *[Placeholder: confirm modal layout — single modal with collapsible sections vs multi-step wizard.]*
 - *[Placeholder: lineage delete cascade behavior when multi-rev.]*
-- *[Placeholder: behavior when planner enters a rev value that was used in a different lineage of the same job (allowed or blocked?).]*
+
+### Resolved During Requirements Discussion
+
+- **Revs are job-owned** (not path-owned). A rev value means the same thing across all lineages in a job; a path expresses one of the job's catalog revs. Captured in R1 and R8.
