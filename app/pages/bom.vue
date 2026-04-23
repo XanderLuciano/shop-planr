@@ -2,6 +2,8 @@
 import type { BomSummary } from '~/types/computed'
 import type { BOM } from '~/types/domain'
 
+type JobRef = { id: string, name: string }
+
 const { boms, loading, fetchBoms, createBom, getBomWithSummary } = useBom()
 const { jobs, fetchJobs } = useJobs()
 const { editBom } = useBomVersions()
@@ -77,19 +79,29 @@ function toggleVersions(bomId: string) {
 }
 
 const jobMap = computed(() => {
-  const map: Record<string, { id: string, name: string }> = {}
+  const map: Record<string, JobRef> = {}
   for (const j of jobs.value) {
     map[j.id] = { id: j.id, name: j.name }
   }
   return map
 })
 
-function getContributingJobs(bom: BOM, partType: string): { id: string, name: string }[] {
-  const entry = bom.entries.find(e => e.partType === partType)
-  if (!entry) return []
-  return entry.contributingJobIds
-    .map(id => jobMap.value[id])
-    .filter((j): j is { id: string, name: string } => !!j)
+const contributingJobsMap = computed(() => {
+  const map: Record<string, Record<string, JobRef[]>> = {}
+  for (const bom of boms.value) {
+    const bomMap: Record<string, JobRef[]> = {}
+    for (const entry of bom.entries) {
+      bomMap[entry.partType] = entry.contributingJobIds
+        .map(id => jobMap.value[id])
+        .filter((j): j is JobRef => !!j)
+    }
+    map[bom.id] = bomMap
+  }
+  return map
+})
+
+function getContributingJobs(bom: BOM, partType: string): JobRef[] {
+  return contributingJobsMap.value[bom.id]?.[partType] ?? []
 }
 
 onMounted(async () => {
@@ -257,7 +269,9 @@ onMounted(async () => {
                 v-for="entry in summaries[b.id]!.entries"
                 :key="entry.partType"
               >
-                <tr class="border-b border-(--ui-border-muted) last:border-0">
+                <tr
+                  :class="getContributingJobs(b, entry.partType).length ? '' : 'border-b border-(--ui-border-muted) last:border-0'"
+                >
                   <td class="py-1 text-(--ui-text-highlighted)">
                     {{ entry.partType }}
                   </td>
