@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import type { BomSummary } from '~/types/computed'
-import type { BOM, BomEntry } from '~/types/domain'
+import type { BOM, Tag } from '~/types/domain'
 
-type JobRef = { id: string, name: string }
-type BomEntryPayload = Pick<BomEntry, 'partType' | 'requiredQuantityPerBuild'> & { contributingJobIds: string[] }
-type BomSavePayload = { name: string, entries: BomEntryPayload[] }
+type BomSavePayload = { name: string, entries: { jobId: string, requiredQuantity?: number }[] }
 
 const { boms, loading, fetchBoms, createBom, getBomWithSummary } = useBom()
 const { jobs, fetchJobs } = useJobs()
 const { editBom } = useBomVersions()
+const { tags, fetchTags } = useTags()
 
 const showForm = ref(false)
 const formSaving = ref(false)
@@ -23,6 +22,9 @@ const editError = ref('')
 
 // Version history state
 const showVersionsId = ref<string | null>(null)
+
+// "Create from tag" state
+const prefillJobIds = ref<string[]>([])
 
 async function toggleExpand(bom: BOM) {
   if (expandedId.value === bom.id) {
@@ -48,6 +50,7 @@ async function onSave(payload: BomSavePayload) {
   try {
     await createBom(payload)
     showForm.value = false
+    prefillJobIds.value = []
   } catch {
     // error handled by composable
   } finally {
@@ -65,7 +68,6 @@ async function onEditSave(bomId: string, payload: BomSavePayload) {
       changeDescription: 'Updated BOM entries',
     })
     editingBomId.value = null
-    // Refresh summaries
     const { [bomId]: _, ...rest } = summaries.value
     summaries.value = rest
     await fetchBoms()
@@ -80,43 +82,17 @@ function toggleVersions(bomId: string) {
   showVersionsId.value = showVersionsId.value === bomId ? null : bomId
 }
 
-const jobMap = computed(() => {
-  const map: Record<string, JobRef> = {}
-  for (const j of jobs.value) {
-    map[j.id] = { id: j.id, name: j.name }
-  }
-  return map
-})
-
-const contributingJobsMap = computed(() => {
-  const map: Record<string, Record<string, JobRef[]>> = {}
-  for (const bom of boms.value) {
-    const bomMap: Record<string, JobRef[]> = {}
-    for (const entry of bom.entries) {
-      bomMap[entry.partType] = entry.contributingJobIds
-        .map(id => jobMap.value[id])
-        .filter((j): j is JobRef => !!j)
-    }
-    map[bom.id] = bomMap
-  }
-  return map
-})
-
-function getContributingJobs(bom: BOM, partType: string): JobRef[] {
-  return contributingJobsMap.value[bom.id]?.[partType] ?? []
-}
-
-function summaryEntriesWithJobs(bom: BOM) {
-  const summary = summaries.value[bom.id]
-  if (!summary) return []
-  return summary.entries.map(entry => ({
-    ...entry,
-    jobs: getContributingJobs(bom, entry.partType),
-  }))
+function createFromTag(tag: Tag) {
+  const jobIds = jobs.value
+    .filter(j => j.tags.some(t => t.id === tag.id))
+    .map(j => j.id)
+  if (!jobIds.length) return
+  prefillJobIds.value = jobIds
+  showForm.value = true
 }
 
 onMounted(async () => {
-  await Promise.all([fetchBoms(), fetchJobs()])
+  await Promise.all([fetchBoms(), fetchJobs(), fetchTags()])
 })
 </script>
 
@@ -126,21 +102,36 @@ onMounted(async () => {
       <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
         Bill of Materials
       </h1>
-      <UButton
-        v-if="!showForm"
-        icon="i-lucide-plus"
-        label="New BOM"
-        size="sm"
-        @click="showForm = true"
-      />
+      <div class="flex items-center gap-2">
+        <!-- Create from tag dropdown -->
+        <UDropdownMenu
+          v-if="tags.length"
+          :items="tags.map(t => ({ label: t.name, click: () => createFromTag(t) }))"
+        >
+          <UButton
+            icon="i-lucide-tag"
+            label="From Tag"
+            size="sm"
+            variant="soft"
+          />
+        </UDropdownMenu>
+        <UButton
+          v-if="!showForm"
+          icon="i-lucide-plus"
+          label="New BOM"
+          size="sm"
+          @click="showForm = true"
+        />
+      </div>
     </div>
 
     <!-- Create form -->
     <BomEditor
       v-if="showForm"
       :jobs="jobs"
+      :prefill-job-ids="prefillJobIds"
       @save="onSave"
-      @cancel="showForm = false"
+      @cancel="showForm = false; prefillJobIds = []"
     />
 
     <!-- Loading -->
@@ -160,7 +151,7 @@ onMounted(async () => {
       v-else-if="!boms.length && !showForm"
       class="text-sm text-(--ui-text-muted) py-8 text-center"
     >
-      No BOMs defined yet. Create a BOM to track sub-assembly part requirements.
+      No BOMs defined yet. Create a BOM to track sub-assembly requirements.
     </div>
 
     <!-- BOM list -->
@@ -183,7 +174,7 @@ onMounted(async () => {
               {{ b.name }}
             </div>
             <div class="text-xs text-(--ui-text-muted) mt-0.5">
-              {{ b.entries.length }} part type{{ b.entries.length !== 1 ? 's' : '' }}
+              {{ b.entries.length }} job{{ b.entries.length !== 1 ? 's' : '' }}
             </div>
           </div>
           <div class="flex items-center gap-1 shrink-0">
@@ -259,7 +250,7 @@ onMounted(async () => {
             <thead>
               <tr class="text-(--ui-text-muted) border-b border-(--ui-border-muted)">
                 <th class="text-left py-1 font-medium">
-                  Part Type
+                  Job
                 </th>
                 <th class="text-right py-1 font-medium">
                   Required
@@ -276,56 +267,35 @@ onMounted(async () => {
               </tr>
             </thead>
             <tbody>
-              <template
-                v-for="entry in summaryEntriesWithJobs(b)"
-                :key="entry.partType"
+              <tr
+                v-for="entry in summaries[b.id]!.entries"
+                :key="entry.jobId"
+                class="border-b border-(--ui-border-muted) last:border-0"
               >
-                <tr
-                  :class="entry.jobs.length ? '' : 'border-b border-(--ui-border-muted) last:border-0'"
-                >
-                  <td class="py-1 text-(--ui-text-highlighted)">
-                    {{ entry.partType }}
-                  </td>
-                  <td class="py-1 text-right">
-                    {{ entry.requiredQuantityPerBuild }}
-                  </td>
-                  <td class="py-1 text-right text-green-500">
-                    {{ entry.totalCompleted }}
-                  </td>
-                  <td class="py-1 text-right text-blue-500">
-                    {{ entry.totalInProgress }}
-                  </td>
-                  <td
-                    class="py-1 text-right"
-                    :class="entry.totalOutstanding > 0 ? 'text-amber-500' : 'text-(--ui-text-muted)'"
+                <td class="py-1">
+                  <NuxtLink
+                    :to="`/jobs/${entry.jobId}`"
+                    class="text-(--ui-primary) hover:underline"
                   >
-                    {{ entry.totalOutstanding }}
-                  </td>
-                </tr>
-                <tr
-                  v-if="entry.jobs.length"
-                  class="border-b border-(--ui-border-muted) last:border-0"
+                    {{ entry.jobName }}
+                  </NuxtLink>
+                </td>
+                <td class="py-1 text-right">
+                  {{ entry.requiredQuantity }}
+                </td>
+                <td class="py-1 text-right text-green-500">
+                  {{ entry.totalCompleted }}
+                </td>
+                <td class="py-1 text-right text-blue-500">
+                  {{ entry.totalInProgress }}
+                </td>
+                <td
+                  class="py-1 text-right"
+                  :class="entry.totalOutstanding > 0 ? 'text-amber-500' : 'text-(--ui-text-muted)'"
                 >
-                  <td
-                    colspan="5"
-                    class="py-1 pl-3"
-                  >
-                    <span class="text-(--ui-text-muted)">Jobs: </span>
-                    <template
-                      v-for="(job, idx) in entry.jobs"
-                      :key="job.id"
-                    >
-                      <NuxtLink
-                        :to="`/jobs/${job.id}`"
-                        class="text-(--ui-primary) hover:underline"
-                      >
-                        {{ job.name }}
-                      </NuxtLink>
-                      <span v-if="idx < entry.jobs.length - 1">, </span>
-                    </template>
-                  </td>
-                </tr>
-              </template>
+                  {{ entry.totalOutstanding }}
+                </td>
+              </tr>
             </tbody>
           </table>
           <div

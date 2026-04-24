@@ -106,9 +106,8 @@ const arbTemplateRoute = (): fc.Arbitrary<TemplateRoute> =>
 
 const arbBomEntry = (): fc.Arbitrary<BomEntry> =>
   fc.record({
-    partType: arbName(),
-    requiredQuantityPerBuild: fc.integer({ min: 1, max: 1000 }),
-    contributingJobIds: fc.array(arbId(), { maxLength: 5 }),
+    jobId: arbId(),
+    requiredQuantity: fc.integer({ min: 1, max: 1000 }),
   })
 
 const arbBom = (): fc.Arbitrary<BOM> =>

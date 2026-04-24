@@ -33,12 +33,11 @@ Returns an array of `BOM` objects. If no BOMs exist, returns an empty array `[]`
 |-------|------|-------------|
 | `id` | `string` | Unique identifier for the BOM (prefixed with `bom_`) |
 | `name` | `string` | Human-readable BOM name |
-| `entries` | `BomEntry[]` | Array of part entries |
+| `entries` | `BomEntry[]` | Array of job entries |
 | `entries[].id` | `string \| undefined` | Entry ID, if assigned by the repository |
 | `entries[].bomId` | `string \| undefined` | Parent BOM ID reference |
-| `entries[].partType` | `string` | Part type name or identifier |
-| `entries[].requiredQuantityPerBuild` | `number` | Quantity of this part needed per build |
-| `entries[].contributingJobIds` | `string[]` | Job IDs that supply this part |
+| `entries[].jobId` | `string` | Referenced job ID |
+| `entries[].requiredQuantity` | `number` | Quantity needed per build |
 | `createdAt` | `string` | ISO 8601 timestamp of when the BOM was created |
 | `updatedAt` | `string` | ISO 8601 timestamp of the last modification |
 
@@ -69,16 +68,14 @@ curl http://localhost:3000/api/bom
       {
         "id": "entry_001",
         "bomId": "bom_abc123",
-        "partType": "Steel Plate",
-        "requiredQuantityPerBuild": 4,
-        "contributingJobIds": ["job_001", "job_002"]
+        "jobId": "job_001",
+        "requiredQuantity": 4
       },
       {
         "id": "entry_002",
         "bomId": "bom_abc123",
-        "partType": "Bolt M8",
-        "requiredQuantityPerBuild": 12,
-        "contributingJobIds": ["job_003"]
+        "jobId": "job_003",
+        "requiredQuantity": 12
       }
     ],
     "createdAt": "2024-01-15T10:30:00.000Z",
@@ -91,9 +88,8 @@ curl http://localhost:3000/api/bom
       {
         "id": "entry_003",
         "bomId": "bom_def456",
-        "partType": "Aluminum Sheet",
-        "requiredQuantityPerBuild": 2,
-        "contributingJobIds": ["job_004"]
+        "jobId": "job_004",
+        "requiredQuantity": 2
       }
     ],
     "createdAt": "2024-01-16T08:00:00.000Z",

@@ -15,35 +15,40 @@ describe('BOM Version History Integration', () => {
 
   it('full BOM version flow: create → edit twice → verify versions → verify immutability', () => {
     ctx = createTestContext()
-    const { bomService } = ctx
+    const { bomService, jobService } = ctx
+
+    // Create jobs to reference in BOM entries
+    const bracketJob = jobService.createJob({ name: 'Bracket', goalQuantity: 10 })
+    const boltJob = jobService.createJob({ name: 'Bolt', goalQuantity: 20 })
+    const washerJob = jobService.createJob({ name: 'Washer', goalQuantity: 30 })
 
     // 1. Create a BOM with initial entries
     const bom = bomService.createBom({
       name: 'Assembly BOM',
       entries: [
-        { partType: 'Bracket', requiredQuantityPerBuild: 4, contributingJobIds: [] },
-        { partType: 'Bolt', requiredQuantityPerBuild: 12, contributingJobIds: [] },
+        { jobId: bracketJob.id, requiredQuantity: 4 },
+        { jobId: boltJob.id, requiredQuantity: 12 },
       ],
     })
     expect(bom.entries).toHaveLength(2)
 
-    // 2. First edit — change quantities
+    // 2. First edit — change quantities, add washer
     const edited1 = bomService.editBom(bom.id, {
       entries: [
-        { partType: 'Bracket', requiredQuantityPerBuild: 6, contributingJobIds: [] },
-        { partType: 'Bolt', requiredQuantityPerBuild: 16, contributingJobIds: [] },
-        { partType: 'Washer', requiredQuantityPerBuild: 16, contributingJobIds: [] },
+        { jobId: bracketJob.id, requiredQuantity: 6 },
+        { jobId: boltJob.id, requiredQuantity: 16 },
+        { jobId: washerJob.id, requiredQuantity: 16 },
       ],
       changeDescription: 'Increased quantities, added washers',
       userId: 'engineer1',
     })
     expect(edited1.entries).toHaveLength(3)
 
-    // 3. Second edit — remove a part
+    // 3. Second edit — remove bolt
     const edited2 = bomService.editBom(bom.id, {
       entries: [
-        { partType: 'Bracket', requiredQuantityPerBuild: 6, contributingJobIds: [] },
-        { partType: 'Washer', requiredQuantityPerBuild: 20, contributingJobIds: [] },
+        { jobId: bracketJob.id, requiredQuantity: 6 },
+        { jobId: washerJob.id, requiredQuantity: 20 },
       ],
       changeDescription: 'Removed bolts, increased washers',
       userId: 'engineer2',
@@ -58,10 +63,10 @@ describe('BOM Version History Integration', () => {
     const v1 = versions.find(v => v.versionNumber === 1)
     expect(v1).toBeDefined()
     expect(v1!.entriesSnapshot).toHaveLength(2)
-    expect(v1!.entriesSnapshot[0].partType).toBe('Bracket')
-    expect(v1!.entriesSnapshot[0].requiredQuantityPerBuild).toBe(4)
-    expect(v1!.entriesSnapshot[1].partType).toBe('Bolt')
-    expect(v1!.entriesSnapshot[1].requiredQuantityPerBuild).toBe(12)
+    expect(v1!.entriesSnapshot[0].jobId).toBe(bracketJob.id)
+    expect(v1!.entriesSnapshot[0].requiredQuantity).toBe(4)
+    expect(v1!.entriesSnapshot[1].jobId).toBe(boltJob.id)
+    expect(v1!.entriesSnapshot[1].requiredQuantity).toBe(12)
     expect(v1!.changeDescription).toBe('Increased quantities, added washers')
     expect(v1!.changedBy).toBe('engineer1')
 
@@ -69,30 +74,32 @@ describe('BOM Version History Integration', () => {
     const v2 = versions.find(v => v.versionNumber === 2)
     expect(v2).toBeDefined()
     expect(v2!.entriesSnapshot).toHaveLength(3)
-    expect(v2!.entriesSnapshot[0].partType).toBe('Bracket')
-    expect(v2!.entriesSnapshot[0].requiredQuantityPerBuild).toBe(6)
-    expect(v2!.entriesSnapshot[2].partType).toBe('Washer')
+    expect(v2!.entriesSnapshot[0].jobId).toBe(bracketJob.id)
+    expect(v2!.entriesSnapshot[0].requiredQuantity).toBe(6)
+    expect(v2!.entriesSnapshot[2].jobId).toBe(washerJob.id)
     expect(v2!.changeDescription).toBe('Removed bolts, increased washers')
 
     // 7. Verify version 1 is unchanged after edit 2 (immutability)
     const versionsAfter = bomService.listBomVersions(bom.id)
     const v1After = versionsAfter.find(v => v.versionNumber === 1)
     expect(v1After!.entriesSnapshot).toHaveLength(2)
-    expect(v1After!.entriesSnapshot[0].requiredQuantityPerBuild).toBe(4)
-    expect(v1After!.entriesSnapshot[1].requiredQuantityPerBuild).toBe(12)
+    expect(v1After!.entriesSnapshot[0].requiredQuantity).toBe(4)
+    expect(v1After!.entriesSnapshot[1].requiredQuantity).toBe(12)
   })
 
   it('edit BOM records audit entry', () => {
     ctx = createTestContext()
-    const { bomService, auditService } = ctx
+    const { bomService, jobService, auditService } = ctx
+
+    const job = jobService.createJob({ name: 'Part A', goalQuantity: 10 })
 
     const bom = bomService.createBom({
       name: 'Audit BOM',
-      entries: [{ partType: 'Part A', requiredQuantityPerBuild: 1, contributingJobIds: [] }],
+      entries: [{ jobId: job.id }],
     })
 
     bomService.editBom(bom.id, {
-      entries: [{ partType: 'Part A', requiredQuantityPerBuild: 2, contributingJobIds: [] }],
+      entries: [{ jobId: job.id, requiredQuantity: 2 }],
       changeDescription: 'Doubled quantity',
       userId: 'user1',
     })

@@ -11,11 +11,8 @@ import { describe, it, expect } from 'vitest'
 import fc from 'fast-check'
 import { createBomService } from '../../server/services/bomService'
 import { createAuditService } from '../../server/services/auditService'
-import type { BOM, BomVersion, AuditEntry } from '../../server/types/domain'
+import type { BOM, BomVersion, AuditEntry, Job } from '../../server/types/domain'
 
-/**
- * In-memory BOM repository for pure property testing.
- */
 function createInMemoryBomRepo() {
   const boms = new Map<string, BOM>()
   return {
@@ -35,6 +32,7 @@ function createInMemoryBomRepo() {
       return { ...updated }
     },
     delete: () => true,
+    countJobRefs: () => 0,
   }
 }
 
@@ -77,11 +75,21 @@ function createInMemoryPartRepo() {
   }
 }
 
+function createInMemoryJobRepo() {
+  return {
+    getById: (id: string) => ({ id, name: `Job ${id}` }) as Job,
+    list: () => [] as Job[],
+    create: () => ({}) as Job,
+    update: () => ({}) as Job,
+    delete: () => true,
+    listByIds: () => [] as Job[],
+  }
+}
+
 /** Arbitrary for BOM entry */
 const arbBomEntry = fc.record({
-  partType: fc.string({ minLength: 1, maxLength: 20 }),
-  requiredQuantityPerBuild: fc.integer({ min: 1, max: 100 }),
-  contributingJobIds: fc.array(fc.string({ minLength: 1, maxLength: 10 }), { minLength: 0, maxLength: 3 }),
+  jobId: fc.string({ minLength: 1, maxLength: 20 }),
+  requiredQuantity: fc.integer({ min: 1, max: 100 }),
 })
 
 /** Arbitrary for a non-empty array of BOM entries */
@@ -99,9 +107,11 @@ describe('Property 9: BOM Version Immutability', () => {
           const bomVersionRepo = createInMemoryBomVersionRepo()
           const auditRepo = createInMemoryAuditRepo()
           const partRepo = createInMemoryPartRepo()
+          const jobRepo = createInMemoryJobRepo()
           const auditService = createAuditService({ audit: auditRepo })
           const bomService = createBomService(
-            { bom: bomRepo, parts: partRepo as any, bomVersions: bomVersionRepo },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            { bom: bomRepo, parts: partRepo as any, jobs: jobRepo as any, bomVersions: bomVersionRepo },
             auditService,
           )
 
@@ -122,8 +132,8 @@ describe('Property 9: BOM Version Immutability', () => {
           const versionsAfterEdit1 = bomService.listBomVersions(bom.id)
           expect(versionsAfterEdit1).toHaveLength(1)
           const version1Snapshot = versionsAfterEdit1[0]!.entriesSnapshot.map(e => ({
-            partType: e.partType,
-            requiredQuantityPerBuild: e.requiredQuantityPerBuild,
+            jobId: e.jobId,
+            requiredQuantity: e.requiredQuantity,
           }))
 
           // Second edit
@@ -139,8 +149,8 @@ describe('Property 9: BOM Version Immutability', () => {
 
           const version1AfterEdit2 = versionsAfterEdit2.find(v => v.versionNumber === 1)!
           const version1SnapshotAfter = version1AfterEdit2.entriesSnapshot.map(e => ({
-            partType: e.partType,
-            requiredQuantityPerBuild: e.requiredQuantityPerBuild,
+            jobId: e.jobId,
+            requiredQuantity: e.requiredQuantity,
           }))
 
           expect(version1SnapshotAfter).toEqual(version1Snapshot)

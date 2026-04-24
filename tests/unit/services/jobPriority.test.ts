@@ -79,7 +79,7 @@ function createMockBomRepo(): BomRepository {
     list: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
-    countContributingJobRefs: vi.fn(() => 0),
+    countJobRefs: vi.fn(() => 0),
   } as unknown as BomRepository
 }
 

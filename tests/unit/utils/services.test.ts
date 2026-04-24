@@ -64,7 +64,7 @@ describe('Service Factory (getServices pattern)', () => {
     const jobService = createJobService({ jobs: repos.jobs, paths: repos.paths, parts: repos.parts })
     const pathService = createPathService({ paths: repos.paths, parts: repos.parts })
     const templateService = createTemplateService({ templates: repos.templates, paths: repos.paths })
-    const bomService = createBomService({ bom: repos.bom, parts: repos.parts })
+    const bomService = createBomService({ bom: repos.bom, parts: repos.parts, jobs: repos.jobs })
 
     const partIdGenerator = createSequentialPartIdGenerator({
       getCounter: () => {

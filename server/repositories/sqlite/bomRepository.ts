@@ -13,32 +13,19 @@ interface BomRow {
 interface BomEntryRow {
   id: number
   bom_id: string
-  part_type: string
-  required_quantity_per_build: number
-}
-
-interface ContribJobRow {
-  bom_entry_id: number
   job_id: string
+  required_quantity: number
 }
 
-function buildBomDomain(row: BomRow, entryRows: BomEntryRow[], contribRows: ContribJobRow[]): BOM {
-  const contribMap = new Map<number, string[]>()
-  for (const c of contribRows) {
-    const list = contribMap.get(c.bom_entry_id) ?? []
-    list.push(c.job_id)
-    contribMap.set(c.bom_entry_id, list)
-  }
-
+function buildBomDomain(row: BomRow, entryRows: BomEntryRow[]): BOM {
   return {
     id: row.id,
     name: row.name,
     entries: entryRows.map(e => ({
       id: String(e.id),
       bomId: e.bom_id,
-      partType: e.part_type,
-      requiredQuantityPerBuild: e.required_quantity_per_build,
-      contributingJobIds: contribMap.get(e.id) ?? [],
+      jobId: e.job_id,
+      requiredQuantity: e.required_quantity,
     })),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -53,24 +40,17 @@ export class SQLiteBomRepository implements BomRepository {
   }
 
   create(bom: BOM): BOM {
-    const insertBom = this.db.prepare(`
-      INSERT INTO boms (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)
-    `)
-    const insertEntry = this.db.prepare(`
-      INSERT INTO bom_entries (bom_id, part_type, required_quantity_per_build) VALUES (?, ?, ?)
-    `)
-    const insertContrib = this.db.prepare(`
-      INSERT INTO bom_contributing_jobs (bom_entry_id, job_id) VALUES (?, ?)
-    `)
+    const insertBom = this.db.prepare(
+      'INSERT INTO boms (id, name, created_at, updated_at) VALUES (?, ?, ?, ?)',
+    )
+    const insertEntry = this.db.prepare(
+      'INSERT INTO bom_entries (bom_id, job_id, required_quantity) VALUES (?, ?, ?)',
+    )
 
     this.db.transaction(() => {
       insertBom.run(bom.id, bom.name, bom.createdAt, bom.updatedAt)
       for (const entry of bom.entries) {
-        const result = insertEntry.run(bom.id, entry.partType, entry.requiredQuantityPerBuild)
-        const entryId = result.lastInsertRowid as number
-        for (const jobId of entry.contributingJobIds) {
-          insertContrib.run(entryId, jobId)
-        }
+        insertEntry.run(bom.id, entry.jobId, entry.requiredQuantity)
       }
     })()
 
@@ -85,16 +65,7 @@ export class SQLiteBomRepository implements BomRepository {
       'SELECT * FROM bom_entries WHERE bom_id = ?',
     ).all(id) as BomEntryRow[]
 
-    const entryIds = entryRows.map(e => e.id)
-    let contribRows: ContribJobRow[] = []
-    if (entryIds.length > 0) {
-      const placeholders = entryIds.map(() => '?').join(',')
-      contribRows = this.db.prepare(
-        `SELECT * FROM bom_contributing_jobs WHERE bom_entry_id IN (${placeholders})`,
-      ).all(...entryIds) as ContribJobRow[]
-    }
-
-    return buildBomDomain(row, entryRows, contribRows)
+    return buildBomDomain(row, entryRows)
   }
 
   list(): BOM[] {
@@ -115,23 +86,16 @@ export class SQLiteBomRepository implements BomRepository {
 
     const updateBom = this.db.prepare('UPDATE boms SET name = ?, updated_at = ? WHERE id = ?')
     const deleteEntries = this.db.prepare('DELETE FROM bom_entries WHERE bom_id = ?')
-    const insertEntry = this.db.prepare(`
-      INSERT INTO bom_entries (bom_id, part_type, required_quantity_per_build) VALUES (?, ?, ?)
-    `)
-    const insertContrib = this.db.prepare(`
-      INSERT INTO bom_contributing_jobs (bom_entry_id, job_id) VALUES (?, ?)
-    `)
+    const insertEntry = this.db.prepare(
+      'INSERT INTO bom_entries (bom_id, job_id, required_quantity) VALUES (?, ?, ?)',
+    )
 
     this.db.transaction(() => {
       updateBom.run(updated.name, updated.updatedAt, id)
       if (partial.entries) {
         deleteEntries.run(id)
         for (const entry of updated.entries) {
-          const result = insertEntry.run(id, entry.partType, entry.requiredQuantityPerBuild)
-          const entryId = result.lastInsertRowid as number
-          for (const jobId of entry.contributingJobIds) {
-            insertContrib.run(entryId, jobId)
-          }
+          insertEntry.run(id, entry.jobId, entry.requiredQuantity)
         }
       }
     })()
@@ -144,9 +108,9 @@ export class SQLiteBomRepository implements BomRepository {
     return result.changes > 0
   }
 
-  countContributingJobRefs(jobId: string): number {
+  countJobRefs(jobId: string): number {
     const row = this.db.prepare(
-      'SELECT COUNT(*) AS cnt FROM bom_contributing_jobs WHERE job_id = ?',
+      'SELECT COUNT(*) AS cnt FROM bom_entries WHERE job_id = ?',
     ).get(jobId) as { cnt: number } | undefined
     return row?.cnt ?? 0
   }

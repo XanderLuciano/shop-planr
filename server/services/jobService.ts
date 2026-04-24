@@ -142,7 +142,7 @@ export function createJobService(repos: {
       }
 
       const bomRefCount = repos.bom
-        ? repos.bom.countContributingJobRefs(id)
+        ? repos.bom.countJobRefs(id)
         : 0
       if (bomRefCount > 0) {
         throw new ValidationError(`Cannot delete job: it is referenced by ${bomRefCount} BOM entry/entries. Remove BOM references first.`)
@@ -241,7 +241,7 @@ export function createJobService(repos: {
       }
 
       const bomRefCount = repos.bom
-        ? repos.bom.countContributingJobRefs(id)
+        ? repos.bom.countJobRefs(id)
         : 0
       if (bomRefCount > 0) {
         reasons.push(`Job is referenced by ${bomRefCount} BOM entry/entries`)

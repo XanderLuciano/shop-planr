@@ -115,9 +115,8 @@ export interface ApplyTemplateInput {
 export interface CreateBomInput {
   name: string
   entries: {
-    partType: string
-    requiredQuantityPerBuild: number
-    contributingJobIds: readonly string[]
+    jobId: string
+    requiredQuantity?: number
   }[]
 }
 
@@ -186,7 +185,7 @@ export interface CreateStepOverrideInput {
 
 export interface EditBomInput {
   name?: string
-  entries: { partType: string, requiredQuantityPerBuild: number, contributingJobIds: readonly string[] }[]
+  entries: { jobId: string, requiredQuantity?: number }[]
   changeDescription: string
   userId: string
 }

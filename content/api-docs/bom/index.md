@@ -1,6 +1,6 @@
 ---
 title: "BOM API"
-description: "Bill of materials management — part roll-ups, versioned editing, and production tracking"
+description: "Bill of materials management — job-based entries, versioned editing, and production tracking"
 icon: "i-lucide-layers"
 navigation:
   order: 6
@@ -8,17 +8,16 @@ navigation:
 
 # BOM API
 
-The BOM (Bill of Materials) API manages material requirements for production builds. A BOM defines which part types are needed, how many of each are required per build, and which jobs contribute to supplying those parts. The API supports full CRUD operations, versioned editing with change tracking, and real-time production summary roll-ups.
+The BOM (Bill of Materials) API manages material requirements for production builds. A BOM defines which jobs are needed, how many units each must produce, and tracks real-time production progress. The API supports full CRUD operations, versioned editing with change tracking, and real-time production summary roll-ups.
 
 ## Domain Concepts
 
 ### BOMs and Entries
 
-A BOM is a named collection of **entries**. Each entry represents a single part type required for a build and specifies:
+A BOM is a named collection of **entries**. Each entry references a single job and specifies:
 
-- **`partType`** — The name or identifier of the part (e.g., `"Steel Plate"`, `"Bolt M8"`, `"PCB Assembly"`).
-- **`requiredQuantityPerBuild`** — How many of this part are needed for each unit produced.
-- **`contributingJobIds`** — An array of job IDs that supply this part. The system uses these references to compute real-time production progress for each BOM entry.
+- **`jobId`** — The ID of the job this entry tracks (e.g., `"job_001"`). Each job can only appear once per BOM.
+- **`requiredQuantity`** — How many units are needed per build. Defaults to 1 if omitted during creation or editing.
 
 ### Versioned Editing
 
@@ -31,15 +30,16 @@ Versioned edits also generate a `bom_edited` entry in the [Audit API](/api-docs/
 
 ### BOM Summary
 
-The `GET /api/bom/:id` endpoint returns a `summary` object alongside the BOM data. The summary computes real-time production statistics for each entry by querying serial number counts across the contributing jobs:
+The `GET /api/bom/:id` endpoint returns a `summary` object alongside the BOM data. The summary computes real-time production statistics for each entry by querying serial number counts for the referenced job:
 
-- **`totalCompleted`** — How many serials across all contributing jobs have reached `completed` status.
+- **`jobId`** / **`jobName`** — The job reference and its human-readable name.
+- **`totalCompleted`** — How many serials for this job have reached `completed` status.
 - **`totalInProgress`** — How many serials are still in progress.
-- **`totalOutstanding`** — How many more completed units are needed to meet the `requiredQuantityPerBuild` target.
+- **`totalOutstanding`** — How many more completed units are needed to meet the `requiredQuantity` target.
 
 ## Common Use Cases
 
-- **Defining material requirements**: Create a BOM with entries for each part type needed, linking each to the jobs that produce or supply those parts.
+- **Defining material requirements**: Create a BOM with entries for each job needed, specifying the required quantity for each.
 - **Tracking production against requirements**: Fetch a BOM by ID to see real-time summary data showing how many parts have been completed vs. how many are still needed.
 - **Recording engineering changes**: Use the versioned edit endpoint to update BOM entries while preserving a history of what changed, when, and why.
 - **Reviewing change history**: Fetch the version history for a BOM to see every past state of its entries, with change descriptions and user attribution.
@@ -57,6 +57,6 @@ The `GET /api/bom/:id` endpoint returns a `summary` object alongside the BOM dat
 
 ## Related APIs
 
-- [Jobs API](/api-docs/jobs) — The jobs referenced by BOM entry `contributingJobIds`
+- [Jobs API](/api-docs/jobs) — The jobs referenced by BOM entry `jobId`
 - [Serials API](/api-docs/serials) — Serial numbers whose completion drives BOM summary statistics
 - [Audit API](/api-docs/audit) — Query `bom_edited` audit entries for change traceability

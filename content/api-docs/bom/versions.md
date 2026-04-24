@@ -39,9 +39,8 @@ Returns an array of `BomVersion` objects ordered by version number. If the BOM e
 | `bomId` | `string` | The parent BOM ID |
 | `versionNumber` | `number` | Auto-incrementing version number (starts at 1) |
 | `entriesSnapshot` | `BomEntry[]` | The BOM entries as they were **before** the edit that created this version |
-| `entriesSnapshot[].partType` | `string` | Part type name |
-| `entriesSnapshot[].requiredQuantityPerBuild` | `number` | Required quantity at that point in time |
-| `entriesSnapshot[].contributingJobIds` | `string[]` | Contributing job IDs at that point in time |
+| `entriesSnapshot[].jobId` | `string` | Referenced job ID at that point in time |
+| `entriesSnapshot[].requiredQuantity` | `number` | Required quantity at that point in time |
 | `changeDescription` | `string \| undefined` | The change description provided when the edit was made |
 | `changedBy` | `string` | The user ID who made the edit |
 | `createdAt` | `string` | ISO 8601 timestamp of when the version was created |
@@ -80,17 +79,15 @@ curl http://localhost:3000/api/bom/bom_abc123/versions
     "versionNumber": 1,
     "entriesSnapshot": [
       {
-        "partType": "Steel Plate",
-        "requiredQuantityPerBuild": 4,
-        "contributingJobIds": ["job_001"]
+        "jobId": "job_001",
+        "requiredQuantity": 4
       },
       {
-        "partType": "Bolt M8",
-        "requiredQuantityPerBuild": 12,
-        "contributingJobIds": ["job_003"]
+        "jobId": "job_003",
+        "requiredQuantity": 12
       }
     ],
-    "changeDescription": "Added second contributing job for steel plates",
+    "changeDescription": "Added second job entry for enclosure parts",
     "changedBy": "user_xyz",
     "createdAt": "2024-01-18T10:00:00.000Z"
   },
@@ -100,14 +97,16 @@ curl http://localhost:3000/api/bom/bom_abc123/versions
     "versionNumber": 2,
     "entriesSnapshot": [
       {
-        "partType": "Steel Plate",
-        "requiredQuantityPerBuild": 4,
-        "contributingJobIds": ["job_001", "job_002"]
+        "jobId": "job_001",
+        "requiredQuantity": 4
       },
       {
-        "partType": "Bolt M8",
-        "requiredQuantityPerBuild": 12,
-        "contributingJobIds": ["job_003"]
+        "jobId": "job_003",
+        "requiredQuantity": 12
+      },
+      {
+        "jobId": "job_005",
+        "requiredQuantity": 6
       }
     ],
     "changeDescription": "Increased bolt quantity from 12 to 16 per engineering review",
