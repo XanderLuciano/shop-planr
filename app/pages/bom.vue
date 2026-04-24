@@ -106,7 +106,7 @@ onMounted(async () => {
         <!-- Create from tag dropdown -->
         <UDropdownMenu
           v-if="tags.length"
-          :items="tags.map(t => ({ label: t.name, click: () => createFromTag(t) }))"
+          :items="[tags.map(t => ({ label: t.name, onSelect: () => createFromTag(t) }))]"
         >
           <UButton
             icon="i-lucide-tag"
