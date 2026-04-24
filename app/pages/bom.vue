@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { BomSummary } from '~/types/computed'
-import type { BOM } from '~/types/domain'
+import type { BOM, BomEntry } from '~/types/domain'
 
 type JobRef = { id: string, name: string }
+type BomEntryPayload = Pick<BomEntry, 'partType' | 'requiredQuantityPerBuild'> & { contributingJobIds: string[] }
+type BomSavePayload = { name: string, entries: BomEntryPayload[] }
 
 const { boms, loading, fetchBoms, createBom, getBomWithSummary } = useBom()
 const { jobs, fetchJobs } = useJobs()
@@ -41,7 +43,7 @@ async function toggleExpand(bom: BOM) {
   }
 }
 
-async function onSave(payload: { name: string, entries: { partType: string, requiredQuantityPerBuild: number, contributingJobIds: string[] }[] }) {
+async function onSave(payload: BomSavePayload) {
   formSaving.value = true
   try {
     await createBom(payload)
@@ -53,7 +55,7 @@ async function onSave(payload: { name: string, entries: { partType: string, requ
   }
 }
 
-async function onEditSave(bomId: string, payload: { name: string, entries: { partType: string, requiredQuantityPerBuild: number, contributingJobIds: string[] }[] }) {
+async function onEditSave(bomId: string, payload: BomSavePayload) {
   editSaving.value = true
   editError.value = ''
   try {
@@ -102,6 +104,15 @@ const contributingJobsMap = computed(() => {
 
 function getContributingJobs(bom: BOM, partType: string): JobRef[] {
   return contributingJobsMap.value[bom.id]?.[partType] ?? []
+}
+
+function summaryEntriesWithJobs(bom: BOM) {
+  const summary = summaries.value[bom.id]
+  if (!summary) return []
+  return summary.entries.map(entry => ({
+    ...entry,
+    jobs: getContributingJobs(bom, entry.partType),
+  }))
 }
 
 onMounted(async () => {
@@ -207,7 +218,7 @@ onMounted(async () => {
           <BomEditor
             :bom="b"
             :jobs="jobs"
-            @save="(payload: any) => onEditSave(b.id, payload)"
+            @save="(payload: BomSavePayload) => onEditSave(b.id, payload)"
             @cancel="editingBomId = null"
           />
           <p
@@ -266,11 +277,11 @@ onMounted(async () => {
             </thead>
             <tbody>
               <template
-                v-for="entry in summaries[b.id]!.entries"
+                v-for="entry in summaryEntriesWithJobs(b)"
                 :key="entry.partType"
               >
                 <tr
-                  :class="getContributingJobs(b, entry.partType).length ? '' : 'border-b border-(--ui-border-muted) last:border-0'"
+                  :class="entry.jobs.length ? '' : 'border-b border-(--ui-border-muted) last:border-0'"
                 >
                   <td class="py-1 text-(--ui-text-highlighted)">
                     {{ entry.partType }}
@@ -292,7 +303,7 @@ onMounted(async () => {
                   </td>
                 </tr>
                 <tr
-                  v-if="getContributingJobs(b, entry.partType).length"
+                  v-if="entry.jobs.length"
                   class="border-b border-(--ui-border-muted) last:border-0"
                 >
                   <td
@@ -301,7 +312,7 @@ onMounted(async () => {
                   >
                     <span class="text-(--ui-text-muted)">Jobs: </span>
                     <template
-                      v-for="(job, idx) in getContributingJobs(b, entry.partType)"
+                      v-for="(job, idx) in entry.jobs"
                       :key="job.id"
                     >
                       <NuxtLink
@@ -310,7 +321,7 @@ onMounted(async () => {
                       >
                         {{ job.name }}
                       </NuxtLink>
-                      <span v-if="idx < getContributingJobs(b, entry.partType).length - 1">, </span>
+                      <span v-if="idx < entry.jobs.length - 1">, </span>
                     </template>
                   </td>
                 </tr>

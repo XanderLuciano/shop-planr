@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import type { BOM, Job } from '~/types/domain'
+import type { BOM, BomEntry, Job } from '~/types/domain'
+
+type BomEntryPayload = Pick<BomEntry, 'partType' | 'requiredQuantityPerBuild'> & { contributingJobIds: string[] }
+type BomSavePayload = { name: string, entries: BomEntryPayload[] }
 
 interface EntryDraft {
   partType: string
@@ -13,7 +16,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  save: [payload: { name: string, entries: { partType: string, requiredQuantityPerBuild: number, contributingJobIds: string[] }[] }]
+  save: [payload: BomSavePayload]
   cancel: []
 }>()
 
