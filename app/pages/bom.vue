@@ -105,7 +105,7 @@ onMounted(async () => {
       <div class="flex items-center gap-2">
         <!-- Create from tag dropdown -->
         <UDropdownMenu
-          v-if="tags.length"
+          v-if="tags.length && !showForm"
           :items="[tags.map(t => ({ label: t.name, onSelect: () => createFromTag(t) }))]"
         >
           <UButton
