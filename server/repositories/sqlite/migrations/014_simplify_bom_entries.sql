@@ -10,12 +10,13 @@ CREATE TABLE bom_entries_new (
 );
 
 -- 2. Migrate existing data: for each old entry that had contributing jobs,
---    create one new entry per contributing job (preserving the quantity).
---    Entries with no contributing jobs are dropped (they had no job link).
+--    deduplicate by (bom_id, job_id) and sum quantities when the same job
+--    appeared across multiple entries in the same BOM.
 INSERT INTO bom_entries_new (bom_id, job_id, required_quantity)
-SELECT be.bom_id, bcj.job_id, be.required_quantity_per_build
+SELECT be.bom_id, bcj.job_id, MAX(be.required_quantity_per_build)
 FROM bom_entries be
-JOIN bom_contributing_jobs bcj ON bcj.bom_entry_id = be.id;
+JOIN bom_contributing_jobs bcj ON bcj.bom_entry_id = be.id
+GROUP BY be.bom_id, bcj.job_id;
 
 -- 3. Drop old tables (contributing_jobs first due to FK)
 DROP TABLE IF EXISTS bom_contributing_jobs;
