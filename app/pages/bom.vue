@@ -158,7 +158,7 @@ onMounted(async () => {
         />
       </template>
       <template #footer>
-        <div class="flex gap-2 justify-end">
+        <div class="flex gap-2 justify-end w-full">
           <UButton
             variant="ghost"
             size="sm"
@@ -263,7 +263,7 @@ onMounted(async () => {
             </p>
           </template>
           <template #footer>
-            <div class="flex gap-2 justify-end">
+            <div class="flex gap-2 justify-end w-full">
               <UButton
                 variant="ghost"
                 size="sm"
