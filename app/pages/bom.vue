@@ -29,7 +29,17 @@ const prefillName = ref('')
 
 // Component refs
 const createEditorRef = ref<{ submit: () => void } | null>(null)
-const editEditorRef = ref<{ submit: () => void } | null>(null)
+const editEditorRefs = ref<Record<string, { submit: () => void }>>({})
+
+function setEditEditorRef(bomId: string) {
+  return (el: unknown) => {
+    if (el) editEditorRefs.value[bomId] = el as { submit: () => void }
+    else {
+      const { [bomId]: _, ...rest } = editEditorRefs.value
+      editEditorRefs.value = rest
+    }
+  }
+}
 async function toggleExpand(bom: BOM) {
   if (expandedId.value === bom.id) {
     expandedId.value = null
@@ -249,7 +259,7 @@ onMounted(async () => {
         >
           <template #body>
             <BomEditor
-              ref="editEditorRef"
+              :ref="setEditEditorRef(b.id)"
               :bom="b"
               :jobs="jobs"
               @save="(payload: BomSavePayload) => onEditSave(b.id, payload)"
@@ -273,7 +283,7 @@ onMounted(async () => {
               <UButton
                 size="sm"
                 label="Update BOM"
-                @click="editEditorRef?.submit()"
+                @click="editEditorRefs[b.id]?.submit()"
               />
             </div>
           </template>
