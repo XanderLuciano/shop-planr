@@ -30,15 +30,21 @@ const prefillName = ref('')
 // Component refs
 const createEditorRef = ref<{ submit: () => void } | null>(null)
 const editEditorRefs = ref<Record<string, { submit: () => void }>>({})
+const editRefCallbacks = new Map<string, (el: unknown) => void>()
 
 function setEditEditorRef(bomId: string) {
-  return (el: unknown) => {
-    if (el) editEditorRefs.value[bomId] = el as { submit: () => void }
-    else {
-      const { [bomId]: _, ...rest } = editEditorRefs.value
-      editEditorRefs.value = rest
+  let cb = editRefCallbacks.get(bomId)
+  if (!cb) {
+    cb = (el: unknown) => {
+      if (el) editEditorRefs.value[bomId] = el as { submit: () => void }
+      else {
+        const { [bomId]: _, ...rest } = editEditorRefs.value
+        editEditorRefs.value = rest
+      }
     }
+    editRefCallbacks.set(bomId, cb)
   }
+  return cb
 }
 async function toggleExpand(bom: BOM) {
   if (expandedId.value === bom.id) {
