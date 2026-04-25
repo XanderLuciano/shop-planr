@@ -10,8 +10,8 @@ CREATE TABLE bom_entries_new (
 );
 
 -- 2. Migrate existing data: for each old entry that had contributing jobs,
---    deduplicate by (bom_id, job_id) and sum quantities when the same job
---    appeared across multiple entries in the same BOM.
+--    fan out to one row per (bom_id, job_id). When the same job appeared
+--    across multiple old entries, keep the highest required quantity.
 INSERT INTO bom_entries_new (bom_id, job_id, required_quantity)
 SELECT be.bom_id, bcj.job_id, MAX(be.required_quantity_per_build)
 FROM bom_entries be

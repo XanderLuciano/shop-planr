@@ -7,8 +7,20 @@ import type { BOM, BomVersion } from '../types/domain'
 import type { CreateBomInput, EditBomInput } from '../types/api'
 import type { BomSummary, BomEntrySummary } from '../types/computed'
 import { generateId } from '../utils/idGenerator'
-import { assertNonEmpty, assertNonEmptyArray } from '../utils/validation'
-import { NotFoundError } from '../utils/errors'
+import { assertNonEmpty, assertNonEmptyArray, assertPositive } from '../utils/validation'
+import { NotFoundError, ValidationError } from '../utils/errors'
+
+function validateBomEntries(entries: { jobId: string, requiredQuantity?: number }[]) {
+  return entries.map((e) => {
+    assertNonEmpty(e.jobId, 'entry jobId')
+    const qty = e.requiredQuantity ?? 1
+    if (!Number.isInteger(qty)) {
+      throw new ValidationError('requiredQuantity must be an integer')
+    }
+    assertPositive(qty, 'requiredQuantity')
+    return { jobId: e.jobId, requiredQuantity: qty }
+  })
+}
 
 export function createBomService(repos: {
   bom: BomRepository
@@ -25,10 +37,7 @@ export function createBomService(repos: {
       return repos.bom.create({
         id: generateId('bom'),
         name: input.name.trim(),
-        entries: input.entries.map(e => ({
-          jobId: e.jobId,
-          requiredQuantity: e.requiredQuantity ?? 1,
-        })),
+        entries: validateBomEntries(input.entries),
         createdAt: now,
         updatedAt: now,
       })
@@ -59,10 +68,7 @@ export function createBomService(repos: {
       const partial: Partial<BOM> = { updatedAt: new Date().toISOString() }
       if (input.name !== undefined) partial.name = input.name.trim()
       if (input.entries !== undefined) {
-        partial.entries = input.entries.map(e => ({
-          jobId: e.jobId,
-          requiredQuantity: e.requiredQuantity ?? 1,
-        }))
+        partial.entries = validateBomEntries(input.entries)
       }
 
       return repos.bom.update(id, partial)
@@ -135,10 +141,7 @@ export function createBomService(repos: {
 
       // Update the BOM entries (and name if provided)
       const updatePayload: Partial<BOM> = {
-        entries: input.entries.map(e => ({
-          jobId: e.jobId,
-          requiredQuantity: e.requiredQuantity ?? 1,
-        })),
+        entries: validateBomEntries(input.entries),
         updatedAt: now,
       }
       if (input.name !== undefined) {

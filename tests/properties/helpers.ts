@@ -16,7 +16,7 @@ const MIGRATIONS_DIR = resolve(__dirname, '../../server/repositories/sqlite/migr
 /**
  * Create a migrated in-memory database. Call once in `beforeAll`.
  */
-export function createMigratedDb(): Database.default.Database {
+export function createMigratedDb(): Database.Database {
   const db = new Database(':memory:')
   db.pragma('journal_mode = WAL')
   db.pragma('foreign_keys = ON')
@@ -27,7 +27,7 @@ export function createMigratedDb(): Database.default.Database {
 /**
  * Create a savepoint. Call before each property iteration.
  */
-export function savepoint(db: Database.default.Database, name = 'prop_iter'): void {
+export function savepoint(db: Database.Database, name = 'prop_iter'): void {
   db.exec(`SAVEPOINT ${name}`)
 }
 
@@ -35,7 +35,7 @@ export function savepoint(db: Database.default.Database, name = 'prop_iter'): vo
  * Rollback to savepoint, undoing all changes from the iteration.
  * This is essentially free — no data to delete, no migrations to re-run.
  */
-export function rollback(db: Database.default.Database, name = 'prop_iter'): void {
+export function rollback(db: Database.Database, name = 'prop_iter'): void {
   db.exec(`ROLLBACK TO ${name}`)
   db.exec(`RELEASE ${name}`)
 }

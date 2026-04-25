@@ -25,7 +25,11 @@ const showVersionsId = ref<string | null>(null)
 
 // "Create from tag" state
 const prefillJobIds = ref<string[]>([])
+const prefillName = ref('')
 
+// Component refs
+const createEditorRef = ref<{ submit: () => void } | null>(null)
+const editEditorRef = ref<{ submit: () => void } | null>(null)
 async function toggleExpand(bom: BOM) {
   if (expandedId.value === bom.id) {
     expandedId.value = null
@@ -45,12 +49,19 @@ async function toggleExpand(bom: BOM) {
   }
 }
 
+function onCancelCreate() {
+  showForm.value = false
+  prefillJobIds.value = []
+  prefillName.value = ''
+}
+
 async function onSave(payload: BomSavePayload) {
   formSaving.value = true
   try {
     await createBom(payload)
     showForm.value = false
     prefillJobIds.value = []
+    prefillName.value = ''
   } catch {
     // error handled by composable
   } finally {
@@ -82,12 +93,18 @@ function toggleVersions(bomId: string) {
   showVersionsId.value = showVersionsId.value === bomId ? null : bomId
 }
 
+const toast = useToast()
+
 function createFromTag(tag: Tag) {
   const jobIds = jobs.value
     .filter(j => j.tags.some(t => t.id === tag.id))
     .map(j => j.id)
-  if (!jobIds.length) return
+  if (!jobIds.length) {
+    toast.add({ title: `No jobs found with tag "${tag.name}"`, color: 'warning' })
+    return
+  }
   prefillJobIds.value = jobIds
+  prefillName.value = tag.name
   showForm.value = true
 }
 
@@ -102,37 +119,60 @@ onMounted(async () => {
       <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
         Bill of Materials
       </h1>
-      <div class="flex items-center gap-2">
-        <!-- Create from tag dropdown -->
-        <UDropdownMenu
-          v-if="tags.length && !showForm"
-          :items="[tags.map(t => ({ label: t.name, onSelect: () => createFromTag(t) }))]"
-        >
-          <UButton
-            icon="i-lucide-tag"
-            label="From Tag"
-            size="sm"
-            variant="soft"
-          />
-        </UDropdownMenu>
+      <UFieldGroup size="sm">
         <UButton
-          v-if="!showForm"
           icon="i-lucide-plus"
           label="New BOM"
-          size="sm"
+          color="neutral"
+          variant="subtle"
           @click="showForm = true"
         />
-      </div>
+        <UDropdownMenu
+          v-if="tags.length"
+          :modal="false"
+          :items="[[{ label: 'New BOM from tag', type: 'label', class: 'text-[10px] text-(--ui-text-dimmed) font-normal py-0' }], tags.map(t => ({ label: t.name, onSelect: () => createFromTag(t) }))]"
+        >
+          <UButton
+            icon="i-lucide-chevron-down"
+            color="neutral"
+            variant="subtle"
+          />
+        </UDropdownMenu>
+      </UFieldGroup>
     </div>
 
-    <!-- Create form -->
-    <BomEditor
-      v-if="showForm"
-      :jobs="jobs"
-      :prefill-job-ids="prefillJobIds"
-      @save="onSave"
-      @cancel="showForm = false; prefillJobIds = []"
-    />
+    <!-- Create modal -->
+    <UModal
+      v-model:open="showForm"
+      title="New BOM"
+      @update:open="(val: boolean) => { if (!val) onCancelCreate() }"
+    >
+      <template #body>
+        <BomEditor
+          ref="createEditorRef"
+          :jobs="jobs"
+          :prefill-job-ids="prefillJobIds"
+          :prefill-name="prefillName"
+          @save="onSave"
+          @cancel="onCancelCreate"
+        />
+      </template>
+      <template #footer>
+        <div class="flex gap-2 justify-end">
+          <UButton
+            variant="ghost"
+            size="sm"
+            label="Cancel"
+            @click="onCancelCreate"
+          />
+          <UButton
+            size="sm"
+            label="Create BOM"
+            @click="createEditorRef?.submit()"
+          />
+        </div>
+      </template>
+    </UModal>
 
     <!-- Loading -->
     <div
@@ -148,7 +188,7 @@ onMounted(async () => {
 
     <!-- Empty state -->
     <div
-      v-else-if="!boms.length && !showForm"
+      v-else-if="!boms.length"
       class="text-sm text-(--ui-text-muted) py-8 text-center"
     >
       No BOMs defined yet. Create a BOM to track sub-assembly requirements.
@@ -201,24 +241,43 @@ onMounted(async () => {
           </div>
         </button>
 
-        <!-- Edit form -->
-        <div
-          v-if="editingBomId === b.id"
-          class="px-3 pb-3 border-t border-(--ui-border-muted)"
+        <!-- Edit modal -->
+        <UModal
+          :open="editingBomId === b.id"
+          title="Edit BOM"
+          @update:open="(val: boolean) => { if (!val) { editingBomId = null; editError = '' } }"
         >
-          <BomEditor
-            :bom="b"
-            :jobs="jobs"
-            @save="(payload: BomSavePayload) => onEditSave(b.id, payload)"
-            @cancel="editingBomId = null"
-          />
-          <p
-            v-if="editError"
-            class="text-xs text-red-500 mt-1"
-          >
-            {{ editError }}
-          </p>
-        </div>
+          <template #body>
+            <BomEditor
+              ref="editEditorRef"
+              :bom="b"
+              :jobs="jobs"
+              @save="(payload: BomSavePayload) => onEditSave(b.id, payload)"
+              @cancel="editingBomId = null"
+            />
+            <p
+              v-if="editError"
+              class="text-xs text-red-500 mt-2"
+            >
+              {{ editError }}
+            </p>
+          </template>
+          <template #footer>
+            <div class="flex gap-2 justify-end">
+              <UButton
+                variant="ghost"
+                size="sm"
+                label="Cancel"
+                @click="editingBomId = null"
+              />
+              <UButton
+                size="sm"
+                label="Update BOM"
+                @click="editEditorRef?.submit()"
+              />
+            </div>
+          </template>
+        </UModal>
 
         <!-- Version history -->
         <div
@@ -230,7 +289,7 @@ onMounted(async () => {
 
         <!-- Expanded summary -->
         <div
-          v-if="expandedId === b.id && editingBomId !== b.id"
+          v-if="expandedId === b.id"
           class="px-3 pb-3 border-t border-(--ui-border-muted)"
         >
           <div

@@ -88,7 +88,7 @@ function createInMemoryJobRepo() {
 
 /** Arbitrary for BOM entry */
 const arbBomEntry = fc.record({
-  jobId: fc.string({ minLength: 1, maxLength: 20 }),
+  jobId: fc.stringMatching(/^[a-zA-Z0-9_-]{1,20}$/),
   requiredQuantity: fc.integer({ min: 1, max: 100 }),
 })
 
