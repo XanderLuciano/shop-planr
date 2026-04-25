@@ -39,6 +39,37 @@ const formError = ref('')
 
 const usedJobIds = computed(() => new Set(entries.value.map(e => e.jobId).filter(Boolean)))
 
+const availableTags = computed(() => {
+  const tagMap = new Map<string, Tag>()
+  for (const job of props.jobs) {
+    for (const tag of job.tags) {
+      if (!tagMap.has(tag.id)) tagMap.set(tag.id, tag)
+    }
+  }
+  return [...tagMap.values()]
+})
+
+function addFromTag(tag: Tag) {
+  const jobIds = props.jobs
+    .filter(j => j.tags.some(t => t.id === tag.id))
+    .map(j => j.id)
+    .filter(id => !usedJobIds.value.has(id))
+
+  if (!jobIds.length) return
+
+  // Remove any empty placeholder rows first
+  entries.value = entries.value.filter(e => e.jobId)
+
+  for (const id of jobIds) {
+    entries.value.push({ _key: nextKey++, jobId: id, requiredQuantity: 1 })
+  }
+
+  // Ensure at least one row if somehow everything was filtered
+  if (!entries.value.length) {
+    entries.value.push({ _key: nextKey++, jobId: '', requiredQuantity: 1 })
+  }
+}
+
 function jobOptions(currentJobId: string) {
   return props.jobs
     .filter(j => j.id === currentJobId || !usedJobIds.value.has(j.id))
@@ -99,13 +130,18 @@ defineExpose({ submit: onSubmit })
     <div>
       <div class="flex items-center justify-between mb-1">
         <label class="text-xs font-medium text-(--ui-text-muted)">Entries</label>
-        <UButton
-          icon="i-lucide-plus"
-          size="xs"
-          variant="ghost"
-          label="Add Entry"
-          @click="addEntry"
-        />
+        <UDropdownMenu
+          v-if="availableTags.length"
+          :modal="false"
+          :items="[[{ label: 'Add jobs from tag', type: 'label', class: 'text-[10px] text-(--ui-text-dimmed) font-normal py-0' }], availableTags.map(t => ({ label: t.name, onSelect: () => addFromTag(t) }))]"
+        >
+          <UButton
+            icon="i-lucide-tag"
+            size="xs"
+            variant="ghost"
+            label="From Tag"
+          />
+        </UDropdownMenu>
       </div>
       <div class="space-y-2">
         <div
@@ -142,6 +178,14 @@ defineExpose({ submit: onSubmit })
             @click="removeEntry(i)"
           />
         </div>
+        <UButton
+          icon="i-lucide-plus"
+          size="xs"
+          variant="ghost"
+          label="Add Entry"
+          class="w-full"
+          @click="addEntry"
+        />
       </div>
     </div>
 
