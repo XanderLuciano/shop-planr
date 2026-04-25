@@ -7,11 +7,10 @@
  *
  * **Validates: Requirements 1.3, 1.5, 7.1, 7.6**
  */
-import { describe, it, afterEach } from 'vitest'
+import { describe, it, afterAll, beforeAll } from 'vitest'
 import fc from 'fast-check'
-import Database from 'better-sqlite3'
-import { resolve } from 'path'
-import { runMigrations } from '../../server/repositories/sqlite/index'
+import type Database from 'better-sqlite3'
+import { createMigratedDb, clearData } from './helpers'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
 import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
@@ -23,16 +22,7 @@ import { createPartService } from '../../server/services/partService'
 import { createAuditService } from '../../server/services/auditService'
 import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
 
-function createTestDb() {
-  const db = new Database(':memory:')
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
-  const migrationsDir = resolve(__dirname, '../../server/repositories/sqlite/migrations')
-  runMigrations(db, migrationsDir)
-  return db
-}
-
-function setupServices(db: Database.default.Database) {
+function setupServices(db: Database.Database) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
@@ -64,10 +54,14 @@ function setupServices(db: Database.default.Database) {
 }
 
 describe('Property 7: Progress Bar Accuracy', () => {
-  let db: Database.default.Database
+  let db: Database.Database
 
-  afterEach(() => {
-    if (db) db.close()
+  beforeAll(() => {
+    db = createMigratedDb()
+  })
+
+  afterAll(() => {
+    db?.close()
   })
 
   it('progress percentage equals (completed / goal) * 100', () => {
@@ -76,16 +70,13 @@ describe('Property 7: Progress Bar Accuracy', () => {
         fc.record({
           goalQuantity: fc.integer({ min: 1, max: 100 }),
           partQuantity: fc.integer({ min: 1, max: 50 }),
-          // How many parts to advance to completion (single-step path for simplicity)
           completionCount: fc.integer({ min: 0, max: 50 }),
         }),
         ({ goalQuantity, partQuantity, completionCount }) => {
-          db = createTestDb()
+          clearData(db)
           const { jobService, pathService, partService } = setupServices(db)
 
           const job = jobService.createJob({ name: 'Progress Test', goalQuantity })
-
-          // Use a single-step path so advancing = completing
           const path = pathService.createPath({
             jobId: job.id,
             name: 'Route',
@@ -98,7 +89,6 @@ describe('Property 7: Progress Bar Accuracy', () => {
             'user_test',
           )
 
-          // Complete some parts (advance past the single step)
           const toComplete = Math.min(completionCount, parts.length)
           for (let i = 0; i < toComplete; i++) {
             try {
@@ -108,7 +98,6 @@ describe('Property 7: Progress Bar Accuracy', () => {
             }
           }
 
-          // ASSERT: progress percentage matches formula
           const progress = jobService.computeJobProgress(job.id)
           const expectedPercent = (toComplete / goalQuantity) * 100
 
@@ -116,13 +105,9 @@ describe('Property 7: Progress Bar Accuracy', () => {
           expect(progress.completedParts).toBe(toComplete)
           expect(progress.goalQuantity).toBe(goalQuantity)
 
-          // Can exceed 100% when completed > goal
           if (toComplete > goalQuantity) {
             expect(progress.progressPercent).toBeGreaterThan(100)
           }
-
-          db.close()
-          db = null as any
         },
       ),
       { numRuns: 100 },
@@ -139,7 +124,7 @@ describe('Property 7: Progress Bar Accuracy', () => {
           completionCount: fc.integer({ min: 0, max: 20 }),
         }),
         ({ initialGoal, newGoal, partQuantity, completionCount }) => {
-          db = createTestDb()
+          clearData(db)
           const { jobService, pathService, partService } = setupServices(db)
 
           const job = jobService.createJob({ name: 'Goal Change Test', goalQuantity: initialGoal })
@@ -164,18 +149,13 @@ describe('Property 7: Progress Bar Accuracy', () => {
             }
           }
 
-          // Change goal quantity
           jobService.updateJob(job.id, { goalQuantity: newGoal })
 
-          // ASSERT: progress recalculates with new goal
           const progress = jobService.computeJobProgress(job.id)
           const expectedPercent = (toComplete / newGoal) * 100
 
           expect(progress.progressPercent).toBeCloseTo(expectedPercent, 10)
           expect(progress.goalQuantity).toBe(newGoal)
-
-          db.close()
-          db = null as any
         },
       ),
       { numRuns: 100 },
