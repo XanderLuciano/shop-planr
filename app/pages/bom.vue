@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { BomSummary } from '~/types/computed'
 import type { BOM, Tag } from '~/types/domain'
-
-type BomSavePayload = { name: string, entries: { jobId: string, requiredQuantity?: number }[] }
+import type { BomSavePayload } from '~/types/api'
+import { extractApiError } from '~/utils/apiError'
 
 const { boms, loading, fetchBoms, createBom, getBomWithSummary } = useBom()
 const { jobs, fetchJobs } = useJobs()
@@ -83,7 +83,7 @@ async function onEditSave(bomId: string, payload: BomSavePayload) {
     summaries.value = rest
     await fetchBoms()
   } catch (e) {
-    editError.value = e?.data?.message ?? e?.message ?? 'Failed to edit BOM'
+    editError.value = extractApiError(e, 'Failed to edit BOM')
   } finally {
     editSaving.value = false
   }

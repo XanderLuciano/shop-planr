@@ -112,6 +112,11 @@ export interface ApplyTemplateInput {
 
 // ---- BOM ----
 
+export interface BomSavePayload {
+  name: string
+  entries: { jobId: string, requiredQuantity: number }[]
+}
+
 export interface CreateBomInput {
   name: string
   entries: {

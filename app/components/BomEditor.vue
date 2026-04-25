@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BOM, Job, Tag } from '~/types/domain'
+import type { BomSavePayload } from '~/types/api'
 
 interface EntryDraft {
   _key: number
@@ -8,8 +9,6 @@ interface EntryDraft {
 }
 
 let nextKey = 0
-
-type BomSavePayload = { name: string, entries: { jobId: string, requiredQuantity: number }[] }
 
 const props = defineProps<{
   bom?: BOM

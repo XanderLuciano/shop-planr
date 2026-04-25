@@ -11,6 +11,7 @@ export type {
   CreateTemplateInput,
   ApplyTemplateInput,
   CreateBomInput,
+  BomSavePayload,
   AssignStepInput,
   LinkJiraInput,
   PushToJiraInput,
