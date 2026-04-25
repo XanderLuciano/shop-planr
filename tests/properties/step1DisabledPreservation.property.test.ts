@@ -93,7 +93,6 @@ const scenarioArb = fc.array(jobPathConfigArb, { minLength: 1, maxLength: 3 })
 /** Arbitrary for random non-existent step IDs */
 const fakeStepIdArb = fc.stringMatching(/^step_[A-Za-z0-9]{8,12}$/)
 
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -101,8 +100,12 @@ const fakeStepIdArb = fc.stringMatching(/^step_[A-Za-z0-9]{8,12}$/)
 describe('Preservation — Step 1 Disabled After Advance', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   /**
    * Property 4: Preservation — Steps With Active Parts Unchanged

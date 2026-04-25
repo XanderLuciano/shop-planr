@@ -16,8 +16,12 @@ import { createReusableTestContext, savepoint, rollback, type TestContext } from
 describe('Path Done Count Properties', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   /**
    * Arbitrary: generates a scenario with a path, parts, random advancements,

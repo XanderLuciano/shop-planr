@@ -94,12 +94,15 @@ const jobPathConfigArb = fc.record({
 /** Generate 1-3 job/path configs for a multi-job scenario */
 const scenarioArb = fc.array(jobPathConfigArb, { minLength: 1, maxLength: 3 })
 
-
 describe('Property 1: All-Work Endpoint Completeness', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   it('returns a WorkQueueJob for every step with active parts, with correct metadata', () => {
     fc.assert(

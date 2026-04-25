@@ -158,7 +158,6 @@ const multiStepConfigArb = fc.record({
   ),
 })
 
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -166,8 +165,12 @@ const multiStepConfigArb = fc.record({
 describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   /**
    * Property 1: Bug Condition — First Step Always Accessible

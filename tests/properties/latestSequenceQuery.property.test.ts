@@ -16,8 +16,12 @@ import { generateId } from '../../server/utils/idGenerator'
 describe('Feature: step-id-part-tracking, Property 11: Latest sequence number query returns most recent visit', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   it('getLatestByPartAndStep returns the entry with the highest sequenceNumber', () => {
     fc.assert(

@@ -17,8 +17,12 @@ import type { EnrichedPart } from '../../server/types/computed'
 describe('Property 1: Non-admin users are rejected', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   it('should throw ForbiddenError for any non-admin user and leave path unchanged', () => {
     fc.assert(
@@ -89,8 +93,12 @@ describe('Property 1: Non-admin users are rejected', () => {
 describe('Property 2: Cascade delete completeness', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   it('should remove path, parts, and all dependent records for any random configuration', () => {
     fc.assert(
@@ -248,8 +256,12 @@ describe('Property 2: Cascade delete completeness', () => {
 describe('Property 3: Audit entry completeness', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   it('should record audit entry with correct fields for any admin path deletion', () => {
     fc.assert(

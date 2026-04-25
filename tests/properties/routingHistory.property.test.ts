@@ -52,8 +52,12 @@ function advanceOneStep(ctx: TestContext, partId: string): void {
 describe('Feature: step-id-part-tracking, Property 6: Routing history is ordered and complete', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   it('routing history is ordered by sequenceNumber and covers all visited steps', () => {
     fc.assert(
@@ -113,12 +117,15 @@ describe('Feature: step-id-part-tracking, Property 6: Routing history is ordered
   })
 })
 
-
 describe('Feature: step-id-part-tracking, Property 7: Step entry creates routing entry with incrementing sequence number', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   it('each advancement creates a routing entry with a sequenceNumber greater than all previous', () => {
     fc.assert(
@@ -172,8 +179,12 @@ describe('Feature: step-id-part-tracking, Property 7: Step entry creates routing
 describe('Feature: step-id-part-tracking, Property 8: Step completion updates the correct routing entry', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   it('completing a step updates the latest routing entry with completed status and timestamp', () => {
     fc.assert(

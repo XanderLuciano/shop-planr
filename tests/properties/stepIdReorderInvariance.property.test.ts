@@ -16,8 +16,12 @@ import { createReusableTestContext, savepoint, rollback, type TestContext } from
 describe('Feature: step-id-part-tracking, Property 3: Step reorder preserves currentStepId', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   it('reordering steps via updatePath does not change any part currentStepId', () => {
     fc.assert(

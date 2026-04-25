@@ -80,8 +80,12 @@ function insertPartDirectly(ctx: TestContext, id: string, jobId: string, pathId:
 describe('Property 5: Dual ID Prefix Compatibility', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   it('getById returns the part for both SN- and part_ prefixed IDs', () => {
     fc.assert(
@@ -166,7 +170,6 @@ describe('Property 5: Dual ID Prefix Compatibility', () => {
       { numRuns: 100 },
     )
   })
-
 
   it('repository update works for both SN- and part_ prefixed IDs', () => {
     fc.assert(

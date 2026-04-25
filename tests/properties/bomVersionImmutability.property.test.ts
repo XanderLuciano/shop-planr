@@ -110,7 +110,7 @@ describe('Property 9: BOM Version Immutability', () => {
           const jobRepo = createInMemoryJobRepo()
           const auditService = createAuditService({ audit: auditRepo })
           const bomService = createBomService(
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
             { bom: bomRepo, parts: partRepo as any, jobs: jobRepo as any, bomVersions: bomVersionRepo },
             auditService,
           )

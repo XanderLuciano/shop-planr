@@ -19,8 +19,12 @@ import { createReusableTestContext, savepoint, rollback, type TestContext } from
 describe('Feature: step-id-part-tracking, Property 2: Advancement past final step completes part', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   it('advancing a part at the final step sets currentStepId to null and status to completed', () => {
     fc.assert(
@@ -72,8 +76,12 @@ describe('Feature: step-id-part-tracking, Property 2: Advancement past final ste
 describe('Feature: step-id-part-tracking, Property 4: Next-step resolution by order', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   it('advancing a part at a non-final step sets currentStepId to the step with order + 1', () => {
     fc.assert(

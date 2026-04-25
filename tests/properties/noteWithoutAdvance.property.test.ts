@@ -25,8 +25,12 @@ import { ValidationError } from '../../server/utils/errors'
 describe('Property 1: Note creation never modifies part position', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   it('creating a note on any subset of parts leaves currentStepId unchanged for every part', () => {
     fc.assert(
@@ -110,7 +114,6 @@ describe('Property 1: Note creation never modifies part position', () => {
   })
 })
 
-
 /**
  * Property 2: Note attribution and valid timestamp
  *
@@ -123,8 +126,12 @@ describe('Property 1: Note creation never modifies part position', () => {
 describe('Property 2: Note attribution and valid timestamp', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   it('createdBy matches the input userId and createdAt is a valid ISO 8601 timestamp', () => {
     fc.assert(
@@ -191,8 +198,12 @@ describe('Property 2: Note attribution and valid timestamp', () => {
 describe('Property 3: Note visible from each referenced part', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   it('getNotesForPart returns the created note for every part in the subset', () => {
     fc.assert(
@@ -269,8 +280,12 @@ describe('Property 3: Note visible from each referenced part', () => {
 describe('Property 4: Audit trail records note creation', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   it('audit log contains exactly one new note_created entry with matching fields', () => {
     fc.assert(
@@ -355,8 +370,12 @@ describe('Property 4: Audit trail records note creation', () => {
 describe('Property 5: Whitespace-only text is rejected', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   it('createNote throws ValidationError for any whitespace-only string and persists no note', () => {
     fc.assert(

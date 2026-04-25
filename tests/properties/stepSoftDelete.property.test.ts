@@ -69,7 +69,6 @@ function buildFullRoute(ctx: TestContext, partId: string): FullRouteResponse {
     }
   }
 
-
   const isCompleted = part.currentStepId === null
   const currentStep = part.currentStepId ? activeStepMap.get(part.currentStepId) : undefined
   const currentOrder = currentStep?.order
@@ -131,8 +130,12 @@ function buildFullRoute(ctx: TestContext, partId: string): FullRouteResponse {
 describe('Feature: step-id-part-tracking, Property 20: Soft-deleted step preserves routing history', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   it('routing history entries for a soft-deleted step remain intact and show isRemoved in full route', () => {
     fc.assert(
@@ -201,8 +204,12 @@ describe('Feature: step-id-part-tracking, Property 20: Soft-deleted step preserv
 describe('Feature: step-id-part-tracking, Property 21: Soft-deleted step excluded from active routing', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   it('path.steps does not include soft-deleted steps; distribution and advancement ignore them', () => {
     fc.assert(

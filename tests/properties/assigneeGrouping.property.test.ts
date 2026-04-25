@@ -114,7 +114,6 @@ interface _StepAssignment {
   userIndex: number | null // null = unassigned
 }
 
-
 /** Arbitrary for a single job/path config with assignment info */
 const jobPathConfigArb = fc.record({
   jobName: fc.string({ minLength: 1, maxLength: 20 }).filter(s => s.trim().length > 0),
@@ -150,8 +149,12 @@ const scenarioArb = fc.record({
 describe('Property 6: Assignee Grouping Correctness', () => {
   let ctx: TestContext
 
-  beforeAll(() => { ctx = createReusableTestContext() })
-  afterAll(() => { ctx?.cleanup() })
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
+  })
 
   it('groups work by assignedTo, resolves operator names, and handles unassigned correctly', () => {
     fc.assert(
