@@ -7,11 +7,10 @@
  *
  * **Validates: Requirements 2.1, 2.2**
  */
-import { describe, it, afterEach, expect } from 'vitest'
+import { describe, it, afterAll, beforeAll, expect } from 'vitest'
 import fc from 'fast-check'
-import Database from 'better-sqlite3'
-import { resolve } from 'path'
-import { runMigrations } from '../../server/repositories/sqlite/index'
+import type Database from 'better-sqlite3'
+import { createMigratedDb, savepoint, rollback } from './helpers'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
 import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
@@ -23,16 +22,7 @@ import { createPartService } from '../../server/services/partService'
 import { createAuditService } from '../../server/services/auditService'
 import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
 
-function createTestDb() {
-  const db = new Database(':memory:')
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
-  const migrationsDir = resolve(__dirname, '../../server/repositories/sqlite/migrations')
-  runMigrations(db, migrationsDir)
-  return db
-}
-
-function setupServices(db: InstanceType<typeof Database>) {
+function setupServices(db: Database.Database) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
@@ -64,10 +54,14 @@ function setupServices(db: InstanceType<typeof Database>) {
 }
 
 describe('Property 1: Batch result completeness', () => {
-  let db: InstanceType<typeof Database>
+  let db: Database.Database
 
-  afterEach(() => {
-    if (db) db.close()
+  beforeAll(() => {
+    db = createMigratedDb()
+  })
+
+  afterAll(() => {
+    db?.close()
   })
 
   it('results.length === partIds.length and advanced + failed === partIds.length', () => {
@@ -75,33 +69,34 @@ describe('Property 1: Batch result completeness', () => {
       fc.property(
         fc.integer({ min: 1, max: 15 }),
         (partCount) => {
-          db = createTestDb()
-          const { jobService, pathService, partService } = setupServices(db)
+          savepoint(db)
+          try {
+            const { jobService, pathService, partService } = setupServices(db)
 
-          const job = jobService.createJob({ name: 'Completeness Job', goalQuantity: partCount })
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: 'Main Path',
-            goalQuantity: partCount,
-            steps: [{ name: 'OP1' }, { name: 'OP2' }],
-          })
+            const job = jobService.createJob({ name: 'Completeness Job', goalQuantity: partCount })
+            const path = pathService.createPath({
+              jobId: job.id,
+              name: 'Main Path',
+              goalQuantity: partCount,
+              steps: [{ name: 'OP1' }, { name: 'OP2' }],
+            })
 
-          const parts = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: partCount },
-            'user_test',
-          )
+            const parts = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: partCount },
+              'user_test',
+            )
 
-          const partIds = parts.map(p => p.id)
-          const result = partService.batchAdvanceParts(partIds, 'user_test')
+            const partIds = parts.map(p => p.id)
+            const result = partService.batchAdvanceParts(partIds, 'user_test')
 
-          // ASSERT: one result per input ID
-          expect(result.results.length).toBe(partIds.length)
+            // ASSERT: one result per input ID
+            expect(result.results.length).toBe(partIds.length)
 
-          // ASSERT: advanced + failed === input length
-          expect(result.advanced + result.failed).toBe(partIds.length)
-
-          db.close()
-          db = null as any
+            // ASSERT: advanced + failed === input length
+            expect(result.advanced + result.failed).toBe(partIds.length)
+          } finally {
+            rollback(db)
+          }
         },
       ),
       { numRuns: 100 },

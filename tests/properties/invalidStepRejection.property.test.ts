@@ -7,9 +7,9 @@
  *
  * **Validates: Requirements 2.6**
  */
-import { describe, it, afterEach, expect } from 'vitest'
+import { describe, it, beforeAll, afterAll, expect } from 'vitest'
 import fc from 'fast-check'
-import { createTestContext, type TestContext } from '../integration/helpers'
+import { createReusableTestContext, savepoint, rollback, type TestContext } from './helpers'
 import type { WorkQueueJob, StepViewResponse } from '../../server/types/computed'
 
 /**
@@ -79,11 +79,12 @@ function lookupStep(ctx: TestContext, stepId: string): StepViewResponse | null {
 describe('Property 5: Invalid Step Rejection', () => {
   let ctx: TestContext
 
-  afterEach(() => {
-    if (ctx) {
-      ctx.cleanup()
-      ctx = null as any
-    }
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+
+  afterAll(() => {
+    ctx?.cleanup()
   })
 
   it('returns null (404) for any non-existent step ID', () => {
@@ -91,14 +92,14 @@ describe('Property 5: Invalid Step Rejection', () => {
 
     fc.assert(
       fc.property(nonExistentIdArb, (fakeStepId) => {
-        ctx = createTestContext()
-
-        // Empty database — no jobs, paths, or steps exist
-        const result = lookupStep(ctx, fakeStepId)
-        expect(result).toBeNull()
-
-        ctx.cleanup()
-        ctx = null as any
+        savepoint(ctx.db)
+        try {
+          // Empty database — no jobs, paths, or steps exist
+          const result = lookupStep(ctx, fakeStepId)
+          expect(result).toBeNull()
+        } finally {
+          rollback(ctx.db)
+        }
       }),
       { numRuns: 100 },
     )
@@ -114,47 +115,48 @@ describe('Property 5: Invalid Step Rejection', () => {
 
     fc.assert(
       fc.property(configArb, (config) => {
-        ctx = createTestContext()
-        const { jobService, pathService, partService } = ctx
+        savepoint(ctx.db)
+        try {
+          const { jobService, pathService, partService } = ctx
 
-        // Create a job with a path and multiple steps
-        const job = jobService.createJob({
-          name: config.jobName,
-          goalQuantity: config.partCount,
-        })
+          // Create a job with a path and multiple steps
+          const job = jobService.createJob({
+            name: config.jobName,
+            goalQuantity: config.partCount,
+          })
 
-        const steps = Array.from({ length: config.stepCount }, (_, i) => ({
-          name: `Step-${i}`,
-        }))
+          const steps = Array.from({ length: config.stepCount }, (_, i) => ({
+            name: `Step-${i}`,
+          }))
 
-        const path = pathService.createPath({
-          jobId: job.id,
-          name: config.pathName,
-          goalQuantity: config.partCount,
-          steps,
-        })
+          const path = pathService.createPath({
+            jobId: job.id,
+            name: config.pathName,
+            goalQuantity: config.partCount,
+            steps,
+          })
 
-        // Create parts (they start at step 0)
-        const parts = partService.batchCreateParts(
-          { jobId: job.id, pathId: path.id, quantity: config.partCount },
-          'user_test',
-        )
+          // Create parts (they start at step 0)
+          const parts = partService.batchCreateParts(
+            { jobId: job.id, pathId: path.id, quantity: config.partCount },
+            'user_test',
+          )
 
-        // Advance ALL parts past step 0 so step 0 has zero active parts
-        for (const part of parts) {
-          partService.advancePart(part.id, 'user_test')
+          // Advance ALL parts past step 0 so step 0 has zero active parts
+          for (const part of parts) {
+            partService.advancePart(part.id, 'user_test')
+          }
+
+          // Step 0 now has zero active parts — fixed lookup returns valid response with partCount: 0
+          const step0Id = path.steps[0].id
+          const result = lookupStep(ctx, step0Id)
+          expect(result, `Expected non-null for step 0 ${step0Id} with zero active parts`).not.toBeNull()
+          expect(result!.job.partCount).toBe(0)
+          expect(result!.job.partIds).toEqual([])
+          expect(result!.job.stepOrder).toBe(0)
+        } finally {
+          rollback(ctx.db)
         }
-
-        // Step 0 now has zero active parts — fixed lookup returns valid response with partCount: 0
-        const step0Id = path.steps[0].id
-        const result = lookupStep(ctx, step0Id)
-        expect(result, `Expected non-null for step 0 ${step0Id} with zero active parts`).not.toBeNull()
-        expect(result!.job.partCount).toBe(0)
-        expect(result!.job.partIds).toEqual([])
-        expect(result!.job.stepOrder).toBe(0)
-
-        ctx.cleanup()
-        ctx = null as any
       }),
       { numRuns: 100 },
     )

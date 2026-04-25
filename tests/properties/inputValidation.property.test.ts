@@ -6,11 +6,10 @@
  *
  * **Validates: Requirements 1.6, 2.6, 4.6, 5.5**
  */
-import { describe, it, afterEach, expect } from 'vitest'
+import { describe, it, afterAll, beforeAll, expect } from 'vitest'
 import fc from 'fast-check'
-import Database from 'better-sqlite3'
-import { resolve } from 'path'
-import { runMigrations } from '../../server/repositories/sqlite/index'
+import type Database from 'better-sqlite3'
+import { createMigratedDb, savepoint, rollback } from './helpers'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
 import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
@@ -24,16 +23,7 @@ import { createAuditService } from '../../server/services/auditService'
 import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
 import { ValidationError, NotFoundError } from '../../server/utils/errors'
 
-function createTestDb() {
-  const db = new Database(':memory:')
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
-  const migrationsDir = resolve(__dirname, '../../server/repositories/sqlite/migrations')
-  runMigrations(db, migrationsDir)
-  return db
-}
-
-function setupServices(db: InstanceType<typeof Database>) {
+function setupServices(db: Database.Database) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
@@ -66,10 +56,14 @@ function setupServices(db: InstanceType<typeof Database>) {
 }
 
 describe('Property 11: Invalid Input Rejection', () => {
-  let db: InstanceType<typeof Database>
+  let db: Database.Database
 
-  afterEach(() => {
-    if (db) db.close()
+  beforeAll(() => {
+    db = createMigratedDb()
+  })
+
+  afterAll(() => {
+    db?.close()
   })
 
   it('creating a job with goalQuantity ≤ 0 throws ValidationError', () => {
@@ -77,20 +71,21 @@ describe('Property 11: Invalid Input Rejection', () => {
       fc.property(
         fc.integer({ min: -1000, max: 0 }),
         (badQuantity) => {
-          db = createTestDb()
-          const { jobService, repos } = setupServices(db)
+          savepoint(db)
+          try {
+            const { jobService, repos } = setupServices(db)
 
-          const jobsBefore = repos.jobs.list().length
+            const jobsBefore = repos.jobs.list().length
 
-          expect(() => {
-            jobService.createJob({ name: 'Bad Job', goalQuantity: badQuantity })
-          }).toThrow(ValidationError)
+            expect(() => {
+              jobService.createJob({ name: 'Bad Job', goalQuantity: badQuantity })
+            }).toThrow(ValidationError)
 
-          // State unchanged — no job created
-          expect(repos.jobs.list().length).toBe(jobsBefore)
-
-          db.close()
-          db = null as any
+            // State unchanged — no job created
+            expect(repos.jobs.list().length).toBe(jobsBefore)
+          } finally {
+            rollback(db)
+          }
         },
       ),
       { numRuns: 100 },
@@ -102,26 +97,27 @@ describe('Property 11: Invalid Input Rejection', () => {
       fc.property(
         fc.integer({ min: 1, max: 100 }),
         (goalQty) => {
-          db = createTestDb()
-          const { jobService, pathService, repos } = setupServices(db)
+          savepoint(db)
+          try {
+            const { jobService, pathService, repos } = setupServices(db)
 
-          const job = jobService.createJob({ name: 'Test Job', goalQuantity: goalQty })
-          const pathsBefore = repos.paths.listByJobId(job.id).length
+            const job = jobService.createJob({ name: 'Test Job', goalQuantity: goalQty })
+            const pathsBefore = repos.paths.listByJobId(job.id).length
 
-          expect(() => {
-            pathService.createPath({
-              jobId: job.id,
-              name: 'Empty Path',
-              goalQuantity: goalQty,
-              steps: [],
-            })
-          }).toThrow(ValidationError)
+            expect(() => {
+              pathService.createPath({
+                jobId: job.id,
+                name: 'Empty Path',
+                goalQuantity: goalQty,
+                steps: [],
+              })
+            }).toThrow(ValidationError)
 
-          // State unchanged — no path created
-          expect(repos.paths.listByJobId(job.id).length).toBe(pathsBefore)
-
-          db.close()
-          db = null as any
+            // State unchanged — no path created
+            expect(repos.paths.listByJobId(job.id).length).toBe(pathsBefore)
+          } finally {
+            rollback(db)
+          }
         },
       ),
       { numRuns: 100 },
@@ -133,43 +129,35 @@ describe('Property 11: Invalid Input Rejection', () => {
       fc.property(
         fc.integer({ min: 1, max: 20 }),
         (quantity) => {
-          db = createTestDb()
-          const { jobService, pathService, partService, repos } = setupServices(db)
+          savepoint(db)
+          try {
+            const { jobService, pathService, partService, repos } = setupServices(db)
 
-          const job = jobService.createJob({ name: 'Test Job', goalQuantity: 50 })
+            const job = jobService.createJob({ name: 'Test Job', goalQuantity: 50 })
 
-          // Create a path with steps, then update to remove all steps
-          pathService.createPath({
-            jobId: job.id,
-            name: 'Will Be Stepless',
-            goalQuantity: 50,
-            steps: [{ name: 'Temp Step' }],
-          })
+            // Create a path with steps, then update to remove all steps
+            pathService.createPath({
+              jobId: job.id,
+              name: 'Will Be Stepless',
+              goalQuantity: 50,
+              steps: [{ name: 'Temp Step' }],
+            })
 
-          // Remove steps by updating with a single step, then directly clear steps in DB
-          // Actually, the service won't allow zero steps via updatePath either.
-          // Instead, we test that batchCreateParts validates path.steps is non-empty.
-          // The path was created with steps, so parts can be created.
-          // The real test: create a path that somehow has no steps — but the service prevents that.
-          // So we test the validation at the part service level by mocking a path with no steps.
-          // Since we can't create a stepless path through the service, we verify the validation
-          // exists by checking that the part service calls assertNonEmptyArray on path.steps.
+            // The most realistic test: try to create parts with a non-existent pathId
+            const partsBefore = repos.parts.listByJobId(job.id).length
 
-          // The most realistic test: try to create parts with a non-existent pathId
-          const partsBefore = repos.parts.listByJobId(job.id).length
+            expect(() => {
+              partService.batchCreateParts(
+                { jobId: job.id, pathId: 'nonexistent_path', quantity },
+                'user_test',
+              )
+            }).toThrow(NotFoundError)
 
-          expect(() => {
-            partService.batchCreateParts(
-              { jobId: job.id, pathId: 'nonexistent_path', quantity },
-              'user_test',
-            )
-          }).toThrow(NotFoundError)
-
-          // State unchanged
-          expect(repos.parts.listByJobId(job.id).length).toBe(partsBefore)
-
-          db.close()
-          db = null as any
+            // State unchanged
+            expect(repos.parts.listByJobId(job.id).length).toBe(partsBefore)
+          } finally {
+            rollback(db)
+          }
         },
       ),
       { numRuns: 100 },
@@ -181,42 +169,43 @@ describe('Property 11: Invalid Input Rejection', () => {
       fc.property(
         fc.integer({ min: 1, max: 5 }),
         (partCount) => {
-          db = createTestDb()
-          const { jobService, pathService, partService, certService, repos } = setupServices(db)
+          savepoint(db)
+          try {
+            const { jobService, pathService, partService, certService, repos } = setupServices(db)
 
-          const job = jobService.createJob({ name: 'Cert Test Job', goalQuantity: partCount })
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: 'Main Path',
-            goalQuantity: partCount,
-            steps: [{ name: 'OP1' }],
-          })
-          const parts = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: partCount },
-            'user_test',
-          )
-
-          const auditBefore = repos.audit.list().length
-
-          // Try to batch attach a non-existent cert
-          expect(() => {
-            certService.batchAttachCert({
-              certId: 'nonexistent_cert_id',
-              partIds: parts.map(s => s.id),
-              userId: 'user_test',
+            const job = jobService.createJob({ name: 'Cert Test Job', goalQuantity: partCount })
+            const path = pathService.createPath({
+              jobId: job.id,
+              name: 'Main Path',
+              goalQuantity: partCount,
+              steps: [{ name: 'OP1' }],
             })
-          }).toThrow(NotFoundError)
+            const parts = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: partCount },
+              'user_test',
+            )
 
-          // No new audit entries created
-          expect(repos.audit.list().length).toBe(auditBefore)
+            const auditBefore = repos.audit.list().length
 
-          // No cert attachments created
-          for (const part of parts) {
-            expect(certService.getCertsForPart(part.id).length).toBe(0)
+            // Try to batch attach a non-existent cert
+            expect(() => {
+              certService.batchAttachCert({
+                certId: 'nonexistent_cert_id',
+                partIds: parts.map(s => s.id),
+                userId: 'user_test',
+              })
+            }).toThrow(NotFoundError)
+
+            // No new audit entries created
+            expect(repos.audit.list().length).toBe(auditBefore)
+
+            // No cert attachments created
+            for (const part of parts) {
+              expect(certService.getCertsForPart(part.id).length).toBe(0)
+            }
+          } finally {
+            rollback(db)
           }
-
-          db.close()
-          db = null as any
         },
       ),
       { numRuns: 100 },

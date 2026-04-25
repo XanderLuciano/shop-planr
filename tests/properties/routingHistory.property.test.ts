@@ -18,9 +18,9 @@
  *
  * **Validates: Requirements 3.1, 3.2, 3.3, 3.6, 4.2, 4.3, 11.1, 11.4**
  */
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import fc from 'fast-check'
-import { createTestContext, type TestContext } from '../integration/helpers'
+import { createReusableTestContext, savepoint, rollback, type TestContext } from './helpers'
 
 /**
  * Helper: advance a part one step forward using lifecycleService.advanceToStep,
@@ -52,8 +52,11 @@ function advanceOneStep(ctx: TestContext, partId: string): void {
 describe('Feature: step-id-part-tracking, Property 6: Routing history is ordered and complete', () => {
   let ctx: TestContext
 
-  afterEach(() => {
-    if (ctx) ctx.cleanup()
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
   })
 
   it('routing history is ordered by sequenceNumber and covers all visited steps', () => {
@@ -62,51 +65,51 @@ describe('Feature: step-id-part-tracking, Property 6: Routing history is ordered
         fc.integer({ min: 2, max: 6 }),
         fc.integer({ min: 1, max: 5 }),
         (stepCount, advanceCount) => {
-          ctx = createTestContext()
+          savepoint(ctx.db)
+          try {
+            const job = ctx.jobService.createJob({ name: 'Job', goalQuantity: 10 })
+            const steps = Array.from({ length: stepCount }, (_, i) => ({ name: `Step ${i}` }))
+            const path = ctx.pathService.createPath({
+              jobId: job.id,
+              name: 'Path',
+              goalQuantity: 10,
+              steps,
+            })
 
-          const job = ctx.jobService.createJob({ name: 'Job', goalQuantity: 10 })
-          const steps = Array.from({ length: stepCount }, (_, i) => ({ name: `Step ${i}` }))
-          const path = ctx.pathService.createPath({
-            jobId: job.id,
-            name: 'Path',
-            goalQuantity: 10,
-            steps,
-          })
+            const [part] = ctx.partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: 1 },
+              'user1',
+            )
 
-          const [part] = ctx.partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: 1 },
-            'user1',
-          )
+            // Advance using lifecycleService for proper routing history
+            const actualAdvances = Math.min(advanceCount, stepCount)
+            for (let i = 0; i < actualAdvances; i++) {
+              const fresh = ctx.partService.getPart(part!.id)
+              if (fresh.currentStepId === null) break
+              advanceOneStep(ctx, part!.id)
+            }
 
-          // Advance using lifecycleService for proper routing history
-          const actualAdvances = Math.min(advanceCount, stepCount)
-          for (let i = 0; i < actualAdvances; i++) {
-            const fresh = ctx.partService.getPart(part!.id)
-            if (fresh.currentStepId === null) break
-            advanceOneStep(ctx, part!.id)
+            // Read routing history
+            const history = ctx.lifecycleService.getStepStatuses(part!.id)
+
+            // P6a: entries are ordered by sequenceNumber ascending
+            for (let i = 1; i < history.length; i++) {
+              expect(history[i]!.sequenceNumber).toBeGreaterThanOrEqual(history[i - 1]!.sequenceNumber)
+            }
+
+            // P6b: history contains at least one entry for every step the part visited
+            const stepsVisited = Math.min(actualAdvances, stepCount - 1)
+            const visitedStepIds = new Set<string>()
+            for (let i = 0; i <= stepsVisited; i++) {
+              if (i < path.steps.length) visitedStepIds.add(path.steps[i]!.id)
+            }
+            const historyStepIds = new Set(history.map(h => h.stepId))
+            for (const stepId of visitedStepIds) {
+              expect(historyStepIds.has(stepId)).toBe(true)
+            }
+          } finally {
+            rollback(ctx.db)
           }
-
-          // Read routing history
-          const history = ctx.lifecycleService.getStepStatuses(part!.id)
-
-          // P6a: entries are ordered by sequenceNumber ascending
-          for (let i = 1; i < history.length; i++) {
-            expect(history[i]!.sequenceNumber).toBeGreaterThanOrEqual(history[i - 1]!.sequenceNumber)
-          }
-
-          // P6b: history contains at least one entry for every step the part visited
-          const stepsVisited = Math.min(actualAdvances, stepCount - 1)
-          const visitedStepIds = new Set<string>()
-          for (let i = 0; i <= stepsVisited; i++) {
-            if (i < path.steps.length) visitedStepIds.add(path.steps[i]!.id)
-          }
-          const historyStepIds = new Set(history.map(h => h.stepId))
-          for (const stepId of visitedStepIds) {
-            expect(historyStepIds.has(stepId)).toBe(true)
-          }
-
-          ctx.cleanup()
-          ctx = null as any
         },
       ),
       { numRuns: 100 },
@@ -117,8 +120,11 @@ describe('Feature: step-id-part-tracking, Property 6: Routing history is ordered
 describe('Feature: step-id-part-tracking, Property 7: Step entry creates routing entry with incrementing sequence number', () => {
   let ctx: TestContext
 
-  afterEach(() => {
-    if (ctx) ctx.cleanup()
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
   })
 
   it('each advancement creates a routing entry with a sequenceNumber greater than all previous', () => {
@@ -126,43 +132,43 @@ describe('Feature: step-id-part-tracking, Property 7: Step entry creates routing
       fc.property(
         fc.integer({ min: 3, max: 7 }),
         (stepCount) => {
-          ctx = createTestContext()
+          savepoint(ctx.db)
+          try {
+            const job = ctx.jobService.createJob({ name: 'Job', goalQuantity: 10 })
+            const steps = Array.from({ length: stepCount }, (_, i) => ({ name: `Step ${i}` }))
+            const path = ctx.pathService.createPath({
+              jobId: job.id,
+              name: 'Path',
+              goalQuantity: 10,
+              steps,
+            })
 
-          const job = ctx.jobService.createJob({ name: 'Job', goalQuantity: 10 })
-          const steps = Array.from({ length: stepCount }, (_, i) => ({ name: `Step ${i}` }))
-          const path = ctx.pathService.createPath({
-            jobId: job.id,
-            name: 'Path',
-            goalQuantity: 10,
-            steps,
-          })
+            const [part] = ctx.partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: 1 },
+              'user1',
+            )
 
-          const [part] = ctx.partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: 1 },
-            'user1',
-          )
+            // Advance through all steps using lifecycleService
+            for (let i = 0; i < stepCount - 1; i++) {
+              advanceOneStep(ctx, part!.id)
+            }
 
-          // Advance through all steps using lifecycleService
-          for (let i = 0; i < stepCount - 1; i++) {
-            advanceOneStep(ctx, part!.id)
+            const history = ctx.lifecycleService.getStepStatuses(part!.id)
+
+            // All entries should have non-decreasing sequence numbers
+            const seqNumbers = history.map(h => h.sequenceNumber)
+            for (let i = 1; i < seqNumbers.length; i++) {
+              expect(seqNumbers[i]!).toBeGreaterThanOrEqual(seqNumbers[i - 1]!)
+            }
+
+            // The latest entry for the last step should be 'in_progress'
+            const lastStepId = path.steps[stepCount - 1]!.id
+            const lastEntry = ctx.repos.partStepStatuses.getLatestByPartAndStep(part!.id, lastStepId)
+            expect(lastEntry).toBeDefined()
+            expect(lastEntry!.status).toBe('in_progress')
+          } finally {
+            rollback(ctx.db)
           }
-
-          const history = ctx.lifecycleService.getStepStatuses(part!.id)
-
-          // All entries should have non-decreasing sequence numbers
-          const seqNumbers = history.map(h => h.sequenceNumber)
-          for (let i = 1; i < seqNumbers.length; i++) {
-            expect(seqNumbers[i]!).toBeGreaterThanOrEqual(seqNumbers[i - 1]!)
-          }
-
-          // The latest entry for the last step should be 'in_progress'
-          const lastStepId = path.steps[stepCount - 1]!.id
-          const lastEntry = ctx.repos.partStepStatuses.getLatestByPartAndStep(part!.id, lastStepId)
-          expect(lastEntry).toBeDefined()
-          expect(lastEntry!.status).toBe('in_progress')
-
-          ctx.cleanup()
-          ctx = null as any
         },
       ),
       { numRuns: 100 },
@@ -173,8 +179,11 @@ describe('Feature: step-id-part-tracking, Property 7: Step entry creates routing
 describe('Feature: step-id-part-tracking, Property 8: Step completion updates the correct routing entry', () => {
   let ctx: TestContext
 
-  afterEach(() => {
-    if (ctx) ctx.cleanup()
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
   })
 
   it('completing a step updates the latest routing entry with completed status and timestamp', () => {
@@ -183,39 +192,39 @@ describe('Feature: step-id-part-tracking, Property 8: Step completion updates th
         fc.integer({ min: 3, max: 7 }),
         fc.integer({ min: 1, max: 5 }),
         (stepCount, advanceCount) => {
-          ctx = createTestContext()
+          savepoint(ctx.db)
+          try {
+            const job = ctx.jobService.createJob({ name: 'Job', goalQuantity: 10 })
+            const steps = Array.from({ length: stepCount }, (_, i) => ({ name: `Step ${i}` }))
+            const path = ctx.pathService.createPath({
+              jobId: job.id,
+              name: 'Path',
+              goalQuantity: 10,
+              steps,
+            })
 
-          const job = ctx.jobService.createJob({ name: 'Job', goalQuantity: 10 })
-          const steps = Array.from({ length: stepCount }, (_, i) => ({ name: `Step ${i}` }))
-          const path = ctx.pathService.createPath({
-            jobId: job.id,
-            name: 'Path',
-            goalQuantity: 10,
-            steps,
-          })
+            const [part] = ctx.partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: 1 },
+              'user1',
+            )
 
-          const [part] = ctx.partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: 1 },
-            'user1',
-          )
+            const actualAdvances = Math.min(advanceCount, stepCount - 1)
+            for (let i = 0; i < actualAdvances; i++) {
+              advanceOneStep(ctx, part!.id)
+            }
 
-          const actualAdvances = Math.min(advanceCount, stepCount - 1)
-          for (let i = 0; i < actualAdvances; i++) {
-            advanceOneStep(ctx, part!.id)
+            // For each step the part advanced THROUGH (origin steps), verify
+            // the latest routing entry is 'completed' with a completedAt timestamp.
+            for (let i = 0; i < actualAdvances; i++) {
+              const stepId = path.steps[i]!.id
+              const latest = ctx.repos.partStepStatuses.getLatestByPartAndStep(part!.id, stepId)
+              expect(latest).not.toBeNull()
+              expect(latest!.status).toBe('completed')
+              expect(latest!.completedAt).toBeDefined()
+            }
+          } finally {
+            rollback(ctx.db)
           }
-
-          // For each step the part advanced THROUGH (origin steps), verify
-          // the latest routing entry is 'completed' with a completedAt timestamp.
-          for (let i = 0; i < actualAdvances; i++) {
-            const stepId = path.steps[i]!.id
-            const latest = ctx.repos.partStepStatuses.getLatestByPartAndStep(part!.id, stepId)
-            expect(latest).not.toBeNull()
-            expect(latest!.status).toBe('completed')
-            expect(latest!.completedAt).toBeDefined()
-          }
-
-          ctx.cleanup()
-          ctx = null as any
         },
       ),
       { numRuns: 100 },

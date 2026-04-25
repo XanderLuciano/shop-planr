@@ -10,9 +10,10 @@
  *
  * **Validates: Requirements 1.7, 2.3, 2.4, 8.6**
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterAll, beforeAll } from 'vitest'
 import fc from 'fast-check'
-import { createTestDb } from '../integration/helpers'
+import type Database from 'better-sqlite3'
+import { createMigratedDb, savepoint, rollback } from './helpers'
 import { SQLiteUserRepository } from '../../server/repositories/sqlite/userRepository'
 import { createUserService } from '../../server/services/userService'
 
@@ -25,6 +26,16 @@ const arbNonEmptyString = fc.array(fc.constantFrom(...SAFE_CHARS), { minLength: 
   .map(chars => chars.join(''))
 
 describe('Property 1: User CRUD Round-Trip', () => {
+  let db: Database.Database
+
+  beforeAll(() => {
+    db = createMigratedDb()
+  })
+
+  afterAll(() => {
+    db?.close()
+  })
+
   it('create user with explicit isAdmin and read back — all fields match', () => {
     let runIndex = 0
 
@@ -35,7 +46,7 @@ describe('Property 1: User CRUD Round-Trip', () => {
         fc.boolean(),
         fc.option(arbNonEmptyString, { nil: undefined }),
         (username, displayName, isAdmin, department) => {
-          const db = createTestDb()
+          savepoint(db)
           try {
             const userRepo = new SQLiteUserRepository(db)
             const userService = createUserService({ users: userRepo })
@@ -62,7 +73,7 @@ describe('Property 1: User CRUD Round-Trip', () => {
             expect(readBack.id).toBe(created.id)
             expect(readBack.createdAt).toBe(created.createdAt)
           } finally {
-            db.close()
+            rollback(db)
           }
         },
       ),
@@ -79,7 +90,7 @@ describe('Property 1: User CRUD Round-Trip', () => {
         arbNonEmptyString,
         fc.option(arbNonEmptyString, { nil: undefined }),
         (username, displayName, department) => {
-          const db = createTestDb()
+          savepoint(db)
           try {
             const userRepo = new SQLiteUserRepository(db)
             const userService = createUserService({ users: userRepo })
@@ -105,7 +116,7 @@ describe('Property 1: User CRUD Round-Trip', () => {
             expect(readBack.department).toBe(department)
             expect(readBack.active).toBe(true)
           } finally {
-            db.close()
+            rollback(db)
           }
         },
       ),

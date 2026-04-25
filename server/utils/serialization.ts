@@ -212,9 +212,8 @@ const validators: Record<DomainType, (obj: Record<string, unknown>) => void> = {
   },
 
   BomEntry(obj) {
-    requireString(obj, 'partType', 'BomEntry')
-    requireNumber(obj, 'requiredQuantityPerBuild', 'BomEntry')
-    requireArray(obj, 'contributingJobIds', 'BomEntry')
+    requireString(obj, 'jobId', 'BomEntry')
+    requireNumber(obj, 'requiredQuantity', 'BomEntry')
   },
 
   AuditEntry(obj) {

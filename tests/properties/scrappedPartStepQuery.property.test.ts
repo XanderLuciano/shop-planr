@@ -8,14 +8,18 @@
  *
  * **Validates: Requirements 1.1, 2.1**
  */
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import fc from 'fast-check'
-import { createTestContext, type TestContext } from '../integration/helpers'
+import { createReusableTestContext, savepoint, rollback, type TestContext } from './helpers'
 
 describe('Property 1: Bug Condition — Scrapped Parts Excluded from Step Query', () => {
   let ctx: TestContext
 
-  afterEach(() => {
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+
+  afterAll(() => {
     ctx?.cleanup()
   })
 
@@ -34,40 +38,43 @@ describe('Property 1: Bug Condition — Scrapped Parts Excluded from Step Query'
           ),
         ),
         ([totalCount, scrapIndices]) => {
-          // Fresh isolated DB per run
-          ctx = createTestContext()
-          const { jobService, pathService, partService, lifecycleService, repos } = ctx
+          savepoint(ctx.db)
+          try {
+            const { jobService, pathService, partService, lifecycleService, repos } = ctx
 
-          // Create job + path with one step
-          const job = jobService.createJob({ name: 'Test Job', goalQuantity: totalCount })
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: 'Path',
-            goalQuantity: totalCount,
-            steps: [{ name: 'Step 1' }],
-          })
-
-          // Create parts (all start at first step, status in_progress)
-          const parts = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: totalCount },
-            'test-user',
-          )
-
-          // Scrap the selected parts
-          for (const idx of scrapIndices) {
-            lifecycleService.scrapPart(parts[idx].id, {
-              reason: 'defective',
-              userId: 'test-user',
+            // Create job + path with one step
+            const job = jobService.createJob({ name: 'Test Job', goalQuantity: totalCount })
+            const path = pathService.createPath({
+              jobId: job.id,
+              name: 'Path',
+              goalQuantity: totalCount,
+              steps: [{ name: 'Step 1' }],
             })
-          }
 
-          // Query parts at first step by step ID
-          const firstStepId = path.steps[0].id
-          const result = repos.parts.listByCurrentStepId(firstStepId)
+            // Create parts (all start at first step, status in_progress)
+            const parts = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: totalCount },
+              'test-user',
+            )
 
-          // Assert: no returned part should have status = 'scrapped'
-          for (const part of result) {
-            expect(part.status).not.toBe('scrapped')
+            // Scrap the selected parts
+            for (const idx of scrapIndices) {
+              lifecycleService.scrapPart(parts[idx].id, {
+                reason: 'defective',
+                userId: 'test-user',
+              })
+            }
+
+            // Query parts at first step by step ID
+            const firstStepId = path.steps[0].id
+            const result = repos.parts.listByCurrentStepId(firstStepId)
+
+            // Assert: no returned part should have status = 'scrapped'
+            for (const part of result) {
+              expect(part.status).not.toBe('scrapped')
+            }
+          } finally {
+            rollback(ctx.db)
           }
         },
       ),
@@ -88,7 +95,11 @@ describe('Property 1: Bug Condition — Scrapped Parts Excluded from Step Query'
 describe('Property 2: Preservation — Non-Scrapped Parts at Step Included', () => {
   let ctx: TestContext
 
-  afterEach(() => {
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+
+  afterAll(() => {
     ctx?.cleanup()
   })
 
@@ -97,32 +108,36 @@ describe('Property 2: Preservation — Non-Scrapped Parts at Step Included', () 
       fc.property(
         fc.integer({ min: 1, max: 5 }),
         (totalCount) => {
-          ctx = createTestContext()
-          const { jobService, pathService, partService, repos } = ctx
+          savepoint(ctx.db)
+          try {
+            const { jobService, pathService, partService, repos } = ctx
 
-          const job = jobService.createJob({ name: 'Test Job', goalQuantity: totalCount })
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: 'Path',
-            goalQuantity: totalCount,
-            steps: [{ name: 'Step 1' }],
-          })
+            const job = jobService.createJob({ name: 'Test Job', goalQuantity: totalCount })
+            const path = pathService.createPath({
+              jobId: job.id,
+              name: 'Path',
+              goalQuantity: totalCount,
+              steps: [{ name: 'Step 1' }],
+            })
 
-          const parts = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: totalCount },
-            'test-user',
-          )
+            const parts = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: totalCount },
+              'test-user',
+            )
 
-          // No scrapping — all parts are in_progress at first step
-          const firstStepId = path.steps[0].id
-          const result = repos.parts.listByCurrentStepId(firstStepId)
+            // No scrapping — all parts are in_progress at first step
+            const firstStepId = path.steps[0].id
+            const result = repos.parts.listByCurrentStepId(firstStepId)
 
-          // Every created part must appear in the result
-          const resultIds = new Set(result.map(s => s.id))
-          for (const part of parts) {
-            expect(resultIds.has(part.id)).toBe(true)
+            // Every created part must appear in the result
+            const resultIds = new Set(result.map(s => s.id))
+            for (const part of parts) {
+              expect(resultIds.has(part.id)).toBe(true)
+            }
+            expect(result.length).toBe(totalCount)
+          } finally {
+            rollback(ctx.db)
           }
-          expect(result.length).toBe(totalCount)
         },
       ),
       { numRuns: 50 },
@@ -133,7 +148,11 @@ describe('Property 2: Preservation — Non-Scrapped Parts at Step Included', () 
 describe('Property 2: Preservation — listByPathId Includes Scrapped Parts', () => {
   let ctx: TestContext
 
-  afterEach(() => {
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+
+  afterAll(() => {
     ctx?.cleanup()
   })
 
@@ -150,42 +169,46 @@ describe('Property 2: Preservation — listByPathId Includes Scrapped Parts', ()
           ),
         ),
         ([totalCount, scrapIndices]) => {
-          ctx = createTestContext()
-          const { jobService, pathService, partService, lifecycleService, repos } = ctx
+          savepoint(ctx.db)
+          try {
+            const { jobService, pathService, partService, lifecycleService, repos } = ctx
 
-          const job = jobService.createJob({ name: 'Test Job', goalQuantity: totalCount })
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: 'Path',
-            goalQuantity: totalCount,
-            steps: [{ name: 'Step 1' }],
-          })
-
-          const parts = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: totalCount },
-            'test-user',
-          )
-
-          // Scrap selected parts
-          for (const idx of scrapIndices) {
-            lifecycleService.scrapPart(parts[idx].id, {
-              reason: 'defective',
-              userId: 'test-user',
+            const job = jobService.createJob({ name: 'Test Job', goalQuantity: totalCount })
+            const path = pathService.createPath({
+              jobId: job.id,
+              name: 'Path',
+              goalQuantity: totalCount,
+              steps: [{ name: 'Step 1' }],
             })
+
+            const parts = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: totalCount },
+              'test-user',
+            )
+
+            // Scrap selected parts
+            for (const idx of scrapIndices) {
+              lifecycleService.scrapPart(parts[idx].id, {
+                reason: 'defective',
+                userId: 'test-user',
+              })
+            }
+
+            const result = repos.parts.listByPathId(path.id)
+
+            // listByPathId must return ALL parts — scrapped and non-scrapped
+            const resultIds = new Set(result.map(s => s.id))
+            for (const part of parts) {
+              expect(resultIds.has(part.id)).toBe(true)
+            }
+            expect(result.length).toBe(totalCount)
+
+            // Verify scrapped parts are actually present with scrapped status
+            const scrappedResults = result.filter(s => s.status === 'scrapped')
+            expect(scrappedResults.length).toBe(scrapIndices.length)
+          } finally {
+            rollback(ctx.db)
           }
-
-          const result = repos.parts.listByPathId(path.id)
-
-          // listByPathId must return ALL parts — scrapped and non-scrapped
-          const resultIds = new Set(result.map(s => s.id))
-          for (const part of parts) {
-            expect(resultIds.has(part.id)).toBe(true)
-          }
-          expect(result.length).toBe(totalCount)
-
-          // Verify scrapped parts are actually present with scrapped status
-          const scrappedResults = result.filter(s => s.status === 'scrapped')
-          expect(scrappedResults.length).toBe(scrapIndices.length)
         },
       ),
       { numRuns: 50 },
@@ -196,7 +219,11 @@ describe('Property 2: Preservation — listByPathId Includes Scrapped Parts', ()
 describe('Property 2: Preservation — listByCurrentStepId Scopes to stepId (No Cross-Path Leakage)', () => {
   let ctx: TestContext
 
-  afterEach(() => {
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+
+  afterAll(() => {
     ctx?.cleanup()
   })
 
@@ -206,62 +233,66 @@ describe('Property 2: Preservation — listByCurrentStepId Scopes to stepId (No 
         fc.integer({ min: 1, max: 3 }),
         fc.integer({ min: 1, max: 3 }),
         (countA, countB) => {
-          ctx = createTestContext()
-          const { jobService, pathService, partService, repos } = ctx
+          savepoint(ctx.db)
+          try {
+            const { jobService, pathService, partService, repos } = ctx
 
-          const job = jobService.createJob({ name: 'Test Job', goalQuantity: countA + countB })
+            const job = jobService.createJob({ name: 'Test Job', goalQuantity: countA + countB })
 
-          const pathA = pathService.createPath({
-            jobId: job.id,
-            name: 'Path A',
-            goalQuantity: countA,
-            steps: [{ name: 'Step 1' }],
-          })
-          const pathB = pathService.createPath({
-            jobId: job.id,
-            name: 'Path B',
-            goalQuantity: countB,
-            steps: [{ name: 'Step 1' }],
-          })
+            const pathA = pathService.createPath({
+              jobId: job.id,
+              name: 'Path A',
+              goalQuantity: countA,
+              steps: [{ name: 'Step 1' }],
+            })
+            const pathB = pathService.createPath({
+              jobId: job.id,
+              name: 'Path B',
+              goalQuantity: countB,
+              steps: [{ name: 'Step 1' }],
+            })
 
-          const partsA = partService.batchCreateParts(
-            { jobId: job.id, pathId: pathA.id, quantity: countA },
-            'test-user',
-          )
-          const partsB = partService.batchCreateParts(
-            { jobId: job.id, pathId: pathB.id, quantity: countB },
-            'test-user',
-          )
+            const partsA = partService.batchCreateParts(
+              { jobId: job.id, pathId: pathA.id, quantity: countA },
+              'test-user',
+            )
+            const partsB = partService.batchCreateParts(
+              { jobId: job.id, pathId: pathB.id, quantity: countB },
+              'test-user',
+            )
 
-          // Query first step of path A — should only contain path A parts
-          const stepAId = pathA.steps[0].id
-          const resultA = repos.parts.listByCurrentStepId(stepAId)
-          const resultAIds = new Set(resultA.map(s => s.id))
-          const partAIds = new Set(partsA.map(s => s.id))
-          const partBIds = new Set(partsB.map(s => s.id))
+            // Query first step of path A — should only contain path A parts
+            const stepAId = pathA.steps[0].id
+            const resultA = repos.parts.listByCurrentStepId(stepAId)
+            const resultAIds = new Set(resultA.map(s => s.id))
+            const partAIds = new Set(partsA.map(s => s.id))
+            const partBIds = new Set(partsB.map(s => s.id))
 
-          // All path A parts present
-          for (const id of partAIds) {
-            expect(resultAIds.has(id)).toBe(true)
+            // All path A parts present
+            for (const id of partAIds) {
+              expect(resultAIds.has(id)).toBe(true)
+            }
+            // No path B parts leaked in
+            for (const id of partBIds) {
+              expect(resultAIds.has(id)).toBe(false)
+            }
+            expect(resultA.length).toBe(countA)
+
+            // Query first step of path B — should only contain path B parts
+            const stepBId = pathB.steps[0].id
+            const resultB = repos.parts.listByCurrentStepId(stepBId)
+            const resultBIds = new Set(resultB.map(s => s.id))
+
+            for (const id of partBIds) {
+              expect(resultBIds.has(id)).toBe(true)
+            }
+            for (const id of partAIds) {
+              expect(resultBIds.has(id)).toBe(false)
+            }
+            expect(resultB.length).toBe(countB)
+          } finally {
+            rollback(ctx.db)
           }
-          // No path B parts leaked in
-          for (const id of partBIds) {
-            expect(resultAIds.has(id)).toBe(false)
-          }
-          expect(resultA.length).toBe(countA)
-
-          // Query first step of path B — should only contain path B parts
-          const stepBId = pathB.steps[0].id
-          const resultB = repos.parts.listByCurrentStepId(stepBId)
-          const resultBIds = new Set(resultB.map(s => s.id))
-
-          for (const id of partBIds) {
-            expect(resultBIds.has(id)).toBe(true)
-          }
-          for (const id of partAIds) {
-            expect(resultBIds.has(id)).toBe(false)
-          }
-          expect(resultB.length).toBe(countB)
         },
       ),
       { numRuns: 50 },

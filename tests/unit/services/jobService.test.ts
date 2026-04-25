@@ -72,7 +72,7 @@ function createMockBomRepo(bomRefCount: number = 0): BomRepository {
     list: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
-    countContributingJobRefs: vi.fn(() => bomRefCount),
+    countJobRefs: vi.fn(() => bomRefCount),
   }
 }
 
@@ -302,7 +302,7 @@ describe('JobService', () => {
 
     it('throws ValidationError when job has BOM references', () => {
       const job = service.createJob({ name: 'Has BOM', goalQuantity: 5 })
-      vi.mocked(bomRepo.countContributingJobRefs).mockReturnValue(2)
+      vi.mocked(bomRepo.countJobRefs).mockReturnValue(2)
       expect(() => service.deleteJob(job.id)).toThrow(ValidationError)
       expect(() => service.deleteJob(job.id)).toThrow(/2 BOM entry\/entries/)
     })
@@ -338,7 +338,7 @@ describe('JobService', () => {
 
     it('returns reasons for BOM references', () => {
       const job = service.createJob({ name: 'Has BOM', goalQuantity: 5 })
-      vi.mocked(bomRepo.countContributingJobRefs).mockReturnValue(1)
+      vi.mocked(bomRepo.countJobRefs).mockReturnValue(1)
       const result = service.canDeleteJob(job.id)
       expect(result.canDelete).toBe(false)
       expect(result.reasons).toContainEqual(expect.stringContaining('1 BOM entry/entries'))
@@ -348,7 +348,7 @@ describe('JobService', () => {
       const job = service.createJob({ name: 'Blocked', goalQuantity: 5 })
       vi.mocked(pathRepo.listByJobId).mockReturnValue([{ id: 'p1' } as any])
       vi.mocked(partRepo.countByJobId).mockReturnValue(2)
-      vi.mocked(bomRepo.countContributingJobRefs).mockReturnValue(3)
+      vi.mocked(bomRepo.countJobRefs).mockReturnValue(3)
       const result = service.canDeleteJob(job.id)
       expect(result.canDelete).toBe(false)
       expect(result.reasons).toHaveLength(3)

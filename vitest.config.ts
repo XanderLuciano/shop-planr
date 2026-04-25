@@ -27,19 +27,31 @@ export default defineConfig({
   test: {
     environment: 'happy-dom',
     globals: true,
-    pool: 'threads',
+    pool: 'forks',
     // Exclude Playwright e2e specs — they use a different runner and import
     // `@playwright/test`, which refuses to load under vitest. Run with
     // `npm run test:e2e` instead.
     exclude: [...configDefaults.exclude, 'tests/e2e/**'],
     env: {
       TZ: 'UTC',
+      BCRYPT_ROUNDS: '4',
     },
     poolOptions: {
-      threads: {
-        maxThreads: 4,
-        minThreads: 1,
+      forks: {
+        // maxForks: 6,
+        minForks: 1,
       },
+    },
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'lcov'],
+      reportsDirectory: './coverage',
+      include: ['server/**/*.ts', 'app/**/*.ts', 'app/**/*.vue'],
+      exclude: [
+        'server/repositories/sqlite/migrations/**',
+        '**/*.d.ts',
+        '**/*.test.ts',
+      ],
     },
   },
   plugins: [nuxtImportMetaPlugin()],

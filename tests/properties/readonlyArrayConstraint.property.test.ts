@@ -32,7 +32,6 @@ const CANONICAL_ARRAY_PROPERTIES: ArrayPropertyEntry[] = [
   { file: 'server/types/domain.ts', iface: 'Path', property: 'steps' },
   { file: 'server/types/domain.ts', iface: 'TemplateRoute', property: 'steps' },
   { file: 'server/types/domain.ts', iface: 'BOM', property: 'entries' },
-  { file: 'server/types/domain.ts', iface: 'BomEntry', property: 'contributingJobIds' },
   { file: 'server/types/domain.ts', iface: 'StepNote', property: 'partIds' },
   { file: 'server/types/domain.ts', iface: 'BomVersion', property: 'entriesSnapshot' },
 
@@ -53,9 +52,6 @@ const CANONICAL_ARRAY_PROPERTIES: ArrayPropertyEntry[] = [
   { file: 'server/types/api.ts', iface: 'BatchAttachCertInput', property: 'partIds' },
   { file: 'server/types/api.ts', iface: 'CreateStepOverrideInput', property: 'partIds' },
   { file: 'server/types/api.ts', iface: 'CreateJobInput', property: 'jiraLabels' },
-  // CreateBomInput and EditBomInput have nested entries[].contributingJobIds
-  { file: 'server/types/api.ts', iface: 'CreateBomInput', property: 'contributingJobIds' },
-  { file: 'server/types/api.ts', iface: 'EditBomInput', property: 'contributingJobIds' },
 ]
 
 // ---------------------------------------------------------------------------

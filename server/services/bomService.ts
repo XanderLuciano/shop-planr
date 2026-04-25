@@ -1,17 +1,31 @@
 import type { BomRepository } from '../repositories/interfaces/bomRepository'
 import type { BomVersionRepository } from '../repositories/interfaces/bomVersionRepository'
 import type { PartRepository } from '../repositories/interfaces/partRepository'
+import type { JobRepository } from '../repositories/interfaces/jobRepository'
 import type { AuditService } from './auditService'
 import type { BOM, BomVersion } from '../types/domain'
 import type { CreateBomInput, EditBomInput } from '../types/api'
 import type { BomSummary, BomEntrySummary } from '../types/computed'
 import { generateId } from '../utils/idGenerator'
-import { assertNonEmpty, assertNonEmptyArray } from '../utils/validation'
-import { NotFoundError } from '../utils/errors'
+import { assertNonEmpty, assertNonEmptyArray, assertPositive } from '../utils/validation'
+import { NotFoundError, ValidationError } from '../utils/errors'
+
+function validateBomEntries(entries: { jobId: string, requiredQuantity?: number }[]) {
+  return entries.map((e) => {
+    assertNonEmpty(e.jobId, 'entry jobId')
+    const qty = e.requiredQuantity ?? 1
+    if (!Number.isInteger(qty)) {
+      throw new ValidationError('requiredQuantity must be an integer')
+    }
+    assertPositive(qty, 'requiredQuantity')
+    return { jobId: e.jobId, requiredQuantity: qty }
+  })
+}
 
 export function createBomService(repos: {
   bom: BomRepository
   parts: PartRepository
+  jobs: JobRepository
   bomVersions?: BomVersionRepository
 }, auditService?: AuditService) {
   return {
@@ -23,11 +37,7 @@ export function createBomService(repos: {
       return repos.bom.create({
         id: generateId('bom'),
         name: input.name.trim(),
-        entries: input.entries.map(e => ({
-          partType: e.partType,
-          requiredQuantityPerBuild: e.requiredQuantityPerBuild,
-          contributingJobIds: e.contributingJobIds,
-        })),
+        entries: validateBomEntries(input.entries),
         createdAt: now,
         updatedAt: now,
       })
@@ -58,11 +68,7 @@ export function createBomService(repos: {
       const partial: Partial<BOM> = { updatedAt: new Date().toISOString() }
       if (input.name !== undefined) partial.name = input.name.trim()
       if (input.entries !== undefined) {
-        partial.entries = input.entries.map(e => ({
-          partType: e.partType,
-          requiredQuantityPerBuild: e.requiredQuantityPerBuild,
-          contributingJobIds: e.contributingJobIds,
-        }))
+        partial.entries = validateBomEntries(input.entries)
       }
 
       return repos.bom.update(id, partial)
@@ -75,32 +81,19 @@ export function createBomService(repos: {
       }
 
       const entries: BomEntrySummary[] = bom.entries.map((entry) => {
-        if (entry.contributingJobIds.length === 0) {
-          return {
-            partType: entry.partType,
-            requiredQuantityPerBuild: entry.requiredQuantityPerBuild,
-            totalCompleted: 0,
-            totalInProgress: 0,
-            totalOutstanding: 0,
-          }
-        }
+        const job = repos.jobs.getById(entry.jobId)
+        const jobName = job?.name ?? 'Unknown Job'
 
-        let totalCompleted = 0
-        let totalInProgress = 0
-
-        for (const jobId of entry.contributingJobIds) {
-          const total = repos.parts.countByJobId(jobId)
-          const completed = repos.parts.countCompletedByJobId(jobId)
-          totalCompleted += completed
-          totalInProgress += (total - completed)
-        }
-
-        const totalOutstanding = Math.max(0, entry.requiredQuantityPerBuild - totalCompleted)
+        const total = repos.parts.countByJobId(entry.jobId)
+        const completed = repos.parts.countCompletedByJobId(entry.jobId)
+        const totalInProgress = total - completed
+        const totalOutstanding = Math.max(0, entry.requiredQuantity - completed)
 
         return {
-          partType: entry.partType,
-          requiredQuantityPerBuild: entry.requiredQuantityPerBuild,
-          totalCompleted,
+          jobId: entry.jobId,
+          jobName,
+          requiredQuantity: entry.requiredQuantity,
+          totalCompleted: completed,
           totalInProgress,
           totalOutstanding,
         }
@@ -148,11 +141,7 @@ export function createBomService(repos: {
 
       // Update the BOM entries (and name if provided)
       const updatePayload: Partial<BOM> = {
-        entries: input.entries.map(e => ({
-          partType: e.partType,
-          requiredQuantityPerBuild: e.requiredQuantityPerBuild,
-          contributingJobIds: e.contributingJobIds,
-        })),
+        entries: validateBomEntries(input.entries),
         updatedAt: now,
       }
       if (input.name !== undefined) {

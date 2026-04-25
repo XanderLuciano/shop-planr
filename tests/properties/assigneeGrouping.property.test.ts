@@ -10,9 +10,9 @@
  *
  * **Validates: Requirements 4.2, 4.3, 4.4**
  */
-import { describe, it, afterEach, expect } from 'vitest'
+import { describe, it, beforeAll, afterAll, expect } from 'vitest'
 import fc from 'fast-check'
-import { createTestContext, type TestContext } from '../integration/helpers'
+import { createReusableTestContext, savepoint, rollback, type TestContext } from './helpers'
 import { SQLiteUserRepository } from '../../server/repositories/sqlite/userRepository'
 import { createUserService } from '../../server/services/userService'
 import type { WorkQueueJob, WorkQueueGroupedResponse, WorkQueueGroup } from '../../server/types/computed'
@@ -149,151 +149,152 @@ const scenarioArb = fc.record({
 describe('Property 6: Assignee Grouping Correctness', () => {
   let ctx: TestContext
 
-  afterEach(() => {
-    if (ctx) {
-      ctx.cleanup()
-      ctx = null as any
-    }
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
   })
 
   it('groups work by assignedTo, resolves operator names, and handles unassigned correctly', () => {
     fc.assert(
       fc.property(scenarioArb, (scenario) => {
-        ctx = createTestContext()
-        const { jobService, pathService, partService, db } = ctx
+        savepoint(ctx.db)
+        try {
+          const { jobService, pathService, partService, db } = ctx
 
-        // Create userService from the same DB
-        const userRepo = new SQLiteUserRepository(db)
-        const userService = createUserService({ users: userRepo })
+          // Create userService from the same DB
+          const userRepo = new SQLiteUserRepository(db)
+          const userService = createUserService({ users: userRepo })
 
-        // Create users
-        const createdUsers = scenario.userNames.map((name, i) =>
-          userService.createUser({ username: `user_${i}_${name.replace(/\s+/g, '_')}`, displayName: name }),
-        )
-
-        // Track expected: stepId → assignedTo (userId or undefined)
-        const stepAssignments = new Map<string, string | undefined>()
-        // Track which steps have active serials
-        const activeStepIds = new Set<string>()
-        // Track step metadata for verification
-        const stepToJob = new Map<string, { jobId: string, jobName: string, pathId: string, pathName: string }>()
-
-        for (const config of scenario.configs) {
-          const job = jobService.createJob({
-            name: config.jobName,
-            goalQuantity: config.partCount,
-          })
-
-          const steps = Array.from({ length: config.stepCount }, (_, i) => ({
-            name: `Step-${i}`,
-            location: config.stepLocations[i],
-          }))
-
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: config.pathName,
-            goalQuantity: config.partCount,
-            steps,
-          })
-
-          // Create parts (all start at step 0)
-          partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: config.partCount },
-            'user_test',
+          // Create users
+          const createdUsers = scenario.userNames.map((name, i) =>
+            userService.createUser({ username: `user_${i}_${name.replace(/\s+/g, '_')}`, displayName: name }),
           )
 
-          // Record step metadata
-          for (const step of path.steps) {
-            stepToJob.set(step.id, {
-              jobId: job.id,
-              jobName: job.name,
-              pathId: path.id,
-              pathName: path.name,
+          // Track expected: stepId → assignedTo (userId or undefined)
+          const stepAssignments = new Map<string, string | undefined>()
+          // Track which steps have active serials
+          const activeStepIds = new Set<string>()
+          // Track step metadata for verification
+          const stepToJob = new Map<string, { jobId: string, jobName: string, pathId: string, pathName: string }>()
+
+          for (const config of scenario.configs) {
+            const job = jobService.createJob({
+              name: config.jobName,
+              goalQuantity: config.partCount,
             })
-            // Only step 0 has active serials (we don't advance)
-            if (step.order === 0) {
-              activeStepIds.add(step.id)
-            }
-            stepAssignments.set(step.id, undefined)
-          }
 
-          // Apply assignments using direct DB update (pathService in test context
-          // doesn't have users repo, so we use the repo directly)
-          for (const assignment of config.assignments) {
-            if (assignment.stepIndex >= config.stepCount) continue
-            const step = path.steps[assignment.stepIndex]
+            const steps = Array.from({ length: config.stepCount }, (_, i) => ({
+              name: `Step-${i}`,
+              location: config.stepLocations[i],
+            }))
 
-            if (assignment.userIndex !== null && assignment.userIndex < createdUsers.length) {
-              const userId = createdUsers[assignment.userIndex].id
-              ctx.repos.paths.updateStepAssignment(step.id, userId)
-              stepAssignments.set(step.id, userId)
-            } else {
-              // Leave unassigned (or explicitly set to null)
-              ctx.repos.paths.updateStepAssignment(step.id, null)
+            const path = pathService.createPath({
+              jobId: job.id,
+              name: config.pathName,
+              goalQuantity: config.partCount,
+              steps,
+            })
+
+            // Create parts (all start at step 0)
+            partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: config.partCount },
+              'user_test',
+            )
+
+            // Record step metadata
+            for (const step of path.steps) {
+              stepToJob.set(step.id, {
+                jobId: job.id,
+                jobName: job.name,
+                pathId: path.id,
+                pathName: path.name,
+              })
+              // Only step 0 has active serials (we don't advance)
+              if (step.order === 0) {
+                activeStepIds.add(step.id)
+              }
               stepAssignments.set(step.id, undefined)
             }
+
+            // Apply assignments using direct DB update (pathService in test context
+            // doesn't have users repo, so we use the repo directly)
+            for (const assignment of config.assignments) {
+              if (assignment.stepIndex >= config.stepCount) continue
+              const step = path.steps[assignment.stepIndex]
+
+              if (assignment.userIndex !== null && assignment.userIndex < createdUsers.length) {
+                const userId = createdUsers[assignment.userIndex].id
+                ctx.repos.paths.updateStepAssignment(step.id, userId)
+                stepAssignments.set(step.id, userId)
+              } else {
+                // Leave unassigned (or explicitly set to null)
+                ctx.repos.paths.updateStepAssignment(step.id, null)
+                stepAssignments.set(step.id, undefined)
+              }
+            }
           }
-        }
 
-        // Run the aggregation
-        const response = aggregateGroupedWork(ctx, userService)
+          // Run the aggregation
+          const response = aggregateGroupedWork(ctx, userService)
 
-        // Build expected grouping: assignedTo → set of active stepIds
-        const expectedGroups = new Map<string | null, Set<string>>()
-        for (const stepId of activeStepIds) {
-          const assignedTo = stepAssignments.get(stepId) ?? null
-          if (!expectedGroups.has(assignedTo)) expectedGroups.set(assignedTo, new Set())
-          expectedGroups.get(assignedTo)!.add(stepId)
-        }
-
-        // Build userId → displayName map for verification
-        const userNameMap = new Map<string, string>()
-        for (const u of createdUsers) {
-          userNameMap.set(u.id, u.displayName)
-        }
-
-        // 1. Every active step appears in exactly one group
-        const allResponseStepIds = new Set<string>()
-        for (const group of response.groups) {
-          for (const job of group.jobs) {
-            expect(allResponseStepIds.has(job.stepId)).toBe(false) // no duplicates
-            allResponseStepIds.add(job.stepId)
+          // Build expected grouping: assignedTo → set of active stepIds
+          const expectedGroups = new Map<string | null, Set<string>>()
+          for (const stepId of activeStepIds) {
+            const assignedTo = stepAssignments.get(stepId) ?? null
+            if (!expectedGroups.has(assignedTo)) expectedGroups.set(assignedTo, new Set())
+            expectedGroups.get(assignedTo)!.add(stepId)
           }
-        }
-        expect(allResponseStepIds.size).toBe(activeStepIds.size)
-        for (const stepId of activeStepIds) {
-          expect(allResponseStepIds.has(stepId)).toBe(true)
-        }
 
-        // 2. Each WorkQueueJob is in the group matching its step's assignedTo
-        for (const group of response.groups) {
-          for (const job of group.jobs) {
-            const expectedAssignedTo = stepAssignments.get(job.stepId) ?? null
-            expect(group.groupKey).toBe(expectedAssignedTo)
+          // Build userId → displayName map for verification
+          const userNameMap = new Map<string, string>()
+          for (const u of createdUsers) {
+            userNameMap.set(u.id, u.displayName)
           }
-        }
 
-        // 3. Operator name resolution: assigned groups have correct ShopUser.displayName
-        for (const group of response.groups) {
-          if (group.groupKey !== null) {
-            const expectedName = userNameMap.get(group.groupKey)
-            expect(expectedName).toBeDefined()
-            expect(group.groupLabel).toBe(expectedName)
+          // 1. Every active step appears in exactly one group
+          const allResponseStepIds = new Set<string>()
+          for (const group of response.groups) {
+            for (const job of group.jobs) {
+              expect(allResponseStepIds.has(job.stepId)).toBe(false) // no duplicates
+              allResponseStepIds.add(job.stepId)
+            }
           }
+          expect(allResponseStepIds.size).toBe(activeStepIds.size)
+          for (const stepId of activeStepIds) {
+            expect(allResponseStepIds.has(stepId)).toBe(true)
+          }
+
+          // 2. Each WorkQueueJob is in the group matching its step's assignedTo
+          for (const group of response.groups) {
+            for (const job of group.jobs) {
+              const expectedAssignedTo = stepAssignments.get(job.stepId) ?? null
+              expect(group.groupKey).toBe(expectedAssignedTo)
+            }
+          }
+
+          // 3. Operator name resolution: assigned groups have correct ShopUser.displayName
+          for (const group of response.groups) {
+            if (group.groupKey !== null) {
+              const expectedName = userNameMap.get(group.groupKey)
+              expect(expectedName).toBeDefined()
+              expect(group.groupLabel).toBe(expectedName)
+            }
+          }
+
+          // 4. Unassigned group has groupKey = null and groupLabel = "Unassigned"
+          const unassignedGroup = response.groups.find(g => g.groupKey === null)
+          if (expectedGroups.has(null)) {
+            expect(unassignedGroup).toBeDefined()
+            expect(unassignedGroup!.groupLabel).toBe('Unassigned')
+          }
+
+          // 5. Number of groups matches expected
+          expect(response.groups.length).toBe(expectedGroups.size)
+        } finally {
+          rollback(ctx.db)
         }
-
-        // 4. Unassigned group has groupKey = null and groupLabel = "Unassigned"
-        const unassignedGroup = response.groups.find(g => g.groupKey === null)
-        if (expectedGroups.has(null)) {
-          expect(unassignedGroup).toBeDefined()
-          expect(unassignedGroup!.groupLabel).toBe('Unassigned')
-        }
-
-        // 5. Number of groups matches expected
-        expect(response.groups.length).toBe(expectedGroups.size)
-
-        ctx.cleanup()
-        ctx = null as any
       }),
       { numRuns: 100 },
     )

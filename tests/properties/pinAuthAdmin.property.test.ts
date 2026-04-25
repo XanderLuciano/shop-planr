@@ -7,21 +7,32 @@
  * Property 14: ensureKeyPair is idempotent (Req 2.2)
  * Property 15: Migration preserves users with pin_hash NULL (Req 1.3)
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import fc from 'fast-check'
 import { RateLimiterMemory } from 'rate-limiter-flexible'
-import { createTestContext } from '../integration/helpers'
+import { createReusableTestContext, savepoint, rollback, type TestContext } from './helpers'
 import { generateId } from '../../server/utils/idGenerator'
 import { AuthenticationError, ForbiddenError } from '../../server/utils/errors'
 
 const arbPin = fc.integer({ min: 0, max: 9999 }).map((n: number) => String(n).padStart(4, '0'))
 
+// File-level ctx — shared across all describe blocks
+let ctx: TestContext
+
+beforeAll(() => {
+  ctx = createReusableTestContext()
+})
+
+afterAll(() => {
+  ctx?.cleanup()
+})
+
 describe('Property 4: Invalid PIN produces auth error', () => {
-  it('login with wrong PIN throws AuthenticationError', () => {
-    fc.assert(
+  it('login with wrong PIN throws AuthenticationError', { timeout: 30_000 }, async () => {
+    await fc.assert(
       fc.asyncProperty(arbPin, arbPin, async (correctPin: string, wrongPin: string) => {
         if (correctPin === wrongPin) return
-        const ctx = createTestContext()
+        savepoint(ctx.db)
         try {
           await ctx.authService.ensureKeyPair()
           const user = ctx.repos.users.create({
@@ -34,7 +45,7 @@ describe('Property 4: Invalid PIN produces auth error', () => {
             ctx.authService.login('logintest', wrongPin),
           ).rejects.toThrow(AuthenticationError)
         } finally {
-          ctx.cleanup()
+          rollback(ctx.db)
         }
       }),
       { numRuns: 50 },
@@ -58,10 +69,10 @@ describe('Property 10: Rate limit exceeded returns 429', () => {
 })
 
 describe('Property 11: Admin PIN reset sets pin_hash to NULL', () => {
-  it('resetPin nullifies target pinHash', () => {
-    fc.assert(
+  it('resetPin nullifies target pinHash', { timeout: 30_000 }, async () => {
+    await fc.assert(
       fc.asyncProperty(arbPin, async (pin: string) => {
-        const ctx = createTestContext()
+        savepoint(ctx.db)
         try {
           await ctx.authService.ensureKeyPair()
           const admin = ctx.repos.users.create({
@@ -79,7 +90,7 @@ describe('Property 11: Admin PIN reset sets pin_hash to NULL', () => {
           ctx.authService.resetPin(admin.id, target.id)
           expect(ctx.repos.users.getById(target.id)!.pinHash).toBeUndefined()
         } finally {
-          ctx.cleanup()
+          rollback(ctx.db)
         }
       }),
       { numRuns: 50 },
@@ -88,10 +99,10 @@ describe('Property 11: Admin PIN reset sets pin_hash to NULL', () => {
 })
 
 describe('Property 12: Non-admin PIN reset throws ForbiddenError', () => {
-  it('non-admin cannot reset another user PIN', () => {
-    fc.assert(
+  it('non-admin cannot reset another user PIN', { timeout: 30_000 }, async () => {
+    await fc.assert(
       fc.asyncProperty(arbPin, async (pin: string) => {
-        const ctx = createTestContext()
+        savepoint(ctx.db)
         try {
           await ctx.authService.ensureKeyPair()
           const nonAdmin = ctx.repos.users.create({
@@ -108,7 +119,7 @@ describe('Property 12: Non-admin PIN reset throws ForbiddenError', () => {
           expect(() => ctx.authService.resetPin(nonAdmin.id, target.id)).toThrow(ForbiddenError)
           expect(ctx.repos.users.getById(target.id)!.pinHash).toBeTruthy()
         } finally {
-          ctx.cleanup()
+          rollback(ctx.db)
         }
       }),
       { numRuns: 50 },
@@ -120,7 +131,7 @@ describe('Property 13: ensureDefaultAdmin is idempotent', () => {
   it('does not add users when table is non-empty', () => {
     fc.assert(
       fc.property(fc.integer({ min: 1, max: 5 }), (userCount: number) => {
-        const ctx = createTestContext()
+        savepoint(ctx.db)
         try {
           for (let i = 0; i < userCount; i++) {
             ctx.repos.users.create({
@@ -133,7 +144,7 @@ describe('Property 13: ensureDefaultAdmin is idempotent', () => {
           ctx.authService.ensureDefaultAdmin()
           expect(ctx.repos.users.list().length).toBe(before)
         } finally {
-          ctx.cleanup()
+          rollback(ctx.db)
         }
       }),
       { numRuns: 50 },
@@ -143,7 +154,7 @@ describe('Property 13: ensureDefaultAdmin is idempotent', () => {
 
 describe('Property 14: ensureKeyPair is idempotent', () => {
   it('calling twice does not change stored keys', async () => {
-    const ctx = createTestContext()
+    savepoint(ctx.db)
     try {
       await ctx.authService.ensureKeyPair()
       const first = ctx.repos.cryptoKeys.getByAlgorithm('ES256')
@@ -152,7 +163,7 @@ describe('Property 14: ensureKeyPair is idempotent', () => {
       expect(second!.publicKey).toBe(first!.publicKey)
       expect(second!.privateKey).toBe(first!.privateKey)
     } finally {
-      ctx.cleanup()
+      rollback(ctx.db)
     }
   })
 })
@@ -161,7 +172,7 @@ describe('Property 15: Migration preserves users with pin_hash NULL', () => {
   it('all users have pinHash undefined after creation', () => {
     fc.assert(
       fc.property(fc.integer({ min: 1, max: 5 }), (userCount: number) => {
-        const ctx = createTestContext()
+        savepoint(ctx.db)
         try {
           for (let i = 0; i < userCount; i++) {
             ctx.repos.users.create({
@@ -176,7 +187,7 @@ describe('Property 15: Migration preserves users with pin_hash NULL', () => {
             expect(user.pinHash).toBeUndefined()
           }
         } finally {
-          ctx.cleanup()
+          rollback(ctx.db)
         }
       }),
       { numRuns: 50 },

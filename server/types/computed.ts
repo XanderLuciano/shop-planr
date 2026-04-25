@@ -67,8 +67,9 @@ export interface BomSummary {
 }
 
 export interface BomEntrySummary {
-  partType: string
-  requiredQuantityPerBuild: number
+  jobId: string
+  jobName: string
+  requiredQuantity: number
   totalCompleted: number
   totalInProgress: number
   totalOutstanding: number

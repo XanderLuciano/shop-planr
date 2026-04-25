@@ -140,9 +140,8 @@ export interface BOM {
 export interface BomEntry {
   id?: string
   bomId?: string
-  partType: string
-  requiredQuantityPerBuild: number
-  contributingJobIds: readonly string[]
+  jobId: string
+  requiredQuantity: number
 }
 
 // ---- Audit Trail ----

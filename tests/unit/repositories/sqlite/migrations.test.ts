@@ -179,7 +179,6 @@ describe('SQLite migration system', () => {
       expect(names).toContain('template_steps')
       expect(names).toContain('boms')
       expect(names).toContain('bom_entries')
-      expect(names).toContain('bom_contributing_jobs')
       expect(names).toContain('users')
       expect(names).toContain('audit_entries')
       expect(names).toContain('settings')
@@ -299,7 +298,7 @@ describe('SQLite migration system', () => {
       const db = initDatabase(dbPath)
 
       const applied = db.prepare('SELECT version, name FROM _migrations ORDER BY version').all() as any[]
-      expect(applied).toHaveLength(13)
+      expect(applied).toHaveLength(14)
       expect(applied[0].version).toBe(1)
       expect(applied[0].name).toBe('initial_schema')
       expect(applied[1].version).toBe(2)
@@ -326,6 +325,8 @@ describe('SQLite migration system', () => {
       expect(applied[11].name).toBe('pin_auth')
       expect(applied[12].version).toBe(13)
       expect(applied[12].name).toBe('add_job_tags')
+      expect(applied[13].version).toBe(14)
+      expect(applied[13].name).toBe('simplify_bom_entries')
 
       db.close()
     })

@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import type { BomSummary } from '~/types/computed'
-import type { BOM } from '~/types/domain'
+import type { BOM, Tag } from '~/types/domain'
+import type { BomSavePayload } from '~/types/api'
+import { extractApiError } from '~/utils/apiError'
 
 const { boms, loading, fetchBoms, createBom, getBomWithSummary } = useBom()
 const { jobs, fetchJobs } = useJobs()
 const { editBom } = useBomVersions()
+const { tags, fetchTags } = useTags()
 
 const showForm = ref(false)
 const formSaving = ref(false)
@@ -20,6 +23,13 @@ const editError = ref('')
 // Version history state
 const showVersionsId = ref<string | null>(null)
 
+// "Create from tag" state
+const prefillJobIds = ref<string[]>([])
+const prefillName = ref('')
+
+// Component refs
+const createEditorRef = ref<{ submit: () => void } | null>(null)
+const editEditorRef = ref<{ submit: () => void } | null>(null)
 async function toggleExpand(bom: BOM) {
   if (expandedId.value === bom.id) {
     expandedId.value = null
@@ -39,11 +49,19 @@ async function toggleExpand(bom: BOM) {
   }
 }
 
-async function onSave(payload: { name: string, entries: { partType: string, requiredQuantityPerBuild: number, contributingJobIds: string[] }[] }) {
+function onCancelCreate() {
+  showForm.value = false
+  prefillJobIds.value = []
+  prefillName.value = ''
+}
+
+async function onSave(payload: BomSavePayload) {
   formSaving.value = true
   try {
     await createBom(payload)
     showForm.value = false
+    prefillJobIds.value = []
+    prefillName.value = ''
   } catch {
     // error handled by composable
   } finally {
@@ -51,7 +69,7 @@ async function onSave(payload: { name: string, entries: { partType: string, requ
   }
 }
 
-async function onEditSave(bomId: string, payload: { name: string, entries: { partType: string, requiredQuantityPerBuild: number, contributingJobIds: string[] }[] }) {
+async function onEditSave(bomId: string, payload: BomSavePayload) {
   editSaving.value = true
   editError.value = ''
   try {
@@ -61,12 +79,11 @@ async function onEditSave(bomId: string, payload: { name: string, entries: { par
       changeDescription: 'Updated BOM entries',
     })
     editingBomId.value = null
-    // Refresh summaries
     const { [bomId]: _, ...rest } = summaries.value
     summaries.value = rest
     await fetchBoms()
   } catch (e) {
-    editError.value = e?.data?.message ?? e?.message ?? 'Failed to edit BOM'
+    editError.value = extractApiError(e, 'Failed to edit BOM')
   } finally {
     editSaving.value = false
   }
@@ -76,8 +93,23 @@ function toggleVersions(bomId: string) {
   showVersionsId.value = showVersionsId.value === bomId ? null : bomId
 }
 
+const toast = useToast()
+
+function createFromTag(tag: Tag) {
+  const jobIds = jobs.value
+    .filter(j => j.tags.some(t => t.id === tag.id))
+    .map(j => j.id)
+  if (!jobIds.length) {
+    toast.add({ title: `No jobs found with tag "${tag.name}"`, color: 'warning' })
+    return
+  }
+  prefillJobIds.value = jobIds
+  prefillName.value = tag.name
+  showForm.value = true
+}
+
 onMounted(async () => {
-  await Promise.all([fetchBoms(), fetchJobs()])
+  await Promise.all([fetchBoms(), fetchJobs(), fetchTags()])
 })
 </script>
 
@@ -87,22 +119,60 @@ onMounted(async () => {
       <h1 class="text-lg font-bold text-(--ui-text-highlighted)">
         Bill of Materials
       </h1>
-      <UButton
-        v-if="!showForm"
-        icon="i-lucide-plus"
-        label="New BOM"
-        size="sm"
-        @click="showForm = true"
-      />
+      <UFieldGroup size="sm">
+        <UButton
+          icon="i-lucide-plus"
+          label="New BOM"
+          color="neutral"
+          variant="subtle"
+          @click="showForm = true"
+        />
+        <UDropdownMenu
+          v-if="tags.length"
+          :modal="false"
+          :items="[[{ label: 'New BOM from tag', type: 'label', class: 'text-[10px] text-(--ui-text-dimmed) font-normal py-0' }], tags.map(t => ({ label: t.name, onSelect: () => createFromTag(t) }))]"
+        >
+          <UButton
+            icon="i-lucide-chevron-down"
+            color="neutral"
+            variant="subtle"
+          />
+        </UDropdownMenu>
+      </UFieldGroup>
     </div>
 
-    <!-- Create form -->
-    <BomEditor
-      v-if="showForm"
-      :jobs="jobs"
-      @save="onSave"
-      @cancel="showForm = false"
-    />
+    <!-- Create modal -->
+    <UModal
+      v-model:open="showForm"
+      title="New BOM"
+      @update:open="(val: boolean) => { if (!val) onCancelCreate() }"
+    >
+      <template #body>
+        <BomEditor
+          ref="createEditorRef"
+          :jobs="jobs"
+          :prefill-job-ids="prefillJobIds"
+          :prefill-name="prefillName"
+          @save="onSave"
+          @cancel="onCancelCreate"
+        />
+      </template>
+      <template #footer>
+        <div class="flex gap-2 justify-end w-full">
+          <UButton
+            variant="ghost"
+            size="sm"
+            label="Cancel"
+            @click="onCancelCreate"
+          />
+          <UButton
+            size="sm"
+            label="Create BOM"
+            @click="createEditorRef?.submit()"
+          />
+        </div>
+      </template>
+    </UModal>
 
     <!-- Loading -->
     <div
@@ -118,10 +188,10 @@ onMounted(async () => {
 
     <!-- Empty state -->
     <div
-      v-else-if="!boms.length && !showForm"
+      v-else-if="!boms.length"
       class="text-sm text-(--ui-text-muted) py-8 text-center"
     >
-      No BOMs defined yet. Create a BOM to track sub-assembly part requirements.
+      No BOMs defined yet. Create a BOM to track sub-assembly requirements.
     </div>
 
     <!-- BOM list -->
@@ -144,7 +214,7 @@ onMounted(async () => {
               {{ b.name }}
             </div>
             <div class="text-xs text-(--ui-text-muted) mt-0.5">
-              {{ b.entries.length }} part type{{ b.entries.length !== 1 ? 's' : '' }}
+              {{ b.entries.length }} job{{ b.entries.length !== 1 ? 's' : '' }}
             </div>
           </div>
           <div class="flex items-center gap-1 shrink-0">
@@ -171,24 +241,43 @@ onMounted(async () => {
           </div>
         </button>
 
-        <!-- Edit form -->
-        <div
-          v-if="editingBomId === b.id"
-          class="px-3 pb-3 border-t border-(--ui-border-muted)"
+        <!-- Edit modal -->
+        <UModal
+          :open="editingBomId === b.id"
+          title="Edit BOM"
+          @update:open="(val: boolean) => { if (!val) { editingBomId = null; editError = '' } }"
         >
-          <BomEditor
-            :bom="b"
-            :jobs="jobs"
-            @save="(payload: any) => onEditSave(b.id, payload)"
-            @cancel="editingBomId = null"
-          />
-          <p
-            v-if="editError"
-            class="text-xs text-red-500 mt-1"
-          >
-            {{ editError }}
-          </p>
-        </div>
+          <template #body>
+            <BomEditor
+              ref="editEditorRef"
+              :bom="b"
+              :jobs="jobs"
+              @save="(payload: BomSavePayload) => onEditSave(b.id, payload)"
+              @cancel="editingBomId = null"
+            />
+            <p
+              v-if="editError"
+              class="text-xs text-red-500 mt-2"
+            >
+              {{ editError }}
+            </p>
+          </template>
+          <template #footer>
+            <div class="flex gap-2 justify-end w-full">
+              <UButton
+                variant="ghost"
+                size="sm"
+                label="Cancel"
+                @click="editingBomId = null"
+              />
+              <UButton
+                size="sm"
+                label="Update BOM"
+                @click="editEditorRef?.submit()"
+              />
+            </div>
+          </template>
+        </UModal>
 
         <!-- Version history -->
         <div
@@ -200,7 +289,7 @@ onMounted(async () => {
 
         <!-- Expanded summary -->
         <div
-          v-if="expandedId === b.id && editingBomId !== b.id"
+          v-if="expandedId === b.id"
           class="px-3 pb-3 border-t border-(--ui-border-muted)"
         >
           <div
@@ -220,7 +309,7 @@ onMounted(async () => {
             <thead>
               <tr class="text-(--ui-text-muted) border-b border-(--ui-border-muted)">
                 <th class="text-left py-1 font-medium">
-                  Part Type
+                  Job
                 </th>
                 <th class="text-right py-1 font-medium">
                   Required
@@ -239,14 +328,19 @@ onMounted(async () => {
             <tbody>
               <tr
                 v-for="entry in summaries[b.id]!.entries"
-                :key="entry.partType"
+                :key="entry.jobId"
                 class="border-b border-(--ui-border-muted) last:border-0"
               >
-                <td class="py-1 text-(--ui-text-highlighted)">
-                  {{ entry.partType }}
+                <td class="py-1">
+                  <NuxtLink
+                    :to="`/jobs/${entry.jobId}`"
+                    class="text-(--ui-primary) hover:underline"
+                  >
+                    {{ entry.jobName }}
+                  </NuxtLink>
                 </td>
                 <td class="py-1 text-right">
-                  {{ entry.requiredQuantityPerBuild }}
+                  {{ entry.requiredQuantity }}
                 </td>
                 <td class="py-1 text-right text-green-500">
                   {{ entry.totalCompleted }}

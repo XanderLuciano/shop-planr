@@ -14,9 +14,9 @@
  *
  * **Validates: Requirements 14.3, 14.4, 14.5, 14.7**
  */
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import fc from 'fast-check'
-import { createTestContext, type TestContext } from '../integration/helpers'
+import { createReusableTestContext, savepoint, rollback, type TestContext } from './helpers'
 import type { FullRouteEntry, FullRouteResponse } from '../../server/types/computed'
 import type { PartStepStatus, ProcessStep } from '../../server/types/domain'
 
@@ -130,8 +130,11 @@ function buildFullRoute(ctx: TestContext, partId: string): FullRouteResponse {
 describe('Feature: step-id-part-tracking, Property 20: Soft-deleted step preserves routing history', () => {
   let ctx: TestContext
 
-  afterEach(() => {
-    if (ctx) ctx.cleanup()
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
   })
 
   it('routing history entries for a soft-deleted step remain intact and show isRemoved in full route', () => {
@@ -139,70 +142,58 @@ describe('Feature: step-id-part-tracking, Property 20: Soft-deleted step preserv
       fc.property(
         fc.integer({ min: 3, max: 7 }),
         (stepCount) => {
-          ctx = createTestContext()
+          savepoint(ctx.db)
+          try {
+            const job = ctx.jobService.createJob({ name: 'Job', goalQuantity: 10 })
+            const steps = Array.from({ length: stepCount }, (_, i) => ({ name: `Step ${i}` }))
+            const path = ctx.pathService.createPath({
+              jobId: job.id, name: 'Path', goalQuantity: 10, steps,
+            })
 
-          const job = ctx.jobService.createJob({ name: 'Job', goalQuantity: 10 })
-          const steps = Array.from({ length: stepCount }, (_, i) => ({ name: `Step ${i}` }))
-          const path = ctx.pathService.createPath({
-            jobId: job.id, name: 'Path', goalQuantity: 10, steps,
-          })
+            const [part] = ctx.partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: 1 }, 'user1',
+            )
 
-          const [part] = ctx.partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: 1 }, 'user1',
-          )
+            // Advance past step 0 so it has routing history
+            advanceOneStep(ctx, part!.id)
 
-          // Advance past step 0 so it has routing history
-          advanceOneStep(ctx, part!.id)
+            const step0Id = path.steps[0]!.id
 
-          const step0Id = path.steps[0]!.id
+            // Verify routing history exists for step 0
+            const historyBefore = ctx.lifecycleService.getStepStatuses(part!.id)
+            const step0EntriesBefore = historyBefore.filter(e => e.stepId === step0Id)
+            expect(step0EntriesBefore.length).toBeGreaterThan(0)
 
-          // Verify routing history exists for step 0
-          const historyBefore = ctx.lifecycleService.getStepStatuses(part!.id)
-          const step0EntriesBefore = historyBefore.filter(e => e.stepId === step0Id)
-          expect(step0EntriesBefore.length).toBeGreaterThan(0)
+            // Soft-delete step 0 directly via repo
+            const now = new Date().toISOString()
+            ctx.repos.paths.softDeleteStep(step0Id, now)
 
-          // Soft-delete step 0 by removing it from the path update.
-          // Remove the LAST step instead to avoid UNIQUE(path_id, step_order) conflicts,
-          // then also soft-delete step 0 directly via the repo.
-          // Actually: remove the last step via updatePath (no reorder conflict),
-          // then manually soft-delete step 0 via repo.
-          //
-          // Simpler approach: use updatePath to remove the last step (which has no
-          // routing history), then directly soft-delete step 0 via the repo and
-          // move its order out of the way.
-          //
-          // Simplest: directly soft-delete step 0 via the repo (set removed_at and
-          // null out step_order). This tests the property that
-          // routing history is preserved after soft-delete.
-          const now = new Date().toISOString()
-          ctx.repos.paths.softDeleteStep(step0Id, now)
+            // Routing history entries for step 0 should still exist
+            const historyAfter = ctx.lifecycleService.getStepStatuses(part!.id)
+            const step0EntriesAfter = historyAfter.filter(e => e.stepId === step0Id)
+            expect(step0EntriesAfter.length).toBe(step0EntriesBefore.length)
 
-          // Routing history entries for step 0 should still exist
-          const historyAfter = ctx.lifecycleService.getStepStatuses(part!.id)
-          const step0EntriesAfter = historyAfter.filter(e => e.stepId === step0Id)
-          expect(step0EntriesAfter.length).toBe(step0EntriesBefore.length)
+            // Each entry should have the same status as before
+            for (let i = 0; i < step0EntriesBefore.length; i++) {
+              expect(step0EntriesAfter[i]!.status).toBe(step0EntriesBefore[i]!.status)
+              expect(step0EntriesAfter[i]!.sequenceNumber).toBe(step0EntriesBefore[i]!.sequenceNumber)
+            }
 
-          // Each entry should have the same status as before
-          for (let i = 0; i < step0EntriesBefore.length; i++) {
-            expect(step0EntriesAfter[i]!.status).toBe(step0EntriesBefore[i]!.status)
-            expect(step0EntriesAfter[i]!.sequenceNumber).toBe(step0EntriesBefore[i]!.sequenceNumber)
+            // Full route should include the removed step with isRemoved = true
+            const route = buildFullRoute(ctx, part!.id)
+            const removedEntries = route.entries.filter(e => e.stepId === step0Id)
+            expect(removedEntries.length).toBeGreaterThan(0)
+            for (const entry of removedEntries) {
+              expect(entry.isRemoved).toBe(true)
+            }
+
+            // The step via getStepByIdIncludeRemoved should have removedAt set
+            const removedStep = ctx.repos.paths.getStepByIdIncludeRemoved(step0Id)
+            expect(removedStep).not.toBeNull()
+            expect(removedStep!.removedAt).toBeDefined()
+          } finally {
+            rollback(ctx.db)
           }
-
-          // Full route should include the removed step with isRemoved = true
-          const route = buildFullRoute(ctx, part!.id)
-          const removedEntries = route.entries.filter(e => e.stepId === step0Id)
-          expect(removedEntries.length).toBeGreaterThan(0)
-          for (const entry of removedEntries) {
-            expect(entry.isRemoved).toBe(true)
-          }
-
-          // The step via getStepByIdIncludeRemoved should have removedAt set
-          const removedStep = ctx.repos.paths.getStepByIdIncludeRemoved(step0Id)
-          expect(removedStep).not.toBeNull()
-          expect(removedStep!.removedAt).toBeDefined()
-
-          ctx.cleanup()
-          ctx = null as any
         },
       ),
       { numRuns: 100 },
@@ -213,8 +204,11 @@ describe('Feature: step-id-part-tracking, Property 20: Soft-deleted step preserv
 describe('Feature: step-id-part-tracking, Property 21: Soft-deleted step excluded from active routing', () => {
   let ctx: TestContext
 
-  afterEach(() => {
-    if (ctx) ctx.cleanup()
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+  afterAll(() => {
+    ctx?.cleanup()
   })
 
   it('path.steps does not include soft-deleted steps; distribution and advancement ignore them', () => {
@@ -222,65 +216,65 @@ describe('Feature: step-id-part-tracking, Property 21: Soft-deleted step exclude
       fc.property(
         fc.integer({ min: 3, max: 7 }),
         (stepCount) => {
-          ctx = createTestContext()
+          savepoint(ctx.db)
+          try {
+            const job = ctx.jobService.createJob({ name: 'Job', goalQuantity: 10 })
+            const steps = Array.from({ length: stepCount }, (_, i) => ({ name: `Step ${i}` }))
+            const path = ctx.pathService.createPath({
+              jobId: job.id, name: 'Path', goalQuantity: 10, steps,
+            })
 
-          const job = ctx.jobService.createJob({ name: 'Job', goalQuantity: 10 })
-          const steps = Array.from({ length: stepCount }, (_, i) => ({ name: `Step ${i}` }))
-          const path = ctx.pathService.createPath({
-            jobId: job.id, name: 'Path', goalQuantity: 10, steps,
-          })
+            const [part] = ctx.partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: 1 }, 'user1',
+            )
 
-          const [part] = ctx.partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: 1 }, 'user1',
-          )
-
-          // Advance past step 0
-          advanceOneStep(ctx, part!.id)
-
-          const step0Id = path.steps[0]!.id
-
-          // Soft-delete step 0 directly via repo (set removed_at, null out step_order)
-          // Also renumber remaining steps to be 0-based so advancement works correctly
-          const now = new Date().toISOString()
-          ctx.repos.paths.softDeleteStep(step0Id, now)
-
-          // Renumber remaining active steps to be 0-based (as updatePath would do)
-          const activeSteps = ctx.pathService.getPath(path.id).steps
-          for (let i = 0; i < activeSteps.length; i++) {
-            if (activeSteps[i]!.order !== i) {
-              ctx.repos.paths.updateStep(activeSteps[i]!.id, { order: i })
-            }
-          }
-
-          // path.steps should NOT include the removed step
-          const pathAfter = ctx.pathService.getPath(path.id)
-          const removedInActive = pathAfter.steps.find(s => s.id === step0Id)
-          expect(removedInActive).toBeUndefined()
-
-          // Active step count should be stepCount - 1
-          expect(pathAfter.steps.length).toBe(stepCount - 1)
-
-          // Step distribution should not include the removed step
-          const distribution = ctx.pathService.getStepDistribution(path.id)
-          const removedInDist = distribution.find(d => d.stepId === step0Id)
-          expect(removedInDist).toBeUndefined()
-          expect(distribution.length).toBe(stepCount - 1)
-
-          // Advancement should work normally with remaining steps
-          let freshPart = ctx.partService.getPart(part!.id)
-          while (freshPart.currentStepId !== null) {
+            // Advance past step 0
             advanceOneStep(ctx, part!.id)
-            freshPart = ctx.partService.getPart(part!.id)
+
+            const step0Id = path.steps[0]!.id
+
+            // Soft-delete step 0 directly via repo (set removed_at, null out step_order)
+            // Also renumber remaining steps to be 0-based so advancement works correctly
+            const now = new Date().toISOString()
+            ctx.repos.paths.softDeleteStep(step0Id, now)
+
+            // Renumber remaining active steps to be 0-based (as updatePath would do)
+            const activeSteps = ctx.pathService.getPath(path.id).steps
+            for (let i = 0; i < activeSteps.length; i++) {
+              if (activeSteps[i]!.order !== i) {
+                ctx.repos.paths.updateStep(activeSteps[i]!.id, { order: i })
+              }
+            }
+
+            // path.steps should NOT include the removed step
+            const pathAfter = ctx.pathService.getPath(path.id)
+            const removedInActive = pathAfter.steps.find(s => s.id === step0Id)
+            expect(removedInActive).toBeUndefined()
+
+            // Active step count should be stepCount - 1
+            expect(pathAfter.steps.length).toBe(stepCount - 1)
+
+            // Step distribution should not include the removed step
+            const distribution = ctx.pathService.getStepDistribution(path.id)
+            const removedInDist = distribution.find(d => d.stepId === step0Id)
+            expect(removedInDist).toBeUndefined()
+            expect(distribution.length).toBe(stepCount - 1)
+
+            // Advancement should work normally with remaining steps
+            let freshPart = ctx.partService.getPart(part!.id)
+            while (freshPart.currentStepId !== null) {
+              advanceOneStep(ctx, part!.id)
+              freshPart = ctx.partService.getPart(part!.id)
+            }
+            expect(freshPart.status).toBe('completed')
+
+            // Full route planned entries should not reference removed step
+            const route = buildFullRoute(ctx, part!.id)
+            const plannedRemoved = route.entries.filter(e => e.isPlanned && e.stepId === step0Id)
+            expect(plannedRemoved).toHaveLength(0)
+          } finally {
+            rollback(ctx.db)
           }
-          expect(freshPart.status).toBe('completed')
-
-          // Full route planned entries should not reference removed step
-          const route = buildFullRoute(ctx, part!.id)
-          const plannedRemoved = route.entries.filter(e => e.isPlanned && e.stepId === step0Id)
-          expect(plannedRemoved).toHaveLength(0)
-
-          ctx.cleanup()
-          ctx = null as any
         },
       ),
       { numRuns: 100 },

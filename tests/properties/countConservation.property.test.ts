@@ -6,11 +6,10 @@
  *
  * **Validates: Requirements 3.4, 2.4, 7.4**
  */
-import { describe, it, afterEach } from 'vitest'
+import { describe, it, afterAll, beforeAll } from 'vitest'
 import fc from 'fast-check'
-import Database from 'better-sqlite3'
-import { resolve } from 'path'
-import { runMigrations } from '../../server/repositories/sqlite/index'
+import type Database from 'better-sqlite3'
+import { createMigratedDb, savepoint, rollback } from './helpers'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
 import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
@@ -22,16 +21,7 @@ import { createPartService } from '../../server/services/partService'
 import { createAuditService } from '../../server/services/auditService'
 import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
 
-function createTestDb() {
-  const db = new Database(':memory:')
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
-  const migrationsDir = resolve(__dirname, '../../server/repositories/sqlite/migrations')
-  runMigrations(db, migrationsDir)
-  return db
-}
-
-function setupServices(db: Database.default.Database) {
+function setupServices(db: Database.Database) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
@@ -63,10 +53,14 @@ function setupServices(db: Database.default.Database) {
 }
 
 describe('Property 4: Process Step Count Conservation', () => {
-  let db: Database.default.Database
+  let db: Database.Database
 
-  afterEach(() => {
-    if (db) db.close()
+  beforeAll(() => {
+    db = createMigratedDb()
+  })
+
+  afterAll(() => {
+    db?.close()
   })
 
   it('sum of parts at each step plus completed parts equals total parts created', () => {
@@ -85,53 +79,54 @@ describe('Property 4: Process Step Count Conservation', () => {
           ),
         }),
         ({ stepCount, partQuantity, advanceOps }) => {
-          db = createTestDb()
-          const { jobService, pathService, partService } = setupServices(db)
+          savepoint(db)
+          try {
+            const { jobService, pathService, partService } = setupServices(db)
 
-          const job = jobService.createJob({ name: 'Test Job', goalQuantity: 100 })
-          const steps = Array.from({ length: stepCount }, (_, i) => ({
-            name: `Step ${i}`,
-          }))
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: 'Route',
-            goalQuantity: partQuantity,
-            steps,
-          })
+            const job = jobService.createJob({ name: 'Test Job', goalQuantity: 100 })
+            const steps = Array.from({ length: stepCount }, (_, i) => ({
+              name: `Step ${i}`,
+            }))
+            const path = pathService.createPath({
+              jobId: job.id,
+              name: 'Route',
+              goalQuantity: partQuantity,
+              steps,
+            })
 
-          const parts = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: partQuantity },
-            'user_test',
-          )
-          const totalCreated = parts.length
+            const parts = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: partQuantity },
+              'user_test',
+            )
+            const totalCreated = parts.length
 
-          // Advance some parts randomly
-          for (const op of advanceOps) {
-            const idx = op.partIndex % parts.length
-            for (let t = 0; t < op.times; t++) {
-              try {
-                partService.advancePart(parts[idx].id, 'user_test')
-              } catch {
-                // Already completed — skip
-                break
+            // Advance some parts randomly
+            for (const op of advanceOps) {
+              const idx = op.partIndex % parts.length
+              for (let t = 0; t < op.times; t++) {
+                try {
+                  partService.advancePart(parts[idx].id, 'user_test')
+                } catch {
+                  // Already completed — skip
+                  break
+                }
               }
             }
+
+            // Count parts at each step by currentStepId + completed (null)
+            let countSum = 0
+            for (const step of path.steps) {
+              countSum += partService.listPartsByCurrentStepId(step.id).length
+            }
+            // Add completed parts (currentStepId === null)
+            const allParts = partService.listPartsByPath(path.id)
+            countSum += allParts.filter(p => p.currentStepId === null && p.status !== 'scrapped').length
+
+            // ASSERT: conservation — no parts lost or duplicated
+            expect(countSum).toBe(totalCreated)
+          } finally {
+            rollback(db)
           }
-
-          // Count parts at each step by currentStepId + completed (null)
-          let countSum = 0
-          for (const step of path.steps) {
-            countSum += partService.listPartsByCurrentStepId(step.id).length
-          }
-          // Add completed parts (currentStepId === null)
-          const allParts = partService.listPartsByPath(path.id)
-          countSum += allParts.filter(p => p.currentStepId === null && p.status !== 'scrapped').length
-
-          // ASSERT: conservation — no parts lost or duplicated
-          expect(countSum).toBe(totalCreated)
-
-          db.close()
-          db = null as any
         },
       ),
       { numRuns: 100 },

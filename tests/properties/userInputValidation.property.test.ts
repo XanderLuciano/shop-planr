@@ -9,9 +9,10 @@
  *
  * **Validates: Requirements 1.7, 3.4, 3.5**
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterAll, beforeAll } from 'vitest'
 import fc from 'fast-check'
-import { createTestDb } from '../integration/helpers'
+import type Database from 'better-sqlite3'
+import { createMigratedDb, savepoint, rollback } from './helpers'
 import { SQLiteUserRepository } from '../../server/repositories/sqlite/userRepository'
 import { createUserService } from '../../server/services/userService'
 import { ValidationError } from '../../server/utils/errors'
@@ -31,13 +32,23 @@ const arbNonEmptyString = fc.array(fc.constantFrom(...SAFE_CHARS), { minLength: 
 let runIndex = 0
 
 describe('Property 3: Empty/Whitespace Input Rejection', () => {
+  let db: Database.Database
+
+  beforeAll(() => {
+    db = createMigratedDb()
+  })
+
+  afterAll(() => {
+    db?.close()
+  })
+
   it('whitespace-only username throws ValidationError, repo unchanged', () => {
     fc.assert(
       fc.property(
         arbWhitespaceString,
         arbNonEmptyString,
         (whitespaceUsername, validDisplayName) => {
-          const db = createTestDb()
+          savepoint(db)
           try {
             const userRepo = new SQLiteUserRepository(db)
             const userService = createUserService({ users: userRepo })
@@ -53,7 +64,7 @@ describe('Property 3: Empty/Whitespace Input Rejection', () => {
             const allUsers = userService.listUsers()
             expect(allUsers).toHaveLength(0)
           } finally {
-            db.close()
+            rollback(db)
           }
         },
       ),
@@ -67,7 +78,7 @@ describe('Property 3: Empty/Whitespace Input Rejection', () => {
         arbNonEmptyString,
         arbWhitespaceString,
         (validUsername, whitespaceDisplayName) => {
-          const db = createTestDb()
+          savepoint(db)
           try {
             const userRepo = new SQLiteUserRepository(db)
             const userService = createUserService({ users: userRepo })
@@ -85,7 +96,7 @@ describe('Property 3: Empty/Whitespace Input Rejection', () => {
             const allUsers = userService.listUsers()
             expect(allUsers).toHaveLength(0)
           } finally {
-            db.close()
+            rollback(db)
           }
         },
       ),

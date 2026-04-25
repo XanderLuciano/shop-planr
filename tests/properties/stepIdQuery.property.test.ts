@@ -8,23 +8,12 @@
  *
  * **Validates: Requirements 1.5, 9.1, 9.2**
  */
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterAll, beforeAll } from 'vitest'
 import fc from 'fast-check'
-import Database from 'better-sqlite3'
-import { resolve } from 'path'
-import { runMigrations } from '../../server/repositories/sqlite/index'
+import type Database from 'better-sqlite3'
+import { createMigratedDb, savepoint, rollback } from './helpers'
 import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
 import type { Part, ScrapReason } from '../../server/types/domain'
-
-const MIGRATIONS_DIR = resolve(__dirname, '../../server/repositories/sqlite/migrations')
-
-function createTestDb() {
-  const db = new Database(':memory:')
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
-  runMigrations(db, MIGRATIONS_DIR)
-  return db
-}
 
 /**
  * Seed a job, path, and N process steps. Returns the step IDs in order.
@@ -88,8 +77,12 @@ function arbPartAssignments(stepCount: number): fc.Arbitrary<PartAssignment[]> {
 describe('Feature: step-id-part-tracking, Property 5: Query by currentStepId returns correct parts', () => {
   let db: Database.Database
 
-  afterEach(() => {
-    if (db) db.close()
+  beforeAll(() => {
+    db = createMigratedDb()
+  })
+
+  afterAll(() => {
+    db?.close()
   })
 
   it('listByCurrentStepId returns exactly the non-scrapped parts at the queried step', () => {
@@ -99,52 +92,53 @@ describe('Feature: step-id-part-tracking, Property 5: Query by currentStepId ret
           fc.tuple(fc.constant(stepCount), arbPartAssignments(stepCount)),
         ),
         ([stepCount, assignments]) => {
-          db = createTestDb()
-          const jobId = 'job_q'
-          const pathId = 'path_q'
-          const stepIds = seedWithSteps(db, jobId, pathId, stepCount)
-          const repo = new SQLitePartRepository(db)
+          savepoint(db)
+          try {
+            const jobId = 'job_q'
+            const pathId = 'path_q'
+            const stepIds = seedWithSteps(db, jobId, pathId, stepCount)
+            const repo = new SQLitePartRepository(db)
 
-          const now = new Date().toISOString()
+            const now = new Date().toISOString()
 
-          // Create all parts
-          const parts: Part[] = assignments.map((a, i) => ({
-            id: `part_${i}`,
-            jobId,
-            pathId,
-            currentStepId: a.stepIdx >= 0 ? stepIds[a.stepIdx]! : null,
-            status: a.status,
-            forceCompleted: false,
-            scrapReason: a.status === 'scrapped' ? 'damaged' as ScrapReason : undefined,
-            createdAt: now,
-            updatedAt: now,
-          }))
+            // Create all parts
+            const parts: Part[] = assignments.map((a, i) => ({
+              id: `part_${i}`,
+              jobId,
+              pathId,
+              currentStepId: a.stepIdx >= 0 ? stepIds[a.stepIdx]! : null,
+              status: a.status,
+              forceCompleted: false,
+              scrapReason: a.status === 'scrapped' ? 'damaged' as ScrapReason : undefined,
+              createdAt: now,
+              updatedAt: now,
+            }))
 
-          repo.createBatch(parts)
+            repo.createBatch(parts)
 
-          // For each step, verify listByCurrentStepId returns the correct subset
-          for (let s = 0; s < stepCount; s++) {
-            const stepId = stepIds[s]!
-            const result = repo.listByCurrentStepId(stepId)
-            const resultIds = new Set(result.map(p => p.id))
+            // For each step, verify listByCurrentStepId returns the correct subset
+            for (let s = 0; s < stepCount; s++) {
+              const stepId = stepIds[s]!
+              const result = repo.listByCurrentStepId(stepId)
+              const resultIds = new Set(result.map(p => p.id))
 
-            // Expected: non-scrapped parts whose currentStepId matches
-            const expectedIds = new Set(
-              parts
-                .filter(p => p.currentStepId === stepId && p.status !== 'scrapped')
-                .map(p => p.id),
-            )
+              // Expected: non-scrapped parts whose currentStepId matches
+              const expectedIds = new Set(
+                parts
+                  .filter(p => p.currentStepId === stepId && p.status !== 'scrapped')
+                  .map(p => p.id),
+              )
 
-            expect(resultIds).toEqual(expectedIds)
+              expect(resultIds).toEqual(expectedIds)
 
-            // Double-check: no scrapped parts in result
-            for (const p of result) {
-              expect(p.status).not.toBe('scrapped')
+              // Double-check: no scrapped parts in result
+              for (const p of result) {
+                expect(p.status).not.toBe('scrapped')
+              }
             }
+          } finally {
+            rollback(db)
           }
-
-          db.close()
-          db = null as any
         },
       ),
       { numRuns: 100 },
@@ -157,36 +151,37 @@ describe('Feature: step-id-part-tracking, Property 5: Query by currentStepId ret
         fc.integer({ min: 2, max: 5 }),
         fc.integer({ min: 1, max: 5 }),
         (stepCount, partCount) => {
-          db = createTestDb()
-          const jobId = 'job_e'
-          const pathId = 'path_e'
-          const stepIds = seedWithSteps(db, jobId, pathId, stepCount)
-          const repo = new SQLitePartRepository(db)
+          savepoint(db)
+          try {
+            const jobId = 'job_e'
+            const pathId = 'path_e'
+            const stepIds = seedWithSteps(db, jobId, pathId, stepCount)
+            const repo = new SQLitePartRepository(db)
 
-          const now = new Date().toISOString()
+            const now = new Date().toISOString()
 
-          // Put all parts at step 0
-          const parts: Part[] = Array.from({ length: partCount }, (_, i) => ({
-            id: `part_e_${i}`,
-            jobId,
-            pathId,
-            currentStepId: stepIds[0]!,
-            status: 'in_progress' as const,
-            forceCompleted: false,
-            createdAt: now,
-            updatedAt: now,
-          }))
+            // Put all parts at step 0
+            const parts: Part[] = Array.from({ length: partCount }, (_, i) => ({
+              id: `part_e_${i}`,
+              jobId,
+              pathId,
+              currentStepId: stepIds[0]!,
+              status: 'in_progress' as const,
+              forceCompleted: false,
+              createdAt: now,
+              updatedAt: now,
+            }))
 
-          repo.createBatch(parts)
+            repo.createBatch(parts)
 
-          // Steps 1..N should return empty
-          for (let s = 1; s < stepCount; s++) {
-            const result = repo.listByCurrentStepId(stepIds[s]!)
-            expect(result).toHaveLength(0)
+            // Steps 1..N should return empty
+            for (let s = 1; s < stepCount; s++) {
+              const result = repo.listByCurrentStepId(stepIds[s]!)
+              expect(result).toHaveLength(0)
+            }
+          } finally {
+            rollback(db)
           }
-
-          db.close()
-          db = null as any
         },
       ),
       { numRuns: 100 },
@@ -199,73 +194,74 @@ describe('Feature: step-id-part-tracking, Property 5: Query by currentStepId ret
         fc.integer({ min: 1, max: 3 }),
         fc.integer({ min: 1, max: 3 }),
         (countA, countB) => {
-          db = createTestDb()
-          const now = new Date().toISOString()
+          savepoint(db)
+          try {
+            const now = new Date().toISOString()
 
-          // Create two separate jobs + paths, each with one step
-          db.prepare(
-            `INSERT INTO jobs (id, name, goal_quantity, created_at, updated_at) VALUES ('jobA', 'Job A', 10, ?, ?)`,
-          ).run(now, now)
-          db.prepare(
-            `INSERT INTO jobs (id, name, goal_quantity, created_at, updated_at) VALUES ('jobB', 'Job B', 10, ?, ?)`,
-          ).run(now, now)
-          db.prepare(
-            `INSERT INTO paths (id, job_id, name, goal_quantity, advancement_mode, created_at, updated_at) VALUES ('pathA', 'jobA', 'Path A', 10, 'strict', ?, ?)`,
-          ).run(now, now)
-          db.prepare(
-            `INSERT INTO paths (id, job_id, name, goal_quantity, advancement_mode, created_at, updated_at) VALUES ('pathB', 'jobB', 'Path B', 10, 'strict', ?, ?)`,
-          ).run(now, now)
-          db.prepare(
-            `INSERT INTO process_steps (id, path_id, name, step_order, optional, dependency_type) VALUES ('stepA', 'pathA', 'Step A', 0, 0, 'preferred')`,
-          ).run()
-          db.prepare(
-            `INSERT INTO process_steps (id, path_id, name, step_order, optional, dependency_type) VALUES ('stepB', 'pathB', 'Step B', 0, 0, 'preferred')`,
-          ).run()
+            // Create two separate jobs + paths, each with one step
+            db.prepare(
+              `INSERT INTO jobs (id, name, goal_quantity, created_at, updated_at) VALUES ('jobA', 'Job A', 10, ?, ?)`,
+            ).run(now, now)
+            db.prepare(
+              `INSERT INTO jobs (id, name, goal_quantity, created_at, updated_at) VALUES ('jobB', 'Job B', 10, ?, ?)`,
+            ).run(now, now)
+            db.prepare(
+              `INSERT INTO paths (id, job_id, name, goal_quantity, advancement_mode, created_at, updated_at) VALUES ('pathA', 'jobA', 'Path A', 10, 'strict', ?, ?)`,
+            ).run(now, now)
+            db.prepare(
+              `INSERT INTO paths (id, job_id, name, goal_quantity, advancement_mode, created_at, updated_at) VALUES ('pathB', 'jobB', 'Path B', 10, 'strict', ?, ?)`,
+            ).run(now, now)
+            db.prepare(
+              `INSERT INTO process_steps (id, path_id, name, step_order, optional, dependency_type) VALUES ('stepA', 'pathA', 'Step A', 0, 0, 'preferred')`,
+            ).run()
+            db.prepare(
+              `INSERT INTO process_steps (id, path_id, name, step_order, optional, dependency_type) VALUES ('stepB', 'pathB', 'Step B', 0, 0, 'preferred')`,
+            ).run()
 
-          const repo = new SQLitePartRepository(db)
+            const repo = new SQLitePartRepository(db)
 
-          // Create parts on path A
-          const partsA: Part[] = Array.from({ length: countA }, (_, i) => ({
-            id: `pA_${i}`,
-            jobId: 'jobA',
-            pathId: 'pathA',
-            currentStepId: 'stepA',
-            status: 'in_progress' as const,
-            forceCompleted: false,
-            createdAt: now,
-            updatedAt: now,
-          }))
-          repo.createBatch(partsA)
+            // Create parts on path A
+            const partsA: Part[] = Array.from({ length: countA }, (_, i) => ({
+              id: `pA_${i}`,
+              jobId: 'jobA',
+              pathId: 'pathA',
+              currentStepId: 'stepA',
+              status: 'in_progress' as const,
+              forceCompleted: false,
+              createdAt: now,
+              updatedAt: now,
+            }))
+            repo.createBatch(partsA)
 
-          // Create parts on path B
-          const partsB: Part[] = Array.from({ length: countB }, (_, i) => ({
-            id: `pB_${i}`,
-            jobId: 'jobB',
-            pathId: 'pathB',
-            currentStepId: 'stepB',
-            status: 'in_progress' as const,
-            forceCompleted: false,
-            createdAt: now,
-            updatedAt: now,
-          }))
-          repo.createBatch(partsB)
+            // Create parts on path B
+            const partsB: Part[] = Array.from({ length: countB }, (_, i) => ({
+              id: `pB_${i}`,
+              jobId: 'jobB',
+              pathId: 'pathB',
+              currentStepId: 'stepB',
+              status: 'in_progress' as const,
+              forceCompleted: false,
+              createdAt: now,
+              updatedAt: now,
+            }))
+            repo.createBatch(partsB)
 
-          // Query stepA — should only return path A parts
-          const resultA = repo.listByCurrentStepId('stepA')
-          expect(resultA).toHaveLength(countA)
-          for (const p of resultA) {
-            expect(p.pathId).toBe('pathA')
+            // Query stepA — should only return path A parts
+            const resultA = repo.listByCurrentStepId('stepA')
+            expect(resultA).toHaveLength(countA)
+            for (const p of resultA) {
+              expect(p.pathId).toBe('pathA')
+            }
+
+            // Query stepB — should only return path B parts
+            const resultB = repo.listByCurrentStepId('stepB')
+            expect(resultB).toHaveLength(countB)
+            for (const p of resultB) {
+              expect(p.pathId).toBe('pathB')
+            }
+          } finally {
+            rollback(db)
           }
-
-          // Query stepB — should only return path B parts
-          const resultB = repo.listByCurrentStepId('stepB')
-          expect(resultB).toHaveLength(countB)
-          for (const p of resultB) {
-            expect(p.pathId).toBe('pathB')
-          }
-
-          db.close()
-          db = null as any
         },
       ),
       { numRuns: 100 },

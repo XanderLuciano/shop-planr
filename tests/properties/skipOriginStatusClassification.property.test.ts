@@ -7,11 +7,10 @@
  *
  * **Validates: Requirements 9.1, 9.2, 9.4, 10.2**
  */
-import { describe, it, afterEach, expect } from 'vitest'
+import { describe, it, afterAll, beforeAll, expect } from 'vitest'
 import fc from 'fast-check'
-import Database from 'better-sqlite3'
-import { resolve } from 'path'
-import { runMigrations } from '../../server/repositories/sqlite/index'
+import type Database from 'better-sqlite3'
+import { createMigratedDb, savepoint, rollback } from './helpers'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
 import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
@@ -25,16 +24,7 @@ import { createAuditService } from '../../server/services/auditService'
 import { createLifecycleService } from '../../server/services/lifecycleService'
 import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
 
-function createTestDb() {
-  const db = new Database(':memory:')
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
-  const migrationsDir = resolve(__dirname, '../../server/repositories/sqlite/migrations')
-  runMigrations(db, migrationsDir)
-  return db
-}
-
-function setupServices(db: InstanceType<typeof Database>) {
+function setupServices(db: Database.Database) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
@@ -72,10 +62,14 @@ function setupServices(db: InstanceType<typeof Database>) {
 }
 
 describe('Property 7: Skip origin status classification', () => {
-  let db: InstanceType<typeof Database>
+  let db: Database.Database
 
-  afterEach(() => {
-    if (db) db.close()
+  beforeAll(() => {
+    db = createMigratedDb()
+  })
+
+  afterAll(() => {
+    db?.close()
   })
 
   it('skip:true marks origin as skipped (optional) or deferred (required); skip:false/omitted marks completed', () => {
@@ -86,63 +80,64 @@ describe('Property 7: Skip origin status classification', () => {
           skipFlag: fc.constantFrom(true, false, undefined),
         }),
         ({ originOptional, skipFlag }) => {
-          db = createTestDb()
-          const { jobService, pathService, partService, lifecycleService, repos } = setupServices(db)
+          savepoint(db)
+          try {
+            const { jobService, pathService, partService, lifecycleService, repos } = setupServices(db)
 
-          // Create job + path with 3 steps: origin (optional or required), middle, target
-          const job = jobService.createJob({ name: 'Skip Test', goalQuantity: 1 })
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: 'Test Path',
-            goalQuantity: 1,
-            advancementMode: 'flexible',
-            steps: [
-              { name: 'Origin', optional: originOptional },
-              { name: 'Middle', optional: false },
-              { name: 'Target', optional: false },
-            ],
-          })
+            // Create job + path with 3 steps: origin (optional or required), middle, target
+            const job = jobService.createJob({ name: 'Skip Test', goalQuantity: 1 })
+            const path = pathService.createPath({
+              jobId: job.id,
+              name: 'Test Path',
+              goalQuantity: 1,
+              advancementMode: 'flexible',
+              steps: [
+                { name: 'Origin', optional: originOptional },
+                { name: 'Middle', optional: false },
+                { name: 'Target', optional: false },
+              ],
+            })
 
-          const originStep = path.steps[0]
-          const targetStep = path.steps[1]
+            const originStep = path.steps[0]
+            const targetStep = path.steps[1]
 
-          // Create a part at the origin step
-          const parts = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: 1 },
-            'user_test',
-          )
-          const partId = parts[0].id
+            // Create a part at the origin step
+            const parts = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: 1 },
+              'user_test',
+            )
+            const partId = parts[0].id
 
-          // Call advanceToStep with the skip flag
-          const input: any = {
-            targetStepId: targetStep.id,
-            userId: 'user_test',
-          }
-          if (skipFlag !== undefined) {
-            input.skip = skipFlag
-          }
-
-          lifecycleService.advanceToStep(partId, input)
-
-          // Check origin step status
-          const originStatus = repos.partStepStatuses.getLatestByPartAndStep(partId, originStep.id)
-          expect(originStatus).toBeTruthy()
-
-          if (skipFlag === true) {
-            if (originOptional) {
-              // Optional + skip → 'skipped'
-              expect(originStatus!.status).toBe('skipped')
-            } else {
-              // Required + skip → 'deferred'
-              expect(originStatus!.status).toBe('deferred')
+            // Call advanceToStep with the skip flag
+            const input: any = {
+              targetStepId: targetStep.id,
+              userId: 'user_test',
             }
-          } else {
-            // skip:false or omitted → 'completed'
-            expect(originStatus!.status).toBe('completed')
-          }
+            if (skipFlag !== undefined) {
+              input.skip = skipFlag
+            }
 
-          db.close()
-          db = null as any
+            lifecycleService.advanceToStep(partId, input)
+
+            // Check origin step status
+            const originStatus = repos.partStepStatuses.getLatestByPartAndStep(partId, originStep.id)
+            expect(originStatus).toBeTruthy()
+
+            if (skipFlag === true) {
+              if (originOptional) {
+                // Optional + skip → 'skipped'
+                expect(originStatus!.status).toBe('skipped')
+              } else {
+                // Required + skip → 'deferred'
+                expect(originStatus!.status).toBe('deferred')
+              }
+            } else {
+              // skip:false or omitted → 'completed'
+              expect(originStatus!.status).toBe('completed')
+            }
+          } finally {
+            rollback(db)
+          }
         },
       ),
       { numRuns: 100 },
@@ -154,49 +149,50 @@ describe('Property 7: Skip origin status classification', () => {
       fc.property(
         fc.constant(null),
         () => {
-          db = createTestDb()
-          const { jobService, pathService, partService, lifecycleService, repos } = setupServices(db)
+          savepoint(db)
+          try {
+            const { jobService, pathService, partService, lifecycleService, repos } = setupServices(db)
 
-          // Create job + path with required origin step
-          const job = jobService.createJob({ name: 'Override Test', goalQuantity: 1 })
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: 'Test Path',
-            goalQuantity: 1,
-            advancementMode: 'flexible',
-            steps: [
-              { name: 'Origin', optional: false },
-              { name: 'Target', optional: false },
-            ],
-          })
+            // Create job + path with required origin step
+            const job = jobService.createJob({ name: 'Override Test', goalQuantity: 1 })
+            const path = pathService.createPath({
+              jobId: job.id,
+              name: 'Test Path',
+              goalQuantity: 1,
+              advancementMode: 'flexible',
+              steps: [
+                { name: 'Origin', optional: false },
+                { name: 'Target', optional: false },
+              ],
+            })
 
-          const originStep = path.steps[0]
-          const targetStep = path.steps[1]
+            const originStep = path.steps[0]
+            const targetStep = path.steps[1]
 
-          // Create a part
-          const parts = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: 1 },
-            'user_test',
-          )
-          const partId = parts[0].id
+            // Create a part
+            const parts = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: 1 },
+              'user_test',
+            )
+            const partId = parts[0].id
 
-          // Create an active override on the origin step
-          lifecycleService.createStepOverride([partId], originStep.id, 'test override', 'user_test')
+            // Create an active override on the origin step
+            lifecycleService.createStepOverride([partId], originStep.id, 'test override', 'user_test')
 
-          // Advance with skip:true
-          lifecycleService.advanceToStep(partId, {
-            targetStepId: targetStep.id,
-            userId: 'user_test',
-            skip: true,
-          })
+            // Advance with skip:true
+            lifecycleService.advanceToStep(partId, {
+              targetStepId: targetStep.id,
+              userId: 'user_test',
+              skip: true,
+            })
 
-          // Required step with active override + skip → 'skipped' (not 'deferred')
-          const originStatus = repos.partStepStatuses.getLatestByPartAndStep(partId, originStep.id)
-          expect(originStatus).toBeTruthy()
-          expect(originStatus!.status).toBe('skipped')
-
-          db.close()
-          db = null as any
+            // Required step with active override + skip → 'skipped' (not 'deferred')
+            const originStatus = repos.partStepStatuses.getLatestByPartAndStep(partId, originStep.id)
+            expect(originStatus).toBeTruthy()
+            expect(originStatus!.status).toBe('skipped')
+          } finally {
+            rollback(db)
+          }
         },
       ),
       { numRuns: 100 },

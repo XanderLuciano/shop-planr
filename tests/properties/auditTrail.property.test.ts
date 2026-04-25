@@ -6,11 +6,10 @@
  *
  * **Validates: Requirements 5.4, 13.1, 13.2, 13.3, 13.4, 13.5**
  */
-import { describe, it, afterEach } from 'vitest'
+import { describe, it, afterAll, beforeAll } from 'vitest'
 import fc from 'fast-check'
-import Database from 'better-sqlite3'
-import { resolve } from 'path'
-import { runMigrations } from '../../server/repositories/sqlite/index'
+import type Database from 'better-sqlite3'
+import { createMigratedDb, savepoint, rollback } from './helpers'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
 import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
@@ -23,16 +22,7 @@ import { createCertService } from '../../server/services/certService'
 import { createAuditService } from '../../server/services/auditService'
 import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
 
-function createTestDb() {
-  const db = new Database(':memory:')
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
-  const migrationsDir = resolve(__dirname, '../../server/repositories/sqlite/migrations')
-  runMigrations(db, migrationsDir)
-  return db
-}
-
-function setupServices(db: Database.default.Database) {
+function setupServices(db: Database.Database) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
@@ -65,10 +55,14 @@ function setupServices(db: Database.default.Database) {
 }
 
 describe('Property 6: Audit Trail Immutability and Completeness', () => {
-  let db: Database.default.Database
+  let db: Database.Database
 
-  afterEach(() => {
-    if (db) db.close()
+  beforeAll(() => {
+    db = createMigratedDb()
+  })
+
+  afterAll(() => {
+    db?.close()
   })
 
   it('exactly one audit entry per part creation batch, advancement, and cert attachment', () => {
@@ -81,86 +75,87 @@ describe('Property 6: Audit Trail Immutability and Completeness', () => {
           certAttachCount: fc.integer({ min: 0, max: 5 }),
         }),
         ({ stepCount, partQuantity, advanceCount, certAttachCount }) => {
-          db = createTestDb()
-          const { jobService, pathService, partService, certService, auditService } = setupServices(db)
+          savepoint(db)
+          try {
+            const { jobService, pathService, partService, certService, auditService } = setupServices(db)
 
-          const job = jobService.createJob({ name: 'Audit Test Job', goalQuantity: 100 })
-          const steps = Array.from({ length: stepCount }, (_, i) => ({ name: `Step ${i}` }))
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: 'Route',
-            goalQuantity: partQuantity,
-            steps,
-          })
+            const job = jobService.createJob({ name: 'Audit Test Job', goalQuantity: 100 })
+            const steps = Array.from({ length: stepCount }, (_, i) => ({ name: `Step ${i}` }))
+            const path = pathService.createPath({
+              jobId: job.id,
+              name: 'Route',
+              goalQuantity: partQuantity,
+              steps,
+            })
 
-          // Track expected audit counts
-          let expectedCreationAudits = 0
-          let expectedAdvancementAudits = 0
-          let expectedCompletionAudits = 0
-          let expectedCertAudits = 0
+            // Track expected audit counts
+            let expectedCreationAudits = 0
+            let expectedAdvancementAudits = 0
+            let expectedCompletionAudits = 0
+            let expectedCertAudits = 0
 
-          // 1. Batch create parts — one audit entry per batch
-          const parts = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: partQuantity },
-            'user_test',
-          )
-          expectedCreationAudits = 1
+            // 1. Batch create parts — one audit entry per batch
+            const parts = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: partQuantity },
+              'user_test',
+            )
+            expectedCreationAudits = 1
 
-          // 2. Advance some parts — one audit entry per successful advancement
-          const advanceable = Math.min(advanceCount, parts.length)
-          for (let i = 0; i < advanceable; i++) {
-            try {
-              const part = partService.getPart(parts[i].id)
-              if (part.currentStepId === null) continue
-              partService.advancePart(parts[i].id, 'user_test')
-              const updated = partService.getPart(parts[i].id)
-              if (updated.currentStepId === -1) {
-                expectedCompletionAudits++
-              } else {
-                expectedAdvancementAudits++
+            // 2. Advance some parts — one audit entry per successful advancement
+            const advanceable = Math.min(advanceCount, parts.length)
+            for (let i = 0; i < advanceable; i++) {
+              try {
+                const part = partService.getPart(parts[i].id)
+                if (part.currentStepId === null) continue
+                partService.advancePart(parts[i].id, 'user_test')
+                const updated = partService.getPart(parts[i].id)
+                if (updated.currentStepId === -1) {
+                  expectedCompletionAudits++
+                } else {
+                  expectedAdvancementAudits++
+                }
+              } catch {
+                // Already completed — skip
               }
-            } catch {
-              // Already completed — skip
             }
-          }
 
-          // 3. Attach certs — one audit entry per attachment
-          const attachCount = Math.min(certAttachCount, parts.length)
-          if (attachCount > 0) {
-            const cert = certService.createCert({ type: 'material', name: 'Test Cert' })
-            for (let i = 0; i < attachCount; i++) {
-              const part = partService.getPart(parts[i].id)
-              const stepId = part.currentStepId ?? path.steps[stepCount - 1].id
-              certService.attachCertToPart({
-                certId: cert.id,
-                partId: parts[i].id,
-                stepId,
-                userId: 'user_test',
-                jobId: job.id,
-                pathId: path.id,
-              })
-              expectedCertAudits++
+            // 3. Attach certs — one audit entry per attachment
+            const attachCount = Math.min(certAttachCount, parts.length)
+            if (attachCount > 0) {
+              const cert = certService.createCert({ type: 'material', name: 'Test Cert' })
+              for (let i = 0; i < attachCount; i++) {
+                const part = partService.getPart(parts[i].id)
+                const stepId = part.currentStepId ?? path.steps[stepCount - 1].id
+                certService.attachCertToPart({
+                  certId: cert.id,
+                  partId: parts[i].id,
+                  stepId,
+                  userId: 'user_test',
+                  jobId: job.id,
+                  pathId: path.id,
+                })
+                expectedCertAudits++
+              }
             }
+
+            // ASSERT: total audit entries match expected operation count
+            const allAudits = auditService.listAuditEntries({ limit: 10000 })
+            const expectedTotal = expectedCreationAudits + expectedAdvancementAudits + expectedCompletionAudits + expectedCertAudits
+            expect(allAudits.length).toBe(expectedTotal)
+
+            // Verify counts by action type
+            const creationAudits = allAudits.filter(a => a.action === 'part_created')
+            const advancementAudits = allAudits.filter(a => a.action === 'part_advanced')
+            const completionAudits = allAudits.filter(a => a.action === 'part_completed')
+            const certAudits = allAudits.filter(a => a.action === 'cert_attached')
+
+            expect(creationAudits.length).toBe(expectedCreationAudits)
+            expect(advancementAudits.length).toBe(expectedAdvancementAudits)
+            expect(completionAudits.length).toBe(expectedCompletionAudits)
+            expect(certAudits.length).toBe(expectedCertAudits)
+          } finally {
+            rollback(db)
           }
-
-          // ASSERT: total audit entries match expected operation count
-          const allAudits = auditService.listAuditEntries({ limit: 10000 })
-          const expectedTotal = expectedCreationAudits + expectedAdvancementAudits + expectedCompletionAudits + expectedCertAudits
-          expect(allAudits.length).toBe(expectedTotal)
-
-          // Verify counts by action type
-          const creationAudits = allAudits.filter(a => a.action === 'part_created')
-          const advancementAudits = allAudits.filter(a => a.action === 'part_advanced')
-          const completionAudits = allAudits.filter(a => a.action === 'part_completed')
-          const certAudits = allAudits.filter(a => a.action === 'cert_attached')
-
-          expect(creationAudits.length).toBe(expectedCreationAudits)
-          expect(advancementAudits.length).toBe(expectedAdvancementAudits)
-          expect(completionAudits.length).toBe(expectedCompletionAudits)
-          expect(certAudits.length).toBe(expectedCertAudits)
-
-          db.close()
-          db = null as any
         },
       ),
       { numRuns: 100 },
@@ -175,40 +170,41 @@ describe('Property 6: Audit Trail Immutability and Completeness', () => {
           advanceTimes: fc.integer({ min: 1, max: 4 }),
         }),
         ({ stepCount, advanceTimes }) => {
-          db = createTestDb()
-          const { jobService, pathService, partService, auditService } = setupServices(db)
+          savepoint(db)
+          try {
+            const { jobService, pathService, partService, auditService } = setupServices(db)
 
-          const job = jobService.createJob({ name: 'Chrono Test', goalQuantity: 10 })
-          const steps = Array.from({ length: stepCount }, (_, i) => ({ name: `Step ${i}` }))
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: 'Route',
-            goalQuantity: 1,
-            steps,
-          })
+            const job = jobService.createJob({ name: 'Chrono Test', goalQuantity: 10 })
+            const steps = Array.from({ length: stepCount }, (_, i) => ({ name: `Step ${i}` }))
+            const path = pathService.createPath({
+              jobId: job.id,
+              name: 'Route',
+              goalQuantity: 1,
+              steps,
+            })
 
-          const [part] = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: 1 },
-            'user_test',
-          )
+            const [part] = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: 1 },
+              'user_test',
+            )
 
-          const times = Math.min(advanceTimes, stepCount)
-          for (let i = 0; i < times; i++) {
-            try {
-              partService.advancePart(part.id, 'user_test')
-            } catch {
-              break
+            const times = Math.min(advanceTimes, stepCount)
+            for (let i = 0; i < times; i++) {
+              try {
+                partService.advancePart(part.id, 'user_test')
+              } catch {
+                break
+              }
             }
-          }
 
-          // Audit trail for this part should be in chronological order
-          const trail = auditService.getPartAuditTrail(part.id)
-          for (let i = 1; i < trail.length; i++) {
-            expect(trail[i].timestamp >= trail[i - 1].timestamp).toBe(true)
+            // Audit trail for this part should be in chronological order
+            const trail = auditService.getPartAuditTrail(part.id)
+            for (let i = 1; i < trail.length; i++) {
+              expect(trail[i].timestamp >= trail[i - 1].timestamp).toBe(true)
+            }
+          } finally {
+            rollback(db)
           }
-
-          db.close()
-          db = null as any
         },
       ),
       { numRuns: 100 },

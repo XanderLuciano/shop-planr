@@ -73,9 +73,8 @@ const arbBomEntry = (): fc.Arbitrary<BomEntry> =>
   fc.record({
     id: fc.option(arbId(), { nil: undefined }),
     bomId: fc.option(arbId(), { nil: undefined }),
-    partType: arbName(),
-    requiredQuantityPerBuild: fc.integer({ min: 1, max: 1000 }),
-    contributingJobIds: fc.array(arbId(), { maxLength: 5 }),
+    jobId: arbId(),
+    requiredQuantity: fc.integer({ min: 1, max: 1000 }),
   })
 
 const arbBom = (): fc.Arbitrary<BOM> =>
@@ -177,8 +176,9 @@ const arbWorkQueueJob = (): fc.Arbitrary<WorkQueueJob> =>
 
 const arbBomEntrySummary = (): fc.Arbitrary<BomEntrySummary> =>
   fc.record({
-    partType: arbName(),
-    requiredQuantityPerBuild: fc.integer({ min: 1, max: 1000 }),
+    jobId: arbId(),
+    jobName: arbName(),
+    requiredQuantity: fc.integer({ min: 1, max: 1000 }),
     totalCompleted: fc.nat({ max: 500 }),
     totalInProgress: fc.nat({ max: 500 }),
     totalOutstanding: fc.nat({ max: 500 }),

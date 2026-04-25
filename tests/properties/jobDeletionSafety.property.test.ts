@@ -81,7 +81,7 @@ function createMockBomRepo(bomRefCount: number): BomRepository {
     list: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
-    countContributingJobRefs: vi.fn(() => bomRefCount),
+    countJobRefs: vi.fn(() => bomRefCount),
   }
 }
 

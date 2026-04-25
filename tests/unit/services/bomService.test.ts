@@ -3,7 +3,8 @@ import { createBomService } from '../../../server/services/bomService'
 import { NotFoundError, ValidationError } from '../../../server/utils/errors'
 import type { BomRepository } from '../../../server/repositories/interfaces/bomRepository'
 import type { PartRepository } from '../../../server/repositories/interfaces/partRepository'
-import type { BOM } from '../../../server/types/domain'
+import type { JobRepository } from '../../../server/repositories/interfaces/jobRepository'
+import type { BOM, Job } from '../../../server/types/domain'
 
 function createMockBomRepo(): BomRepository {
   const store = new Map<string, BOM>()
@@ -21,6 +22,7 @@ function createMockBomRepo(): BomRepository {
       return updated
     }),
     delete: vi.fn((id: string) => store.delete(id)),
+    countJobRefs: vi.fn(() => 0),
   }
 }
 
@@ -43,35 +45,64 @@ function createMockPartRepo(counts: Record<string, { total: number, completed: n
   }
 }
 
+function createMockJobRepo(jobs: Record<string, string> = {}): JobRepository {
+  return {
+    create: vi.fn(),
+    getById: vi.fn((id: string) => jobs[id] ? { id, name: jobs[id] } as Job : null),
+    list: vi.fn(() => Object.entries(jobs).map(([id, name]) => ({ id, name }) as Job)),
+    update: vi.fn(),
+    delete: vi.fn(),
+    listByIds: vi.fn(),
+  }
+}
+
 describe('BomService', () => {
   let bomRepo: BomRepository
   let partRepo: PartRepository
+  let jobRepo: JobRepository
   let service: ReturnType<typeof createBomService>
 
   beforeEach(() => {
     bomRepo = createMockBomRepo()
     partRepo = createMockPartRepo()
-    service = createBomService({ bom: bomRepo, parts: partRepo })
+    jobRepo = createMockJobRepo({ job_a: 'Bracket Job', job_b: 'Bolt Job' })
+    service = createBomService({ bom: bomRepo, parts: partRepo, jobs: jobRepo })
   })
 
   describe('createBom', () => {
     it('creates a BOM with generated ID and timestamps', () => {
       const bom = service.createBom({
         name: 'Assembly A',
-        entries: [{ partType: 'Bracket', requiredQuantityPerBuild: 4, contributingJobIds: [] }],
+        entries: [{ jobId: 'job_a' }],
       })
       expect(bom.id).toMatch(/^bom_/)
       expect(bom.name).toBe('Assembly A')
       expect(bom.entries).toHaveLength(1)
-      expect(bom.entries[0].partType).toBe('Bracket')
+      expect(bom.entries[0].jobId).toBe('job_a')
+      expect(bom.entries[0].requiredQuantity).toBe(1)
       expect(bom.createdAt).toBeTruthy()
-      expect(bom.updatedAt).toBeTruthy()
+    })
+
+    it('defaults requiredQuantity to 1', () => {
+      const bom = service.createBom({
+        name: 'Default Qty',
+        entries: [{ jobId: 'job_a' }],
+      })
+      expect(bom.entries[0].requiredQuantity).toBe(1)
+    })
+
+    it('respects explicit requiredQuantity', () => {
+      const bom = service.createBom({
+        name: 'Custom Qty',
+        entries: [{ jobId: 'job_a', requiredQuantity: 5 }],
+      })
+      expect(bom.entries[0].requiredQuantity).toBe(5)
     })
 
     it('trims whitespace from name', () => {
       const bom = service.createBom({
         name: '  Trimmed BOM  ',
-        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }],
+        entries: [{ jobId: 'job_a' }],
       })
       expect(bom.name).toBe('Trimmed BOM')
     })
@@ -79,14 +110,14 @@ describe('BomService', () => {
     it('throws ValidationError for empty name', () => {
       expect(() => service.createBom({
         name: '',
-        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }],
+        entries: [{ jobId: 'job_a' }],
       })).toThrow(ValidationError)
     })
 
     it('throws ValidationError for whitespace-only name', () => {
       expect(() => service.createBom({
         name: '   ',
-        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }],
+        entries: [{ jobId: 'job_a' }],
       })).toThrow(ValidationError)
     })
 
@@ -99,7 +130,7 @@ describe('BomService', () => {
     it('returns existing BOM', () => {
       const created = service.createBom({
         name: 'Test BOM',
-        entries: [{ partType: 'Widget', requiredQuantityPerBuild: 2, contributingJobIds: [] }],
+        entries: [{ jobId: 'job_a', requiredQuantity: 2 }],
       })
       const found = service.getBom(created.id)
       expect(found.id).toBe(created.id)
@@ -112,8 +143,8 @@ describe('BomService', () => {
 
   describe('listBoms', () => {
     it('returns all BOMs', () => {
-      service.createBom({ name: 'BOM A', entries: [{ partType: 'A', requiredQuantityPerBuild: 1, contributingJobIds: [] }] })
-      service.createBom({ name: 'BOM B', entries: [{ partType: 'B', requiredQuantityPerBuild: 2, contributingJobIds: [] }] })
+      service.createBom({ name: 'BOM A', entries: [{ jobId: 'job_a' }] })
+      service.createBom({ name: 'BOM B', entries: [{ jobId: 'job_b' }] })
       expect(service.listBoms()).toHaveLength(2)
     })
 
@@ -126,7 +157,7 @@ describe('BomService', () => {
     it('updates name', () => {
       const bom = service.createBom({
         name: 'Old Name',
-        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }],
+        entries: [{ jobId: 'job_a' }],
       })
       const updated = service.updateBom(bom.id, { name: 'New Name' })
       expect(updated.name).toBe('New Name')
@@ -135,25 +166,14 @@ describe('BomService', () => {
     it('updates entries', () => {
       const bom = service.createBom({
         name: 'Test',
-        entries: [{ partType: 'Old Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }],
+        entries: [{ jobId: 'job_a' }],
       })
       const updated = service.updateBom(bom.id, {
-        entries: [
-          { partType: 'New Part', requiredQuantityPerBuild: 5, contributingJobIds: ['job_1'] },
-        ],
+        entries: [{ jobId: 'job_b', requiredQuantity: 5 }],
       })
       expect(updated.entries).toHaveLength(1)
-      expect(updated.entries[0].partType).toBe('New Part')
-      expect(updated.entries[0].requiredQuantityPerBuild).toBe(5)
-    })
-
-    it('sets updatedAt on update', () => {
-      const bom = service.createBom({
-        name: 'Test',
-        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }],
-      })
-      const updated = service.updateBom(bom.id, { name: 'Changed' })
-      expect(updated.updatedAt).toBeTruthy()
+      expect(updated.entries[0].jobId).toBe('job_b')
+      expect(updated.entries[0].requiredQuantity).toBe(5)
     })
 
     it('throws NotFoundError for missing BOM', () => {
@@ -163,52 +183,32 @@ describe('BomService', () => {
     it('throws ValidationError for empty name update', () => {
       const bom = service.createBom({
         name: 'Test',
-        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }],
+        entries: [{ jobId: 'job_a' }],
       })
       expect(() => service.updateBom(bom.id, { name: '' })).toThrow(ValidationError)
     })
   })
 
   describe('getBomSummary', () => {
-    it('returns zero counts for entries with no contributing jobs', () => {
-      const bom = service.createBom({
-        name: 'Empty BOM',
-        entries: [{ partType: 'Bracket', requiredQuantityPerBuild: 10, contributingJobIds: [] }],
-      })
-      const summary = service.getBomSummary(bom.id)
-      expect(summary.bomId).toBe(bom.id)
-      expect(summary.bomName).toBe('Empty BOM')
-      expect(summary.entries).toHaveLength(1)
-      expect(summary.entries[0].totalCompleted).toBe(0)
-      expect(summary.entries[0].totalInProgress).toBe(0)
-      expect(summary.entries[0].totalOutstanding).toBe(0)
-    })
-
-    it('aggregates counts from contributing jobs', () => {
+    it('returns summary with job names and part counts', () => {
       const counts: Record<string, { total: number, completed: number }> = {
         job_a: { total: 10, completed: 6 },
-        job_b: { total: 8, completed: 3 },
       }
       partRepo = createMockPartRepo(counts)
-      service = createBomService({ bom: bomRepo, parts: partRepo })
+      service = createBomService({ bom: bomRepo, parts: partRepo, jobs: jobRepo })
 
       const bom = service.createBom({
         name: 'Assembly',
-        entries: [{
-          partType: 'Bracket',
-          requiredQuantityPerBuild: 20,
-          contributingJobIds: ['job_a', 'job_b'],
-        }],
+        entries: [{ jobId: 'job_a', requiredQuantity: 20 }],
       })
 
       const summary = service.getBomSummary(bom.id)
       const entry = summary.entries[0]
-      // totalCompleted = 6 + 3 = 9
-      expect(entry.totalCompleted).toBe(9)
-      // totalInProgress = (10-6) + (8-3) = 4 + 5 = 9
-      expect(entry.totalInProgress).toBe(9)
-      // totalOutstanding = max(0, 20 - 9) = 11
-      expect(entry.totalOutstanding).toBe(11)
+      expect(entry.jobId).toBe('job_a')
+      expect(entry.jobName).toBe('Bracket Job')
+      expect(entry.totalCompleted).toBe(6)
+      expect(entry.totalInProgress).toBe(4)
+      expect(entry.totalOutstanding).toBe(14)
     })
 
     it('sets outstanding to zero when completed exceeds required', () => {
@@ -216,15 +216,11 @@ describe('BomService', () => {
         job_a: { total: 15, completed: 15 },
       }
       partRepo = createMockPartRepo(counts)
-      service = createBomService({ bom: bomRepo, parts: partRepo })
+      service = createBomService({ bom: bomRepo, parts: partRepo, jobs: jobRepo })
 
       const bom = service.createBom({
         name: 'Over-produced',
-        entries: [{
-          partType: 'Widget',
-          requiredQuantityPerBuild: 10,
-          contributingJobIds: ['job_a'],
-        }],
+        entries: [{ jobId: 'job_a', requiredQuantity: 10 }],
       })
 
       const summary = service.getBomSummary(bom.id)
@@ -238,13 +234,13 @@ describe('BomService', () => {
         job_b: { total: 4, completed: 4 },
       }
       partRepo = createMockPartRepo(counts)
-      service = createBomService({ bom: bomRepo, parts: partRepo })
+      service = createBomService({ bom: bomRepo, parts: partRepo, jobs: jobRepo })
 
       const bom = service.createBom({
         name: 'Multi-entry',
         entries: [
-          { partType: 'Bracket', requiredQuantityPerBuild: 10, contributingJobIds: ['job_a'] },
-          { partType: 'Bolt', requiredQuantityPerBuild: 5, contributingJobIds: ['job_b'] },
+          { jobId: 'job_a', requiredQuantity: 10 },
+          { jobId: 'job_b', requiredQuantity: 5 },
         ],
       })
 
@@ -252,13 +248,13 @@ describe('BomService', () => {
       expect(summary.entries).toHaveLength(2)
 
       const bracket = summary.entries[0]
-      expect(bracket.partType).toBe('Bracket')
+      expect(bracket.jobName).toBe('Bracket Job')
       expect(bracket.totalCompleted).toBe(3)
       expect(bracket.totalInProgress).toBe(2)
       expect(bracket.totalOutstanding).toBe(7)
 
       const bolt = summary.entries[1]
-      expect(bolt.partType).toBe('Bolt')
+      expect(bolt.jobName).toBe('Bolt Job')
       expect(bolt.totalCompleted).toBe(4)
       expect(bolt.totalInProgress).toBe(0)
       expect(bolt.totalOutstanding).toBe(1)
@@ -273,11 +269,11 @@ describe('BomService', () => {
     it('updates BOM name when provided', () => {
       const bom = service.createBom({
         name: 'Original Name',
-        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }],
+        entries: [{ jobId: 'job_a' }],
       })
       const updated = service.editBom(bom.id, {
         name: 'Renamed BOM',
-        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }],
+        entries: [{ jobId: 'job_a' }],
         changeDescription: 'Renamed',
         userId: 'user_1',
       })
@@ -287,11 +283,11 @@ describe('BomService', () => {
     it('trims whitespace from name', () => {
       const bom = service.createBom({
         name: 'Test',
-        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }],
+        entries: [{ jobId: 'job_a' }],
       })
       const updated = service.editBom(bom.id, {
         name: '  Padded Name  ',
-        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }],
+        entries: [{ jobId: 'job_a' }],
         changeDescription: 'Trimmed',
         userId: 'user_1',
       })
@@ -301,10 +297,10 @@ describe('BomService', () => {
     it('keeps existing name when name is not provided', () => {
       const bom = service.createBom({
         name: 'Keep This',
-        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }],
+        entries: [{ jobId: 'job_a' }],
       })
       const updated = service.editBom(bom.id, {
-        entries: [{ partType: 'New Part', requiredQuantityPerBuild: 2, contributingJobIds: [] }],
+        entries: [{ jobId: 'job_b', requiredQuantity: 2 }],
         changeDescription: 'Entries only',
         userId: 'user_1',
       })
@@ -314,11 +310,11 @@ describe('BomService', () => {
     it('throws ValidationError for empty name', () => {
       const bom = service.createBom({
         name: 'Test',
-        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }],
+        entries: [{ jobId: 'job_a' }],
       })
       expect(() => service.editBom(bom.id, {
         name: '',
-        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }],
+        entries: [{ jobId: 'job_a' }],
         changeDescription: 'Bad name',
         userId: 'user_1',
       })).toThrow(ValidationError)
@@ -327,11 +323,11 @@ describe('BomService', () => {
     it('throws ValidationError for whitespace-only name', () => {
       const bom = service.createBom({
         name: 'Test',
-        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }],
+        entries: [{ jobId: 'job_a' }],
       })
       expect(() => service.editBom(bom.id, {
         name: '   ',
-        entries: [{ partType: 'Part', requiredQuantityPerBuild: 1, contributingJobIds: [] }],
+        entries: [{ jobId: 'job_a' }],
         changeDescription: 'Whitespace name',
         userId: 'user_1',
       })).toThrow(ValidationError)

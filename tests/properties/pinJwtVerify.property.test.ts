@@ -3,21 +3,32 @@
  * Property 6: Missing or invalid token (Requirements 6.3, 6.5)
  * Property 7: Token refresh (Requirements 7.1, 7.4)
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import fc from 'fast-check'
-import { createTestContext } from '../integration/helpers'
+import { createReusableTestContext, savepoint, rollback, type TestContext } from './helpers'
 import { generateId } from '../../server/utils/idGenerator'
 
+// File-level ctx — shared across all describe blocks
+let ctx: TestContext
+
+beforeAll(() => {
+  ctx = createReusableTestContext()
+})
+
+afterAll(() => {
+  ctx?.cleanup()
+})
+
 describe('Property 5: Valid JWT attaches user context', () => {
-  it('verifyToken decodes a valid JWT with matching user fields', () => {
-    fc.assert(
+  it('verifyToken decodes a valid JWT with matching user fields', async () => {
+    await fc.assert(
       fc.asyncProperty(
         fc.record({
           username: fc.string({ minLength: 1, maxLength: 20 }).filter((s: string) => s.trim().length > 0),
           isAdmin: fc.boolean(),
         }),
         async ({ username, isAdmin }) => {
-          const ctx = createTestContext()
+          savepoint(ctx.db)
           try {
             await ctx.authService.ensureKeyPair()
             const user = ctx.repos.users.create({
@@ -32,7 +43,7 @@ describe('Property 5: Valid JWT attaches user context', () => {
             expect(payload.username).toBe(user.username)
             expect(payload.isAdmin).toBe(user.isAdmin)
           } finally {
-            ctx.cleanup()
+            rollback(ctx.db)
           }
         },
       ),
@@ -42,17 +53,17 @@ describe('Property 5: Valid JWT attaches user context', () => {
 })
 
 describe('Property 6: Missing or invalid token', () => {
-  it('verifyToken rejects garbage tokens', () => {
-    fc.assert(
+  it('verifyToken rejects garbage tokens', async () => {
+    await fc.assert(
       fc.asyncProperty(
         fc.string({ minLength: 1, maxLength: 200 }),
         async (garbage: string) => {
-          const ctx = createTestContext()
+          savepoint(ctx.db)
           try {
             await ctx.authService.ensureKeyPair()
             await expect(ctx.authService.verifyToken(garbage)).rejects.toThrow()
           } finally {
-            ctx.cleanup()
+            rollback(ctx.db)
           }
         },
       ),
@@ -62,14 +73,14 @@ describe('Property 6: Missing or invalid token', () => {
 })
 
 describe('Property 7: Token refresh produces a new valid token', () => {
-  it('refreshToken returns a new JWT verifiable with the same key', () => {
-    fc.assert(
+  it('refreshToken returns a new JWT verifiable with the same key', async () => {
+    await fc.assert(
       fc.asyncProperty(
         fc.record({
           username: fc.string({ minLength: 1, maxLength: 20 }).filter((s: string) => s.trim().length > 0),
         }),
         async ({ username }) => {
-          const ctx = createTestContext()
+          savepoint(ctx.db)
           try {
             await ctx.authService.ensureKeyPair()
             const user = ctx.repos.users.create({
@@ -85,7 +96,7 @@ describe('Property 7: Token refresh produces a new valid token', () => {
             expect(payload.sub).toBe(user.id)
             expect(payload.exp - payload.iat).toBe(86400)
           } finally {
-            ctx.cleanup()
+            rollback(ctx.db)
           }
         },
       ),

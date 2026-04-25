@@ -1,45 +1,87 @@
 <script setup lang="ts">
-import type { BOM, Job } from '~/types/domain'
+import type { BOM, Job, Tag } from '~/types/domain'
+import type { BomSavePayload } from '~/types/api'
 
 interface EntryDraft {
-  partType: string
-  requiredQuantityPerBuild: number | null
-  contributingJobIds: string[]
+  _key: number
+  jobId: string
+  requiredQuantity: number
 }
+
+let nextKey = 0
 
 const props = defineProps<{
   bom?: BOM
-  jobs: readonly Job[]
+  jobs: readonly (Job & { tags: readonly Tag[] })[]
+  prefillJobIds?: string[]
+  prefillName?: string
 }>()
 
 const emit = defineEmits<{
-  save: [payload: { name: string, entries: { partType: string, requiredQuantityPerBuild: number, contributingJobIds: string[] }[] }]
+  save: [payload: BomSavePayload]
   cancel: []
 }>()
 
-const name = ref(props.bom?.name ?? '')
+const name = ref(props.bom?.name ?? props.prefillName ?? '')
 const entries = ref<EntryDraft[]>(
   props.bom?.entries.length
     ? props.bom.entries.map(e => ({
-        partType: e.partType,
-        requiredQuantityPerBuild: e.requiredQuantityPerBuild,
-        contributingJobIds: [...e.contributingJobIds],
+        _key: nextKey++,
+        jobId: e.jobId,
+        requiredQuantity: e.requiredQuantity,
       }))
-    : [{ partType: '', requiredQuantityPerBuild: null, contributingJobIds: [] }],
+    : props.prefillJobIds?.length
+      ? props.prefillJobIds.map(id => ({ _key: nextKey++, jobId: id, requiredQuantity: 1 }))
+      : [{ _key: nextKey++, jobId: '', requiredQuantity: 1 }],
 )
 const formError = ref('')
 
+const usedJobIds = computed(() => new Set(entries.value.map(e => e.jobId).filter(Boolean)))
+
+const availableTags = computed(() => {
+  const tagMap = new Map<string, Tag>()
+  for (const job of props.jobs) {
+    for (const tag of job.tags) {
+      if (!tagMap.has(tag.id)) tagMap.set(tag.id, tag)
+    }
+  }
+  return [...tagMap.values()]
+})
+
+function addFromTag(tag: Tag) {
+  const jobIds = props.jobs
+    .filter(j => j.tags.some(t => t.id === tag.id))
+    .map(j => j.id)
+    .filter(id => !usedJobIds.value.has(id))
+
+  if (!jobIds.length) return
+
+  // Remove any empty placeholder rows first
+  entries.value = entries.value.filter(e => e.jobId)
+
+  for (const id of jobIds) {
+    entries.value.push({ _key: nextKey++, jobId: id, requiredQuantity: 1 })
+  }
+
+  // Ensure at least one row if somehow everything was filtered
+  if (!entries.value.length) {
+    entries.value.push({ _key: nextKey++, jobId: '', requiredQuantity: 1 })
+  }
+}
+
+function jobOptions(currentJobId: string) {
+  return props.jobs
+    .filter(j => j.id === currentJobId || !usedJobIds.value.has(j.id))
+    .map(j => ({ label: j.name, value: j.id }))
+}
+
 function addEntry() {
-  entries.value.push({ partType: '', requiredQuantityPerBuild: null, contributingJobIds: [] })
+  entries.value.push({ _key: nextKey++, jobId: '', requiredQuantity: 1 })
 }
 
 function removeEntry(index: number) {
   if (entries.value.length <= 1) return
   entries.value.splice(index, 1)
-}
-
-function jobOptions() {
-  return props.jobs.map(j => ({ label: j.name, value: j.id }))
 }
 
 function onSubmit() {
@@ -48,34 +90,32 @@ function onSubmit() {
     formError.value = 'BOM name is required'
     return
   }
-  const valid = entries.value.filter(e => e.partType.trim())
+  const valid = entries.value.filter(e => e.jobId)
   if (!valid.length) {
-    formError.value = 'At least one entry with a part type is required'
+    formError.value = 'At least one job entry is required'
     return
   }
   for (const e of valid) {
-    if (!e.requiredQuantityPerBuild || e.requiredQuantityPerBuild < 1) {
-      formError.value = `Required quantity must be at least 1 for "${e.partType}"`
+    if (!Number.isFinite(e.requiredQuantity) || !Number.isInteger(e.requiredQuantity) || e.requiredQuantity < 1) {
+      const job = props.jobs.find(j => j.id === e.jobId)
+      formError.value = `Required quantity must be at least 1 for "${job?.name ?? e.jobId}"`
       return
     }
   }
   emit('save', {
     name: name.value.trim(),
     entries: valid.map(e => ({
-      partType: e.partType.trim(),
-      requiredQuantityPerBuild: e.requiredQuantityPerBuild!,
-      contributingJobIds: e.contributingJobIds,
+      jobId: e.jobId,
+      requiredQuantity: e.requiredQuantity,
     })),
   })
 }
+
+defineExpose({ submit: onSubmit })
 </script>
 
 <template>
-  <div class="space-y-3 p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50">
-    <div class="text-xs font-semibold text-(--ui-text-highlighted)">
-      {{ bom ? 'Edit BOM' : 'New BOM' }}
-    </div>
-
+  <div class="space-y-3">
     <div>
       <label class="block text-xs text-(--ui-text-muted) mb-0.5">BOM Name</label>
       <UInput
@@ -89,61 +129,62 @@ function onSubmit() {
     <div>
       <div class="flex items-center justify-between mb-1">
         <label class="text-xs font-medium text-(--ui-text-muted)">Entries</label>
+        <UDropdownMenu
+          v-if="availableTags.length"
+          :modal="false"
+          :items="[[{ label: 'Add jobs from tag', type: 'label', class: 'text-[10px] text-(--ui-text-dimmed) font-normal py-0' }], availableTags.map(t => ({ label: t.name, onSelect: () => addFromTag(t) }))]"
+        >
+          <UButton
+            icon="i-lucide-tag"
+            size="xs"
+            variant="ghost"
+            label="From Tag"
+          />
+        </UDropdownMenu>
+      </div>
+      <div class="space-y-2">
+        <div
+          v-for="(entry, i) in entries"
+          :key="entry._key"
+          class="flex items-center gap-2"
+        >
+          <div class="flex-[3] min-w-0">
+            <USelectMenu
+              v-model="entry.jobId"
+              :items="jobOptions(entry.jobId)"
+              size="sm"
+              placeholder="Select a job..."
+              value-key="value"
+              class="w-full"
+            />
+          </div>
+          <div class="w-16 shrink-0">
+            <UInput
+              v-model.number="entry.requiredQuantity"
+              size="sm"
+              type="number"
+              :min="1"
+              placeholder="Qty"
+            />
+          </div>
+          <UButton
+            icon="i-lucide-x"
+            size="xs"
+            variant="ghost"
+            color="error"
+            class="shrink-0"
+            :disabled="entries.length <= 1"
+            @click="removeEntry(i)"
+          />
+        </div>
         <UButton
           icon="i-lucide-plus"
           size="xs"
           variant="ghost"
           label="Add Entry"
+          class="w-full"
           @click="addEntry"
         />
-      </div>
-      <div class="space-y-2">
-        <div
-          v-for="(entry, i) in entries"
-          :key="i"
-          class="p-2 border border-(--ui-border-muted) rounded space-y-1.5"
-        >
-          <div class="flex items-center gap-2">
-            <div class="flex-1">
-              <label class="block text-xs text-(--ui-text-muted) mb-0.5">Part Type</label>
-              <UInput
-                v-model="entry.partType"
-                size="sm"
-                placeholder="e.g. Bracket"
-              />
-            </div>
-            <div class="w-32">
-              <label class="block text-xs text-(--ui-text-muted) mb-0.5">Qty / Build</label>
-              <UInput
-                v-model.number="entry.requiredQuantityPerBuild"
-                size="sm"
-                type="number"
-                :min="1"
-                placeholder="1"
-              />
-            </div>
-            <UButton
-              icon="i-lucide-x"
-              size="xs"
-              variant="ghost"
-              color="error"
-              class="mt-4"
-              :disabled="entries.length <= 1"
-              @click="removeEntry(i)"
-            />
-          </div>
-          <div>
-            <label class="block text-xs text-(--ui-text-muted) mb-0.5">Contributing Jobs</label>
-            <USelectMenu
-              v-model="entry.contributingJobIds"
-              :items="jobOptions()"
-              multiple
-              size="sm"
-              placeholder="Select jobs..."
-              value-key="value"
-            />
-          </div>
-        </div>
       </div>
     </div>
 
@@ -153,19 +194,5 @@ function onSubmit() {
     >
       {{ formError }}
     </p>
-
-    <div class="flex gap-2 justify-end">
-      <UButton
-        variant="ghost"
-        size="xs"
-        label="Cancel"
-        @click="emit('cancel')"
-      />
-      <UButton
-        size="xs"
-        :label="bom ? 'Update BOM' : 'Create BOM'"
-        @click="onSubmit"
-      />
-    </div>
   </div>
 </template>

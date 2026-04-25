@@ -11,6 +11,7 @@ description: "Coding standards for Shop Planr: import resolution, architecture l
 2. Never use `any`, `as any`, or unnecessary type assertions (`as SomeType`) to silence the compiler. If a type doesn't fit, fix the type — don't cast around it. `as` casts are acceptable only at trust boundaries (e.g., parsing external JSON, library interop) where you've validated the shape. `any` is OK in `tests/**` for mocking.
 3. Verify fixes end-to-end: run `npm run lint`, `npx nuxt typecheck`, and `npm run test` before considering work done. All three must pass.
 4. USelect (Reka UI SelectRoot) must NEVER be bound to a ref typed with `undefined` or `null`. Use the sentinel string `'__none__'` for the unselected state, and include it as a disabled item in the items array so the value types align. Setting `v-model` to `undefined` causes runtime errors in Reka UI.
+5. When grouping connected UI elements (e.g., split buttons via `UFieldGroup`), always use the same `variant` and `color` on all elements unless explicitly asked to differ. Mismatched variants cause visual inconsistencies (different backgrounds, hover states, borders) that look broken.
 
 ## Writing Code That Passes Lint
 
