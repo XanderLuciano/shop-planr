@@ -34,6 +34,7 @@ export default defineConfig({
     exclude: [...configDefaults.exclude, 'tests/e2e/**'],
     env: {
       TZ: 'UTC',
+      BCRYPT_ROUNDS: '4',
     },
     poolOptions: {
       forks: {

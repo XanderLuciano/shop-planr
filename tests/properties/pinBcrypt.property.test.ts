@@ -27,7 +27,7 @@ describe('Property 1: PIN bcrypt round-trip', () => {
   it('hashing then comparing the same PIN returns true, different PIN returns false', () => {
     fc.assert(
       fc.property(arbPin, arbPin, (pin: string, otherPin: string) => {
-        const hash = hashSync(pin, 10)
+        const hash = hashSync(pin, 4)
         expect(compareSync(pin, hash)).toBe(true)
         if (pin !== otherPin) {
           expect(compareSync(otherPin, hash)).toBe(false)

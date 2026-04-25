@@ -9,7 +9,7 @@ import { AuthenticationError, ForbiddenError, NotFoundError, ValidationError } f
 
 const ALGORITHM = 'ES256'
 const JWT_EXPIRY_SECONDS = 86400 // 24 hours
-const BCRYPT_ROUNDS = 10
+const BCRYPT_ROUNDS = process.env.BCRYPT_ROUNDS ? Number.parseInt(process.env.BCRYPT_ROUNDS, 10) : 10
 const PIN_REGEX = /^\d{4}$/
 
 export interface JwtPayload {
