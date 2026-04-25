@@ -42,6 +42,17 @@ export default defineConfig({
         minForks: 1,
       },
     },
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'lcov'],
+      reportsDirectory: './coverage',
+      include: ['server/**/*.ts', 'app/**/*.ts', 'app/**/*.vue'],
+      exclude: [
+        'server/repositories/sqlite/migrations/**',
+        '**/*.d.ts',
+        '**/*.test.ts',
+      ],
+    },
   },
   plugins: [nuxtImportMetaPlugin()],
   resolve: {
