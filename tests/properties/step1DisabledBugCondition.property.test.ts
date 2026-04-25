@@ -10,9 +10,9 @@
  *
  * **Validates: Requirements 2.1, 2.3, 2.4**
  */
-import { describe, it, afterEach, expect } from 'vitest'
+import { describe, it, beforeAll, afterAll, expect } from 'vitest'
 import fc from 'fast-check'
-import { createTestContext, type TestContext } from '../integration/helpers'
+import { createReusableTestContext, savepoint, rollback, type TestContext } from './helpers'
 import type { WorkQueueJob, StepViewResponse, WorkQueueResponse } from '../../server/types/computed'
 import { findFirstActiveStep, shouldIncludeStep } from '../../server/utils/workQueueHelpers'
 
@@ -158,6 +158,7 @@ const multiStepConfigArb = fc.record({
   ),
 })
 
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -165,12 +166,8 @@ const multiStepConfigArb = fc.record({
 describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
   let ctx: TestContext
 
-  afterEach(() => {
-    if (ctx) {
-      ctx.cleanup()
-      ctx = null as any
-    }
-  })
+  beforeAll(() => { ctx = createReusableTestContext() })
+  afterAll(() => { ctx?.cleanup() })
 
   /**
    * Property 1: Bug Condition — First Step Always Accessible
@@ -187,55 +184,56 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
   it('Property 1: First step with zero parts returns valid response', () => {
     fc.assert(
       fc.property(jobPathConfigArb, (config) => {
-        ctx = createTestContext()
-        const { jobService, pathService, partService } = ctx
+        savepoint(ctx.db)
+        try {
+          const { jobService, pathService, partService } = ctx
 
-        // Create job + path
-        const job = jobService.createJob({
-          name: config.jobName,
-          goalQuantity: config.partCount,
-        })
+          // Create job + path
+          const job = jobService.createJob({
+            name: config.jobName,
+            goalQuantity: config.partCount,
+          })
 
-        const steps = Array.from({ length: config.stepCount }, (_, i) => ({
-          name: `Step-${i}`,
-          location: config.stepLocations[i],
-        }))
+          const steps = Array.from({ length: config.stepCount }, (_, i) => ({
+            name: `Step-${i}`,
+            location: config.stepLocations[i],
+          }))
 
-        const path = pathService.createPath({
-          jobId: job.id,
-          name: config.pathName,
-          goalQuantity: config.partCount,
-          steps,
-        })
+          const path = pathService.createPath({
+            jobId: job.id,
+            name: config.pathName,
+            goalQuantity: config.partCount,
+            steps,
+          })
 
-        // Create parts (they start at step 0)
-        const parts = partService.batchCreateParts(
-          { jobId: job.id, pathId: path.id, quantity: config.partCount },
-          'user_test',
-        )
+          // Create parts (they start at step 0)
+          const parts = partService.batchCreateParts(
+            { jobId: job.id, pathId: path.id, quantity: config.partCount },
+            'user_test',
+          )
 
-        // Advance ALL parts past step 0
-        // For single-step paths, advancing completes the part
-        // For multi-step paths, advancing moves to step 1
-        for (const part of parts) {
-          try {
-            partService.advancePart(part.id, 'user_test')
-          } catch {
-            // ignore if already completed
+          // Advance ALL parts past step 0
+          // For single-step paths, advancing completes the part
+          // For multi-step paths, advancing moves to step 1
+          for (const part of parts) {
+            try {
+              partService.advancePart(part.id, 'user_test')
+            } catch {
+              // ignore if already completed
+            }
           }
+
+          // Now step 0 has zero parts — query it
+          const step0Id = path.steps[0].id
+          const result = lookupStep(ctx, step0Id)
+
+          // ASSERT: first step should always be accessible with partCount: 0
+          expect(result, `First step ${step0Id} should return non-null even with 0 parts`).not.toBeNull()
+          expect(result!.job.partCount).toBe(0)
+          expect(result!.job.partIds).toEqual([])
+        } finally {
+          rollback(ctx.db)
         }
-
-        // Now step 0 has zero parts — query it
-        const step0Id = path.steps[0].id
-        const result = lookupStep(ctx, step0Id)
-
-        // ASSERT: first step should always be accessible with partCount: 0
-        expect(result, `First step ${step0Id} should return non-null even with 0 parts`).not.toBeNull()
-        expect(result!.job.partCount).toBe(0)
-        expect(result!.job.partIds).toEqual([])
-
-        ctx.cleanup()
-        ctx = null as any
       }),
       { numRuns: 100 },
     )
@@ -256,44 +254,45 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
   it('Property 2: Non-first step with zero parts returns valid response', () => {
     fc.assert(
       fc.property(multiStepConfigArb, (config) => {
-        ctx = createTestContext()
-        const { jobService, pathService, partService } = ctx
+        savepoint(ctx.db)
+        try {
+          const { jobService, pathService, partService } = ctx
 
-        // Create job + path with 2+ steps
-        const job = jobService.createJob({
-          name: config.jobName,
-          goalQuantity: config.partCount,
-        })
+          // Create job + path with 2+ steps
+          const job = jobService.createJob({
+            name: config.jobName,
+            goalQuantity: config.partCount,
+          })
 
-        const steps = Array.from({ length: config.stepCount }, (_, i) => ({
-          name: `Step-${i}`,
-          location: config.stepLocations[i],
-        }))
+          const steps = Array.from({ length: config.stepCount }, (_, i) => ({
+            name: `Step-${i}`,
+            location: config.stepLocations[i],
+          }))
 
-        const path = pathService.createPath({
-          jobId: job.id,
-          name: config.pathName,
-          goalQuantity: config.partCount,
-          steps,
-        })
+          const path = pathService.createPath({
+            jobId: job.id,
+            name: config.pathName,
+            goalQuantity: config.partCount,
+            steps,
+          })
 
-        // Create parts at step 0 — do NOT advance any
-        partService.batchCreateParts(
-          { jobId: job.id, pathId: path.id, quantity: config.partCount },
-          'user_test',
-        )
+          // Create parts at step 0 — do NOT advance any
+          partService.batchCreateParts(
+            { jobId: job.id, pathId: path.id, quantity: config.partCount },
+            'user_test',
+          )
 
-        // Step 1 has zero parts (none advanced from step 0 yet)
-        const step1Id = path.steps[1].id
-        const result = lookupStep(ctx, step1Id)
+          // Step 1 has zero parts (none advanced from step 0 yet)
+          const step1Id = path.steps[1].id
+          const result = lookupStep(ctx, step1Id)
 
-        // ASSERT: non-first step should return valid response with partCount: 0
-        expect(result, `Step 1 (${step1Id}) should return non-null even with 0 parts`).not.toBeNull()
-        expect(result!.job.partCount).toBe(0)
-        expect(result!.job.partIds).toEqual([])
-
-        ctx.cleanup()
-        ctx = null as any
+          // ASSERT: non-first step should return valid response with partCount: 0
+          expect(result, `Step 1 (${step1Id}) should return non-null even with 0 parts`).not.toBeNull()
+          expect(result!.job.partCount).toBe(0)
+          expect(result!.job.partIds).toEqual([])
+        } finally {
+          rollback(ctx.db)
+        }
       }),
       { numRuns: 100 },
     )
@@ -313,55 +312,56 @@ describe('Bug Condition Exploration — Step 1 Disabled After Advance', () => {
   it('Property 3: Parts View includes first step even with zero parts when goal not met', () => {
     fc.assert(
       fc.property(jobPathConfigArb, (config) => {
-        ctx = createTestContext()
-        const { jobService, pathService, partService } = ctx
+        savepoint(ctx.db)
+        try {
+          const { jobService, pathService, partService } = ctx
 
-        // Create job + path — use partCount + 1 as goalQuantity so advancing
-        // all parts still leaves completedCount < goalQuantity
-        const goalQuantity = config.partCount + 1
-        const job = jobService.createJob({
-          name: config.jobName,
-          goalQuantity,
-        })
+          // Create job + path — use partCount + 1 as goalQuantity so advancing
+          // all parts still leaves completedCount < goalQuantity
+          const goalQuantity = config.partCount + 1
+          const job = jobService.createJob({
+            name: config.jobName,
+            goalQuantity,
+          })
 
-        const steps = Array.from({ length: config.stepCount }, (_, i) => ({
-          name: `Step-${i}`,
-          location: config.stepLocations[i],
-        }))
+          const steps = Array.from({ length: config.stepCount }, (_, i) => ({
+            name: `Step-${i}`,
+            location: config.stepLocations[i],
+          }))
 
-        const path = pathService.createPath({
-          jobId: job.id,
-          name: config.pathName,
-          goalQuantity,
-          steps,
-        })
+          const path = pathService.createPath({
+            jobId: job.id,
+            name: config.pathName,
+            goalQuantity,
+            steps,
+          })
 
-        // Create parts
-        const parts = partService.batchCreateParts(
-          { jobId: job.id, pathId: path.id, quantity: config.partCount },
-          'user_test',
-        )
+          // Create parts
+          const parts = partService.batchCreateParts(
+            { jobId: job.id, pathId: path.id, quantity: config.partCount },
+            'user_test',
+          )
 
-        // Advance ALL parts past step 0
-        for (const part of parts) {
-          try {
-            partService.advancePart(part.id, 'user_test')
-          } catch {
-            // ignore if already completed
+          // Advance ALL parts past step 0
+          for (const part of parts) {
+            try {
+              partService.advancePart(part.id, 'user_test')
+            } catch {
+              // ignore if already completed
+            }
           }
+
+          // Call aggregateAllWork
+          const response = aggregateAllWork(ctx)
+
+          // ASSERT: step 0 should appear because completedCount < goalQuantity
+          const step0Id = path.steps[0].id
+          const step0InResponse = response.jobs.some(j => j.stepId === step0Id)
+
+          expect(step0InResponse, `Step 0 (${step0Id}) should be included when completedCount < goalQuantity`).toBe(true)
+        } finally {
+          rollback(ctx.db)
         }
-
-        // Call aggregateAllWork
-        const response = aggregateAllWork(ctx)
-
-        // ASSERT: step 0 should appear because completedCount < goalQuantity
-        const step0Id = path.steps[0].id
-        const step0InResponse = response.jobs.some(j => j.stepId === step0Id)
-
-        expect(step0InResponse, `Step 0 (${step0Id}) should be included when completedCount < goalQuantity`).toBe(true)
-
-        ctx.cleanup()
-        ctx = null as any
       }),
       { numRuns: 100 },
     )

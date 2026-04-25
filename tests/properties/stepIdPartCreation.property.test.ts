@@ -9,23 +9,12 @@
  *
  * **Validates: Requirements 1.2**
  */
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterAll, beforeAll } from 'vitest'
 import fc from 'fast-check'
-import Database from 'better-sqlite3'
-import { resolve } from 'path'
-import { runMigrations } from '../../server/repositories/sqlite/index'
+import type Database from 'better-sqlite3'
+import { createMigratedDb, savepoint, rollback } from './helpers'
 import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
 import type { Part } from '../../server/types/domain'
-
-const MIGRATIONS_DIR = resolve(__dirname, '../../server/repositories/sqlite/migrations')
-
-function createTestDb() {
-  const db = new Database(':memory:')
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
-  runMigrations(db, MIGRATIONS_DIR)
-  return db
-}
 
 /**
  * Seed a job, path, and N process steps. Returns the step IDs in order.
@@ -67,8 +56,12 @@ const arbIsoDate = () =>
 describe('Feature: step-id-part-tracking, Property 1: Part creation sets currentStepId to first step', () => {
   let db: Database.Database
 
-  afterEach(() => {
-    if (db) db.close()
+  beforeAll(() => {
+    db = createMigratedDb()
+  })
+
+  afterAll(() => {
+    db?.close()
   })
 
   it('creating a part with currentStepId = first step ID round-trips correctly', () => {
@@ -79,33 +72,34 @@ describe('Feature: step-id-part-tracking, Property 1: Part creation sets current
         arbIsoDate(),
         arbIsoDate(),
         (partId, stepCount, createdAt, updatedAt) => {
-          db = createTestDb()
-          const jobId = `job_${partId}`
-          const pathId = `path_${partId}`
-          const stepIds = seedWithSteps(db, jobId, pathId, stepCount)
-          const repo = new SQLitePartRepository(db)
+          savepoint(db)
+          try {
+            const jobId = `job_${partId}`
+            const pathId = `path_${partId}`
+            const stepIds = seedWithSteps(db, jobId, pathId, stepCount)
+            const repo = new SQLitePartRepository(db)
 
-          const firstStepId = stepIds[0]!
-          const part: Part = {
-            id: partId,
-            jobId,
-            pathId,
-            currentStepId: firstStepId,
-            status: 'in_progress',
-            forceCompleted: false,
-            createdAt,
-            updatedAt,
+            const firstStepId = stepIds[0]!
+            const part: Part = {
+              id: partId,
+              jobId,
+              pathId,
+              currentStepId: firstStepId,
+              status: 'in_progress',
+              forceCompleted: false,
+              createdAt,
+              updatedAt,
+            }
+
+            repo.create(part)
+            const retrieved = repo.getById(partId)
+
+            expect(retrieved).not.toBeNull()
+            expect(retrieved!.currentStepId).toBe(firstStepId)
+            expect(retrieved!.status).toBe('in_progress')
+          } finally {
+            rollback(db)
           }
-
-          repo.create(part)
-          const retrieved = repo.getById(partId)
-
-          expect(retrieved).not.toBeNull()
-          expect(retrieved!.currentStepId).toBe(firstStepId)
-          expect(retrieved!.status).toBe('in_progress')
-
-          db.close()
-          db = null as any
         },
       ),
       { numRuns: 100 },
@@ -120,32 +114,33 @@ describe('Feature: step-id-part-tracking, Property 1: Part creation sets current
         arbIsoDate(),
         arbIsoDate(),
         (partId, stepCount, createdAt, updatedAt) => {
-          db = createTestDb()
-          const jobId = `job_c_${partId}`
-          const pathId = `path_c_${partId}`
-          seedWithSteps(db, jobId, pathId, stepCount)
-          const repo = new SQLitePartRepository(db)
+          savepoint(db)
+          try {
+            const jobId = `job_c_${partId}`
+            const pathId = `path_c_${partId}`
+            seedWithSteps(db, jobId, pathId, stepCount)
+            const repo = new SQLitePartRepository(db)
 
-          const part: Part = {
-            id: partId,
-            jobId,
-            pathId,
-            currentStepId: null,
-            status: 'completed',
-            forceCompleted: false,
-            createdAt,
-            updatedAt,
+            const part: Part = {
+              id: partId,
+              jobId,
+              pathId,
+              currentStepId: null,
+              status: 'completed',
+              forceCompleted: false,
+              createdAt,
+              updatedAt,
+            }
+
+            repo.create(part)
+            const retrieved = repo.getById(partId)
+
+            expect(retrieved).not.toBeNull()
+            expect(retrieved!.currentStepId).toBeNull()
+            expect(retrieved!.status).toBe('completed')
+          } finally {
+            rollback(db)
           }
-
-          repo.create(part)
-          const retrieved = repo.getById(partId)
-
-          expect(retrieved).not.toBeNull()
-          expect(retrieved!.currentStepId).toBeNull()
-          expect(retrieved!.status).toBe('completed')
-
-          db.close()
-          db = null as any
         },
       ),
       { numRuns: 100 },
@@ -160,35 +155,36 @@ describe('Feature: step-id-part-tracking, Property 1: Part creation sets current
         arbIsoDate(),
         arbIsoDate(),
         (partId, stepCount, createdAt, updatedAt) => {
-          db = createTestDb()
-          const jobId = `job_a_${partId}`
-          const pathId = `path_a_${partId}`
-          const stepIds = seedWithSteps(db, jobId, pathId, stepCount)
-          const repo = new SQLitePartRepository(db)
+          savepoint(db)
+          try {
+            const jobId = `job_a_${partId}`
+            const pathId = `path_a_${partId}`
+            const stepIds = seedWithSteps(db, jobId, pathId, stepCount)
+            const repo = new SQLitePartRepository(db)
 
-          // Pick a random step index deterministically from partId
-          const stepIndex = partId.length % stepCount
-          const chosenStepId = stepIds[stepIndex]!
+            // Pick a random step index deterministically from partId
+            const stepIndex = partId.length % stepCount
+            const chosenStepId = stepIds[stepIndex]!
 
-          const part: Part = {
-            id: partId,
-            jobId,
-            pathId,
-            currentStepId: chosenStepId,
-            status: 'in_progress',
-            forceCompleted: false,
-            createdAt,
-            updatedAt,
+            const part: Part = {
+              id: partId,
+              jobId,
+              pathId,
+              currentStepId: chosenStepId,
+              status: 'in_progress',
+              forceCompleted: false,
+              createdAt,
+              updatedAt,
+            }
+
+            repo.create(part)
+            const retrieved = repo.getById(partId)
+
+            expect(retrieved).not.toBeNull()
+            expect(retrieved!.currentStepId).toBe(chosenStepId)
+          } finally {
+            rollback(db)
           }
-
-          repo.create(part)
-          const retrieved = repo.getById(partId)
-
-          expect(retrieved).not.toBeNull()
-          expect(retrieved!.currentStepId).toBe(chosenStepId)
-
-          db.close()
-          db = null as any
         },
       ),
       { numRuns: 100 },

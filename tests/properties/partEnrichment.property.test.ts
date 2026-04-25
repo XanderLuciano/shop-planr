@@ -3,11 +3,10 @@
  *
  * Tests P5 (status derivation) and P7 (enrichment completeness).
  */
-import { describe, it, afterEach, expect } from 'vitest'
+import { describe, it, afterAll, beforeAll, expect } from 'vitest'
 import fc from 'fast-check'
-import Database from 'better-sqlite3'
-import { resolve } from 'path'
-import { runMigrations } from '../../server/repositories/sqlite/index'
+import type Database from 'better-sqlite3'
+import { createMigratedDb, savepoint, rollback } from './helpers'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
 import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
@@ -31,17 +30,7 @@ import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
  * **Validates: Requirements 11.6**
  */
 
-const migrationsDir = resolve(__dirname, '../../server/repositories/sqlite/migrations')
-
-function createTestDb() {
-  const db = new Database(':memory:')
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
-  runMigrations(db, migrationsDir)
-  return db
-}
-
-function setupServices(db: Database.default.Database) {
+function setupServices(db: Database.Database) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
@@ -91,68 +80,70 @@ const scenarioArb = fc.record({
  * **Validates: Requirements 4.7, 5.4**
  */
 describe('Property 5: Part status derivation', () => {
-  let db: Database.default.Database
+  let db: Database.Database
 
-  afterEach(() => {
-    if (db) {
-      db.close()
-      db = null as any
-    }
+  beforeAll(() => {
+    db = createMigratedDb()
+  })
+
+  afterAll(() => {
+    db?.close()
   })
 
   it('currentStepId === null yields completed, otherwise in-progress', () => {
     fc.assert(
       fc.property(scenarioArb, (config) => {
-        db = createTestDb()
-        const { jobService, pathService, partService } = setupServices(db)
+        savepoint(db)
+        try {
+          const { jobService, pathService, partService } = setupServices(db)
 
-        const job = jobService.createJob({
-          name: config.jobName,
-          goalQuantity: config.partCount,
-        })
+          const job = jobService.createJob({
+            name: config.jobName,
+            goalQuantity: config.partCount,
+          })
 
-        const steps = Array.from({ length: config.stepCount }, (_, i) => ({
-          name: `Step ${i}`,
-          location: `Loc-${i}`,
-        }))
+          const steps = Array.from({ length: config.stepCount }, (_, i) => ({
+            name: `Step ${i}`,
+            location: `Loc-${i}`,
+          }))
 
-        const path = pathService.createPath({
-          jobId: job.id,
-          name: config.pathName,
-          goalQuantity: config.partCount,
-          steps,
-        })
+          const path = pathService.createPath({
+            jobId: job.id,
+            name: config.pathName,
+            goalQuantity: config.partCount,
+            steps,
+          })
 
-        const parts = partService.batchCreateParts(
-          { jobId: job.id, pathId: path.id, quantity: config.partCount },
-          'user_test',
-        )
+          const parts = partService.batchCreateParts(
+            { jobId: job.id, pathId: path.id, quantity: config.partCount },
+            'user_test',
+          )
 
-        // Apply advancements
-        for (let i = 0; i < parts.length; i++) {
-          const advanceCount = config.advanceCounts[i] ?? 0
-          for (let a = 0; a < advanceCount; a++) {
-            try {
-              partService.advancePart(parts[i].id, 'user_test')
-            } catch {
-              break
+          // Apply advancements
+          for (let i = 0; i < parts.length; i++) {
+            const advanceCount = config.advanceCounts[i] ?? 0
+            for (let a = 0; a < advanceCount; a++) {
+              try {
+                partService.advancePart(parts[i].id, 'user_test')
+              } catch {
+                break
+              }
             }
           }
-        }
 
-        // Get enriched parts and verify status derivation
-        const enriched = partService.listAllPartsEnriched()
+          // Get enriched parts and verify status derivation
+          const enriched = partService.listAllPartsEnriched()
 
-        for (const e of enriched) {
-          if (e.currentStepId === null) {
-            expect(e.status).toBe('completed')
-          } else {
-            expect(e.status).toBe('in-progress')
+          for (const e of enriched) {
+            if (e.currentStepId === null) {
+              expect(e.status).toBe('completed')
+            } else {
+              expect(e.status).toBe('in-progress')
+            }
           }
+        } finally {
+          rollback(db)
         }
-
-        db.close()
-        db = null as any
       }),
       { numRuns: 100 },
     )
@@ -169,87 +160,89 @@ describe('Property 5: Part status derivation', () => {
  * **Validates: Requirements 7.3, 11.2**
  */
 describe('Property 7: Part enrichment completeness', () => {
-  let db: Database.default.Database
+  let db: Database.Database
 
-  afterEach(() => {
-    if (db) {
-      db.close()
-      db = null as any
-    }
+  beforeAll(() => {
+    db = createMigratedDb()
+  })
+
+  afterAll(() => {
+    db?.close()
   })
 
   it('enriched parts have all required non-empty fields and valid status', () => {
     fc.assert(
       fc.property(scenarioArb, (config) => {
-        db = createTestDb()
-        const { jobService, pathService, partService } = setupServices(db)
+        savepoint(db)
+        try {
+          const { jobService, pathService, partService } = setupServices(db)
 
-        const job = jobService.createJob({
-          name: config.jobName,
-          goalQuantity: config.partCount,
-        })
+          const job = jobService.createJob({
+            name: config.jobName,
+            goalQuantity: config.partCount,
+          })
 
-        const steps = Array.from({ length: config.stepCount }, (_, i) => ({
-          name: `Step ${i}`,
-          location: `Loc-${i}`,
-        }))
+          const steps = Array.from({ length: config.stepCount }, (_, i) => ({
+            name: `Step ${i}`,
+            location: `Loc-${i}`,
+          }))
 
-        const path = pathService.createPath({
-          jobId: job.id,
-          name: config.pathName,
-          goalQuantity: config.partCount,
-          steps,
-        })
+          const path = pathService.createPath({
+            jobId: job.id,
+            name: config.pathName,
+            goalQuantity: config.partCount,
+            steps,
+          })
 
-        const parts = partService.batchCreateParts(
-          { jobId: job.id, pathId: path.id, quantity: config.partCount },
-          'user_test',
-        )
+          const parts = partService.batchCreateParts(
+            { jobId: job.id, pathId: path.id, quantity: config.partCount },
+            'user_test',
+          )
 
-        // Apply advancements
-        for (let i = 0; i < parts.length; i++) {
-          const advanceCount = config.advanceCounts[i] ?? 0
-          for (let a = 0; a < advanceCount; a++) {
-            try {
-              partService.advancePart(parts[i].id, 'user_test')
-            } catch {
-              break
+          // Apply advancements
+          for (let i = 0; i < parts.length; i++) {
+            const advanceCount = config.advanceCounts[i] ?? 0
+            for (let a = 0; a < advanceCount; a++) {
+              try {
+                partService.advancePart(parts[i].id, 'user_test')
+              } catch {
+                break
+              }
             }
           }
-        }
 
-        // Get enriched parts and verify completeness
-        const enriched = partService.listAllPartsEnriched()
+          // Get enriched parts and verify completeness
+          const enriched = partService.listAllPartsEnriched()
 
-        expect(enriched.length).toBe(config.partCount)
+          expect(enriched.length).toBe(config.partCount)
 
-        for (const e of enriched) {
-          // Non-empty id
-          expect(e.id.length).toBeGreaterThan(0)
+          for (const e of enriched) {
+            // Non-empty id
+            expect(e.id.length).toBeGreaterThan(0)
 
-          // Non-empty jobName
-          expect(e.jobName.length).toBeGreaterThan(0)
+            // Non-empty jobName
+            expect(e.jobName.length).toBeGreaterThan(0)
 
-          // Non-empty pathName
-          expect(e.pathName.length).toBeGreaterThan(0)
+            // Non-empty pathName
+            expect(e.pathName.length).toBeGreaterThan(0)
 
-          // Non-empty currentStepName
-          expect(e.currentStepName.length).toBeGreaterThan(0)
+            // Non-empty currentStepName
+            expect(e.currentStepName.length).toBeGreaterThan(0)
 
-          // Valid status
-          expect(['in-progress', 'completed']).toContain(e.status)
+            // Valid status
+            expect(['in-progress', 'completed']).toContain(e.status)
 
-          // Non-empty createdAt
-          expect(e.createdAt.length).toBeGreaterThan(0)
+            // Non-empty createdAt
+            expect(e.createdAt.length).toBeGreaterThan(0)
 
-          // currentStepName is "Completed" when currentStepId is null
-          if (e.currentStepId === null) {
-            expect(e.currentStepName).toBe('Completed')
+            // currentStepName is "Completed" when currentStepId is null
+            if (e.currentStepId === null) {
+              expect(e.currentStepName).toBe('Completed')
+            }
           }
+        } finally {
+          rollback(db)
         }
-
-        db.close()
-        db = null as any
       }),
       { numRuns: 100 },
     )

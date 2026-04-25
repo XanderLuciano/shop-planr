@@ -28,6 +28,20 @@ inclusion: always
 
 7. If the user asks to "commit" while on a feature branch, commit to the current branch. Only create a PR when the user explicitly asks to merge, says they are done, or says to create a PR.
 
+## Commit Timing — Batch Over Noise
+
+22. Do NOT commit and push after every small change. When going back and forth with the user on iterative refinements (tweaks, fixes, adjustments, review feedback), let changes accumulate as unstaged work on the branch.
+
+23. Wait for a natural completion point before committing. Good commit points:
+    - A coherent feature or fix is working end-to-end
+    - The user says "that looks good", "ship it", "commit", or similar
+    - A spec task is fully complete (not just partially done)
+    - You're about to switch context to a different area of the codebase
+
+24. When in doubt, do NOT commit. It's always better to batch related changes into one meaningful commit than to litter the history with "fix typo", "adjust padding", "oops try again" noise.
+
+25. Never auto-push to origin unless the user explicitly asks to push or create a PR. Committing locally is fine at completion points, but pushing is a deliberate action.
+
 ## Pull Request Rules
 
 19. Every PR body MUST reference the originating GitHub issue number (e.g., `Fixes #16`, `Relates to #42`).
@@ -52,9 +66,9 @@ inclusion: always
 
 16. Before starting a new feature branch, always check the current branch with `git branch --show-current`. If you're on the wrong branch, switch to `main` first, then create the new branch.
 
-17. **After completing each task**, evaluate whether the next task still belongs on the current branch. Ask: "Is the next task part of the same logical scope (e.g., frontend, backend, AI integration)?" If not, commit, push, create a PR, and create a new appropriately-named branch before continuing.
+17. **After completing each task**, evaluate whether the next task still belongs on the current branch. Ask: "Is the next task part of the same logical scope (e.g., frontend, backend, AI integration)?" If not, commit what you have locally and create a new appropriately-named branch before continuing. Do NOT push or create a PR unless the user asks — just keep the local commit history clean.
 
-18. When a spec checkpoint task passes (e.g., "Ensure all tests pass"), that's a natural merge point. Push and create a PR unless the very next task is tightly coupled to the current branch's scope.
+18. Spec checkpoint tasks (e.g., "Ensure all tests pass") are natural commit points but NOT automatic push/PR points. Commit locally, then continue unless the user says to push or the scope is changing.
 
 ## Node Modules and .gitignore
 

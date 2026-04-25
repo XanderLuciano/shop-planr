@@ -7,11 +7,10 @@
  *
  * **Validates: Requirements 4.2, 4.3**
  */
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterAll, beforeAll } from 'vitest'
 import fc from 'fast-check'
-import Database from 'better-sqlite3'
-import { resolve } from 'path'
-import { runMigrations } from '~/server/repositories/sqlite/index'
+import type Database from 'better-sqlite3'
+import { createMigratedDb, savepoint, rollback } from './helpers'
 import { SQLiteJobRepository } from '~/server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '~/server/repositories/sqlite/pathRepository'
 import { SQLitePartRepository } from '~/server/repositories/sqlite/partRepository'
@@ -23,17 +22,7 @@ import { createPartService } from '~/server/services/partService'
 import { createAuditService } from '~/server/services/auditService'
 import { createSequentialPartIdGenerator } from '~/server/utils/idGenerator'
 
-const migrationsDir = resolve(__dirname, '../../server/repositories/sqlite/migrations')
-
-function createTestDb() {
-  const db = new Database(':memory:')
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
-  runMigrations(db, migrationsDir)
-  return db
-}
-
-function setupServices(db: Database.default.Database) {
+function setupServices(db: Database.Database) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
@@ -136,13 +125,14 @@ describe('Property 5: Quantity validation rejects over-limit', () => {
  * **Validates: Requirements 3.4, 4.4**
  */
 describe('Property 4: Batch advancement by quantity in creation order', () => {
-  let db: ReturnType<typeof createTestDb>
+  let db: Database.Database
 
-  afterEach(() => {
-    if (db) {
-      db.close()
-      db = null as any
-    }
+  beforeAll(() => {
+    db = createMigratedDb()
+  })
+
+  afterAll(() => {
+    db?.close()
   })
 
   it('advancing Q serials advances exactly the first Q in creation order', () => {
@@ -154,51 +144,52 @@ describe('Property 4: Batch advancement by quantity in creation order', () => {
         (stepCount, partCount, quantity) => {
           fc.pre(quantity <= partCount)
 
-          db = createTestDb()
-          const { jobService, pathService, partService } = setupServices(db)
+          savepoint(db)
+          try {
+            const { jobService, pathService, partService } = setupServices(db)
 
-          const job = jobService.createJob({ name: 'TestJob', goalQuantity: partCount })
-          const steps = Array.from({ length: stepCount }, (_, i) => ({
-            name: `Step ${i}`,
-            location: `Loc-${i}`,
-          }))
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: 'TestPath',
-            goalQuantity: partCount,
-            steps,
-          })
+            const job = jobService.createJob({ name: 'TestJob', goalQuantity: partCount })
+            const steps = Array.from({ length: stepCount }, (_, i) => ({
+              name: `Step ${i}`,
+              location: `Loc-${i}`,
+            }))
+            const path = pathService.createPath({
+              jobId: job.id,
+              name: 'TestPath',
+              goalQuantity: partCount,
+              steps,
+            })
 
-          const serials = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: partCount },
-            'user_test',
-          )
+            const serials = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: partCount },
+              'user_test',
+            )
 
-          // All start at step 0, sorted by creation order (which is array order)
-          const partIds = serials.map(s => s.id)
-          const toAdvance = partIds.slice(0, quantity)
-          const toRemain = partIds.slice(quantity)
+            // All start at step 0, sorted by creation order (which is array order)
+            const partIds = serials.map(s => s.id)
+            const toAdvance = partIds.slice(0, quantity)
+            const toRemain = partIds.slice(quantity)
 
-          // Advance the first Q serials
-          for (const id of toAdvance) {
-            partService.advancePart(id, 'user_test')
+            // Advance the first Q serials
+            for (const id of toAdvance) {
+              partService.advancePart(id, 'user_test')
+            }
+
+            // Verify advanced serials moved to step 1 (or completed if single-step path)
+            const expectedStepId = stepCount === 1 ? null : path.steps[1].id
+            for (const id of toAdvance) {
+              const s = partService.getPart(id)
+              expect(s.currentStepId).toBe(expectedStepId)
+            }
+
+            // Verify remaining serials are unchanged at step 0
+            for (const id of toRemain) {
+              const s = partService.getPart(id)
+              expect(s.currentStepId).toBe(path.steps[0].id)
+            }
+          } finally {
+            rollback(db)
           }
-
-          // Verify advanced serials moved to step 1 (or completed if single-step path)
-          const expectedStepId = stepCount === 1 ? null : path.steps[1].id
-          for (const id of toAdvance) {
-            const s = partService.getPart(id)
-            expect(s.currentStepId).toBe(expectedStepId)
-          }
-
-          // Verify remaining serials are unchanged at step 0
-          for (const id of toRemain) {
-            const s = partService.getPart(id)
-            expect(s.currentStepId).toBe(path.steps[0].id)
-          }
-
-          db.close()
-          db = null as any
         },
       ),
       { numRuns: 100 },
@@ -211,40 +202,41 @@ describe('Property 4: Batch advancement by quantity in creation order', () => {
         fc.integer({ min: 1, max: 3 }), // stepCount
         fc.integer({ min: 1, max: 5 }), // partCount
         (stepCount, partCount) => {
-          db = createTestDb()
-          const { jobService, pathService, partService } = setupServices(db)
+          savepoint(db)
+          try {
+            const { jobService, pathService, partService } = setupServices(db)
 
-          const job = jobService.createJob({ name: 'TestJob', goalQuantity: partCount })
-          const steps = Array.from({ length: stepCount }, (_, i) => ({
-            name: `Step ${i}`,
-          }))
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: 'TestPath',
-            goalQuantity: partCount,
-            steps,
-          })
+            const job = jobService.createJob({ name: 'TestJob', goalQuantity: partCount })
+            const steps = Array.from({ length: stepCount }, (_, i) => ({
+              name: `Step ${i}`,
+            }))
+            const path = pathService.createPath({
+              jobId: job.id,
+              name: 'TestPath',
+              goalQuantity: partCount,
+              steps,
+            })
 
-          const serials = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: partCount },
-            'user_test',
-          )
+            const serials = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: partCount },
+              'user_test',
+            )
 
-          // Advance each part through all steps to completion
-          for (const part of serials) {
-            for (let step = 0; step < stepCount; step++) {
-              partService.advancePart(part.id, 'user_test')
+            // Advance each part through all steps to completion
+            for (const part of serials) {
+              for (let step = 0; step < stepCount; step++) {
+                partService.advancePart(part.id, 'user_test')
+              }
             }
-          }
 
-          // All should be completed
-          for (const part of serials) {
-            const s = partService.getPart(part.id)
-            expect(s.currentStepId).toBeNull()
+            // All should be completed
+            for (const part of serials) {
+              const s = partService.getPart(part.id)
+              expect(s.currentStepId).toBeNull()
+            }
+          } finally {
+            rollback(db)
           }
-
-          db.close()
-          db = null as any
         },
       ),
       { numRuns: 100 },

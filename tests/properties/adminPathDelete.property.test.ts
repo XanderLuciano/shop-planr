@@ -1,12 +1,12 @@
 /**
  * Property tests for Admin Path Delete feature.
  *
- * Uses real SQLite databases via createTestContext() for full integration-style
+ * Uses shared SQLite database with savepoint/rollback for full integration-style
  * property testing with fast-check.
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import fc from 'fast-check'
-import { createTestContext } from '../integration/helpers'
+import { createReusableTestContext, savepoint, rollback, type TestContext } from './helpers'
 import { generateId } from '../../server/utils/idGenerator'
 import { ForbiddenError } from '../../server/utils/errors'
 import { filterParts } from '../../app/composables/usePartBrowser'
@@ -15,6 +15,11 @@ import type { EnrichedPart } from '../../server/types/computed'
 // Feature: admin-path-delete, Property 1: Non-admin users are rejected
 // **Validates: Requirements 1.2**
 describe('Property 1: Non-admin users are rejected', () => {
+  let ctx: TestContext
+
+  beforeAll(() => { ctx = createReusableTestContext() })
+  afterAll(() => { ctx?.cleanup() })
+
   it('should throw ForbiddenError for any non-admin user and leave path unchanged', () => {
     fc.assert(
       fc.property(
@@ -25,7 +30,7 @@ describe('Property 1: Non-admin users are rejected', () => {
           partQuantity: fc.integer({ min: 0, max: 5 }),
         }),
         ({ username, pathName, stepCount, partQuantity }) => {
-          const ctx = createTestContext()
+          savepoint(ctx.db)
           try {
             // Create a non-admin user
             const user = ctx.repos.users.create({
@@ -70,7 +75,7 @@ describe('Property 1: Non-admin users are rejected', () => {
             expect(stillExists).not.toBeNull()
             expect(stillExists!.id).toBe(path.id)
           } finally {
-            ctx.cleanup()
+            rollback(ctx.db)
           }
         },
       ),
@@ -82,6 +87,11 @@ describe('Property 1: Non-admin users are rejected', () => {
 // Feature: admin-path-delete, Property 2: Cascade delete completeness
 // **Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7**
 describe('Property 2: Cascade delete completeness', () => {
+  let ctx: TestContext
+
+  beforeAll(() => { ctx = createReusableTestContext() })
+  afterAll(() => { ctx?.cleanup() })
+
   it('should remove path, parts, and all dependent records for any random configuration', () => {
     fc.assert(
       fc.property(
@@ -93,7 +103,7 @@ describe('Property 2: Cascade delete completeness', () => {
           statusesPerPart: fc.boolean(),
         }),
         ({ partCount, notesPerStep, overridesPerPart, certAttachmentsPerPart, statusesPerPart }) => {
-          const ctx = createTestContext()
+          savepoint(ctx.db)
           try {
             // Create admin user
             const admin = ctx.repos.users.create({
@@ -224,7 +234,7 @@ describe('Property 2: Cascade delete completeness', () => {
               expect(remainingStatuses.count).toBe(0)
             }
           } finally {
-            ctx.cleanup()
+            rollback(ctx.db)
           }
         },
       ),
@@ -236,6 +246,11 @@ describe('Property 2: Cascade delete completeness', () => {
 // Feature: admin-path-delete, Property 3: Audit entry completeness
 // **Validates: Requirements 3.1, 3.2, 3.3**
 describe('Property 3: Audit entry completeness', () => {
+  let ctx: TestContext
+
+  beforeAll(() => { ctx = createReusableTestContext() })
+  afterAll(() => { ctx?.cleanup() })
+
   it('should record audit entry with correct fields for any admin path deletion', () => {
     fc.assert(
       fc.property(
@@ -244,7 +259,7 @@ describe('Property 3: Audit entry completeness', () => {
           pathName: fc.string({ minLength: 1, maxLength: 30 }).filter(s => s.trim().length > 0),
         }),
         ({ partCount, pathName }) => {
-          const ctx = createTestContext()
+          savepoint(ctx.db)
           try {
             // Create admin user
             const admin = ctx.repos.users.create({
@@ -299,7 +314,7 @@ describe('Property 3: Audit entry completeness', () => {
             // Compare as sets (order doesn't matter)
             expect(new Set(metadata.deletedPartIds)).toEqual(new Set(partIds))
           } finally {
-            ctx.cleanup()
+            rollback(ctx.db)
           }
         },
       ),

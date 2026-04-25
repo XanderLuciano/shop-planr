@@ -7,11 +7,10 @@
  *
  * **Validates: Requirements 2.4, 2.5**
  */
-import { describe, it, afterEach, expect } from 'vitest'
+import { describe, it, afterAll, beforeAll, expect } from 'vitest'
 import fc from 'fast-check'
-import Database from 'better-sqlite3'
-import { resolve } from 'path'
-import { runMigrations } from '../../server/repositories/sqlite/index'
+import type Database from 'better-sqlite3'
+import { createMigratedDb, savepoint, rollback } from './helpers'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
 import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
@@ -23,16 +22,7 @@ import { createPartService } from '../../server/services/partService'
 import { createAuditService } from '../../server/services/auditService'
 import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
 
-function createTestDb() {
-  const db = new Database(':memory:')
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
-  const migrationsDir = resolve(__dirname, '../../server/repositories/sqlite/migrations')
-  runMigrations(db, migrationsDir)
-  return db
-}
-
-function setupServices(db: InstanceType<typeof Database>) {
+function setupServices(db: Database.Database) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
@@ -64,10 +54,14 @@ function setupServices(db: InstanceType<typeof Database>) {
 }
 
 describe('Property 2: Independent failure isolation', () => {
-  let db: InstanceType<typeof Database>
+  let db: Database.Database
 
-  afterEach(() => {
-    if (db) db.close()
+  beforeAll(() => {
+    db = createMigratedDb()
+  })
+
+  afterAll(() => {
+    db?.close()
   })
 
   it('valid parts advance regardless of invalid IDs in the same batch', () => {
@@ -78,65 +72,66 @@ describe('Property 2: Independent failure isolation', () => {
           invalidCount: fc.integer({ min: 1, max: 5 }),
         }),
         ({ validCount, invalidCount }) => {
-          db = createTestDb()
-          const { jobService, pathService, partService } = setupServices(db)
+          savepoint(db)
+          try {
+            const { jobService, pathService, partService } = setupServices(db)
 
-          const job = jobService.createJob({ name: 'Isolation Job', goalQuantity: validCount })
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: 'Main Path',
-            goalQuantity: validCount,
-            steps: [{ name: 'OP1' }, { name: 'OP2' }],
-          })
+            const job = jobService.createJob({ name: 'Isolation Job', goalQuantity: validCount })
+            const path = pathService.createPath({
+              jobId: job.id,
+              name: 'Main Path',
+              goalQuantity: validCount,
+              steps: [{ name: 'OP1' }, { name: 'OP2' }],
+            })
 
-          const parts = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: validCount },
-            'user_test',
-          )
+            const parts = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: validCount },
+              'user_test',
+            )
 
-          const validIds = parts.map(p => p.id)
-          const invalidIds = Array.from({ length: invalidCount }, (_, i) => `nonexistent_${i}`)
+            const validIds = parts.map(p => p.id)
+            const invalidIds = Array.from({ length: invalidCount }, (_, i) => `nonexistent_${i}`)
 
-          // Interleave valid and invalid IDs
-          const mixedIds: string[] = []
-          let vi = 0
-          let ii = 0
-          while (vi < validIds.length || ii < invalidIds.length) {
-            if (vi < validIds.length) mixedIds.push(validIds[vi++])
-            if (ii < invalidIds.length) mixedIds.push(invalidIds[ii++])
+            // Interleave valid and invalid IDs
+            const mixedIds: string[] = []
+            let vi = 0
+            let ii = 0
+            while (vi < validIds.length || ii < invalidIds.length) {
+              if (vi < validIds.length) mixedIds.push(validIds[vi++])
+              if (ii < invalidIds.length) mixedIds.push(invalidIds[ii++])
+            }
+
+            const result = partService.batchAdvanceParts(mixedIds, 'user_test')
+
+            // ASSERT: total results match input length
+            expect(result.results.length).toBe(mixedIds.length)
+            expect(result.advanced + result.failed).toBe(mixedIds.length)
+
+            // ASSERT: all valid parts advanced successfully
+            expect(result.advanced).toBe(validCount)
+
+            // ASSERT: all invalid parts failed
+            expect(result.failed).toBe(invalidCount)
+
+            // ASSERT: each valid part result is success
+            for (const validId of validIds) {
+              const entry = result.results.find(r => r.partId === validId)
+              expect(entry).toBeDefined()
+              expect(entry!.success).toBe(true)
+            }
+
+            // ASSERT: each invalid part result has an error message
+            for (const invalidId of invalidIds) {
+              const entry = result.results.find(r => r.partId === invalidId)
+              expect(entry).toBeDefined()
+              expect(entry!.success).toBe(false)
+              expect(entry!.error).toBeDefined()
+              expect(typeof entry!.error).toBe('string')
+              expect(entry!.error!.length).toBeGreaterThan(0)
+            }
+          } finally {
+            rollback(db)
           }
-
-          const result = partService.batchAdvanceParts(mixedIds, 'user_test')
-
-          // ASSERT: total results match input length
-          expect(result.results.length).toBe(mixedIds.length)
-          expect(result.advanced + result.failed).toBe(mixedIds.length)
-
-          // ASSERT: all valid parts advanced successfully
-          expect(result.advanced).toBe(validCount)
-
-          // ASSERT: all invalid parts failed
-          expect(result.failed).toBe(invalidCount)
-
-          // ASSERT: each valid part result is success
-          for (const validId of validIds) {
-            const entry = result.results.find(r => r.partId === validId)
-            expect(entry).toBeDefined()
-            expect(entry!.success).toBe(true)
-          }
-
-          // ASSERT: each invalid part result has an error message
-          for (const invalidId of invalidIds) {
-            const entry = result.results.find(r => r.partId === invalidId)
-            expect(entry).toBeDefined()
-            expect(entry!.success).toBe(false)
-            expect(entry!.error).toBeDefined()
-            expect(typeof entry!.error).toBe('string')
-            expect(entry!.error!.length).toBeGreaterThan(0)
-          }
-
-          db.close()
-          db = null as any
         },
       ),
       { numRuns: 100 },

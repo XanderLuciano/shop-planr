@@ -10,7 +10,7 @@
 import { describe, it, afterAll, beforeAll } from 'vitest'
 import fc from 'fast-check'
 import type Database from 'better-sqlite3'
-import { createMigratedDb, clearData } from './helpers'
+import { createMigratedDb, savepoint, rollback } from './helpers'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
 import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
@@ -73,40 +73,44 @@ describe('Property 7: Progress Bar Accuracy', () => {
           completionCount: fc.integer({ min: 0, max: 50 }),
         }),
         ({ goalQuantity, partQuantity, completionCount }) => {
-          clearData(db)
-          const { jobService, pathService, partService } = setupServices(db)
+          savepoint(db)
+          try {
+            const { jobService, pathService, partService } = setupServices(db)
 
-          const job = jobService.createJob({ name: 'Progress Test', goalQuantity })
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: 'Route',
-            goalQuantity: partQuantity,
-            steps: [{ name: 'Only Step' }],
-          })
+            const job = jobService.createJob({ name: 'Progress Test', goalQuantity })
+            const path = pathService.createPath({
+              jobId: job.id,
+              name: 'Route',
+              goalQuantity: partQuantity,
+              steps: [{ name: 'Only Step' }],
+            })
 
-          const parts = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: partQuantity },
-            'user_test',
-          )
+            const parts = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: partQuantity },
+              'user_test',
+            )
 
-          const toComplete = Math.min(completionCount, parts.length)
-          for (let i = 0; i < toComplete; i++) {
-            try {
-              partService.advancePart(parts[i].id, 'user_test')
-            } catch {
-              // Already completed
+            const toComplete = Math.min(completionCount, parts.length)
+            for (let i = 0; i < toComplete; i++) {
+              try {
+                partService.advancePart(parts[i].id, 'user_test')
+              } catch {
+                // Already completed
+              }
             }
-          }
 
-          const progress = jobService.computeJobProgress(job.id)
-          const expectedPercent = (toComplete / goalQuantity) * 100
+            const progress = jobService.computeJobProgress(job.id)
+            const expectedPercent = (toComplete / goalQuantity) * 100
 
-          expect(progress.progressPercent).toBeCloseTo(expectedPercent, 10)
-          expect(progress.completedParts).toBe(toComplete)
-          expect(progress.goalQuantity).toBe(goalQuantity)
+            expect(progress.progressPercent).toBeCloseTo(expectedPercent, 10)
+            expect(progress.completedParts).toBe(toComplete)
+            expect(progress.goalQuantity).toBe(goalQuantity)
 
-          if (toComplete > goalQuantity) {
-            expect(progress.progressPercent).toBeGreaterThan(100)
+            if (toComplete > goalQuantity) {
+              expect(progress.progressPercent).toBeGreaterThan(100)
+            }
+          } finally {
+            rollback(db)
           }
         },
       ),
@@ -124,38 +128,42 @@ describe('Property 7: Progress Bar Accuracy', () => {
           completionCount: fc.integer({ min: 0, max: 20 }),
         }),
         ({ initialGoal, newGoal, partQuantity, completionCount }) => {
-          clearData(db)
-          const { jobService, pathService, partService } = setupServices(db)
+          savepoint(db)
+          try {
+            const { jobService, pathService, partService } = setupServices(db)
 
-          const job = jobService.createJob({ name: 'Goal Change Test', goalQuantity: initialGoal })
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: 'Route',
-            goalQuantity: partQuantity,
-            steps: [{ name: 'Only Step' }],
-          })
+            const job = jobService.createJob({ name: 'Goal Change Test', goalQuantity: initialGoal })
+            const path = pathService.createPath({
+              jobId: job.id,
+              name: 'Route',
+              goalQuantity: partQuantity,
+              steps: [{ name: 'Only Step' }],
+            })
 
-          const parts = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: partQuantity },
-            'user_test',
-          )
+            const parts = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: partQuantity },
+              'user_test',
+            )
 
-          const toComplete = Math.min(completionCount, parts.length)
-          for (let i = 0; i < toComplete; i++) {
-            try {
-              partService.advancePart(parts[i].id, 'user_test')
-            } catch {
-              break
+            const toComplete = Math.min(completionCount, parts.length)
+            for (let i = 0; i < toComplete; i++) {
+              try {
+                partService.advancePart(parts[i].id, 'user_test')
+              } catch {
+                break
+              }
             }
+
+            jobService.updateJob(job.id, { goalQuantity: newGoal })
+
+            const progress = jobService.computeJobProgress(job.id)
+            const expectedPercent = (toComplete / newGoal) * 100
+
+            expect(progress.progressPercent).toBeCloseTo(expectedPercent, 10)
+            expect(progress.goalQuantity).toBe(newGoal)
+          } finally {
+            rollback(db)
           }
-
-          jobService.updateJob(job.id, { goalQuantity: newGoal })
-
-          const progress = jobService.computeJobProgress(job.id)
-          const expectedPercent = (toComplete / newGoal) * 100
-
-          expect(progress.progressPercent).toBeCloseTo(expectedPercent, 10)
-          expect(progress.goalQuantity).toBe(newGoal)
         },
       ),
       { numRuns: 100 },

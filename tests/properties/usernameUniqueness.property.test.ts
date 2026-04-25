@@ -8,9 +8,10 @@
  *
  * **Validates: Requirements 1.8**
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, afterAll, beforeAll } from 'vitest'
 import fc from 'fast-check'
-import { createTestDb } from '../integration/helpers'
+import type Database from 'better-sqlite3'
+import { createMigratedDb, savepoint, rollback } from './helpers'
 import { SQLiteUserRepository } from '../../server/repositories/sqlite/userRepository'
 import { createUserService } from '../../server/services/userService'
 import { ValidationError } from '../../server/utils/errors'
@@ -24,6 +25,16 @@ const arbNonEmptyString = fc.array(fc.constantFrom(...SAFE_CHARS), { minLength: 
   .map(chars => chars.join(''))
 
 describe('Property 2: Username Uniqueness Enforcement', () => {
+  let db: Database.Database
+
+  beforeAll(() => {
+    db = createMigratedDb()
+  })
+
+  afterAll(() => {
+    db?.close()
+  })
+
   it('second creation with same username throws ValidationError, first user unaffected', () => {
     let runIndex = 0
 
@@ -33,7 +44,7 @@ describe('Property 2: Username Uniqueness Enforcement', () => {
         arbNonEmptyString,
         arbNonEmptyString,
         (username, displayName1, displayName2) => {
-          const db = createTestDb()
+          savepoint(db)
           try {
             const userRepo = new SQLiteUserRepository(db)
             const userService = createUserService({ users: userRepo })
@@ -63,7 +74,7 @@ describe('Property 2: Username Uniqueness Enforcement', () => {
             expect(retrieved.active).toBe(true)
             expect(retrieved.isAdmin).toBe(false)
           } finally {
-            db.close()
+            rollback(db)
           }
         },
       ),

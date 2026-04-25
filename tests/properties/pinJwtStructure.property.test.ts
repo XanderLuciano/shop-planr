@@ -4,15 +4,26 @@
  * Property 6: Missing or invalid token returns 401 (Requirements 6.3, 6.5)
  * Property 7: Token refresh produces a new valid token (Requirements 7.1, 7.4)
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import fc from 'fast-check'
 import { decodeProtectedHeader } from 'jose'
-import { createTestContext } from '../integration/helpers'
+import { createReusableTestContext, savepoint, rollback, type TestContext } from './helpers'
 import { generateId } from '../../server/utils/idGenerator'
 
+// File-level ctx — shared across all describe blocks
+let ctx: TestContext
+
+beforeAll(() => {
+  ctx = createReusableTestContext()
+})
+
+afterAll(() => {
+  ctx?.cleanup()
+})
+
 describe('Property 2: JWT structure completeness', () => {
-  it('signed JWT has ES256 header and complete payload with 24h expiry', () => {
-    fc.assert(
+  it('signed JWT has ES256 header and complete payload with 24h expiry', async () => {
+    await fc.assert(
       fc.asyncProperty(
         fc.record({
           username: fc.string({ minLength: 1, maxLength: 20 }).filter((s: string) => s.trim().length > 0),
@@ -20,7 +31,7 @@ describe('Property 2: JWT structure completeness', () => {
           isAdmin: fc.boolean(),
         }),
         async ({ username, displayName, isAdmin }) => {
-          const ctx = createTestContext()
+          savepoint(ctx.db)
           try {
             await ctx.authService.ensureKeyPair()
             const user = ctx.repos.users.create({
@@ -40,7 +51,7 @@ describe('Property 2: JWT structure completeness', () => {
             expect(typeof payload.exp).toBe('number')
             expect(payload.exp - payload.iat).toBe(86400)
           } finally {
-            ctx.cleanup()
+            rollback(ctx.db)
           }
         },
       ),

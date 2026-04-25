@@ -9,9 +9,9 @@
  *
  * **Validates: Requirements 10.2, 9.3**
  */
-import { describe, it, afterEach, expect } from 'vitest'
+import { describe, it, beforeAll, afterAll, expect } from 'vitest'
 import fc from 'fast-check'
-import { createTestContext, type TestContext } from '../integration/helpers'
+import { createReusableTestContext, savepoint, rollback, type TestContext } from './helpers'
 import type { WorkQueueJob, WorkQueueResponse } from '../../server/types/computed'
 import { findFirstActiveStep, shouldIncludeStep } from '../../server/utils/workQueueHelpers'
 
@@ -94,179 +94,177 @@ const jobPathConfigArb = fc.record({
 /** Generate 1-3 job/path configs for a multi-job scenario */
 const scenarioArb = fc.array(jobPathConfigArb, { minLength: 1, maxLength: 3 })
 
+
 describe('Property 1: All-Work Endpoint Completeness', () => {
   let ctx: TestContext
 
-  afterEach(() => {
-    if (ctx) {
-      ctx.cleanup()
-      ctx = null as any
-    }
-  })
+  beforeAll(() => { ctx = createReusableTestContext() })
+  afterAll(() => { ctx?.cleanup() })
 
   it('returns a WorkQueueJob for every step with active parts, with correct metadata', () => {
     fc.assert(
       fc.property(scenarioArb, (configs) => {
-        ctx = createTestContext()
-        const { jobService, pathService, partService } = ctx
+        savepoint(ctx.db)
+        try {
+          const { jobService, pathService, partService } = ctx
 
-        // Track expected state: which parts are at which step
-        const expectedParts: Array<{
-          id: string
-          jobId: string
-          jobName: string
-          pathId: string
-          pathName: string
-          currentStepOrder: number
-        }> = []
+          // Track expected state: which parts are at which step
+          const expectedParts: Array<{
+            id: string
+            jobId: string
+            jobName: string
+            pathId: string
+            pathName: string
+            currentStepOrder: number
+          }> = []
 
-        // Track step metadata for verification
-        const stepMeta: Map<string, {
-          stepName: string
-          stepLocation?: string
-          pathName: string
-          jobName: string
-          totalSteps: number
-        }> = new Map()
+          // Track step metadata for verification
+          const stepMeta: Map<string, {
+            stepName: string
+            stepLocation?: string
+            pathName: string
+            jobName: string
+            totalSteps: number
+          }> = new Map()
 
-        for (const config of configs) {
-          const job = jobService.createJob({
-            name: config.jobName,
-            goalQuantity: Math.max(config.partCount, 1),
-          })
-
-          const steps = Array.from({ length: config.stepCount }, (_, i) => ({
-            name: `Step-${i}`,
-            location: config.stepLocations[i],
-          }))
-
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: config.pathName,
-            goalQuantity: Math.max(config.partCount, 1),
-            steps,
-          })
-
-          // Record step metadata for later verification
-          for (const step of path.steps) {
-            const key = `${job.id}|${path.id}|${step.order}`
-            stepMeta.set(key, {
-              stepName: step.name,
-              stepLocation: step.location,
-              pathName: path.name,
-              jobName: job.name,
-              totalSteps: path.steps.length,
+          for (const config of configs) {
+            const job = jobService.createJob({
+              name: config.jobName,
+              goalQuantity: Math.max(config.partCount, 1),
             })
-          }
 
-          if (config.partCount === 0) continue
+            const steps = Array.from({ length: config.stepCount }, (_, i) => ({
+              name: `Step-${i}`,
+              location: config.stepLocations[i],
+            }))
 
-          const parts = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: config.partCount },
-            'user_test',
-          )
-
-          // All parts start at step 0
-          for (const s of parts) {
-            expectedParts.push({
-              id: s.id,
+            const path = pathService.createPath({
               jobId: job.id,
-              jobName: job.name,
-              pathId: path.id,
-              pathName: path.name,
-              currentStepOrder: 0,
+              name: config.pathName,
+              goalQuantity: Math.max(config.partCount, 1),
+              steps,
             })
-          }
 
-          // Apply advancements
-          for (const spec of config.advancementSpecs) {
-            if (spec.partIndex >= parts.length) continue
-            const part = parts[spec.partIndex]
-            const tracked = expectedParts.find(t => t.id === part.id)!
+            // Record step metadata for later verification
+            for (const step of path.steps) {
+              const key = `${job.id}|${path.id}|${step.order}`
+              stepMeta.set(key, {
+                stepName: step.name,
+                stepLocation: step.location,
+                pathName: path.name,
+                jobName: job.name,
+                totalSteps: path.steps.length,
+              })
+            }
 
-            for (let i = 0; i < spec.advanceTimes; i++) {
-              if (tracked.currentStepOrder === -1) break
-              try {
-                partService.advancePart(part.id, 'user_test')
-                if (tracked.currentStepOrder === config.stepCount - 1) {
-                  tracked.currentStepOrder = -1 // completed
-                } else {
-                  tracked.currentStepOrder += 1
+            if (config.partCount === 0) continue
+
+            const parts = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: config.partCount },
+              'user_test',
+            )
+
+            // All parts start at step 0
+            for (const s of parts) {
+              expectedParts.push({
+                id: s.id,
+                jobId: job.id,
+                jobName: job.name,
+                pathId: path.id,
+                pathName: path.name,
+                currentStepOrder: 0,
+              })
+            }
+
+            // Apply advancements
+            for (const spec of config.advancementSpecs) {
+              if (spec.partIndex >= parts.length) continue
+              const part = parts[spec.partIndex]
+              const tracked = expectedParts.find(t => t.id === part.id)!
+
+              for (let i = 0; i < spec.advanceTimes; i++) {
+                if (tracked.currentStepOrder === -1) break
+                try {
+                  partService.advancePart(part.id, 'user_test')
+                  if (tracked.currentStepOrder === config.stepCount - 1) {
+                    tracked.currentStepOrder = -1 // completed
+                  } else {
+                    tracked.currentStepOrder += 1
+                  }
+                } catch {
+                  break
                 }
-              } catch {
-                break
               }
             }
           }
-        }
 
-        // Run the aggregation
-        const response = aggregateAllWork(ctx)
+          // Run the aggregation
+          const response = aggregateAllWork(ctx)
 
-        // Build expected groups: step key → set of active part IDs
-        const expectedGroups = new Map<string, Set<string>>()
-        for (const s of expectedParts) {
-          if (s.currentStepOrder < 0) continue // completed/scrapped
-          const key = `${s.jobId}|${s.pathId}|${s.currentStepOrder}`
-          if (!expectedGroups.has(key)) expectedGroups.set(key, new Set())
-          expectedGroups.get(key)!.add(s.id)
-        }
-
-        // Also account for first-step entries that may have partCount === 0
-        // (these are included by the first-step visibility logic)
-        const firstStepKeys = new Set<string>()
-        for (const entry of response.jobs) {
-          if (entry.partCount === 0 && entry.goalQuantity != null) {
-            const key = `${entry.jobId}|${entry.pathId}|${entry.stepOrder}`
-            firstStepKeys.add(key)
+          // Build expected groups: step key → set of active part IDs
+          const expectedGroups = new Map<string, Set<string>>()
+          for (const s of expectedParts) {
+            if (s.currentStepOrder < 0) continue // completed/scrapped
+            const key = `${s.jobId}|${s.pathId}|${s.currentStepOrder}`
+            if (!expectedGroups.has(key)) expectedGroups.set(key, new Set())
+            expectedGroups.get(key)!.add(s.id)
           }
-        }
 
-        // 1. Every step with active parts has a corresponding WorkQueueJob
-        for (const [key, _partIds] of expectedGroups) {
-          const entry = response.jobs.find((j) => {
-            const entryKey = `${j.jobId}|${j.pathId}|${j.stepOrder}`
-            return entryKey === key
-          })
-          expect(entry, `Missing WorkQueueJob for group ${key}`).toBeDefined()
-        }
-
-        // 2. Response entries = steps with active parts + first-step entries with 0 parts
-        expect(response.jobs.length).toBe(expectedGroups.size + firstStepKeys.size)
-
-        // 3. Each entry has correct partCount and partIds
-        for (const entry of response.jobs) {
-          const key = `${entry.jobId}|${entry.pathId}|${entry.stepOrder}`
-          const expectedIds = expectedGroups.get(key)
-
-          if (expectedIds) {
-            expect(entry.partCount).toBe(expectedIds.size)
-            expect(entry.partIds.length).toBe(expectedIds.size)
-            for (const sid of entry.partIds) {
-              expect(expectedIds.has(sid)).toBe(true)
+          // Also account for first-step entries that may have partCount === 0
+          // (these are included by the first-step visibility logic)
+          const firstStepKeys = new Set<string>()
+          for (const entry of response.jobs) {
+            if (entry.partCount === 0 && entry.goalQuantity != null) {
+              const key = `${entry.jobId}|${entry.pathId}|${entry.stepOrder}`
+              firstStepKeys.add(key)
             }
-          } else {
-            // First-step entry with 0 parts
-            expect(entry.partCount).toBe(0)
-            expect(entry.partIds.length).toBe(0)
-            expect(entry.goalQuantity).toBeDefined()
           }
+
+          // 1. Every step with active parts has a corresponding WorkQueueJob
+          for (const [key, _partIds] of expectedGroups) {
+            const entry = response.jobs.find((j) => {
+              const entryKey = `${j.jobId}|${j.pathId}|${j.stepOrder}`
+              return entryKey === key
+            })
+            expect(entry, `Missing WorkQueueJob for group ${key}`).toBeDefined()
+          }
+
+          // 2. Response entries = steps with active parts + first-step entries with 0 parts
+          expect(response.jobs.length).toBe(expectedGroups.size + firstStepKeys.size)
+
+          // 3. Each entry has correct partCount and partIds
+          for (const entry of response.jobs) {
+            const key = `${entry.jobId}|${entry.pathId}|${entry.stepOrder}`
+            const expectedIds = expectedGroups.get(key)
+
+            if (expectedIds) {
+              expect(entry.partCount).toBe(expectedIds.size)
+              expect(entry.partIds.length).toBe(expectedIds.size)
+              for (const sid of entry.partIds) {
+                expect(expectedIds.has(sid)).toBe(true)
+              }
+            } else {
+              // First-step entry with 0 parts
+              expect(entry.partCount).toBe(0)
+              expect(entry.partIds.length).toBe(0)
+              expect(entry.goalQuantity).toBeDefined()
+            }
+          }
+
+          // 4. Each entry has correct metadata (stepName, stepLocation, pathName, jobName)
+          for (const entry of response.jobs) {
+            const key = `${entry.jobId}|${entry.pathId}|${entry.stepOrder}`
+            const meta = stepMeta.get(key)!
+
+            expect(entry.stepName).toBe(meta.stepName)
+            expect(entry.stepLocation).toBe(meta.stepLocation)
+            expect(entry.pathName).toBe(meta.pathName)
+            expect(entry.jobName).toBe(meta.jobName)
+            expect(entry.totalSteps).toBe(meta.totalSteps)
+          }
+        } finally {
+          rollback(ctx.db)
         }
-
-        // 4. Each entry has correct metadata (stepName, stepLocation, pathName, jobName)
-        for (const entry of response.jobs) {
-          const key = `${entry.jobId}|${entry.pathId}|${entry.stepOrder}`
-          const meta = stepMeta.get(key)!
-
-          expect(entry.stepName).toBe(meta.stepName)
-          expect(entry.stepLocation).toBe(meta.stepLocation)
-          expect(entry.pathName).toBe(meta.pathName)
-          expect(entry.jobName).toBe(meta.jobName)
-          expect(entry.totalSteps).toBe(meta.totalSteps)
-        }
-
-        ctx.cleanup()
-        ctx = null as any
       }),
       { numRuns: 100 },
     )

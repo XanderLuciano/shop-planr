@@ -2,15 +2,26 @@
  * Property 1: PIN bcrypt round-trip (Requirements 3.3, 4.2)
  * Property 3: PIN validation rejects non-4-digit input (Requirements 3.6, 4.5)
  */
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import fc from 'fast-check'
 import { hashSync, compareSync } from 'bcryptjs'
-import { createTestContext } from '../integration/helpers'
+import { createReusableTestContext, savepoint, rollback, type TestContext } from './helpers'
 import { generateId } from '../../server/utils/idGenerator'
 import { ValidationError } from '../../server/utils/errors'
 
 const arbPin = fc.integer({ min: 0, max: 9999 }).map((n: number) => String(n).padStart(4, '0'))
 const arbInvalidPin = fc.string({ minLength: 0, maxLength: 20 }).filter((s: string) => !/^\d{4}$/.test(s))
+
+// File-level ctx — shared across all describe blocks
+let ctx: TestContext
+
+beforeAll(() => {
+  ctx = createReusableTestContext()
+})
+
+afterAll(() => {
+  ctx?.cleanup()
+})
 
 describe('Property 1: PIN bcrypt round-trip', () => {
   it('hashing then comparing the same PIN returns true, different PIN returns false', () => {
@@ -28,10 +39,10 @@ describe('Property 1: PIN bcrypt round-trip', () => {
 })
 
 describe('Property 3: PIN validation rejects non-4-digit input', () => {
-  it('rejects non-4-digit strings', () => {
-    fc.assert(
+  it('rejects non-4-digit strings', async () => {
+    await fc.assert(
       fc.asyncProperty(arbInvalidPin, async (pin: string) => {
-        const ctx = createTestContext()
+        savepoint(ctx.db)
         try {
           await ctx.authService.ensureKeyPair()
           const user = ctx.repos.users.create({
@@ -44,17 +55,17 @@ describe('Property 3: PIN validation rejects non-4-digit input', () => {
           })
           await expect(ctx.authService.setupPin(user.id, pin)).rejects.toThrow(ValidationError)
         } finally {
-          ctx.cleanup()
+          rollback(ctx.db)
         }
       }),
       { numRuns: 100 },
     )
   })
 
-  it('accepts valid 4-digit PINs', () => {
-    fc.assert(
+  it('accepts valid 4-digit PINs', { timeout: 30_000 }, async () => {
+    await fc.assert(
       fc.asyncProperty(arbPin, async (pin: string) => {
-        const ctx = createTestContext()
+        savepoint(ctx.db)
         try {
           await ctx.authService.ensureKeyPair()
           const user = ctx.repos.users.create({
@@ -69,7 +80,7 @@ describe('Property 3: PIN validation rejects non-4-digit input', () => {
           expect(typeof token).toBe('string')
           expect(token.split('.').length).toBe(3)
         } finally {
-          ctx.cleanup()
+          rollback(ctx.db)
         }
       }),
       { numRuns: 50 },

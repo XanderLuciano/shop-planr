@@ -7,11 +7,10 @@
  *
  * **Validates: Requirements 5.4**
  */
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterAll, beforeAll } from 'vitest'
 import fc from 'fast-check'
-import Database from 'better-sqlite3'
-import { resolve } from 'path'
-import { runMigrations } from '~/server/repositories/sqlite/index'
+import type Database from 'better-sqlite3'
+import { createMigratedDb, savepoint, rollback } from './helpers'
 import { SQLiteJobRepository } from '~/server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '~/server/repositories/sqlite/pathRepository'
 import { SQLitePartRepository } from '~/server/repositories/sqlite/partRepository'
@@ -25,17 +24,7 @@ import { createAuditService } from '~/server/services/auditService'
 import { createNoteService } from '~/server/services/noteService'
 import { createSequentialPartIdGenerator } from '~/server/utils/idGenerator'
 
-const migrationsDir = resolve(__dirname, '../../server/repositories/sqlite/migrations')
-
-function createTestDb() {
-  const db = new Database(':memory:')
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
-  runMigrations(db, migrationsDir)
-  return db
-}
-
-function setupServices(db: Database.default.Database) {
+function setupServices(db: Database.Database) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
@@ -144,13 +133,14 @@ describe('Property 7: Note length validation', () => {
  * **Validates: Requirements 5.2, 5.3**
  */
 describe('Property 6: Note creation on advancement with non-empty text', () => {
-  let db: ReturnType<typeof createTestDb>
+  let db: Database.Database
 
-  afterEach(() => {
-    if (db) {
-      db.close()
-      db = null as any
-    }
+  beforeAll(() => {
+    db = createMigratedDb()
+  })
+
+  afterAll(() => {
+    db?.close()
   })
 
   it('non-empty note creates a StepNote with matching partIds and text', () => {
@@ -159,52 +149,53 @@ describe('Property 6: Note creation on advancement with non-empty text', () => {
         fc.string({ minLength: 1, maxLength: 200 }).filter(s => s.trim().length > 0),
         fc.integer({ min: 1, max: 5 }),
         (noteText, partCount) => {
-          db = createTestDb()
-          const { jobService, pathService, partService, noteService } = setupServices(db)
+          savepoint(db)
+          try {
+            const { jobService, pathService, partService, noteService } = setupServices(db)
 
-          const job = jobService.createJob({ name: 'TestJob', goalQuantity: partCount })
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: 'TestPath',
-            goalQuantity: partCount,
-            steps: [{ name: 'Step 0' }, { name: 'Step 1' }],
-          })
+            const job = jobService.createJob({ name: 'TestJob', goalQuantity: partCount })
+            const path = pathService.createPath({
+              jobId: job.id,
+              name: 'TestPath',
+              goalQuantity: partCount,
+              steps: [{ name: 'Step 0' }, { name: 'Step 1' }],
+            })
 
-          const parts = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: partCount },
-            'user_test',
-          )
+            const parts = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: partCount },
+              'user_test',
+            )
 
-          const partIds = parts.map(s => s.id)
-          const stepId = path.steps[0]!.id
+            const partIds = parts.map(s => s.id)
+            const stepId = path.steps[0]!.id
 
-          // Advance parts
-          for (const id of partIds) {
-            partService.advancePart(id, 'user_test')
+            // Advance parts
+            for (const id of partIds) {
+              partService.advancePart(id, 'user_test')
+            }
+
+            // Create note (simulating what advanceBatch does)
+            const created = noteService.createNote({
+              jobId: job.id,
+              pathId: path.id,
+              stepId,
+              partIds,
+              text: noteText,
+              userId: 'user_test',
+            })
+
+            expect(created.text).toBe(noteText.trim())
+            expect(created.partIds).toEqual(partIds)
+            expect(created.stepId).toBe(stepId)
+            expect(created.jobId).toBe(job.id)
+
+            // Verify it's retrievable
+            const notes = noteService.getNotesForStep(stepId)
+            expect(notes.length).toBe(1)
+            expect(notes[0]!.id).toBe(created.id)
+          } finally {
+            rollback(db)
           }
-
-          // Create note (simulating what advanceBatch does)
-          const created = noteService.createNote({
-            jobId: job.id,
-            pathId: path.id,
-            stepId,
-            partIds,
-            text: noteText,
-            userId: 'user_test',
-          })
-
-          expect(created.text).toBe(noteText.trim())
-          expect(created.partIds).toEqual(partIds)
-          expect(created.stepId).toBe(stepId)
-          expect(created.jobId).toBe(job.id)
-
-          // Verify it's retrievable
-          const notes = noteService.getNotesForStep(stepId)
-          expect(notes.length).toBe(1)
-          expect(notes[0]!.id).toBe(created.id)
-
-          db.close()
-          db = null as any
         },
       ),
       { numRuns: 100 },
@@ -216,49 +207,50 @@ describe('Property 6: Note creation on advancement with non-empty text', () => {
       fc.property(
         fc.nat({ max: 20 }).map(n => ' '.repeat(n)),
         (noteText) => {
-          db = createTestDb()
-          const { jobService, pathService, partService, noteService } = setupServices(db)
+          savepoint(db)
+          try {
+            const { jobService, pathService, partService, noteService } = setupServices(db)
 
-          const job = jobService.createJob({ name: 'TestJob', goalQuantity: 2 })
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: 'TestPath',
-            goalQuantity: 2,
-            steps: [{ name: 'Step 0' }, { name: 'Step 1' }],
-          })
-
-          const parts = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: 2 },
-            'user_test',
-          )
-
-          const partIds = parts.map(s => s.id)
-          const stepId = path.steps[0]!.id
-
-          // Advance parts
-          for (const id of partIds) {
-            partService.advancePart(id, 'user_test')
-          }
-
-          // Simulate advanceBatch logic: skip note creation for empty text
-          const trimmed = noteText.trim()
-          if (trimmed.length > 0) {
-            noteService.createNote({
+            const job = jobService.createJob({ name: 'TestJob', goalQuantity: 2 })
+            const path = pathService.createPath({
               jobId: job.id,
-              pathId: path.id,
-              stepId,
-              partIds,
-              text: trimmed,
-              userId: 'user_test',
+              name: 'TestPath',
+              goalQuantity: 2,
+              steps: [{ name: 'Step 0' }, { name: 'Step 1' }],
             })
+
+            const parts = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: 2 },
+              'user_test',
+            )
+
+            const partIds = parts.map(s => s.id)
+            const stepId = path.steps[0]!.id
+
+            // Advance parts
+            for (const id of partIds) {
+              partService.advancePart(id, 'user_test')
+            }
+
+            // Simulate advanceBatch logic: skip note creation for empty text
+            const trimmed = noteText.trim()
+            if (trimmed.length > 0) {
+              noteService.createNote({
+                jobId: job.id,
+                pathId: path.id,
+                stepId,
+                partIds,
+                text: trimmed,
+                userId: 'user_test',
+              })
+            }
+
+            // Verify no note was created (since text is empty/whitespace)
+            const notes = noteService.getNotesForStep(stepId)
+            expect(notes.length).toBe(0)
+          } finally {
+            rollback(db)
           }
-
-          // Verify no note was created (since text is empty/whitespace)
-          const notes = noteService.getNotesForStep(stepId)
-          expect(notes.length).toBe(0)
-
-          db.close()
-          db = null as any
         },
       ),
       { numRuns: 100 },

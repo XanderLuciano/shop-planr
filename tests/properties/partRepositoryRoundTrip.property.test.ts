@@ -8,23 +8,12 @@
  *
  * **Validates: Requirements 3.5**
  */
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterAll, beforeAll } from 'vitest'
 import fc from 'fast-check'
-import Database from 'better-sqlite3'
-import { resolve } from 'path'
-import { runMigrations } from '../../server/repositories/sqlite/index'
+import type Database from 'better-sqlite3'
+import { createMigratedDb, savepoint, rollback } from './helpers'
 import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
 import type { Part, ScrapReason } from '../../server/types/domain'
-
-const MIGRATIONS_DIR = resolve(__dirname, '../../server/repositories/sqlite/migrations')
-
-function createTestDb() {
-  const db = new Database(':memory:')
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
-  runMigrations(db, MIGRATIONS_DIR)
-  return db
-}
 
 /**
  * Insert a minimal Job + Path so that foreign key constraints are satisfied
@@ -146,8 +135,12 @@ function normalizePart(part: Part): Part {
 describe('Property 3: Repository CRUD Round-Trip on Renamed Tables', () => {
   let db: Database.Database
 
-  afterEach(() => {
-    if (db) db.close()
+  beforeAll(() => {
+    db = createMigratedDb()
+  })
+
+  afterAll(() => {
+    db?.close()
   })
 
   it('create then getById returns an equivalent Part object', () => {
@@ -156,18 +149,19 @@ describe('Property 3: Repository CRUD Round-Trip on Renamed Tables', () => {
 
     fc.assert(
       fc.property(arbPart(JOB_ID, PATH_ID), (part) => {
-        db = createTestDb()
-        seedPrerequisites(db, JOB_ID, PATH_ID, STEP_IDS)
-        const repo = new SQLitePartRepository(db)
+        savepoint(db)
+        try {
+          seedPrerequisites(db, JOB_ID, PATH_ID, STEP_IDS)
+          const repo = new SQLitePartRepository(db)
 
-        repo.create(part)
-        const retrieved = repo.getById(part.id)
+          repo.create(part)
+          const retrieved = repo.getById(part.id)
 
-        expect(retrieved).not.toBeNull()
-        expect(normalizePart(retrieved!)).toEqual(normalizePart(part))
-
-        db.close()
-        db = null as any
+          expect(retrieved).not.toBeNull()
+          expect(normalizePart(retrieved!)).toEqual(normalizePart(part))
+        } finally {
+          rollback(db)
+        }
       }),
       { numRuns: 100 },
     )
@@ -179,18 +173,19 @@ describe('Property 3: Repository CRUD Round-Trip on Renamed Tables', () => {
 
     fc.assert(
       fc.property(arbPart(JOB_ID, PATH_ID), (part) => {
-        db = createTestDb()
-        seedPrerequisites(db, JOB_ID, PATH_ID, STEP_IDS)
-        const repo = new SQLitePartRepository(db)
+        savepoint(db)
+        try {
+          seedPrerequisites(db, JOB_ID, PATH_ID, STEP_IDS)
+          const repo = new SQLitePartRepository(db)
 
-        repo.create(part)
-        const list = repo.listByJobId(JOB_ID)
+          repo.create(part)
+          const list = repo.listByJobId(JOB_ID)
 
-        expect(list.length).toBe(1)
-        expect(normalizePart(list[0])).toEqual(normalizePart(part))
-
-        db.close()
-        db = null as any
+          expect(list.length).toBe(1)
+          expect(normalizePart(list[0])).toEqual(normalizePart(part))
+        } finally {
+          rollback(db)
+        }
       }),
       { numRuns: 100 },
     )
@@ -206,25 +201,26 @@ describe('Property 3: Repository CRUD Round-Trip on Renamed Tables', () => {
         fc.constantFrom(...STEP_IDS),
         arbIsoDate(),
         (part, newStepId, newUpdatedAt) => {
-          db = createTestDb()
-          seedPrerequisites(db, JOB_ID, PATH_ID, STEP_IDS)
-          const repo = new SQLitePartRepository(db)
+          savepoint(db)
+          try {
+            seedPrerequisites(db, JOB_ID, PATH_ID, STEP_IDS)
+            const repo = new SQLitePartRepository(db)
 
-          repo.create(part)
-          const updated = repo.update(part.id, {
-            currentStepId: newStepId,
-            updatedAt: newUpdatedAt,
-          })
+            repo.create(part)
+            const updated = repo.update(part.id, {
+              currentStepId: newStepId,
+              updatedAt: newUpdatedAt,
+            })
 
-          expect(updated.currentStepId).toBe(newStepId)
-          expect(updated.updatedAt).toBe(newUpdatedAt)
+            expect(updated.currentStepId).toBe(newStepId)
+            expect(updated.updatedAt).toBe(newUpdatedAt)
 
-          const retrieved = repo.getById(part.id)
-          expect(retrieved).not.toBeNull()
-          expect(retrieved!.currentStepId).toBe(newStepId)
-
-          db.close()
-          db = null as any
+            const retrieved = repo.getById(part.id)
+            expect(retrieved).not.toBeNull()
+            expect(retrieved!.currentStepId).toBe(newStepId)
+          } finally {
+            rollback(db)
+          }
         },
       ),
       { numRuns: 100 },

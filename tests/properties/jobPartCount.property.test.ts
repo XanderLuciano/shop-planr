@@ -6,11 +6,10 @@
  *
  * **Validates: Requirements 1.4, 7.5**
  */
-import { describe, it, afterEach } from 'vitest'
+import { describe, it, afterAll, beforeAll } from 'vitest'
 import fc from 'fast-check'
-import Database from 'better-sqlite3'
-import { resolve } from 'path'
-import { runMigrations } from '../../server/repositories/sqlite/index'
+import type Database from 'better-sqlite3'
+import { createMigratedDb, savepoint, rollback } from './helpers'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
 import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
@@ -22,16 +21,7 @@ import { createPartService } from '../../server/services/partService'
 import { createAuditService } from '../../server/services/auditService'
 import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
 
-function createTestDb() {
-  const db = new Database(':memory:')
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
-  const migrationsDir = resolve(__dirname, '../../server/repositories/sqlite/migrations')
-  runMigrations(db, migrationsDir)
-  return db
-}
-
-function setupServices(db: Database.default.Database) {
+function setupServices(db: Database.Database) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
@@ -63,10 +53,14 @@ function setupServices(db: Database.default.Database) {
 }
 
 describe('Property 1: Job Part Count Invariant', () => {
-  let db: Database.default.Database
+  let db: Database.Database
 
-  afterEach(() => {
-    if (db) db.close()
+  beforeAll(() => {
+    db = createMigratedDb()
+  })
+
+  afterAll(() => {
+    db?.close()
   })
 
   it('job part count equals sum of part counts across all paths after any sequence of operations', () => {
@@ -82,56 +76,57 @@ describe('Property 1: Job Part Count Invariant', () => {
           { minLength: 1, maxLength: 3 },
         ),
         (pathConfigs) => {
-          db = createTestDb()
-          const { jobService, pathService, partService } = setupServices(db)
+          savepoint(db)
+          try {
+            const { jobService, pathService, partService } = setupServices(db)
 
-          // Create a job
-          const job = jobService.createJob({ name: 'Test Job', goalQuantity: 100 })
+            // Create a job
+            const job = jobService.createJob({ name: 'Test Job', goalQuantity: 100 })
 
-          const pathIds: string[] = []
-          for (const config of pathConfigs) {
-            // Create steps for this path
-            const steps = Array.from({ length: config.stepCount }, (_, i) => ({
-              name: `Step ${i}`,
-            }))
+            const pathIds: string[] = []
+            for (const config of pathConfigs) {
+              // Create steps for this path
+              const steps = Array.from({ length: config.stepCount }, (_, i) => ({
+                name: `Step ${i}`,
+              }))
 
-            const path = pathService.createPath({
-              jobId: job.id,
-              name: `Path ${pathIds.length}`,
-              goalQuantity: config.partQuantity,
-              steps,
-            })
-            pathIds.push(path.id)
+              const path = pathService.createPath({
+                jobId: job.id,
+                name: `Path ${pathIds.length}`,
+                goalQuantity: config.partQuantity,
+                steps,
+              })
+              pathIds.push(path.id)
 
-            // Create parts on this path
-            const parts = partService.batchCreateParts(
-              { jobId: job.id, pathId: path.id, quantity: config.partQuantity },
-              'user_test',
-            )
+              // Create parts on this path
+              const parts = partService.batchCreateParts(
+                { jobId: job.id, pathId: path.id, quantity: config.partQuantity },
+                'user_test',
+              )
 
-            // Advance some parts randomly
-            const advanceable = Math.min(config.advanceCount, parts.length)
-            for (let i = 0; i < advanceable; i++) {
-              try {
-                partService.advancePart(parts[i].id, 'user_test')
-              } catch {
-                // Part may already be completed — that's fine
+              // Advance some parts randomly
+              const advanceable = Math.min(config.advanceCount, parts.length)
+              for (let i = 0; i < advanceable; i++) {
+                try {
+                  partService.advancePart(parts[i].id, 'user_test')
+                } catch {
+                  // Part may already be completed — that's fine
+                }
               }
             }
+
+            // ASSERT: jobService.getJobPartCount === sum of parts across all paths
+            const jobPartCount = jobService.getJobPartCount(job.id)
+
+            let sumAcrossPaths = 0
+            for (const pathId of pathIds) {
+              sumAcrossPaths += partService.listPartsByPath(pathId).length
+            }
+
+            expect(jobPartCount).toBe(sumAcrossPaths)
+          } finally {
+            rollback(db)
           }
-
-          // ASSERT: jobService.getJobPartCount === sum of parts across all paths
-          const jobPartCount = jobService.getJobPartCount(job.id)
-
-          let sumAcrossPaths = 0
-          for (const pathId of pathIds) {
-            sumAcrossPaths += partService.listPartsByPath(pathId).length
-          }
-
-          expect(jobPartCount).toBe(sumAcrossPaths)
-
-          db.close()
-          db = null as any
         },
       ),
       { numRuns: 100 },

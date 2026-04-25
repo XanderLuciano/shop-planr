@@ -10,9 +10,9 @@
  *
  * **Validates: Requirements 10.1, 9.3**
  */
-import { describe, it, afterEach, expect } from 'vitest'
+import { describe, it, beforeAll, afterAll, expect } from 'vitest'
 import fc from 'fast-check'
-import { createTestContext, type TestContext } from '../integration/helpers'
+import { createReusableTestContext, savepoint, rollback, type TestContext } from './helpers'
 import type { WorkQueueJob, WorkQueueResponse } from '../../server/types/computed'
 import { findFirstActiveStep, shouldIncludeStep } from '../../server/utils/workQueueHelpers'
 
@@ -97,124 +97,126 @@ const scenarioArb = fc.array(jobPathConfigArb, { minLength: 1, maxLength: 3 })
 describe('Property 1: Queue aggregation correctness', () => {
   let ctx: TestContext
 
-  afterEach(() => {
-    if (ctx) {
-      ctx.cleanup()
-      ctx = null as any
-    }
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+
+  afterAll(() => {
+    ctx?.cleanup()
   })
 
   it('all active part IDs appear exactly once across WorkQueueJob.partIds, each in the correct group', () => {
     fc.assert(
       fc.property(scenarioArb, (configs) => {
-        ctx = createTestContext()
-        const { jobService, pathService, partService } = ctx
+        savepoint(ctx.db)
+        try {
+          const { jobService, pathService, partService } = ctx
 
-        // Track all created parts with their expected state
-        const allParts: Array<{
-          id: string
-          pathId: string
-          currentStepOrder: number
-        }> = []
+          // Track all created parts with their expected state
+          const allParts: Array<{
+            id: string
+            pathId: string
+            currentStepOrder: number
+          }> = []
 
-        for (const config of configs) {
-          const job = jobService.createJob({
-            name: config.jobName,
-            goalQuantity: Math.max(config.partCount, 1),
-          })
+          for (const config of configs) {
+            const job = jobService.createJob({
+              name: config.jobName,
+              goalQuantity: Math.max(config.partCount, 1),
+            })
 
-          const steps = Array.from({ length: config.stepCount }, (_, i) => ({
-            name: `Step ${i}`,
-            location: i % 2 === 0 ? `Loc-${i}` : undefined,
-          }))
+            const steps = Array.from({ length: config.stepCount }, (_, i) => ({
+              name: `Step ${i}`,
+              location: i % 2 === 0 ? `Loc-${i}` : undefined,
+            }))
 
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: config.pathName,
-            goalQuantity: Math.max(config.partCount, 1),
-            steps,
-          })
+            const path = pathService.createPath({
+              jobId: job.id,
+              name: config.pathName,
+              goalQuantity: Math.max(config.partCount, 1),
+              steps,
+            })
 
-          if (config.partCount === 0) continue
+            if (config.partCount === 0) continue
 
-          const parts = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: config.partCount },
-            'user_test',
-          )
+            const parts = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: config.partCount },
+              'user_test',
+            )
 
-          // Initialize tracking — all start at step 0
-          for (const s of parts) {
-            allParts.push({ id: s.id, pathId: path.id, currentStepOrder: 0 })
-          }
+            // Initialize tracking — all start at step 0
+            for (const s of parts) {
+              allParts.push({ id: s.id, pathId: path.id, currentStepOrder: 0 })
+            }
 
-          // Apply advancements
-          for (const spec of config.advancementSpecs) {
-            if (spec.partIndex >= parts.length) continue
-            const part = parts[spec.partIndex]
-            const tracked = allParts.find(t => t.id === part.id)!
+            // Apply advancements
+            for (const spec of config.advancementSpecs) {
+              if (spec.partIndex >= parts.length) continue
+              const part = parts[spec.partIndex]
+              const tracked = allParts.find(t => t.id === part.id)!
 
-            for (let i = 0; i < spec.advanceTimes; i++) {
-              if (tracked.currentStepOrder === -1) break // already completed
-              try {
-                partService.advancePart(part.id, 'user_test')
-                if (tracked.currentStepOrder === config.stepCount - 1) {
-                  tracked.currentStepOrder = -1 // completed
-                } else {
-                  tracked.currentStepOrder += 1
+              for (let i = 0; i < spec.advanceTimes; i++) {
+                if (tracked.currentStepOrder === -1) break // already completed
+                try {
+                  partService.advancePart(part.id, 'user_test')
+                  if (tracked.currentStepOrder === config.stepCount - 1) {
+                    tracked.currentStepOrder = -1 // completed
+                  } else {
+                    tracked.currentStepOrder += 1
+                  }
+                } catch {
+                  break // already completed or error
                 }
-              } catch {
-                break // already completed or error
               }
             }
           }
-        }
 
-        // Run aggregation
-        const response = aggregateWorkQueue(ctx)
+          // Run aggregation
+          const response = aggregateWorkQueue(ctx)
 
-        // Collect all active parts (currentStepId !== null)
-        const expectedActiveIds = new Set(
-          allParts
-            .filter(s => s.currentStepOrder >= 0)
-            .map(s => s.id),
-        )
+          // Collect all active parts (currentStepId !== null)
+          const expectedActiveIds = new Set(
+            allParts
+              .filter(s => s.currentStepOrder >= 0)
+              .map(s => s.id),
+          )
 
-        // Collect all part IDs from the response
-        const actualIds: string[] = []
-        for (const job of response.jobs) {
-          actualIds.push(...job.partIds)
-        }
-        const actualIdSet = new Set(actualIds)
-
-        // 1. Every active part appears in the response
-        for (const expectedId of expectedActiveIds) {
-          expect(actualIdSet.has(expectedId)).toBe(true)
-        }
-
-        // 2. Part count matches (excluding first-step entries with 0 parts)
-        expect(actualIds.length).toBe(expectedActiveIds.size)
-
-        // 3. No duplicates — each part appears exactly once
-        expect(actualIdSet.size).toBe(actualIds.length)
-
-        // 4. Each part is in the correct group (matching pathId and stepOrder)
-        for (const job of response.jobs) {
-          for (const partId of job.partIds) {
-            const tracked = allParts.find(t => t.id === partId)!
-            expect(tracked.pathId).toBe(job.pathId)
-            expect(tracked.currentStepOrder).toBe(job.stepOrder)
+          // Collect all part IDs from the response
+          const actualIds: string[] = []
+          for (const job of response.jobs) {
+            actualIds.push(...job.partIds)
           }
-        }
+          const actualIdSet = new Set(actualIds)
 
-        // 5. First-step entries with 0 parts have goalQuantity set
-        for (const job of response.jobs) {
-          if (job.partCount === 0) {
-            expect(job.goalQuantity).toBeDefined()
+          // 1. Every active part appears in the response
+          for (const expectedId of expectedActiveIds) {
+            expect(actualIdSet.has(expectedId)).toBe(true)
           }
-        }
 
-        ctx.cleanup()
-        ctx = null as any
+          // 2. Part count matches (excluding first-step entries with 0 parts)
+          expect(actualIds.length).toBe(expectedActiveIds.size)
+
+          // 3. No duplicates — each part appears exactly once
+          expect(actualIdSet.size).toBe(actualIds.length)
+
+          // 4. Each part is in the correct group (matching pathId and stepOrder)
+          for (const job of response.jobs) {
+            for (const partId of job.partIds) {
+              const tracked = allParts.find(t => t.id === partId)!
+              expect(tracked.pathId).toBe(job.pathId)
+              expect(tracked.currentStepOrder).toBe(job.stepOrder)
+            }
+          }
+
+          // 5. First-step entries with 0 parts have goalQuantity set
+          for (const job of response.jobs) {
+            if (job.partCount === 0) {
+              expect(job.goalQuantity).toBeDefined()
+            }
+          }
+        } finally {
+          rollback(ctx.db)
+        }
       }),
       { numRuns: 100 },
     )
@@ -235,83 +237,85 @@ describe('Property 1: Queue aggregation correctness', () => {
 describe('Property 2: Queue structural invariants', () => {
   let ctx: TestContext
 
-  afterEach(() => {
-    if (ctx) {
-      ctx.cleanup()
-      ctx = null as any
-    }
+  beforeAll(() => {
+    ctx = createReusableTestContext()
+  })
+
+  afterAll(() => {
+    ctx?.cleanup()
   })
 
   it('partCount === partIds.length, stepName/stepId non-empty, totalParts === sum(partCount), grouping uniqueness', () => {
     fc.assert(
       fc.property(scenarioArb, (configs) => {
-        ctx = createTestContext()
-        const { jobService, pathService, partService } = ctx
+        savepoint(ctx.db)
+        try {
+          const { jobService, pathService, partService } = ctx
 
-        for (const config of configs) {
-          const job = jobService.createJob({
-            name: config.jobName,
-            goalQuantity: Math.max(config.partCount, 1),
-          })
+          for (const config of configs) {
+            const job = jobService.createJob({
+              name: config.jobName,
+              goalQuantity: Math.max(config.partCount, 1),
+            })
 
-          const steps = Array.from({ length: config.stepCount }, (_, i) => ({
-            name: `Step ${i}`,
-            location: i % 2 === 0 ? `Loc-${i}` : undefined,
-          }))
+            const steps = Array.from({ length: config.stepCount }, (_, i) => ({
+              name: `Step ${i}`,
+              location: i % 2 === 0 ? `Loc-${i}` : undefined,
+            }))
 
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: config.pathName,
-            goalQuantity: Math.max(config.partCount, 1),
-            steps,
-          })
+            const path = pathService.createPath({
+              jobId: job.id,
+              name: config.pathName,
+              goalQuantity: Math.max(config.partCount, 1),
+              steps,
+            })
 
-          if (config.partCount === 0) continue
+            if (config.partCount === 0) continue
 
-          const parts = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: config.partCount },
-            'user_test',
-          )
+            const parts = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: config.partCount },
+              'user_test',
+            )
 
-          // Apply advancements
-          for (const spec of config.advancementSpecs) {
-            if (spec.partIndex >= parts.length) continue
-            const part = parts[spec.partIndex]
-            for (let i = 0; i < spec.advanceTimes; i++) {
-              try {
-                partService.advancePart(part.id, 'user_test')
-              } catch {
-                break
+            // Apply advancements
+            for (const spec of config.advancementSpecs) {
+              if (spec.partIndex >= parts.length) continue
+              const part = parts[spec.partIndex]
+              for (let i = 0; i < spec.advanceTimes; i++) {
+                try {
+                  partService.advancePart(part.id, 'user_test')
+                } catch {
+                  break
+                }
               }
             }
           }
+
+          // Run aggregation
+          const response = aggregateWorkQueue(ctx)
+
+          // (a) partCount === partIds.length for every job
+          for (const job of response.jobs) {
+            expect(job.partCount).toBe(job.partIds.length)
+          }
+
+          // (b) stepName and stepId are non-empty for every job
+          for (const job of response.jobs) {
+            expect(job.stepName.length).toBeGreaterThan(0)
+            expect(job.stepId.length).toBeGreaterThan(0)
+          }
+
+          // (c) totalParts === sum of all partCount values
+          const sumPartCount = response.jobs.reduce((sum, j) => sum + j.partCount, 0)
+          expect(response.totalParts).toBe(sumPartCount)
+
+          // (d) No two jobs share the same jobId + pathId + stepOrder combination
+          const groupKeys = response.jobs.map(j => `${j.jobId}|${j.pathId}|${j.stepOrder}`)
+          const uniqueKeys = new Set(groupKeys)
+          expect(uniqueKeys.size).toBe(groupKeys.length)
+        } finally {
+          rollback(ctx.db)
         }
-
-        // Run aggregation
-        const response = aggregateWorkQueue(ctx)
-
-        // (a) partCount === partIds.length for every job
-        for (const job of response.jobs) {
-          expect(job.partCount).toBe(job.partIds.length)
-        }
-
-        // (b) stepName and stepId are non-empty for every job
-        for (const job of response.jobs) {
-          expect(job.stepName.length).toBeGreaterThan(0)
-          expect(job.stepId.length).toBeGreaterThan(0)
-        }
-
-        // (c) totalParts === sum of all partCount values
-        const sumPartCount = response.jobs.reduce((sum, j) => sum + j.partCount, 0)
-        expect(response.totalParts).toBe(sumPartCount)
-
-        // (d) No two jobs share the same jobId + pathId + stepOrder combination
-        const groupKeys = response.jobs.map(j => `${j.jobId}|${j.pathId}|${j.stepOrder}`)
-        const uniqueKeys = new Set(groupKeys)
-        expect(uniqueKeys.size).toBe(groupKeys.length)
-
-        ctx.cleanup()
-        ctx = null as any
       }),
       { numRuns: 100 },
     )

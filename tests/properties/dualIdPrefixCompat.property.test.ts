@@ -7,9 +7,9 @@
  *
  * **Validates: Requirements 8.2, 8.3, 8.4**
  */
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import fc from 'fast-check'
-import { createTestContext, type TestContext } from '../integration/helpers'
+import { createReusableTestContext, savepoint, rollback, type TestContext } from './helpers'
 
 // ---- Arbitraries ----
 
@@ -80,29 +80,29 @@ function insertPartDirectly(ctx: TestContext, id: string, jobId: string, pathId:
 describe('Property 5: Dual ID Prefix Compatibility', () => {
   let ctx: TestContext
 
-  afterEach(() => {
-    if (ctx) ctx.cleanup()
-  })
+  beforeAll(() => { ctx = createReusableTestContext() })
+  afterAll(() => { ctx?.cleanup() })
 
   it('getById returns the part for both SN- and part_ prefixed IDs', () => {
     fc.assert(
       fc.property(arbSnId(), arbPartId(), (snId, partId) => {
-        ctx = createTestContext()
-        const { jobId, pathId } = seedJobAndPath(ctx)
+        savepoint(ctx.db)
+        try {
+          const { jobId, pathId } = seedJobAndPath(ctx)
 
-        insertPartDirectly(ctx, snId, jobId, pathId)
-        insertPartDirectly(ctx, partId, jobId, pathId)
+          insertPartDirectly(ctx, snId, jobId, pathId)
+          insertPartDirectly(ctx, partId, jobId, pathId)
 
-        const snResult = ctx.repos.parts.getById(snId)
-        const partResult = ctx.repos.parts.getById(partId)
+          const snResult = ctx.repos.parts.getById(snId)
+          const partResult = ctx.repos.parts.getById(partId)
 
-        expect(snResult).not.toBeNull()
-        expect(snResult!.id).toBe(snId)
-        expect(partResult).not.toBeNull()
-        expect(partResult!.id).toBe(partId)
-
-        ctx.cleanup()
-        ctx = null as any
+          expect(snResult).not.toBeNull()
+          expect(snResult!.id).toBe(snId)
+          expect(partResult).not.toBeNull()
+          expect(partResult!.id).toBe(partId)
+        } finally {
+          rollback(ctx.db)
+        }
       }),
       { numRuns: 100 },
     )
@@ -111,21 +111,22 @@ describe('Property 5: Dual ID Prefix Compatibility', () => {
   it('advancePart succeeds for both SN- and part_ prefixed IDs', () => {
     fc.assert(
       fc.property(arbSnId(), arbPartId(), (snId, partId) => {
-        ctx = createTestContext()
-        const { jobId, pathId } = seedJobAndPath(ctx)
+        savepoint(ctx.db)
+        try {
+          const { jobId, pathId } = seedJobAndPath(ctx)
 
-        insertPartDirectly(ctx, snId, jobId, pathId)
-        insertPartDirectly(ctx, partId, jobId, pathId)
+          insertPartDirectly(ctx, snId, jobId, pathId)
+          insertPartDirectly(ctx, partId, jobId, pathId)
 
-        // Advance both — should move from step 0 to step 1
-        const advancedSn = ctx.partService.advancePart(snId, 'user_test')
-        const advancedPart = ctx.partService.advancePart(partId, 'user_test')
+          // Advance both — should move from step 0 to step 1
+          const advancedSn = ctx.partService.advancePart(snId, 'user_test')
+          const advancedPart = ctx.partService.advancePart(partId, 'user_test')
 
-        expect(advancedSn.currentStepId).toBe('step_dc_2')
-        expect(advancedPart.currentStepId).toBe('step_dc_2')
-
-        ctx.cleanup()
-        ctx = null as any
+          expect(advancedSn.currentStepId).toBe('step_dc_2')
+          expect(advancedPart.currentStepId).toBe('step_dc_2')
+        } finally {
+          rollback(ctx.db)
+        }
       }),
       { numRuns: 100 },
     )
@@ -134,61 +135,64 @@ describe('Property 5: Dual ID Prefix Compatibility', () => {
   it('scrapPart succeeds for both SN- and part_ prefixed IDs', () => {
     fc.assert(
       fc.property(arbSnId(), arbPartId(), arbScrapReason(), (snId, partId, reason) => {
-        ctx = createTestContext()
-        const { jobId, pathId } = seedJobAndPath(ctx)
+        savepoint(ctx.db)
+        try {
+          const { jobId, pathId } = seedJobAndPath(ctx)
 
-        insertPartDirectly(ctx, snId, jobId, pathId)
-        insertPartDirectly(ctx, partId, jobId, pathId)
+          insertPartDirectly(ctx, snId, jobId, pathId)
+          insertPartDirectly(ctx, partId, jobId, pathId)
 
-        const explanation = reason === 'other' ? 'test explanation' : undefined
+          const explanation = reason === 'other' ? 'test explanation' : undefined
 
-        const scrappedSn = ctx.lifecycleService.scrapPart(snId, {
-          userId: 'user_test',
-          reason,
-          explanation,
-        })
-        const scrappedPart = ctx.lifecycleService.scrapPart(partId, {
-          userId: 'user_test',
-          reason,
-          explanation,
-        })
+          const scrappedSn = ctx.lifecycleService.scrapPart(snId, {
+            userId: 'user_test',
+            reason,
+            explanation,
+          })
+          const scrappedPart = ctx.lifecycleService.scrapPart(partId, {
+            userId: 'user_test',
+            reason,
+            explanation,
+          })
 
-        expect(scrappedSn.status).toBe('scrapped')
-        expect(scrappedSn.scrapReason).toBe(reason)
-        expect(scrappedPart.status).toBe('scrapped')
-        expect(scrappedPart.scrapReason).toBe(reason)
-
-        ctx.cleanup()
-        ctx = null as any
+          expect(scrappedSn.status).toBe('scrapped')
+          expect(scrappedSn.scrapReason).toBe(reason)
+          expect(scrappedPart.status).toBe('scrapped')
+          expect(scrappedPart.scrapReason).toBe(reason)
+        } finally {
+          rollback(ctx.db)
+        }
       }),
       { numRuns: 100 },
     )
   })
 
+
   it('repository update works for both SN- and part_ prefixed IDs', () => {
     fc.assert(
       fc.property(arbSnId(), arbPartId(), fc.constantFrom('step_dc_1', 'step_dc_2', 'step_dc_3'), (snId, partId, newStepId) => {
-        ctx = createTestContext()
-        const { jobId, pathId } = seedJobAndPath(ctx)
+        savepoint(ctx.db)
+        try {
+          const { jobId, pathId } = seedJobAndPath(ctx)
 
-        insertPartDirectly(ctx, snId, jobId, pathId)
-        insertPartDirectly(ctx, partId, jobId, pathId)
+          insertPartDirectly(ctx, snId, jobId, pathId)
+          insertPartDirectly(ctx, partId, jobId, pathId)
 
-        const now = new Date().toISOString()
-        const updatedSn = ctx.repos.parts.update(snId, { currentStepId: newStepId, updatedAt: now })
-        const updatedPart = ctx.repos.parts.update(partId, { currentStepId: newStepId, updatedAt: now })
+          const now = new Date().toISOString()
+          const updatedSn = ctx.repos.parts.update(snId, { currentStepId: newStepId, updatedAt: now })
+          const updatedPart = ctx.repos.parts.update(partId, { currentStepId: newStepId, updatedAt: now })
 
-        expect(updatedSn.currentStepId).toBe(newStepId)
-        expect(updatedPart.currentStepId).toBe(newStepId)
+          expect(updatedSn.currentStepId).toBe(newStepId)
+          expect(updatedPart.currentStepId).toBe(newStepId)
 
-        // Verify round-trip
-        const fetchedSn = ctx.repos.parts.getById(snId)
-        const fetchedPart = ctx.repos.parts.getById(partId)
-        expect(fetchedSn!.currentStepId).toBe(newStepId)
-        expect(fetchedPart!.currentStepId).toBe(newStepId)
-
-        ctx.cleanup()
-        ctx = null as any
+          // Verify round-trip
+          const fetchedSn = ctx.repos.parts.getById(snId)
+          const fetchedPart = ctx.repos.parts.getById(partId)
+          expect(fetchedSn!.currentStepId).toBe(newStepId)
+          expect(fetchedPart!.currentStepId).toBe(newStepId)
+        } finally {
+          rollback(ctx.db)
+        }
       }),
       { numRuns: 100 },
     )
@@ -197,22 +201,23 @@ describe('Property 5: Dual ID Prefix Compatibility', () => {
   it('getPart service method works for both SN- and part_ prefixed IDs', () => {
     fc.assert(
       fc.property(arbSnId(), arbPartId(), (snId, partId) => {
-        ctx = createTestContext()
-        const { jobId, pathId } = seedJobAndPath(ctx)
+        savepoint(ctx.db)
+        try {
+          const { jobId, pathId } = seedJobAndPath(ctx)
 
-        insertPartDirectly(ctx, snId, jobId, pathId)
-        insertPartDirectly(ctx, partId, jobId, pathId)
+          insertPartDirectly(ctx, snId, jobId, pathId)
+          insertPartDirectly(ctx, partId, jobId, pathId)
 
-        const snResult = ctx.partService.getPart(snId)
-        const partResult = ctx.partService.getPart(partId)
+          const snResult = ctx.partService.getPart(snId)
+          const partResult = ctx.partService.getPart(partId)
 
-        expect(snResult.id).toBe(snId)
-        expect(snResult.status).toBe('in_progress')
-        expect(partResult.id).toBe(partId)
-        expect(partResult.status).toBe('in_progress')
-
-        ctx.cleanup()
-        ctx = null as any
+          expect(snResult.id).toBe(snId)
+          expect(snResult.status).toBe('in_progress')
+          expect(partResult.id).toBe(partId)
+          expect(partResult.status).toBe('in_progress')
+        } finally {
+          rollback(ctx.db)
+        }
       }),
       { numRuns: 100 },
     )

@@ -6,11 +6,10 @@
  *
  * **Validates: Requirements 3.1, 3.2, 3.3**
  */
-import { describe, it, afterEach } from 'vitest'
+import { describe, it, afterAll, beforeAll } from 'vitest'
 import fc from 'fast-check'
-import Database from 'better-sqlite3'
-import { resolve } from 'path'
-import { runMigrations } from '../../server/repositories/sqlite/index'
+import type Database from 'better-sqlite3'
+import { createMigratedDb, savepoint, rollback } from './helpers'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
 import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
@@ -22,16 +21,7 @@ import { createPartService } from '../../server/services/partService'
 import { createAuditService } from '../../server/services/auditService'
 import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
 
-function createTestDb() {
-  const db = new Database(':memory:')
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
-  const migrationsDir = resolve(__dirname, '../../server/repositories/sqlite/migrations')
-  runMigrations(db, migrationsDir)
-  return db
-}
-
-function setupServices(db: Database.default.Database) {
+function setupServices(db: Database.Database) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
@@ -63,10 +53,14 @@ function setupServices(db: Database.default.Database) {
 }
 
 describe('Property 3: Sequential Step Advancement', () => {
-  let db: Database.default.Database
+  let db: Database.Database
 
-  afterEach(() => {
-    if (db) db.close()
+  beforeAll(() => {
+    db = createMigratedDb()
+  })
+
+  afterAll(() => {
+    db?.close()
   })
 
   it('advancing a part at step N results in step N+1 or completion at final step', () => {
@@ -77,49 +71,50 @@ describe('Property 3: Sequential Step Advancement', () => {
           advanceTimes: fc.integer({ min: 0, max: 6 }),
         }),
         ({ stepCount, advanceTimes }) => {
-          db = createTestDb()
-          const { jobService, pathService, partService } = setupServices(db)
+          savepoint(db)
+          try {
+            const { jobService, pathService, partService } = setupServices(db)
 
-          const job = jobService.createJob({ name: 'Test Job', goalQuantity: 10 })
-          const steps = Array.from({ length: stepCount }, (_, i) => ({
-            name: `Step ${i}`,
-          }))
-          const path = pathService.createPath({
-            jobId: job.id,
-            name: 'Route',
-            goalQuantity: 10,
-            steps,
-          })
+            const job = jobService.createJob({ name: 'Test Job', goalQuantity: 10 })
+            const steps = Array.from({ length: stepCount }, (_, i) => ({
+              name: `Step ${i}`,
+            }))
+            const path = pathService.createPath({
+              jobId: job.id,
+              name: 'Route',
+              goalQuantity: 10,
+              steps,
+            })
 
-          const parts = partService.batchCreateParts(
-            { jobId: job.id, pathId: path.id, quantity: 1 },
-            'user_test',
-          )
-          const partId = parts[0].id
+            const parts = partService.batchCreateParts(
+              { jobId: job.id, pathId: path.id, quantity: 1 },
+              'user_test',
+            )
+            const partId = parts[0].id
 
-          for (let i = 0; i < advanceTimes; i++) {
-            const before = partService.getPart(partId)
-            if (before.currentStepId === null) {
-              // Already completed — advancing should throw
-              expect(() => partService.advancePart(partId, 'user_test')).toThrow()
-              break
+            for (let i = 0; i < advanceTimes; i++) {
+              const before = partService.getPart(partId)
+              if (before.currentStepId === null) {
+                // Already completed — advancing should throw
+                expect(() => partService.advancePart(partId, 'user_test')).toThrow()
+                break
+              }
+
+              const currentStep = path.steps.find(s => s.id === before.currentStepId)!
+              const after = partService.advancePart(partId, 'user_test')
+
+              if (currentStep.order === stepCount - 1) {
+                // Was at final step — should be completed
+                expect(after.currentStepId).toBeNull()
+              } else {
+                // Should advance to next step
+                const nextStep = path.steps.find(s => s.order === currentStep.order + 1)!
+                expect(after.currentStepId).toBe(nextStep.id)
+              }
             }
-
-            const currentStep = path.steps.find(s => s.id === before.currentStepId)!
-            const after = partService.advancePart(partId, 'user_test')
-
-            if (currentStep.order === stepCount - 1) {
-              // Was at final step — should be completed
-              expect(after.currentStepId).toBeNull()
-            } else {
-              // Should advance to next step
-              const nextStep = path.steps.find(s => s.order === currentStep.order + 1)!
-              expect(after.currentStepId).toBe(nextStep.id)
-            }
+          } finally {
+            rollback(db)
           }
-
-          db.close()
-          db = null as any
         },
       ),
       { numRuns: 100 },

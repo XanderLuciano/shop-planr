@@ -1,42 +1,20 @@
 /**
  * Shared helpers for property tests.
  *
- * Creates a single migrated in-memory SQLite database and provides
- * a fast `clearData()` function that truncates all data tables between
- * property test iterations — avoiding the cost of re-running 14 migrations
- * per iteration.
+ * Creates a single migrated in-memory SQLite database per test file.
+ * Uses SAVEPOINT/ROLLBACK TO between iterations for near-zero-cost resets
+ * instead of creating a new DB + running 14 migrations per iteration.
  */
 import Database from 'better-sqlite3'
 import { resolve } from 'path'
 import { runMigrations } from '../../server/repositories/sqlite/index'
+import { createTestContext } from '../integration/helpers'
+import type { TestContext } from '../integration/helpers'
 
 const MIGRATIONS_DIR = resolve(__dirname, '../../server/repositories/sqlite/migrations')
 
-/** Tables to truncate between property runs (ordered for FK safety) */
-const DATA_TABLES = [
-  'audit_entries',
-  'cert_attachments',
-  'part_step_statuses',
-  'part_step_overrides',
-  'step_notes',
-  'parts',
-  'process_steps',
-  'paths',
-  'bom_entries',
-  'bom_versions',
-  'boms',
-  'job_tags',
-  'jobs',
-  'certs',
-  'templates',
-  'template_steps',
-  'counters',
-  'tags',
-] as const
-
 /**
- * Create a migrated in-memory database. Call once in `beforeAll`,
- * then use `clearData(db)` between iterations.
+ * Create a migrated in-memory database. Call once in `beforeAll`.
  */
 export function createMigratedDb(): Database.default.Database {
   const db = new Database(':memory:')
@@ -47,13 +25,28 @@ export function createMigratedDb(): Database.default.Database {
 }
 
 /**
- * Fast data reset — deletes all rows from data tables without
- * dropping/recreating them. ~100x faster than re-running migrations.
+ * Create a savepoint. Call before each property iteration.
  */
-export function clearData(db: Database.default.Database): void {
-  db.pragma('foreign_keys = OFF')
-  for (const table of DATA_TABLES) {
-    db.prepare(`DELETE FROM ${table}`).run()
-  }
-  db.pragma('foreign_keys = ON')
+export function savepoint(db: Database.default.Database, name = 'prop_iter'): void {
+  db.exec(`SAVEPOINT ${name}`)
 }
+
+/**
+ * Rollback to savepoint, undoing all changes from the iteration.
+ * This is essentially free — no data to delete, no migrations to re-run.
+ */
+export function rollback(db: Database.default.Database, name = 'prop_iter'): void {
+  db.exec(`ROLLBACK TO ${name}`)
+  db.exec(`RELEASE ${name}`)
+}
+
+/**
+ * Create a full test context (all repos + services) backed by a single DB.
+ * Use with `savepoint(ctx.db)` / `rollback(ctx.db)` between iterations.
+ * Call once in `beforeAll`, close in `afterAll`.
+ */
+export function createReusableTestContext(): TestContext {
+  return createTestContext()
+}
+
+export type { TestContext }

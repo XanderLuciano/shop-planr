@@ -7,28 +7,17 @@
  *
  * **Validates: Requirement 3.6**
  */
-import { describe, it, afterEach, expect } from 'vitest'
+import { describe, it, afterAll, beforeAll, expect } from 'vitest'
 import fc from 'fast-check'
-import Database from 'better-sqlite3'
-import { resolve } from 'path'
-import { runMigrations } from '../../server/repositories/sqlite/index'
+import type Database from 'better-sqlite3'
+import { createMigratedDb, savepoint, rollback } from './helpers'
 import { SQLiteJobRepository } from '../../server/repositories/sqlite/jobRepository'
 import { SQLitePathRepository } from '../../server/repositories/sqlite/pathRepository'
 import { SQLitePartRepository } from '../../server/repositories/sqlite/partRepository'
 import { createJobService } from '../../server/services/jobService'
 import { NotFoundError } from '../../server/utils/errors'
 
-const MIGRATIONS_DIR = resolve(__dirname, '../../server/repositories/sqlite/migrations')
-
-function createTestDb() {
-  const db = new Database(':memory:')
-  db.pragma('journal_mode = WAL')
-  db.pragma('foreign_keys = ON')
-  runMigrations(db, MIGRATIONS_DIR)
-  return db
-}
-
-function setupServices(db: Database.default.Database) {
+function setupServices(db: Database.Database) {
   const repos = {
     jobs: new SQLiteJobRepository(db),
     paths: new SQLitePathRepository(db),
@@ -39,10 +28,14 @@ function setupServices(db: Database.default.Database) {
 }
 
 describe('Property 5: Non-existent job ID rejection', () => {
-  let db: Database.default.Database
+  let db: Database.Database
 
-  afterEach(() => {
-    if (db) db.close()
+  beforeAll(() => {
+    db = createMigratedDb()
+  })
+
+  afterAll(() => {
+    db?.close()
   })
 
   it('a priority list with a non-existent job ID is rejected and all priorities remain unchanged', () => {
@@ -52,41 +45,42 @@ describe('Property 5: Non-existent job ID rejection', () => {
         fc.integer({ min: 0 }), // index offset to pick which job ID to replace
         fc.uuid(), // fake non-existent job ID
         (n, indexOffset, fakeId) => {
-          db = createTestDb()
-          const { jobService } = setupServices(db)
+          savepoint(db)
+          try {
+            const { jobService } = setupServices(db)
 
-          // Create N jobs
-          const createdJobs: { id: string, priority: number }[] = []
-          for (let i = 0; i < n; i++) {
-            const job = jobService.createJob({ name: `Job ${i}`, goalQuantity: 10 })
-            createdJobs.push({ id: job.id, priority: job.priority })
+            // Create N jobs
+            const createdJobs: { id: string, priority: number }[] = []
+            for (let i = 0; i < n; i++) {
+              const job = jobService.createJob({ name: `Job ${i}`, goalQuantity: 10 })
+              createdJobs.push({ id: job.id, priority: job.priority })
+            }
+
+            // Snapshot priorities before the invalid attempt
+            const beforeJobs = jobService.listJobs()
+            const beforePriorities = new Map(beforeJobs.map(j => [j.id, j.priority]))
+
+            // Pick one real job to replace with the fake ID
+            const replaceIndex = indexOffset % n
+
+            // Build a valid-shaped priority list but replace one real ID with a fake one
+            const priorities = createdJobs.map((job, idx) => ({
+              jobId: job.id,
+              priority: idx + 1,
+            }))
+            priorities[replaceIndex] = { jobId: fakeId, priority: replaceIndex + 1 }
+
+            // Should throw NotFoundError
+            expect(() => jobService.updatePriorities({ priorities })).toThrow(NotFoundError)
+
+            // All priorities remain unchanged
+            const afterJobs = jobService.listJobs()
+            for (const job of afterJobs) {
+              expect(job.priority).toBe(beforePriorities.get(job.id))
+            }
+          } finally {
+            rollback(db)
           }
-
-          // Snapshot priorities before the invalid attempt
-          const beforeJobs = jobService.listJobs()
-          const beforePriorities = new Map(beforeJobs.map(j => [j.id, j.priority]))
-
-          // Pick one real job to replace with the fake ID
-          const replaceIndex = indexOffset % n
-
-          // Build a valid-shaped priority list but replace one real ID with a fake one
-          const priorities = createdJobs.map((job, idx) => ({
-            jobId: job.id,
-            priority: idx + 1,
-          }))
-          priorities[replaceIndex] = { jobId: fakeId, priority: replaceIndex + 1 }
-
-          // Should throw NotFoundError
-          expect(() => jobService.updatePriorities({ priorities })).toThrow(NotFoundError)
-
-          // All priorities remain unchanged
-          const afterJobs = jobService.listJobs()
-          for (const job of afterJobs) {
-            expect(job.priority).toBe(beforePriorities.get(job.id))
-          }
-
-          db.close()
-          db = null as any
         },
       ),
       { numRuns: 100 },
