@@ -51,8 +51,52 @@ export function createBomService(repos: {
       return bom
     },
 
-    listBoms(): BOM[] {
-      return repos.bom.list()
+    listBoms(includeArchived = false): BOM[] {
+      return repos.bom.list(includeArchived)
+    },
+
+    archiveBom(id: string, userId: string): BOM {
+      const existing = repos.bom.getById(id)
+      if (!existing) {
+        throw new NotFoundError('BOM', id)
+      }
+      if (existing.archivedAt) {
+        throw new ValidationError('BOM is already archived')
+      }
+
+      const now = new Date().toISOString()
+      const updated = repos.bom.update(id, { archivedAt: now, updatedAt: now })
+
+      if (auditService) {
+        auditService.recordBomArchived({
+          userId,
+          metadata: { bomId: id, bomName: existing.name, archived: true },
+        })
+      }
+
+      return updated
+    },
+
+    unarchiveBom(id: string, userId: string): BOM {
+      const existing = repos.bom.getById(id)
+      if (!existing) {
+        throw new NotFoundError('BOM', id)
+      }
+      if (!existing.archivedAt) {
+        throw new ValidationError('BOM is not archived')
+      }
+
+      const now = new Date().toISOString()
+      const updated = repos.bom.update(id, { archivedAt: null, updatedAt: now })
+
+      if (auditService) {
+        auditService.recordBomArchived({
+          userId,
+          metadata: { bomId: id, bomName: existing.name, archived: false },
+        })
+      }
+
+      return updated
     },
 
     updateBom(id: string, input: Partial<CreateBomInput>): BOM {

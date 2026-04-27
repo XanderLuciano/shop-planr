@@ -22,7 +22,7 @@
 | `cert_attachments` | Part↔cert join | part_id, cert_id, step_id, attached_by |
 | `templates` | Reusable route definitions | id, name |
 | `template_steps` | Steps in a template | template_id, name, step_order, location |
-| `boms` | Bill of materials | id, name |
+| `boms` | Bill of materials | id, name, archived_at |
 | `bom_entries` | Part types in a BOM | bom_id, part_type, required_quantity_per_build |
 | `bom_contributing_jobs` | Jobs feeding a BOM entry | bom_entry_id, job_id |
 | `users` | Kiosk-mode user profiles | id, username (UNIQUE), display_name, is_admin, department, active, pin_hash (nullable) |

@@ -6,6 +6,7 @@ import { NotFoundError } from '../../utils/errors'
 interface BomRow {
   id: string
   name: string
+  archived_at: string | null
   created_at: string
   updated_at: string
 }
@@ -21,6 +22,7 @@ function buildBomDomain(row: BomRow, entryRows: BomEntryRow[]): BOM {
   return {
     id: row.id,
     name: row.name,
+    archivedAt: row.archived_at ?? null,
     entries: entryRows.map(e => ({
       id: String(e.id),
       bomId: e.bom_id,
@@ -68,8 +70,11 @@ export class SQLiteBomRepository implements BomRepository {
     return buildBomDomain(row, entryRows)
   }
 
-  list(): BOM[] {
-    const rows = this.db.prepare('SELECT * FROM boms ORDER BY created_at DESC').all() as BomRow[]
+  list(includeArchived = false): BOM[] {
+    const sql = includeArchived
+      ? 'SELECT * FROM boms ORDER BY created_at DESC'
+      : 'SELECT * FROM boms WHERE archived_at IS NULL ORDER BY created_at DESC'
+    const rows = this.db.prepare(sql).all() as BomRow[]
     return rows.map(row => this.getById(row.id)!)
   }
 
@@ -84,14 +89,16 @@ export class SQLiteBomRepository implements BomRepository {
       updatedAt: partial.updatedAt ?? new Date().toISOString(),
     }
 
-    const updateBom = this.db.prepare('UPDATE boms SET name = ?, updated_at = ? WHERE id = ?')
+    const updateBom = this.db.prepare(
+      'UPDATE boms SET name = ?, archived_at = ?, updated_at = ? WHERE id = ?',
+    )
     const deleteEntries = this.db.prepare('DELETE FROM bom_entries WHERE bom_id = ?')
     const insertEntry = this.db.prepare(
       'INSERT INTO bom_entries (bom_id, job_id, required_quantity) VALUES (?, ?, ?)',
     )
 
     this.db.transaction(() => {
-      updateBom.run(updated.name, updated.updatedAt, id)
+      updateBom.run(updated.name, updated.archivedAt ?? null, updated.updatedAt, id)
       if (partial.entries) {
         deleteEntries.run(id)
         for (const entry of updated.entries) {

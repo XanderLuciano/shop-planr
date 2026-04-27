@@ -186,6 +186,12 @@ export interface CreateStepOverrideInput {
   userId: string
 }
 
+// ---- BOM Archive ----
+
+export interface ArchiveBomInput {
+  userId: string
+}
+
 // ---- BOM Edit ----
 
 export interface EditBomInput {

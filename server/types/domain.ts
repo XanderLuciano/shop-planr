@@ -133,6 +133,7 @@ export interface BOM {
   id: string
   name: string
   entries: readonly BomEntry[]
+  archivedAt?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -161,6 +162,7 @@ export type AuditAction
     | 'deferred_step_completed'
     | 'step_waived'
     | 'bom_edited'
+    | 'bom_archived'
     | 'path_deleted'
     | 'part_deleted'
     | 'tag_created'
