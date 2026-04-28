@@ -6,6 +6,11 @@
  */
 import { z } from 'zod'
 
+export const pushJiraCommentSchema = z.object({
+  jobId: z.string().min(1, 'jobId is required'),
+  noteId: z.string().min(1).optional(),
+})
+
 export const linkJiraTicketSchema = z.object({
   ticketKey: z.string().min(1, 'ticketKey is required'),
   goalQuantity: z.number().int().positive('goalQuantity must be a positive integer').optional(),
