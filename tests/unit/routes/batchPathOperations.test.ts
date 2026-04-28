@@ -222,6 +222,8 @@ vi.stubGlobal('parseBody', vi.fn())
 vi.stubGlobal('getAuthUserId', vi.fn().mockReturnValue('user_1'))
 vi.stubGlobal('getRouterParam', vi.fn().mockReturnValue('job_1'))
 vi.stubGlobal('defineApiHandler', (fn: unknown) => fn)
+vi.stubGlobal('defineRouteMeta', () => {})
+vi.stubGlobal('zodRequestBody', () => ({}))
 
 const handler = (await import('~/server/api/jobs/[id]/paths/batch.post')).default
 

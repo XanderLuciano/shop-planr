@@ -11,7 +11,6 @@ export const FALLBACK_ROUTES: FallbackMapping[] = [
   { pattern: /^\/jobs\/[^/]+$/, fallback: '/jobs' },
   { pattern: /^\/serials\/[^/]+$/, fallback: '/parts-browser' },
   { pattern: /^\/queue$/, fallback: '/' },
-  { pattern: /^\/api-docs\/.+$/, fallback: '/api-docs' },
 ]
 
 /** Compute the fallback route for a given path. Returns "/" if no specific mapping matches. */

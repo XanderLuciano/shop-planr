@@ -1,3 +1,16 @@
+import { linkJiraTicketSchema } from '../../schemas/jiraSchemas'
+
+defineRouteMeta({
+  openAPI: {
+    tags: ['Jira'],
+    description: 'Link a Jira ticket to a new job, optionally applying a template.',
+    responses: {
+      201: { description: 'Job created from Jira ticket' },
+      400: { description: 'Validation error or Jira not enabled' },
+    },
+  },
+})
+
 export default defineApiHandler(async (event) => {
   const { settingsService, jiraService, templateService } = getServices()
 
@@ -6,16 +19,7 @@ export default defineApiHandler(async (event) => {
     throw new ValidationError('Jira integration is not enabled')
   }
 
-  const body = await readBody(event)
-  const { ticketKey, goalQuantity, templateId } = body as {
-    ticketKey: string
-    goalQuantity?: number
-    templateId?: string
-  }
-
-  if (!ticketKey) {
-    throw new ValidationError('ticketKey is required')
-  }
+  const { ticketKey, goalQuantity, templateId } = await parseBody(event, linkJiraTicketSchema)
 
   // Create job from Jira ticket
   const job = await jiraService.linkTicketToJob({ ticketKey, goalQuantity })

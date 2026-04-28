@@ -1,6 +1,17 @@
 import type { FullRouteResponse, FullRouteEntry } from '../../../types/computed'
 import type { PartStepStatus, ProcessStep } from '../../../types/domain'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['Parts'],
+    description: 'Get the full routing history and planned steps for a part.',
+    responses: {
+      200: { description: 'Full route with historical, current, and planned entries' },
+      404: { description: 'Part not found' },
+    },
+  },
+})
+
 export default defineApiHandler(async (event) => {
   const partId = getRouterParam(event, 'id')
   if (!partId) {

@@ -1,5 +1,18 @@
 import { updateStepConfigSchema } from '../../../schemas/pathSchemas'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['Steps'],
+    description: 'Update step configuration (optional, location, dependency type).',
+    requestBody: zodRequestBody(updateStepConfigSchema),
+    responses: {
+      200: { description: 'Step config updated' },
+      400: { description: 'Validation error' },
+      404: { description: 'Step not found' },
+    },
+  },
+})
+
 export default defineApiHandler(async (event) => {
   const stepId = getRouterParam(event, 'id')
   if (!stepId) throw new ValidationError('Step ID is required')

@@ -101,6 +101,8 @@ vi.stubGlobal('getServices', () => ({
 
 vi.stubGlobal('parseBody', vi.fn())
 vi.stubGlobal('defineApiHandler', (fn: unknown) => fn)
+vi.stubGlobal('defineRouteMeta', () => {})
+vi.stubGlobal('zodRequestBody', () => ({}))
 vi.stubGlobal('getAuthUserId', () => 'test-user-id')
 
 const handler = (await import('~/server/api/parts/advance-to.post')).default

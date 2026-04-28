@@ -72,6 +72,8 @@ vi.stubGlobal('getServices', () => ({
 
 vi.stubGlobal('parseBody', vi.fn())
 vi.stubGlobal('defineApiHandler', (fn: unknown) => fn)
+vi.stubGlobal('defineRouteMeta', () => {})
+vi.stubGlobal('zodRequestBody', () => ({}))
 
 const handler = (await import('~/server/api/parts/batch-step-statuses.post')).default
 

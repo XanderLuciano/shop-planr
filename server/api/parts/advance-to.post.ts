@@ -1,5 +1,17 @@
 import { batchAdvanceToSchema } from '../../schemas/partSchemas'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['Parts'],
+    description: 'Batch-advance multiple parts to a specific target step.',
+    requestBody: zodRequestBody(batchAdvanceToSchema),
+    responses: {
+      200: { description: 'Batch advance-to results' },
+      400: { description: 'Validation error' },
+    },
+  },
+})
+
 export default defineApiHandler(async (event) => {
   const body = await parseBody(event, batchAdvanceToSchema)
   const userId = getAuthUserId(event)

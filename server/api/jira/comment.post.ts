@@ -1,3 +1,16 @@
+import { pushJiraCommentSchema } from '../../schemas/jiraSchemas'
+
+defineRouteMeta({
+  openAPI: {
+    tags: ['Jira'],
+    description: 'Push a note or summary comment to the linked Jira ticket.',
+    responses: {
+      200: { description: 'Comment pushed to Jira' },
+      400: { description: 'Validation error or Jira push not enabled' },
+    },
+  },
+})
+
 export default defineApiHandler(async (event) => {
   const { settingsService, jiraService } = getServices()
 
@@ -9,12 +22,7 @@ export default defineApiHandler(async (event) => {
     throw new ValidationError('Jira push is not enabled')
   }
 
-  const body = await readBody(event)
-  const { jobId, noteId } = body as { jobId: string, noteId?: string }
-
-  if (!jobId) {
-    throw new ValidationError('jobId is required')
-  }
+  const { jobId, noteId } = await parseBody(event, pushJiraCommentSchema)
 
   if (noteId) {
     return await jiraService.pushNoteAsComment(noteId, jobId)

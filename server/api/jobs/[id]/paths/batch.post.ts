@@ -1,5 +1,18 @@
 import { batchPathOperationsSchema } from '../../../../schemas/pathSchemas'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['Jobs'],
+    description: 'Batch create, update, and delete paths for a job.',
+    requestBody: zodRequestBody(batchPathOperationsSchema),
+    responses: {
+      200: { description: 'Batch operations completed' },
+      400: { description: 'Validation error' },
+      404: { description: 'Job not found' },
+    },
+  },
+})
+
 export default defineApiHandler(async (event) => {
   const jobId = getRouterParam(event, 'id')!
   const body = await parseBody(event, batchPathOperationsSchema)

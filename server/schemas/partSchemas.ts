@@ -49,3 +49,10 @@ export const batchAdvanceToSchema = z.object({
   targetStepId: z.string().min(1, 'targetStepId is required'),
   skip: z.boolean().optional(),
 })
+
+/**
+ * Validates the request body for `POST /api/parts/:id/waive-step/:stepId`.
+ */
+export const waiveStepSchema = z.object({
+  reason: z.string().min(1, 'reason is required'),
+})
