@@ -81,7 +81,7 @@ describe('Service Factory (getServices pattern)', () => {
       auditService,
       partIdGenerator,
     )
-    const certService = createCertService({ certs: repos.certs }, auditService)
+    const certService = createCertService({ certs: repos.certs, parts: repos.parts, paths: repos.paths }, auditService)
     const noteService = createNoteService({ notes: repos.notes }, auditService)
     const settingsService = createSettingsService({ settings: repos.settings }, {
       jiraBaseUrl: 'https://jira.example.com',

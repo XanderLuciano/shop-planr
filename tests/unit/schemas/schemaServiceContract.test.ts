@@ -197,7 +197,7 @@ describe('Cert schemas → certService', () => {
     expect(cert.metadata).toEqual({ temperature: 1200, duration: '2h' })
   })
 
-  it('batchAttachCertSchema output is accepted by certService.batchAttachCertWithSteps', () => {
+  it('batchAttachCertSchema output is accepted by certService.batchAttachCert', () => {
     const cert = ctx.certService.createCert({ type: 'material', name: 'Batch Cert' })
     const job = ctx.jobService.createJob({ name: 'Cert Job', goalQuantity: 10 })
     const path = ctx.pathService.createPath({
@@ -214,17 +214,8 @@ describe('Cert schemas → certService', () => {
       certId: cert.id,
       partIds: parts.map(p => p.id),
     })
-    // Route handler resolves each part's current step, then calls batchAttachCertWithSteps
-    const attachments = ctx.certService.batchAttachCertWithSteps({
-      certId: body.certId,
-      attachments: parts.map(p => ({
-        partId: p.id,
-        stepId: p.currentStepId!,
-        jobId: p.jobId,
-        pathId: p.pathId,
-      })),
-      userId: 'user_1',
-    })
+    // Service now resolves step IDs internally — no route-level workaround needed
+    const attachments = ctx.certService.batchAttachCert({ ...body, userId: 'user_1' })
     expect(attachments).toHaveLength(2)
     expect(attachments[0].stepId).toBe(path.steps[0].id)
   })

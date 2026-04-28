@@ -104,7 +104,7 @@ export function createTestContext() {
     partIdGenerator,
     lifecycleService,
   )
-  const certService = createCertService({ certs: repos.certs }, auditService)
+  const certService = createCertService({ certs: repos.certs, parts: repos.parts, paths: repos.paths }, auditService)
   const templateService = createTemplateService({ templates: repos.templates, paths: repos.paths })
   const bomService = createBomService(
     { bom: repos.bom, parts: repos.parts, jobs: repos.jobs, bomVersions: repos.bomVersions },

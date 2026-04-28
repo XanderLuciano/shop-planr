@@ -79,7 +79,7 @@ function createServices(db: Database.Database) {
     auditService,
     partIdGenerator,
   )
-  const certService = createCertService({ certs: repos.certs }, auditService)
+  const certService = createCertService({ certs: repos.certs, parts: repos.parts, paths: repos.paths }, auditService)
   const templateService = createTemplateService({ templates: repos.templates, paths: repos.paths })
   const noteService = createNoteService({ notes: repos.notes }, auditService)
   const userService = createUserService({ users: repos.users })
