@@ -298,7 +298,7 @@ describe('SQLite migration system', () => {
       const db = initDatabase(dbPath)
 
       const applied = db.prepare('SELECT version, name FROM _migrations ORDER BY version').all() as any[]
-      expect(applied).toHaveLength(14)
+      expect(applied).toHaveLength(15)
       expect(applied[0].version).toBe(1)
       expect(applied[0].name).toBe('initial_schema')
       expect(applied[1].version).toBe(2)
@@ -327,6 +327,8 @@ describe('SQLite migration system', () => {
       expect(applied[12].name).toBe('add_job_tags')
       expect(applied[13].version).toBe(14)
       expect(applied[13].name).toBe('simplify_bom_entries')
+      expect(applied[14].version).toBe(15)
+      expect(applied[14].name).toBe('bom_archived_at')
 
       db.close()
     })

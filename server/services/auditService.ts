@@ -337,6 +337,16 @@ export function createAuditService(repos: { audit: AuditRepository }) {
       })
     },
 
+    recordBomArchived(params: {
+      userId: string
+      metadata: { bomId: string, bomName: string, archived: boolean }
+    }): AuditEntry {
+      return createEntry('bom_archived', {
+        userId: params.userId,
+        metadata: params.metadata,
+      })
+    },
+
     getPartAuditTrail(partId: string): AuditEntry[] {
       return repos.audit.listByPartId(partId)
     },
