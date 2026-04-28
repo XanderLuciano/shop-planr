@@ -4,6 +4,12 @@
  * Uses Zod 4's native `z.toJSONSchema()` to produce OpenAPI 3.1-compatible
  * JSON Schema objects. These are used in `defineRouteMeta({ openAPI })` calls
  * to document request/response bodies without manual duplication.
+ *
+ * Note: Return types use explicit casts because Zod's JSON Schema output is
+ * structurally compatible with OpenAPI 3.1 but TypeScript can't verify this
+ * against Nitro's internal OpenAPI types (which aren't publicly exported).
+ * This is safe — `defineRouteMeta` is a build-time macro that extracts the
+ * metadata statically; the types only matter for IDE feedback.
  */
 import { z } from 'zod'
 import type { ZodType } from 'zod'
@@ -14,7 +20,8 @@ import type { ZodType } from 'zod'
  * Strips the `$schema` meta-key that Zod emits (OpenAPI specs define their
  * own schema dialect at the top level).
  */
-export function zodToJsonSchema(schema: ZodType): Record<string, unknown> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function zodToJsonSchema(schema: ZodType): any {
   const jsonSchema = z.toJSONSchema(schema) as Record<string, unknown>
   delete jsonSchema.$schema
   return jsonSchema
@@ -23,7 +30,8 @@ export function zodToJsonSchema(schema: ZodType): Record<string, unknown> {
 /**
  * Build an OpenAPI `requestBody` object from a Zod schema.
  */
-export function zodRequestBody(schema: ZodType, description?: string) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function zodRequestBody(schema: ZodType, description?: string): any {
   return {
     required: true,
     ...(description && { description }),
@@ -38,7 +46,8 @@ export function zodRequestBody(schema: ZodType, description?: string) {
 /**
  * Build an OpenAPI JSON response content block from a plain schema object.
  */
-export function jsonResponse(description: string, schema?: Record<string, unknown>) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function jsonResponse(description: string, schema?: any) {
   const response: Record<string, unknown> = { description }
   if (schema) {
     response.content = {
