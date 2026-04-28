@@ -10,9 +10,6 @@ import { requiredId, positiveInt, dependencyTypeEnum } from './_primitives'
 const templateStepSchema = z.object({
   name: z.string().min(1, 'Step name is required'),
   location: z.string().optional(),
-})
-
-const templateStepWithOptionsSchema = templateStepSchema.extend({
   optional: z.boolean().optional(),
   dependencyType: dependencyTypeEnum.optional(),
 })
@@ -24,7 +21,7 @@ export const createTemplateSchema = z.object({
 
 export const updateTemplateSchema = z.object({
   name: z.string().min(1).optional(),
-  steps: z.array(templateStepWithOptionsSchema).min(1).optional(),
+  steps: z.array(templateStepSchema).min(1).optional(),
 })
 
 export const applyTemplateSchema = z.object({

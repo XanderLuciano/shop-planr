@@ -88,10 +88,14 @@ export const advanceToStepSchema = z.object({
  */
 export const createOverrideSchema = z.object({
   partIds: z.array(requiredId).min(1, 'At least one partId is required').optional(),
+  /** @deprecated Use `partIds` instead. Kept for backward compatibility. */
   serialIds: z.array(requiredId).min(1).optional(),
   stepId: requiredId,
   reason: z.string().min(1, 'reason is required'),
-})
+}).refine(
+  data => (data.partIds && data.partIds.length > 0) || (data.serialIds && data.serialIds.length > 0),
+  { message: 'At least one of partIds or serialIds must be provided', path: ['partIds'] },
+)
 
 /**
  * Validates the request body for `POST /api/parts/:id/attach-cert`.
