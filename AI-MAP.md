@@ -160,7 +160,7 @@ Dependencies flow left-to-right only. All business logic lives in services. See 
 | `/api/templates/**` | `templateService` | Reusable route templates + apply + edit |
 | `/api/audit/**` | `auditService` | Immutable audit trail |
 | `/api/jira/**` | `jiraService` | Jira read/push integration (tickets, link, push, comment) |
-| `/api/bom/**` | `bomService` | Bill of materials roll-ups + edit + version history |
+| `/api/bom/**` | `bomService` | Bill of materials roll-ups + edit + version history + archive/unarchive |
 | `/api/settings/**` | `settingsService` | Jira config + field mappings + page toggles |
 | `/api/notes/**` | `noteService` | Process step notes/defects |
 | `/api/users/**` | `userService` | Kiosk-mode user profiles with username, displayName, isAdmin |
@@ -212,8 +212,8 @@ Core entities and relationships:
 - **Path** → has `advancementMode` (strict/flexible/per_step)
 - **Certificate** → attached to serials at specific steps (many-to-many via cert_attachments, idempotent UNIQUE)
 - **TemplateRoute** → deep-cloned when applied to create a Path (template independence preserved)
-- **BOM** → has **BomEntries** (part types), each linked to contributing Jobs
-- **AuditEntry** → append-only log of all cert/serial/note/lifecycle operations (14 action types)
+- **BOM** → has **BomEntries** (part types), each linked to contributing Jobs; supports soft-archive via `archivedAt` timestamp
+- **AuditEntry** → append-only log of all cert/serial/note/lifecycle operations (15 action types)
 - **SnStepStatus** → per-serial per-step status tracking (pending/in_progress/completed/skipped/deferred/waived)
 - **SnStepOverride** → per-serial step overrides (fast-track, reversible)
 - **BomVersion** → immutable BOM edit snapshots

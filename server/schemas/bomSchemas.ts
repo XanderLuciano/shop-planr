@@ -34,3 +34,7 @@ export const editBomSchema = z.object({
     .min(1, 'At least one entry is required'),
   changeDescription: z.string().min(1, 'changeDescription is required'),
 })
+
+export const bomListQuerySchema = z.object({
+  status: z.enum(['active', 'archived', 'all']).default('active'),
+})

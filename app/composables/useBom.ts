@@ -15,8 +15,9 @@ export function useBom() {
     error.value = null
     try {
       boms.value = await $api<BOM[]>('/api/bom')
-    } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch BOMs'
+    } catch (e: unknown) {
+      const err = e as { data?: { message?: string }, message?: string }
+      error.value = err?.data?.message ?? err?.message ?? 'Failed to fetch BOMs'
       boms.value = []
     } finally {
       loading.value = false
@@ -41,6 +42,24 @@ export function useBom() {
     return bom
   }
 
+  async function archiveBom(id: string): Promise<BOM> {
+    const bom = await $api<BOM>(`/api/bom/${id}/archive`, {
+      method: 'POST',
+    })
+    return bom
+  }
+
+  async function unarchiveBom(id: string): Promise<BOM> {
+    const bom = await $api<BOM>(`/api/bom/${id}/unarchive`, {
+      method: 'POST',
+    })
+    return bom
+  }
+
+  async function fetchArchivedBoms(): Promise<BOM[]> {
+    return await $api<BOM[]>('/api/bom?status=archived')
+  }
+
   async function getBomWithSummary(id: string): Promise<BOM & { summary: BomSummary }> {
     return await $api(`/api/bom/${id}`)
   }
@@ -52,6 +71,9 @@ export function useBom() {
     fetchBoms,
     createBom,
     updateBom,
+    archiveBom,
+    unarchiveBom,
+    fetchArchivedBoms,
     getBomWithSummary,
   }
 }
