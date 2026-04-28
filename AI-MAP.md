@@ -74,7 +74,7 @@ server/
     services.ts          → getServices() singleton — wires all 12 services together
     pageToggles.ts       → DEFAULT_PAGE_TOGGLES, ROUTE_TOGGLE_MAP, ALWAYS_ENABLED_ROUTES, mergePageToggles(), isPageEnabled() — auto-imported by Nitro
   schemas/
-    _primitives.ts       → Shared Zod building blocks (requiredId, positiveInt, dependencyTypeEnum, advancementModeEnum, scrapReasonEnum, certTypeEnum, batchIds100/500, pinSchema) — imported by all domain schema files
+    _primitives.ts       → Shared Zod building blocks (requiredId, positiveInt, pinSchema) + domain enum schemas (dependencyTypeEnum, advancementModeEnum, scrapReasonEnum, certTypeEnum) derived from `as const` arrays in `server/types/domain.ts` — imported by all domain schema files
     authSchemas.ts       → Login, PIN setup/reset, token refresh
     bomSchemas.ts        → BOM create/update/edit, list query
     certSchemas.ts       → Certificate create, batch-attach

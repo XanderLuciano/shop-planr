@@ -95,7 +95,7 @@ Do NOT use `defineEventHandler` with manual try/catch blocks. Do NOT use inline 
 | `server/utils/httpError.ts` | `defineApiHandler`, `httpError`, `STATUS_MESSAGES`, `ERROR_STATUS_MAP` |
 | `server/utils/idGenerator.ts` | `generateId(prefix)` + sequential SN counter |
 | `server/utils/validation.ts` | `parseBody()` — Zod schema validation for request bodies |
-| `server/schemas/_primitives.ts` | Shared Zod building blocks (`requiredId`, `positiveInt`, domain enums, batch ID arrays, `pinSchema`) — imported by all domain schema files |
+| `server/schemas/_primitives.ts` | Shared Zod building blocks (`requiredId`, `positiveInt`, `pinSchema`) + domain enum schemas derived from `as const` arrays in `domain.ts` — imported by all domain schema files |
 | `server/repositories/factory.ts` | Returns `RepositorySet` based on config |
 | `server/repositories/sqlite/index.ts` | DB init, WAL mode, migration runner |
 | `server/services/authService.ts` | PIN hashing, JWT sign/verify (ES256), key pair management, token refresh |

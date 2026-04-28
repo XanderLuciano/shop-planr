@@ -5,7 +5,7 @@
  * API routes parse incoming data into these types before delegating to services.
  */
 
-import type { AdvancementMode, ScrapReason } from './domain'
+import type { AdvancementMode, DependencyType, ScrapReason } from './domain'
 
 // ---- Job ----
 
@@ -32,14 +32,14 @@ export interface CreatePathInput {
   name: string
   goalQuantity: number
   advancementMode?: AdvancementMode
-  steps: { name: string, location?: string, assignedTo?: string | null, optional?: boolean, dependencyType?: 'physical' | 'preferred' | 'completion_gate' }[]
+  steps: { name: string, location?: string, assignedTo?: string | null, optional?: boolean, dependencyType?: DependencyType }[]
 }
 
 export interface UpdatePathInput {
   name?: string
   goalQuantity?: number
   advancementMode?: AdvancementMode
-  steps?: { id?: string, name: string, location?: string, optional?: boolean, dependencyType?: 'physical' | 'preferred' | 'completion_gate' }[]
+  steps?: { id?: string, name: string, location?: string, optional?: boolean, dependencyType?: DependencyType }[]
 }
 
 export interface BatchPathOperationsInput {

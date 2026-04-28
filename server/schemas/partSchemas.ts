@@ -5,7 +5,7 @@
  * receive correctly-typed inputs.
  */
 import { z } from 'zod'
-import { requiredId, positiveInt, scrapReasonEnum, batchIds100, batchIds500 } from './_primitives'
+import { requiredId, positiveInt, scrapReasonEnum } from './_primitives'
 
 /**
  * Validates the `id` route param for single-part endpoints such as
@@ -22,7 +22,9 @@ export const partIdParamSchema = z.object({
  * Accepts an array of 1–100 non-empty part ID strings.
  */
 export const batchAdvanceSchema = z.object({
-  partIds: batchIds100,
+  partIds: z.array(requiredId)
+    .min(1, 'At least one part ID is required')
+    .max(100, 'Cannot advance more than 100 parts at once'),
 })
 
 /**
@@ -30,7 +32,9 @@ export const batchAdvanceSchema = z.object({
  * Accepts an array of 1–500 non-empty part ID strings.
  */
 export const batchStepStatusesSchema = z.object({
-  partIds: batchIds500,
+  partIds: z.array(requiredId)
+    .min(1, 'At least one part ID is required')
+    .max(500, 'Cannot fetch more than 500 parts at once'),
 })
 
 /**
@@ -38,7 +42,9 @@ export const batchStepStatusesSchema = z.object({
  * Accepts an array of 1–100 part IDs, a target step ID, and an optional skip flag.
  */
 export const batchAdvanceToSchema = z.object({
-  partIds: batchIds100,
+  partIds: z.array(requiredId)
+    .min(1, 'At least one part ID is required')
+    .max(100, 'Cannot advance more than 100 parts at once'),
   targetStepId: requiredId,
   skip: z.boolean().optional(),
 })

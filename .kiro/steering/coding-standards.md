@@ -102,13 +102,13 @@ Common field patterns are centralized in `_primitives.ts` to avoid duplication a
 |---|---|---|
 | `requiredId` | `z.string().min(1)` | Any required entity ID field (jobId, pathId, stepId, certId, etc.) |
 | `positiveInt` | `z.number().int().positive()` | goalQuantity, requiredQuantity, priority |
-| `dependencyTypeEnum` | `z.enum([...])` | Step dependency type (physical/preferred/completion_gate) |
-| `advancementModeEnum` | `z.enum([...])` | Path advancement mode (strict/flexible/per_step) |
-| `scrapReasonEnum` | `z.enum([...])` | Scrap reason values |
-| `certTypeEnum` | `z.enum([...])` | Certificate type (material/process) |
-| `batchIds100` | `z.array(requiredId).min(1).max(100)` | Standard batch operations (advance, overrides) |
-| `batchIds500` | `z.array(requiredId).min(1).max(500)` | Larger read-only batch fetches (step statuses) |
+| `dependencyTypeEnum` | `z.enum(DEPENDENCY_TYPES)` | Step dependency type — derived from `domain.ts` |
+| `advancementModeEnum` | `z.enum(ADVANCEMENT_MODES)` | Path advancement mode — derived from `domain.ts` |
+| `scrapReasonEnum` | `z.enum(SCRAP_REASONS)` | Scrap reason values — derived from `domain.ts` |
+| `certTypeEnum` | `z.enum(CERT_TYPES)` | Certificate type — derived from `domain.ts` |
 | `pinSchema` | `z.string().regex(/^\d{4}$/)` | 4-digit PIN |
+
+Domain enums (`dependencyTypeEnum`, `advancementModeEnum`, `scrapReasonEnum`, `certTypeEnum`) are derived from `as const` arrays exported by `server/types/domain.ts`. Adding a new enum variant to the array in `domain.ts` automatically updates both the TypeScript union type and the Zod schema — no second file to remember.
 
 When adding a new primitive, add it to `_primitives.ts` with a descriptive name and JSDoc comment. Never scatter raw `z.string().min(1)` for ID fields or `z.number().int().positive()` for quantities across schema files — use the shared primitive.
 

@@ -3,34 +3,36 @@
  *
  * Centralizes frequently-reused field schemas so domain schema files
  * can import them instead of re-declaring the same patterns.
- * Prefix-free — consumers import named constants directly.
+ *
+ * Domain enums are derived from the const arrays in `server/types/domain.ts`
+ * — that file is the single source of truth for allowed values. Adding a new
+ * enum variant there automatically updates both the TypeScript type and the
+ * Zod schema.
  */
 import { z } from 'zod'
+import {
+  ADVANCEMENT_MODES,
+  DEPENDENCY_TYPES,
+  SCRAP_REASONS,
+  CERT_TYPES,
+} from '../types/domain'
 
 // ── ID fields ──
 
 /** Non-empty string ID. Use for any required entity reference (jobId, pathId, stepId, etc.). */
 export const requiredId = z.string().min(1)
 
-// ── Domain enums ──
+// ── Domain enums (derived from domain.ts const arrays) ──
 
-export const dependencyTypeEnum = z.enum(['physical', 'preferred', 'completion_gate'])
-export const advancementModeEnum = z.enum(['strict', 'flexible', 'per_step'])
-export const scrapReasonEnum = z.enum(['out_of_tolerance', 'process_defect', 'damaged', 'operator_error', 'other'])
-export const certTypeEnum = z.enum(['material', 'process'])
+export const dependencyTypeEnum = z.enum(DEPENDENCY_TYPES)
+export const advancementModeEnum = z.enum(ADVANCEMENT_MODES)
+export const scrapReasonEnum = z.enum(SCRAP_REASONS)
+export const certTypeEnum = z.enum(CERT_TYPES)
 
 // ── Numeric fields ──
 
 /** Positive integer (> 0). Use for goalQuantity, requiredQuantity, priority, etc. */
 export const positiveInt = z.number().int().positive()
-
-// ── Batch ID arrays ──
-
-/** Array of 1–100 non-empty ID strings. Use for standard batch operations. */
-export const batchIds100 = z.array(requiredId).min(1).max(100)
-
-/** Array of 1–500 non-empty ID strings. Use for larger read-only batch fetches. */
-export const batchIds500 = z.array(requiredId).min(1).max(500)
 
 // ── Auth ──
 
