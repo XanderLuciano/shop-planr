@@ -5,6 +5,19 @@ description: "How to run tests and read output without re-running or losing data
 
 # Test Execution Rules
 
+## MANDATORY — Read This First
+
+You MUST use the EXACT commands in this file when running tests. Copy-paste them. Do NOT:
+
+- Invent your own grep pattern (e.g., `grep -E "^( Test Files| Tests  )"` — WRONG, anchored `^` breaks on vitest output)
+- Use `npm run test` or `npm test` instead of `npx vitest run`
+- Omit the `2>&1` redirect (stderr contains test output)
+- Change `head -200` to a different limit
+- Add `--reporter=verbose` on full-suite or folder runs
+- Pipe through `tail` instead of the canonical grep for multi-file runs
+
+If you deviate from these commands, you WILL get incomplete or misleading output and waste time re-running. The patterns below have been tested against real output from this project. Trust them.
+
 ## The Problem
 
 Vitest output includes noisy migration lines (`Migration N: ... — applied`) repeated per test file, plus verbose per-test lines. Naive `grep` or `tail` misses failures, and the AI ends up re-running the full suite 3-4 times trying different filters. Stop that.
@@ -94,3 +107,4 @@ Do NOT re-run the entire suite or folder to check if one file is fixed. Run the 
 4. Do not use `--reporter=verbose` on folder-level or full-suite runs — it makes the output enormous. Only use it on single files when debugging a failure.
 5. The `head -200` cap prevents runaway output. If you're hitting it, you have too many failures — focus on one file at a time.
 6. Property tests use `fast-check` and can be slow (5-10s each). Set `timeout: 120000` on the vitest run if you're seeing timeout failures on property tests.
+7. These commands are NOT suggestions. They are the ONLY way to run tests in this project. If you think you have a better grep pattern — you don't. Use the ones above.
