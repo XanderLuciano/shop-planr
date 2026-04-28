@@ -8,4 +8,4 @@ defineRouteMeta({
   },
 })
 
-export default defineEventHandler(() => ({ status: 'ok' }))
+export default defineApiHandler(() => ({ status: 'ok' }))
