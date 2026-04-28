@@ -1,6 +1,6 @@
 import type { TemplateRepository } from '../repositories/interfaces/templateRepository'
 import type { PathRepository } from '../repositories/interfaces/pathRepository'
-import type { TemplateRoute, TemplateStep, Path, ProcessStep } from '../types/domain'
+import type { TemplateRoute, TemplateStep, Path, ProcessStep, DependencyType } from '../types/domain'
 import type { CreateTemplateInput, ApplyTemplateInput } from '../types/api'
 import { generateId } from '../utils/idGenerator'
 import { assertNonEmpty, assertNonEmptyArray } from '../utils/validation'
@@ -82,7 +82,7 @@ export function createTemplateService(repos: {
       return repos.paths.create(path)
     },
 
-    updateTemplate(id: string, input: { name?: string, steps?: { name: string, location?: string, optional?: boolean, dependencyType?: 'physical' | 'preferred' | 'completion_gate' }[] }): TemplateRoute {
+    updateTemplate(id: string, input: { name?: string, steps?: { name: string, location?: string, optional?: boolean, dependencyType?: DependencyType }[] }): TemplateRoute {
       const existing = repos.templates.getById(id)
       if (!existing) {
         throw new NotFoundError('TemplateRoute', id)

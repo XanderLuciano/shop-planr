@@ -51,7 +51,7 @@ function setupServices(db: Database.Database) {
     auditService,
     partIdGenerator,
   )
-  const certService = createCertService({ certs: repos.certs }, auditService)
+  const certService = createCertService({ certs: repos.certs, parts: repos.parts, paths: repos.paths }, auditService)
 
   return { jobService, pathService, partService, certService, repos }
 }

@@ -24,7 +24,8 @@ export interface Job {
 
 // ---- Path ----
 
-export type AdvancementMode = 'strict' | 'flexible' | 'per_step'
+export const ADVANCEMENT_MODES = ['strict', 'flexible', 'per_step'] as const
+export type AdvancementMode = typeof ADVANCEMENT_MODES[number]
 
 export interface Path {
   id: string
@@ -39,6 +40,9 @@ export interface Path {
 
 // ---- Process Step ----
 
+export const DEPENDENCY_TYPES = ['physical', 'preferred', 'completion_gate'] as const
+export type DependencyType = typeof DEPENDENCY_TYPES[number]
+
 export interface ProcessStep {
   id: string
   name: string
@@ -46,7 +50,7 @@ export interface ProcessStep {
   location?: string
   assignedTo?: string
   optional: boolean
-  dependencyType: 'physical' | 'preferred' | 'completion_gate'
+  dependencyType: DependencyType
   removedAt?: string // soft-delete timestamp; null/undefined = active
   completedCount: number // write-time counter: parts that have completed this step
 }
@@ -59,12 +63,13 @@ export interface StepInput {
   location?: string
   assignedTo?: string | null // undefined = no change/preserve, null = clear assignment
   optional?: boolean
-  dependencyType?: 'physical' | 'preferred' | 'completion_gate'
+  dependencyType?: DependencyType
 }
 
 // ---- Part (formerly Serial Number) ----
 
-export type ScrapReason = 'out_of_tolerance' | 'process_defect' | 'damaged' | 'operator_error' | 'other'
+export const SCRAP_REASONS = ['out_of_tolerance', 'process_defect', 'damaged', 'operator_error', 'other'] as const
+export type ScrapReason = typeof SCRAP_REASONS[number]
 
 export interface Part {
   id: string
@@ -90,9 +95,12 @@ export type SerialNumber = Part
 
 // ---- Certificate ----
 
+export const CERT_TYPES = ['material', 'process'] as const
+export type CertType = typeof CERT_TYPES[number]
+
 export interface Certificate {
   id: string
-  type: 'material' | 'process'
+  type: CertType
   name: string
   metadata?: Record<string, unknown>
   createdAt: string
@@ -124,7 +132,7 @@ export interface TemplateStep {
   order: number
   location?: string
   optional: boolean
-  dependencyType: 'physical' | 'preferred' | 'completion_gate'
+  dependencyType: DependencyType
 }
 
 // ---- BOM (Bill of Materials) ----

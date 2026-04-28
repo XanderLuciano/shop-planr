@@ -1,7 +1,10 @@
+import { createNoteSchema } from '../../schemas/noteSchemas'
+
 defineRouteMeta({
   openAPI: {
     tags: ['Notes'],
     description: 'Create a new step note.',
+    requestBody: zodRequestBody(createNoteSchema),
     responses: {
       201: { description: 'Note created' },
       400: { description: 'Validation error' },
@@ -10,13 +13,7 @@ defineRouteMeta({
 })
 
 export default defineApiHandler(async (event) => {
-  const body = await readBody<{
-    jobId: string
-    pathId: string
-    stepId: string
-    partIds: string[]
-    text: string
-  }>(event)
+  const body = await parseBody(event, createNoteSchema)
   const userId = getAuthUserId(event)
   const { noteService } = getServices()
   return noteService.createNote({ ...body, userId })

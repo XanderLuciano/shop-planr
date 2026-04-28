@@ -433,7 +433,7 @@ describe('JiraService', () => {
         },
       })
       partService = createPartService({ parts: partsRepo, paths: pathsRepo, certs: certsRepo }, auditService, partIdGenerator)
-      certService = createCertService({ certs: certsRepo }, auditService)
+      certService = createCertService({ certs: certsRepo, parts: partsRepo, paths: pathsRepo }, auditService)
       noteService = createNoteService({ notes: notesRepo }, auditService)
     })
 

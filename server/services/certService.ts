@@ -1,15 +1,31 @@
 import type { CertRepository } from '../repositories/interfaces/certRepository'
+import type { PartRepository } from '../repositories/interfaces/partRepository'
+import type { PathRepository } from '../repositories/interfaces/pathRepository'
 import type { Certificate, CertAttachment } from '../types/domain'
 import type { CreateCertInput, BatchAttachCertInput } from '../types/api'
 import type { AuditService } from '../services/auditService'
 import { assertOneOf, assertNonEmpty } from '../utils/validation'
-import { NotFoundError } from '../utils/errors'
+import { NotFoundError, ValidationError } from '../utils/errors'
 import { generateId } from '../utils/idGenerator'
 
 export function createCertService(
-  repos: { certs: CertRepository },
+  repos: { certs: CertRepository, parts: PartRepository, paths: PathRepository },
   auditService: AuditService,
 ) {
+  /**
+   * Resolve a part's current step ID. Throws if the part is already completed.
+   */
+  function resolveCurrentStepId(partId: string): { stepId: string, jobId: string, pathId: string } {
+    const part = repos.parts.getById(partId)
+    if (!part) {
+      throw new NotFoundError('Part', partId)
+    }
+    if (part.currentStepId === null) {
+      throw new ValidationError(`Part ${partId} is already completed, cannot attach cert`)
+    }
+    return { stepId: part.currentStepId, jobId: part.jobId, pathId: part.pathId }
+  }
+
   return {
     createCert(input: CreateCertInput): Certificate {
       assertOneOf(input.type, ['material', 'process'] as const, 'type')
@@ -93,24 +109,33 @@ export function createCertService(
         throw new NotFoundError('Certificate', input.certId)
       }
 
+      // Resolve each part's current step — same logic as single attach
+      const resolved = input.partIds.map((partId) => {
+        const ctx = resolveCurrentStepId(partId)
+        return { partId, ...ctx }
+      })
+
       const now = new Date().toISOString()
-      const attachments: CertAttachment[] = input.partIds.map(partId => ({
-        partId,
+      const rows: CertAttachment[] = resolved.map(r => ({
+        partId: r.partId,
         certId: input.certId,
-        stepId: '',
+        stepId: r.stepId,
         attachedAt: now,
         attachedBy: input.userId,
       }))
 
-      const results = repos.certs.batchAttach(attachments)
+      const results = repos.certs.batchAttach(rows)
 
-      // Record audit for each new attachment
-      for (const attachment of results) {
+      const resolvedByPartId = new Map(resolved.map(r => [r.partId, r]))
+      for (const result of results) {
+        const source = resolvedByPartId.get(result.partId)
         auditService.recordCertAttachment({
           userId: input.userId,
-          partId: attachment.partId,
+          partId: result.partId,
           certId: input.certId,
-          stepId: attachment.stepId,
+          stepId: result.stepId,
+          jobId: source?.jobId,
+          pathId: source?.pathId,
         })
       }
 

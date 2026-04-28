@@ -5,9 +5,10 @@
  * receive correctly-typed inputs.
  */
 import { z } from 'zod'
+import { requiredId } from './_primitives'
 
 const bomEntrySchema = z.object({
-  jobId: z.string().min(1, 'jobId is required'),
+  jobId: requiredId,
   requiredQuantity: z.number()
     .int('requiredQuantity must be an integer')
     .min(1, 'requiredQuantity must be at least 1')

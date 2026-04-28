@@ -2,7 +2,6 @@
 import type { Certificate } from '~/types/domain'
 
 const { certs, loading, fetchCerts, createCert, batchAttachCert } = useCerts()
-const { authenticatedUser } = useAuth()
 
 // UI state
 const showForm = ref(false)
@@ -74,19 +73,11 @@ async function onBatchAttach() {
     return
   }
 
-  if (!authenticatedUser.value) {
-    batchError.value = 'Please select a user first'
-    return
-  }
-
-  const userId = authenticatedUser.value.id
-
   batchSaving.value = true
   try {
     await batchAttachCert({
       certId: batchCertId.value,
       partIds: ids,
-      userId,
     })
     batchSuccess.value = `Attached certificate to ${ids.length} part(s)`
     batchPartIds.value = ''

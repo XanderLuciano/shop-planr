@@ -94,6 +94,44 @@ API routes that accept request bodies MUST validate them with Zod schemas using 
 
 Schemas live in `server/schemas/` and are colocated by domain (e.g., `pathSchemas.ts`, `jobSchemas.ts`). Each route imports its schema and calls `parseBody(event, schema)` instead of raw `readBody(event)`.
 
+### Shared Primitives (`server/schemas/_primitives.ts`)
+
+Common field patterns are centralized in `_primitives.ts` to avoid duplication across schema files. When writing a new schema, import from `_primitives` instead of re-declaring the same patterns:
+
+| Primitive | Type | Use for |
+|---|---|---|
+| `requiredId` | `z.string().min(1)` | Any required entity ID field (jobId, pathId, stepId, certId, etc.) |
+| `positiveInt` | `z.number().int().positive()` | goalQuantity, requiredQuantity, priority |
+| `dependencyTypeEnum` | `z.enum(DEPENDENCY_TYPES)` | Step dependency type — derived from `domain.ts` |
+| `advancementModeEnum` | `z.enum(ADVANCEMENT_MODES)` | Path advancement mode — derived from `domain.ts` |
+| `scrapReasonEnum` | `z.enum(SCRAP_REASONS)` | Scrap reason values — derived from `domain.ts` |
+| `certTypeEnum` | `z.enum(CERT_TYPES)` | Certificate type — derived from `domain.ts` |
+| `pinSchema` | `z.string().regex(/^\d{4}$/)` | 4-digit PIN |
+
+Domain enums (`dependencyTypeEnum`, `advancementModeEnum`, `scrapReasonEnum`, `certTypeEnum`) are derived from `as const` arrays exported by `server/types/domain.ts`. Adding a new enum variant to the array in `domain.ts` automatically updates both the TypeScript union type and the Zod schema — no second file to remember.
+
+When adding a new primitive, add it to `_primitives.ts` with a descriptive name and JSDoc comment. Never scatter raw `z.string().min(1)` for ID fields or `z.number().int().positive()` for quantities across schema files — use the shared primitive.
+
+```ts
+// CORRECT — use shared primitives
+import { requiredId, positiveInt } from './_primitives'
+
+export const mySchema = z.object({
+  jobId: requiredId,
+  quantity: positiveInt,
+})
+```
+
+```ts
+// WRONG — re-declares patterns that already exist in _primitives
+export const mySchema = z.object({
+  jobId: z.string().min(1, 'jobId is required'),
+  quantity: z.number().int().positive('quantity must be positive'),
+})
+```
+
+### Route Pattern
+
 ```ts
 // CORRECT — validated input, wrong types → 400
 import { createPathSchema } from '../../schemas/pathSchemas'

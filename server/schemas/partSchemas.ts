@@ -5,6 +5,7 @@
  * receive correctly-typed inputs.
  */
 import { z } from 'zod'
+import { requiredId, positiveInt, scrapReasonEnum } from './_primitives'
 
 /**
  * Validates the `id` route param for single-part endpoints such as
@@ -21,11 +22,9 @@ export const partIdParamSchema = z.object({
  * Accepts an array of 1–100 non-empty part ID strings.
  */
 export const batchAdvanceSchema = z.object({
-  partIds: z.array(
-    z.string().min(1, { error: 'Part ID must be non-empty' }),
-  )
-    .min(1, { error: 'At least one part ID is required' })
-    .max(100, { error: 'Cannot advance more than 100 parts at once' }),
+  partIds: z.array(requiredId)
+    .min(1, 'At least one part ID is required')
+    .max(100, 'Cannot advance more than 100 parts at once'),
 })
 
 /**
@@ -33,7 +32,7 @@ export const batchAdvanceSchema = z.object({
  * Accepts an array of 1–500 non-empty part ID strings.
  */
 export const batchStepStatusesSchema = z.object({
-  partIds: z.array(z.string().min(1))
+  partIds: z.array(requiredId)
     .min(1, 'At least one part ID is required')
     .max(500, 'Cannot fetch more than 500 parts at once'),
 })
@@ -43,11 +42,66 @@ export const batchStepStatusesSchema = z.object({
  * Accepts an array of 1–100 part IDs, a target step ID, and an optional skip flag.
  */
 export const batchAdvanceToSchema = z.object({
-  partIds: z.array(z.string().min(1))
+  partIds: z.array(requiredId)
     .min(1, 'At least one part ID is required')
     .max(100, 'Cannot advance more than 100 parts at once'),
-  targetStepId: z.string().min(1, 'targetStepId is required'),
+  targetStepId: requiredId,
   skip: z.boolean().optional(),
+})
+
+/**
+ * Validates the request body for `POST /api/parts`.
+ * Batch-create parts for a path.
+ */
+export const createPartsSchema = z.object({
+  jobId: requiredId,
+  pathId: requiredId,
+  quantity: positiveInt,
+  certId: requiredId.optional(),
+})
+
+/**
+ * Validates the request body for `POST /api/parts/:id/scrap`.
+ */
+export const scrapPartSchema = z.object({
+  reason: scrapReasonEnum,
+  explanation: z.string().optional(),
+})
+
+/**
+ * Validates the request body for `POST /api/parts/:id/force-complete`.
+ */
+export const forceCompleteSchema = z.object({
+  reason: z.string().optional(),
+})
+
+/**
+ * Validates the request body for `POST /api/parts/:id/advance-to`.
+ */
+export const advanceToStepSchema = z.object({
+  targetStepId: requiredId,
+  skip: z.boolean().optional(),
+})
+
+/**
+ * Validates the request body for `POST /api/parts/:id/overrides`.
+ */
+export const createOverrideSchema = z.object({
+  partIds: z.array(requiredId).min(1, 'At least one partId is required').optional(),
+  /** @deprecated Use `partIds` instead. Kept for backward compatibility. */
+  serialIds: z.array(requiredId).min(1).optional(),
+  stepId: requiredId,
+  reason: z.string().min(1, 'reason is required'),
+}).refine(
+  data => (data.partIds && data.partIds.length > 0) || (data.serialIds && data.serialIds.length > 0),
+  { message: 'At least one of partIds or serialIds must be provided', path: ['partIds'] },
+)
+
+/**
+ * Validates the request body for `POST /api/parts/:id/attach-cert`.
+ */
+export const attachCertSchema = z.object({
+  certId: requiredId,
 })
 
 /**

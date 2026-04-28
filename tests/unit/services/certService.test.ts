@@ -2,8 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createCertService } from '../../../server/services/certService'
 import { NotFoundError, ValidationError } from '../../../server/utils/errors'
 import type { CertRepository } from '../../../server/repositories/interfaces/certRepository'
+import type { PartRepository } from '../../../server/repositories/interfaces/partRepository'
+import type { PathRepository } from '../../../server/repositories/interfaces/pathRepository'
 import type { AuditService } from '../../../server/services/auditService'
-import type { Certificate, CertAttachment } from '../../../server/types/domain'
+import type { Certificate, CertAttachment, Part } from '../../../server/types/domain'
 
 function makeCert(overrides: Partial<Certificate> = {}): Certificate {
   return {
@@ -11,6 +13,20 @@ function makeCert(overrides: Partial<Certificate> = {}): Certificate {
     type: 'material',
     name: 'Steel Cert',
     createdAt: '2024-01-01T00:00:00.000Z',
+    ...overrides,
+  }
+}
+
+function makePart(overrides: Partial<Part> = {}): Part {
+  return {
+    id: 'part_00001',
+    jobId: 'job_1',
+    pathId: 'path_1',
+    currentStepId: 'step_1',
+    status: 'in_progress',
+    forceCompleted: false,
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: '2024-01-01T00:00:00.000Z',
     ...overrides,
   }
 }
@@ -46,6 +62,35 @@ function createMockCertRepo(): CertRepository {
   }
 }
 
+function createMockPartRepo(parts: Part[] = []): PartRepository {
+  const partsMap = new Map(parts.map(p => [p.id, p]))
+  return {
+    getById: vi.fn((id: string) => partsMap.get(id) ?? null),
+    create: vi.fn(),
+    list: vi.fn(() => [...partsMap.values()]),
+    update: vi.fn(),
+    delete: vi.fn(),
+    listByJobId: vi.fn(() => []),
+    listByPathId: vi.fn(() => []),
+    countByJobId: vi.fn(() => 0),
+    countCompletedByJobId: vi.fn(() => 0),
+    countScrappedByJobId: vi.fn(() => 0),
+    countsByJob: vi.fn(() => new Map()),
+    batchCreate: vi.fn(() => []),
+  } as any
+}
+
+function createMockPathRepo(): PathRepository {
+  return {
+    getById: vi.fn(() => null),
+    create: vi.fn(),
+    list: vi.fn(() => []),
+    update: vi.fn(),
+    delete: vi.fn(),
+    listByJobId: vi.fn(() => []),
+  } as any
+}
+
 function createMockAuditService(): AuditService {
   return {
     recordCertAttachment: vi.fn(() => ({}) as any),
@@ -61,13 +106,17 @@ function createMockAuditService(): AuditService {
 
 describe('CertService', () => {
   let certRepo: CertRepository
+  let partRepo: PartRepository
+  let pathRepo: PathRepository
   let auditService: AuditService
   let service: ReturnType<typeof createCertService>
 
   beforeEach(() => {
     certRepo = createMockCertRepo()
+    partRepo = createMockPartRepo()
+    pathRepo = createMockPathRepo()
     auditService = createMockAuditService()
-    service = createCertService({ certs: certRepo }, auditService)
+    service = createCertService({ certs: certRepo, parts: partRepo, paths: pathRepo }, auditService)
   })
 
   describe('createCert', () => {
@@ -180,8 +229,15 @@ describe('CertService', () => {
   })
 
   describe('batchAttachCert', () => {
-    it('attaches cert to multiple parts and records audit for each', () => {
+    it('resolves step IDs from parts and attaches cert to each', () => {
       certRepo.create(makeCert({ id: 'cert_1' }))
+      const parts = [
+        makePart({ id: 'part_00001', currentStepId: 'step_1' }),
+        makePart({ id: 'part_00002', currentStepId: 'step_2' }),
+        makePart({ id: 'part_00003', currentStepId: 'step_1' }),
+      ]
+      partRepo = createMockPartRepo(parts)
+      service = createCertService({ certs: certRepo, parts: partRepo, paths: pathRepo }, auditService)
 
       const result = service.batchAttachCert({
         certId: 'cert_1',
@@ -190,11 +246,17 @@ describe('CertService', () => {
       })
 
       expect(result).toHaveLength(3)
+      expect(result[0].stepId).toBe('step_1')
+      expect(result[1].stepId).toBe('step_2')
+      expect(result[2].stepId).toBe('step_1')
       expect(certRepo.batchAttach).toHaveBeenCalledTimes(1)
       expect(auditService.recordCertAttachment).toHaveBeenCalledTimes(3)
     })
 
     it('throws NotFoundError when cert does not exist', () => {
+      partRepo = createMockPartRepo([makePart()])
+      service = createCertService({ certs: certRepo, parts: partRepo, paths: pathRepo }, auditService)
+
       expect(() =>
         service.batchAttachCert({
           certId: 'nonexistent',
@@ -202,6 +264,33 @@ describe('CertService', () => {
           userId: 'user_1',
         }),
       ).toThrow(NotFoundError)
+    })
+
+    it('throws NotFoundError when a part does not exist', () => {
+      certRepo.create(makeCert({ id: 'cert_1' }))
+      // partRepo has no parts
+      expect(() =>
+        service.batchAttachCert({
+          certId: 'cert_1',
+          partIds: ['nonexistent_part'],
+          userId: 'user_1',
+        }),
+      ).toThrow(NotFoundError)
+    })
+
+    it('throws ValidationError when a part is already completed', () => {
+      certRepo.create(makeCert({ id: 'cert_1' }))
+      const completedPart = makePart({ id: 'part_done', currentStepId: null, status: 'completed' })
+      partRepo = createMockPartRepo([completedPart])
+      service = createCertService({ certs: certRepo, parts: partRepo, paths: pathRepo }, auditService)
+
+      expect(() =>
+        service.batchAttachCert({
+          certId: 'cert_1',
+          partIds: ['part_done'],
+          userId: 'user_1',
+        }),
+      ).toThrow(ValidationError)
     })
   })
 

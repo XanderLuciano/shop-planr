@@ -1,7 +1,10 @@
+import { attachCertSchema } from '../../../schemas/partSchemas'
+
 defineRouteMeta({
   openAPI: {
     tags: ['Parts'],
     description: 'Attach a certificate to a part at its current step.',
+    requestBody: zodRequestBody(attachCertSchema),
     responses: {
       200: { description: 'Certificate attached' },
       400: { description: 'Validation error or part already completed' },
@@ -12,7 +15,7 @@ defineRouteMeta({
 
 export default defineApiHandler(async (event) => {
   const id = getRouterParam(event, 'id')!
-  const body = await readBody(event)
+  const body = await parseBody(event, attachCertSchema)
   const userId = getAuthUserId(event)
   const { partService, certService, pathService } = getServices()
 
