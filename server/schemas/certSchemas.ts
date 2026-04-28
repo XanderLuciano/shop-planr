@@ -16,5 +16,4 @@ export const createCertSchema = z.object({
 export const batchAttachCertSchema = z.object({
   certId: requiredId,
   partIds: z.array(requiredId).min(1, 'At least one partId is required'),
-  stepId: requiredId,
 })
