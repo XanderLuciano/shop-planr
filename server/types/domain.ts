@@ -269,6 +269,7 @@ export interface PageToggles {
   certs: boolean
   jira: boolean
   audit: boolean
+  webhooks: boolean
 }
 
 // ---- Settings ----
@@ -382,6 +383,48 @@ export interface Tag {
   id: string
   name: string
   color: string
+  createdAt: string
+  updatedAt: string
+}
+
+// ---- Webhook Events ----
+
+export const WEBHOOK_EVENT_TYPES = [
+  'part_advanced',
+  'part_completed',
+  'part_created',
+  'part_scrapped',
+  'part_force_completed',
+  'step_skipped',
+  'step_deferred',
+  'step_waived',
+  'job_created',
+  'job_deleted',
+  'path_deleted',
+  'note_created',
+  'cert_attached',
+] as const
+export type WebhookEventType = typeof WEBHOOK_EVENT_TYPES[number]
+
+export type WebhookEventStatus = 'queued' | 'sent' | 'failed'
+
+export interface WebhookEvent {
+  id: string
+  eventType: WebhookEventType
+  payload: Record<string, unknown>
+  summary: string
+  status: WebhookEventStatus
+  createdAt: string
+  sentAt?: string
+  lastError?: string
+  retryCount: number
+}
+
+export interface WebhookConfig {
+  id: string
+  endpointUrl: string
+  enabledEventTypes: WebhookEventType[]
+  isActive: boolean
   createdAt: string
   updatedAt: string
 }

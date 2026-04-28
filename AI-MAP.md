@@ -35,7 +35,7 @@ app/
   pages/
     index.vue            → Placeholder homepage (to become dashboard)
   components/            → 50+ components: SectionCard (reusable card wrapper), lifecycle dialogs (ScrapDialog, ForceCompleteDialog, AdvanceToStepDropdown), config panels (StepConfigPanel, AdvancementModeSelector, LibraryManager), job form (JobCreationForm), serial creation (SerialCreationPanel — first-step batch creation + advancement), page visibility (PageVisibilitySettings — toggle switches for nav pages), job view (JobViewToolbar — expand/collapse all jobs/paths buttons, JobExpandableRow — multi-path expansion with bulk signals, JobMobileCard — card-based job display for mobile viewports, JobTagPill — colored pill badge for tags), job tags (TagManager — Settings CRUD with color picker + usage count, TagSelector — multi-select dropdown with inline create), work queue (WorkQueueFilterBar — group-by selector, filter dropdowns, text search, preset management), audit (AuditLog — responsive table/card switch via useMobileBreakpoint, AuditEntryCard — mobile card layout, AuditTrailFilters — collapsible filter panel with active-count badge on mobile), utility (BonusBadge, PathDeleteButton, PartDeleteButton, CertDetailView, TemplateEditor, ViewFilters — filter bar with tag dropdown + group-by-tag toggle, etc.)
-  composables/           → 25+ composables: useAuth (session/token/user), useAuthFetch (authenticated $fetch instance), useJobForm, useLifecycle, useLibrary, useBomVersions, useAudit (with filters), usePartsView, useStepView, useOperatorWorkQueue (extended with groupBy param), useWorkQueueFilters (wraps useOperatorWorkQueue with groupBy/filter/preset/URL-sync), useAdvanceBatch (extracted advanceBatch() with client-side validation), useSettings (extended with pageToggles), useMobileBreakpoint (matchMedia-based mobile viewport detection), useJobPriority (drag-and-drop priority editing), useNavigationStack (stack-based back navigation via sessionStorage), useTags (singleton tag list CRUD), useJobTags (per-instance job tag assignment), useViewFilters (client-side filtering with tag + groupByTag support) + existing ones
+  composables/           → 25+ composables: useAuth (session/token/user), useAuthFetch (authenticated $fetch instance), useJobForm, useLifecycle, useLibrary, useBomVersions, useAudit (with filters), usePartsView, useStepView, useOperatorWorkQueue (extended with groupBy param), useWorkQueueFilters (wraps useOperatorWorkQueue with groupBy/filter/preset/URL-sync), useAdvanceBatch (extracted advanceBatch() with client-side validation), useSettings (extended with pageToggles), useMobileBreakpoint (matchMedia-based mobile viewport detection), useJobPriority (drag-and-drop priority editing), useNavigationStack (stack-based back navigation via sessionStorage), useTags (singleton tag list CRUD), useJobTags (per-instance job tag assignment), useViewFilters (client-side filtering with tag + groupByTag support), useWebhookEvents (webhook queue management + client-side dispatch), useWebhookEmit (fire-and-forget event emission from anywhere) + existing ones
   middleware/
     pageGuard.global.ts  → Global route middleware: blocks navigation to disabled pages, redirects to /
     stackTracker.global.ts → Global route middleware: auto-maintains navigation stack (push/pop/replace) on every client-side route change
@@ -54,7 +54,7 @@ server/
   middleware/
     01.rateLimit.ts      → Tiered rate limiting (login/auth/unauth tiers)
     02.auth.ts           → JWT auth: verifies token on /api/ routes, exempt list, cookie fallback for SSR
-  services/              → 14 service modules (business logic layer, including authService, tagService)
+  services/              → 14 service modules (business logic layer, including authService, tagService, webhookService)
   repositories/
     interfaces/          → 16 repository interfaces + barrel export
     sqlite/              → 16 SQLite implementations + migration system (13 migrations)
@@ -184,6 +184,8 @@ Dependencies flow left-to-right only. All business logic lives in services. See 
 | `/api/paths/:id/advancement-mode` | `pathService` | Path advancement mode (PATCH) |
 | `/api/library/**` | `libraryService` | Process + location library CRUD |
 | `/api/tags/**` | `tagService` | Tag CRUD (admin-gated create/update/delete) |
+| `/api/webhooks/events/**` | `webhookService` | Webhook event queue (CRUD, batch status, retry, stats) |
+| `/api/webhooks/config` | `webhookService` | Webhook endpoint configuration (get/update) |
 | `/api/jobs/:id/tags` | `jobService`, `tagService` | Get/set tags for a job |
 | `POST /api/paths/batch-distributions` | `pathService` | Bulk fetch step distributions + completed counts for multiple paths |
 | `POST /api/parts/batch-step-statuses` | `lifecycleService` | Bulk fetch step statuses for multiple parts |
@@ -209,6 +211,7 @@ Dependencies flow left-to-right only. All business logic lives in services. See 
 | BOM | `app/pages/bom.vue` | Bill of materials roll-ups + edit + version history |
 | Jira | `app/pages/jira.vue` | Jira ticket dashboard (conditional) |
 | Audit | `app/pages/audit.vue` | Audit trail viewer with filters (action type, user, serial, job, date range) |
+| Webhooks | `app/pages/webhooks.vue` | Webhook event queue admin: configure endpoint URL, select event types, start/stop dispatch, retry failed, view queue |
 | Settings | `app/pages/settings.vue` | Users, Jira connection, field mappings, process/location libraries, page visibility toggles |
 | API Docs | `/_scalar` (Nitro built-in) | Auto-generated OpenAPI 3.1 Scalar UI (no custom page) |
 | Serial browser | `app/pages/serials/index.vue` | Searchable/filterable serial number list |
@@ -235,7 +238,9 @@ Core entities and relationships:
 - **StepNote** → defect/note on serial(s) at a process step
 - **Tag** → user-defined label with name (max 30 chars, case-insensitive unique) and hex color; managed under Settings → Tags (admin-only CRUD)
 - **JobTag** → many-to-many join between Jobs and Tags via `job_tags` table; cascade deletes on both sides
-- **AppSettings** → singleton: Jira connection + field mappings + page toggles (5 default PI project mappings, 9 page visibility toggles)
+- **AppSettings** → singleton: Jira connection + field mappings + page toggles (5 default PI project mappings, 10 page visibility toggles)
+- **WebhookEvent** → queued event record: eventType, payload (JSON), summary (human-readable one-liner), status (queued/sent/failed), retryCount; dispatched client-side to configured endpoint
+- **WebhookConfig** → singleton: endpoint URL, enabled event types, isActive flag; controls which events get dispatched and where
 
 ## Sub-Maps (`.ai/` folder)
 

@@ -4,9 +4,15 @@ import type { AdvancementResult, PartStepStatusView } from '~/types/computed'
 
 export function useLifecycle() {
   const $api = useAuthFetch()
+  const { emit: emitWebhook } = useWebhookEmit()
+  const auth = useAuth()
 
   const loading = ref(false)
   const error = ref<string | null>(null)
+
+  function currentUser(): string {
+    return auth.authenticatedUser.value?.displayName ?? auth.authenticatedUser.value?.username ?? 'unknown'
+  }
 
   async function scrapPart(partId: string, input: {
     reason: string
@@ -15,10 +21,18 @@ export function useLifecycle() {
     loading.value = true
     error.value = null
     try {
-      return await $api<Part>(`/api/parts/${encodeURIComponent(partId)}/scrap`, {
+      const result = await $api<Part>(`/api/parts/${encodeURIComponent(partId)}/scrap`, {
         method: 'POST',
         body: input,
       })
+      emitWebhook('part_scrapped', {
+        user: currentUser(),
+        partId,
+        reason: input.reason,
+        explanation: input.explanation,
+        time: new Date().toISOString(),
+      })
+      return result
     } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to scrap part'
       throw e
@@ -33,10 +47,17 @@ export function useLifecycle() {
     loading.value = true
     error.value = null
     try {
-      return await $api<Part>(`/api/parts/${encodeURIComponent(partId)}/force-complete`, {
+      const result = await $api<Part>(`/api/parts/${encodeURIComponent(partId)}/force-complete`, {
         method: 'POST',
         body: input,
       })
+      emitWebhook('part_force_completed', {
+        user: currentUser(),
+        partId,
+        reason: input.reason,
+        time: new Date().toISOString(),
+      })
+      return result
     } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to force complete part'
       throw e
@@ -52,10 +73,20 @@ export function useLifecycle() {
     loading.value = true
     error.value = null
     try {
-      return await $api<AdvancementResult>(`/api/parts/${encodeURIComponent(partId)}/advance-to`, {
+      const result = await $api<AdvancementResult>(`/api/parts/${encodeURIComponent(partId)}/advance-to`, {
         method: 'POST',
         body: input,
       })
+      const eventType = result.serial.status === 'completed' ? 'part_completed' : 'part_advanced'
+      emitWebhook(eventType, {
+        user: currentUser(),
+        partId,
+        targetStepId: input.targetStepId,
+        skip: input.skip,
+        newStatus: result.serial.status,
+        time: new Date().toISOString(),
+      })
+      return result
     } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to advance part'
       throw e
@@ -153,10 +184,22 @@ export function useLifecycle() {
     loading.value = true
     error.value = null
     try {
-      return await $api('/api/parts/advance-to', {
+      const result = await $api<{ advanced: number, failed: number, results: { partId: string, success: boolean, error?: string }[] }>('/api/parts/advance-to', {
         method: 'POST',
         body: input,
       })
+      if (result.advanced > 0) {
+        emitWebhook('part_advanced', {
+          user: currentUser(),
+          partIds: input.partIds,
+          targetStepId: input.targetStepId,
+          skip: input.skip,
+          advancedCount: result.advanced,
+          failedCount: result.failed,
+          time: new Date().toISOString(),
+        })
+      }
+      return result
     } catch (e) {
       error.value = e?.data?.message ?? e?.message ?? 'Failed to advance parts'
       throw e

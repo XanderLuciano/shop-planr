@@ -17,9 +17,9 @@ import {
 } from '~/server/utils/pageToggles'
 import type { PageToggles } from '~/server/types/domain'
 
-/** All 9 valid toggle keys. */
+/** All 10 valid toggle keys. */
 const ALL_KEYS: (keyof PageToggles)[] = [
-  'jobs', 'partsBrowser', 'parts', 'queue', 'templates', 'bom', 'certs', 'jira', 'audit',
+  'jobs', 'partsBrowser', 'parts', 'queue', 'templates', 'bom', 'certs', 'jira', 'audit', 'webhooks',
 ]
 
 /** Arbitrary that produces a full PageToggles object with random booleans. */
@@ -33,6 +33,7 @@ const arbPageToggles: fc.Arbitrary<PageToggles> = fc.record({
   certs: fc.boolean(),
   jira: fc.boolean(),
   audit: fc.boolean(),
+  webhooks: fc.boolean(),
 })
 
 /** Arbitrary that produces a partial PageToggles (random subset of keys). */
@@ -91,16 +92,16 @@ describe('Property 6: Unknown keys ignored in merge', () => {
    *
    * Unknown keys in input are discarded; only valid keys remain.
    */
-  it('result contains only the 9 valid toggle keys regardless of extra input keys', () => {
+  it('result contains only the 10 valid toggle keys regardless of extra input keys', () => {
     fc.assert(
       fc.property(arbPageToggles, arbUnknownKeys, (current, unknowns) => {
         // Mix valid partial with unknown keys
         const mixed: Record<string, unknown> = { ...unknowns, jobs: !current.jobs }
         const merged = mergePageToggles(current, mixed)
 
-        // Result has exactly the 9 valid keys
+        // Result has exactly the 10 valid keys
         const resultKeys = new Set(Object.keys(merged))
-        expect(resultKeys.size).toBe(9)
+        expect(resultKeys.size).toBe(10)
         for (const key of ALL_KEYS) {
           expect(resultKeys.has(key)).toBe(true)
           expect(typeof merged[key]).toBe('boolean')

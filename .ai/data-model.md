@@ -34,6 +34,8 @@
 | `counters` | Part ID sequential counter | name='part', value |
 | `tags` | User-defined job labels | id, name (case-insensitive unique), color (hex, default #8b5cf6), created_at, updated_at |
 | `job_tags` | Many-to-many job↔tag join | job_id (FK CASCADE), tag_id (FK CASCADE), PRIMARY KEY (job_id, tag_id) |
+| `webhook_events` | Webhook event queue | id, event_type, payload (JSON), summary, status (queued/sent/failed), created_at, sent_at, last_error, retry_count |
+| `webhook_config` | Webhook endpoint config (singleton) | id (default), endpoint_url, enabled_event_types (JSON), is_active, created_at, updated_at |
 
 ## Key Constraints
 
@@ -48,7 +50,7 @@
 
 ## Domain Types (`server/types/domain.ts`)
 
-Core interfaces: `Job`, `Path`, `ProcessStep`, `Part`, `Certificate`, `CertAttachment`, `TemplateRoute`, `TemplateStep`, `BOM`, `BomEntry`, `AuditEntry`, `ShopUser`, `StepNote`, `AppSettings`, `JiraConnectionSettings`, `JiraFieldMapping`, `PageToggles`, `FilterState`, `PartStepStatus`, `PartStepOverride`, `StepInput`, `Tag`
+Core interfaces: `Job`, `Path`, `ProcessStep`, `Part`, `Certificate`, `CertAttachment`, `TemplateRoute`, `TemplateStep`, `BOM`, `BomEntry`, `AuditEntry`, `ShopUser`, `StepNote`, `AppSettings`, `JiraConnectionSettings`, `JiraFieldMapping`, `PageToggles`, `FilterState`, `PartStepStatus`, `PartStepOverride`, `StepInput`, `Tag`, `WebhookEvent`, `WebhookConfig`
 
 API input types (`server/types/api.ts`): `CreateJobInput`, `UpdateJobInput`, `CreatePathInput`, `UpdatePathInput`, `BatchCreatePartsInput`, `AdvancePartInput`, `AdvanceToStepInput`, `AttachCertInput`, `CreateCertInput`, `BatchAttachCertInput`, `CreateTemplateInput`, `ApplyTemplateInput`, `CreateBomInput`, `LinkJiraInput`, `PushToJiraInput`, `ScrapPartInput`, `ForceCompleteInput`, `CreateTagInput`, `UpdateTagInput`, `SetJobTagsInput`
 

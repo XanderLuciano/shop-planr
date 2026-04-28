@@ -15,4 +15,5 @@ export const arbPageToggles: fc.Arbitrary<PageToggles> = fc.record({
   certs: fc.boolean(),
   jira: fc.boolean(),
   audit: fc.boolean(),
+  webhooks: fc.boolean(),
 })

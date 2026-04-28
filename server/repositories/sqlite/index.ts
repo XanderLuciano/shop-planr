@@ -20,6 +20,7 @@ import { SQLiteLibraryRepository } from './libraryRepository'
 import { SQLiteCryptoKeyRepository } from './cryptoKeyRepository'
 import { SQLiteTagRepository } from './tagRepository'
 import { SQLiteJobTagRepository } from './jobTagRepository'
+import { createSQLiteWebhookEventRepository, createSQLiteWebhookConfigRepository } from './webhookRepository'
 import type { JobRepository } from '../interfaces/jobRepository'
 import type { PathRepository } from '../interfaces/pathRepository'
 import type { PartRepository } from '../interfaces/partRepository'
@@ -37,6 +38,7 @@ import type { LibraryRepository } from '../interfaces/libraryRepository'
 import type { CryptoKeyRepository } from '../interfaces/cryptoKeyRepository'
 import type { TagRepository } from '../interfaces/tagRepository'
 import type { JobTagRepository } from '../interfaces/jobTagRepository'
+import type { WebhookEventRepository, WebhookConfigRepository } from '../interfaces/webhookRepository'
 
 export interface RepositorySet {
   jobs: JobRepository
@@ -56,6 +58,8 @@ export interface RepositorySet {
   cryptoKeys: CryptoKeyRepository
   tags: TagRepository
   jobTags: JobTagRepository
+  webhookEvents: WebhookEventRepository
+  webhookConfig: WebhookConfigRepository
   /** Raw DB handle — used by the service layer for the counter. */
   _db: import('better-sqlite3').Database
 
@@ -209,6 +213,8 @@ export function createSQLiteRepositories(dbPath: string, migrationsDir?: string)
     cryptoKeys: new SQLiteCryptoKeyRepository(db),
     tags: new SQLiteTagRepository(db),
     jobTags: new SQLiteJobTagRepository(db),
+    webhookEvents: createSQLiteWebhookEventRepository(db),
+    webhookConfig: createSQLiteWebhookConfigRepository(db),
     _db: db,
     // Backward-compatible aliases
     serials: partRepo,

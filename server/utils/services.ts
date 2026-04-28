@@ -13,6 +13,7 @@ import { createLifecycleService } from '../services/lifecycleService'
 import { createLibraryService } from '../services/libraryService'
 import { createAuthService } from '../services/authService'
 import { createTagService } from '../services/tagService'
+import { createWebhookService } from '../services/webhookService'
 import { createSequentialPartIdGenerator } from '../utils/idGenerator'
 import type { AuditService } from '../services/auditService'
 import type { UserService } from '../services/userService'
@@ -29,6 +30,7 @@ import type { LifecycleService } from '../services/lifecycleService'
 import type { LibraryService } from '../services/libraryService'
 import type { AuthService } from '../services/authService'
 import type { TagService } from '../services/tagService'
+import type { WebhookService } from '../services/webhookService'
 
 export interface ServiceSet {
   auditService: AuditService
@@ -46,6 +48,7 @@ export interface ServiceSet {
   libraryService: LibraryService
   authService: AuthService
   tagService: TagService
+  webhookService: WebhookService
   /** @deprecated Use `partService` instead. Backward-compatible alias. */
   serialService: PartService
 }
@@ -144,6 +147,11 @@ export function getServices(): ServiceSet {
       auditService,
     )
 
+    const webhookService = createWebhookService({
+      webhookEvents: repos.webhookEvents,
+      webhookConfig: repos.webhookConfig,
+    })
+
     services = {
       auditService,
       userService,
@@ -160,6 +168,7 @@ export function getServices(): ServiceSet {
       lifecycleService,
       libraryService,
       tagService,
+      webhookService,
       // Backward-compatible alias
       serialService: partService,
     }

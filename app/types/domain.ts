@@ -30,6 +30,10 @@ export type {
   LocationLibraryEntry,
   StepInput,
   Tag,
+  WebhookEvent,
+  WebhookEventType,
+  WebhookEventStatus,
+  WebhookConfig,
 } from '../../server/types/domain'
 
-export { toPublicUser } from '../../server/types/domain'
+export { toPublicUser, WEBHOOK_EVENT_TYPES } from '../../server/types/domain'

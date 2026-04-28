@@ -17,6 +17,7 @@ export const DEFAULT_PAGE_TOGGLES: PageToggles = {
   certs: true,
   jira: true,
   audit: true,
+  webhooks: true,
 }
 
 /** Maps route base paths to their corresponding toggle key. */
@@ -30,6 +31,7 @@ export const ROUTE_TOGGLE_MAP: Record<string, keyof PageToggles> = {
   '/certs': 'certs',
   '/jira': 'jira',
   '/audit': 'audit',
+  '/webhooks': 'webhooks',
 }
 
 /** The set of valid toggle keys. */
