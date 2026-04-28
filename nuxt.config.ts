@@ -14,6 +14,17 @@ export default defineNuxtConfig({
 
   content: {},
 
+  runtimeConfig: {
+    dbType: process.env.DB_TYPE || 'sqlite',
+    dbPath: process.env.DB_PATH || './data/shop_erp.db',
+    jiraBaseUrl: process.env.JIRA_BASE_URL || '',
+    jiraProjectKey: process.env.JIRA_PROJECT_KEY || 'PI',
+    jiraUsername: process.env.JIRA_USERNAME || '',
+    jiraApiToken: process.env.JIRA_API_TOKEN || '',
+  },
+
+  compatibilityDate: '2025-01-15',
+
   nitro: {
     experimental: {
       openAPI: true,
@@ -33,17 +44,6 @@ export default defineNuxtConfig({
       },
     },
   },
-
-  runtimeConfig: {
-    dbType: process.env.DB_TYPE || 'sqlite',
-    dbPath: process.env.DB_PATH || './data/shop_erp.db',
-    jiraBaseUrl: process.env.JIRA_BASE_URL || '',
-    jiraProjectKey: process.env.JIRA_PROJECT_KEY || 'PI',
-    jiraUsername: process.env.JIRA_USERNAME || '',
-    jiraApiToken: process.env.JIRA_API_TOKEN || '',
-  },
-
-  compatibilityDate: '2025-01-15',
 
   vite: {
     optimizeDeps: {
