@@ -1,6 +1,16 @@
 import type { WorkQueueJob, WorkQueueResponse } from '../../../types/computed'
 import { findFirstActiveStep, shouldIncludeStep } from '../../../utils/workQueueHelpers'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['Operator'],
+    description: 'Get all work queue entries (ungrouped flat list).',
+    responses: {
+      200: { description: 'Flat list of all work queue jobs' },
+    },
+  },
+})
+
 export default defineApiHandler(async () => {
   const { jobService, pathService, partService } = getServices()
   const jobs = jobService.listJobs()

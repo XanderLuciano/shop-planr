@@ -1,3 +1,15 @@
+defineRouteMeta({
+  openAPI: {
+    tags: ['Jira'],
+    description: 'Get details for a specific Jira ticket by key.',
+    responses: {
+      200: { description: 'Jira ticket details' },
+      400: { description: 'Jira integration not enabled' },
+      404: { description: 'Ticket not found' },
+    },
+  },
+})
+
 export default defineApiHandler(async (event) => {
   const { settingsService, jiraService } = getServices()
 

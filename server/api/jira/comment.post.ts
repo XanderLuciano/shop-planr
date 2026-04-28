@@ -1,3 +1,14 @@
+defineRouteMeta({
+  openAPI: {
+    tags: ['Jira'],
+    description: 'Push a note or summary comment to the linked Jira ticket.',
+    responses: {
+      200: { description: 'Comment pushed to Jira' },
+      400: { description: 'Validation error or Jira push not enabled' },
+    },
+  },
+})
+
 export default defineApiHandler(async (event) => {
   const { settingsService, jiraService } = getServices()
 

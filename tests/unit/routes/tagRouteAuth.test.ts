@@ -64,6 +64,8 @@ vi.stubGlobal('sendNoContent', vi.fn())
 vi.stubGlobal('parseBody', vi.fn(async () => ({ name: 'Test', tagIds: ['tag_1'] })))
 
 vi.stubGlobal('defineApiHandler', (fn: unknown) => fn)
+vi.stubGlobal('defineRouteMeta', () => {})
+vi.stubGlobal('zodRequestBody', () => ({}))
 
 // --- Import route handlers AFTER stubs ---
 

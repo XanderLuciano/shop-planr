@@ -66,7 +66,7 @@ function onScanned(result: ScanResult) {
         <template #footer>
           <div class="flex flex-col gap-2">
             <NuxtLink
-              to="/api-docs"
+              to="/_scalar"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="API Docs"

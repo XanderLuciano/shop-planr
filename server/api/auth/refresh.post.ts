@@ -1,5 +1,16 @@
 import { refreshTokenSchema } from '../../schemas/authSchemas'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['Auth'],
+    description: 'Refresh an existing JWT token.',
+    responses: {
+      200: { description: 'New JWT token returned' },
+      401: { description: 'Missing or invalid Authorization header' },
+    },
+  },
+})
+
 export default defineApiHandler(async (event) => {
   const authHeader = getHeader(event, 'authorization')
   if (!authHeader || !authHeader.startsWith('Bearer ')) {

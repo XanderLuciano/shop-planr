@@ -3,6 +3,16 @@ import { findFirstActiveStep, shouldIncludeStep } from '../../utils/workQueueHel
 import { parseQuery } from '../../utils/validation'
 import { workQueueQuerySchema } from '../../schemas/operatorSchemas'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['Operator'],
+    description: 'Get the grouped work queue for operators.',
+    responses: {
+      200: { description: 'Grouped work queue entries' },
+    },
+  },
+})
+
 export default defineApiHandler(async (event) => {
   const { groupBy } = parseQuery(event, workQueueQuerySchema)
 

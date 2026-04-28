@@ -14,7 +14,6 @@ describe('resolveFallbackRoute', () => {
     ['/jobs/JOB-123', '/jobs'],
     ['/serials/SN-00001', '/parts-browser'],
     ['/queue', '/'],
-    ['/api-docs/jobs/list', '/api-docs'],
   ])('maps %s → %s', (path, expected) => {
     expect(resolveFallbackRoute(path)).toBe(expected)
   })

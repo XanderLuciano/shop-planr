@@ -1,3 +1,15 @@
+defineRouteMeta({
+  openAPI: {
+    tags: ['Parts'],
+    description: 'Attach a certificate to a part at its current step.',
+    responses: {
+      200: { description: 'Certificate attached' },
+      400: { description: 'Validation error or part already completed' },
+      404: { description: 'Part not found' },
+    },
+  },
+})
+
 export default defineApiHandler(async (event) => {
   const id = getRouterParam(event, 'id')!
   const body = await readBody(event)

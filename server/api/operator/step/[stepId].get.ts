@@ -1,5 +1,16 @@
 import type { WorkQueueJob, StepViewResponse } from '../../../types/computed'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['Operator'],
+    description: 'Get step view details for a specific step ID.',
+    responses: {
+      200: { description: 'Step view with job context and notes' },
+      404: { description: 'Step not found' },
+    },
+  },
+})
+
 export default defineApiHandler(async (event) => {
   const stepId = getRouterParam(event, 'stepId')
   if (!stepId) {

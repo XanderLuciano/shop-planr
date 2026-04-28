@@ -82,6 +82,8 @@ vi.stubGlobal('getServices', () => ({
 
 vi.stubGlobal('getRouterParam', vi.fn())
 vi.stubGlobal('defineApiHandler', (fn: unknown) => fn)
+vi.stubGlobal('defineRouteMeta', () => {})
+vi.stubGlobal('zodRequestBody', () => ({}))
 
 const handler = (await import('~/server/api/notes/path/[id].get')).default
 

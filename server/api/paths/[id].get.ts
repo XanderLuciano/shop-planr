@@ -1,3 +1,14 @@
+defineRouteMeta({
+  openAPI: {
+    tags: ['Paths'],
+    description: 'Get a path by ID with step distribution and completed count.',
+    responses: {
+      200: { description: 'Path details' },
+      404: { description: 'Path not found' },
+    },
+  },
+})
+
 export default defineApiHandler(async (event) => {
   const id = getRouterParam(event, 'id')!
   const { pathService } = getServices()

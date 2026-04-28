@@ -8,6 +8,16 @@ interface PartInfo {
   nextStepLocation?: string
 }
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['Operator'],
+    description: 'Get operator view data for a step by name.',
+    responses: {
+      200: { description: 'Operator step view with current, coming soon, and backlog parts' },
+    },
+  },
+})
+
 export default defineApiHandler(async (event) => {
   const stepName = getRouterParam(event, 'stepName')!
   const { jobService, pathService, partService } = getServices()

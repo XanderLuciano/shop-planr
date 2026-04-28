@@ -1,3 +1,14 @@
+defineRouteMeta({
+  openAPI: {
+    tags: ['Jira'],
+    description: 'Link a Jira ticket to a new job, optionally applying a template.',
+    responses: {
+      201: { description: 'Job created from Jira ticket' },
+      400: { description: 'Validation error or Jira not enabled' },
+    },
+  },
+})
+
 export default defineApiHandler(async (event) => {
   const { settingsService, jiraService, templateService } = getServices()
 
