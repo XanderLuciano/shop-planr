@@ -23,7 +23,7 @@ const editError = ref('')
 
 // Archive state
 const archiveConfirmId = ref<string | null>(null)
-const archiving = ref(false)
+const archivingId = ref<string | null>(null)
 const archivedBoms = ref<BOM[]>([])
 const archivedLoaded = ref(false)
 const archivedLoading = ref(false)
@@ -71,7 +71,7 @@ const filteredBoms = computed(() => {
   let list: readonly BOM[]
   if (statusFilter.value === 'active') list = boms.value
   else if (statusFilter.value === 'archived') list = archivedBoms.value
-  else list = [...boms.value, ...archivedBoms.value]
+  else list = [...boms.value, ...archivedBoms.value].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 
   const q = nameSearch.value.trim().toLowerCase()
   if (q) return list.filter(b => b.name.toLowerCase().includes(q))
@@ -88,8 +88,9 @@ async function ensureArchivedLoaded() {
   try {
     archivedBoms.value = await fetchArchivedBoms()
     archivedLoaded.value = true
-  } catch {
-    // silent
+  } catch (e) {
+    toast.add({ title: extractApiError(e, 'Failed to load archived BOMs'), color: 'error' })
+    statusFilter.value = 'active'
   } finally {
     archivedLoading.value = false
   }
@@ -186,7 +187,8 @@ function createFromTag(tag: Tag) {
 }
 
 async function handleArchive(bom: BOM) {
-  archiving.value = true
+  if (archivingId.value) return
+  archivingId.value = bom.id
   try {
     const archived = await archiveBom(bom.id)
     archiveConfirmId.value = null
@@ -198,12 +200,13 @@ async function handleArchive(bom: BOM) {
   } catch (e) {
     toast.add({ title: extractApiError(e, 'Failed to archive BOM'), color: 'error' })
   } finally {
-    archiving.value = false
+    archivingId.value = null
   }
 }
 
 async function handleUnarchive(bom: BOM) {
-  archiving.value = true
+  if (archivingId.value) return
+  archivingId.value = bom.id
   try {
     await unarchiveBom(bom.id)
     toast.add({ title: `"${bom.name}" restored`, color: 'success' })
@@ -213,7 +216,7 @@ async function handleUnarchive(bom: BOM) {
   } catch (e) {
     toast.add({ title: extractApiError(e, 'Failed to restore BOM'), color: 'error' })
   } finally {
-    archiving.value = false
+    archivingId.value = null
   }
 }
 
@@ -471,7 +474,7 @@ onMounted(async () => {
               icon="i-lucide-archive-restore"
               :title="isMobile ? undefined : 'Restore'"
               :label="isMobile ? 'Restore' : undefined"
-              :loading="archiving"
+              :loading="archivingId === b.id"
               @click.stop="handleUnarchive(b)"
             />
             <UIcon
@@ -505,7 +508,7 @@ onMounted(async () => {
                 size="sm"
                 color="error"
                 label="Archive"
-                :loading="archiving"
+                :loading="archivingId === b.id"
                 @click="handleArchive(b)"
               />
             </div>

@@ -327,6 +327,8 @@ describe('SQLite migration system', () => {
       expect(applied[12].name).toBe('add_job_tags')
       expect(applied[13].version).toBe(14)
       expect(applied[13].name).toBe('simplify_bom_entries')
+      expect(applied[14].version).toBe(15)
+      expect(applied[14].name).toBe('bom_archived_at')
 
       db.close()
     })

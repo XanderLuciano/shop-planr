@@ -70,10 +70,12 @@ export class SQLiteBomRepository implements BomRepository {
     return buildBomDomain(row, entryRows)
   }
 
-  list(includeArchived = false): BOM[] {
-    const sql = includeArchived
+  list(status: 'active' | 'archived' | 'all' = 'active'): BOM[] {
+    const sql = status === 'all'
       ? 'SELECT * FROM boms ORDER BY created_at DESC'
-      : 'SELECT * FROM boms WHERE archived_at IS NULL ORDER BY created_at DESC'
+      : status === 'archived'
+        ? 'SELECT * FROM boms WHERE archived_at IS NOT NULL ORDER BY created_at DESC'
+        : 'SELECT * FROM boms WHERE archived_at IS NULL ORDER BY created_at DESC'
     const rows = this.db.prepare(sql).all() as BomRow[]
     return rows.map(row => this.getById(row.id)!)
   }

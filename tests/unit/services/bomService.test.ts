@@ -16,7 +16,12 @@ function createMockBomRepo(): BomRepository {
       return bom
     }),
     getById: vi.fn((id: string) => store.get(id) ?? null),
-    list: vi.fn(() => [...store.values()]),
+    list: vi.fn((status: 'active' | 'archived' | 'all' = 'active') => {
+      const all = [...store.values()]
+      if (status === 'all') return all
+      if (status === 'archived') return all.filter(b => !!b.archivedAt)
+      return all.filter(b => !b.archivedAt)
+    }),
     update: vi.fn((id: string, partial: Partial<BOM>) => {
       const existing = store.get(id)!
       const updated = { ...existing, ...partial }

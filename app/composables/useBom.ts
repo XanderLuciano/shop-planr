@@ -10,12 +10,11 @@ const error = ref<string | null>(null)
 export function useBom() {
   const $api = useAuthFetch()
 
-  async function fetchBoms(includeArchived = false) {
+  async function fetchBoms() {
     loading.value = true
     error.value = null
     try {
-      const query = includeArchived ? '?includeArchived=true' : ''
-      boms.value = await $api<BOM[]>(`/api/bom${query}`)
+      boms.value = await $api<BOM[]>('/api/bom')
     } catch (e: unknown) {
       const err = e as { data?: { message?: string }, message?: string }
       error.value = err?.data?.message ?? err?.message ?? 'Failed to fetch BOMs'
@@ -58,8 +57,7 @@ export function useBom() {
   }
 
   async function fetchArchivedBoms(): Promise<BOM[]> {
-    const all = await $api<BOM[]>('/api/bom?includeArchived=true')
-    return all.filter(b => !!b.archivedAt)
+    return await $api<BOM[]>('/api/bom?status=archived')
   }
 
   async function getBomWithSummary(id: string): Promise<BOM & { summary: BomSummary }> {

@@ -1,6 +1,8 @@
+import { bomListQuerySchema } from '../../schemas/bomSchemas'
+import { parseQuery } from '../../utils/validation'
+
 export default defineApiHandler(async (event) => {
-  const query = getQuery(event)
-  const includeArchived = query.includeArchived === 'true'
+  const { status } = parseQuery(event, bomListQuerySchema)
   const { bomService } = getServices()
-  return bomService.listBoms(includeArchived)
+  return bomService.listBoms(status)
 })

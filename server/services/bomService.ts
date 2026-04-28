@@ -41,6 +41,7 @@ export function createBomService(repos: {
         id: generateId('bom'),
         name: input.name.trim(),
         entries: validateBomEntries(input.entries),
+        archivedAt: null,
         createdAt: now,
         updatedAt: now,
       })
@@ -54,8 +55,8 @@ export function createBomService(repos: {
       return bom
     },
 
-    listBoms(includeArchived = false): BOM[] {
-      return repos.bom.list(includeArchived)
+    listBoms(status: 'active' | 'archived' | 'all' = 'active'): BOM[] {
+      return repos.bom.list(status)
     },
 
     archiveBom(id: string, userId: string): BOM {
