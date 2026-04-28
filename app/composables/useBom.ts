@@ -43,20 +43,23 @@ export function useBom() {
     return bom
   }
 
-  async function archiveBom(id: string, userId: string): Promise<BOM> {
+  async function archiveBom(id: string): Promise<BOM> {
     const bom = await $api<BOM>(`/api/bom/${id}/archive`, {
       method: 'POST',
-      body: { userId },
     })
     return bom
   }
 
-  async function unarchiveBom(id: string, userId: string): Promise<BOM> {
+  async function unarchiveBom(id: string): Promise<BOM> {
     const bom = await $api<BOM>(`/api/bom/${id}/unarchive`, {
       method: 'POST',
-      body: { userId },
     })
     return bom
+  }
+
+  async function fetchArchivedBoms(): Promise<BOM[]> {
+    const all = await $api<BOM[]>('/api/bom?includeArchived=true')
+    return all.filter(b => !!b.archivedAt)
   }
 
   async function getBomWithSummary(id: string): Promise<BOM & { summary: BomSummary }> {
@@ -72,6 +75,7 @@ export function useBom() {
     updateBom,
     archiveBom,
     unarchiveBom,
+    fetchArchivedBoms,
     getBomWithSummary,
   }
 }

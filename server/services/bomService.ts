@@ -2,6 +2,7 @@ import type { BomRepository } from '../repositories/interfaces/bomRepository'
 import type { BomVersionRepository } from '../repositories/interfaces/bomVersionRepository'
 import type { PartRepository } from '../repositories/interfaces/partRepository'
 import type { JobRepository } from '../repositories/interfaces/jobRepository'
+import type { UserRepository } from '../repositories/interfaces/userRepository'
 import type { AuditService } from './auditService'
 import type { BOM, BomVersion } from '../types/domain'
 import type { CreateBomInput, EditBomInput } from '../types/api'
@@ -9,6 +10,7 @@ import type { BomSummary, BomEntrySummary } from '../types/computed'
 import { generateId } from '../utils/idGenerator'
 import { assertNonEmpty, assertNonEmptyArray, assertPositive } from '../utils/validation'
 import { NotFoundError, ValidationError } from '../utils/errors'
+import { requireAdmin } from '../utils/auth'
 
 function validateBomEntries(entries: { jobId: string, requiredQuantity?: number }[]) {
   return entries.map((e) => {
@@ -26,6 +28,7 @@ export function createBomService(repos: {
   bom: BomRepository
   parts: PartRepository
   jobs: JobRepository
+  users?: UserRepository
   bomVersions?: BomVersionRepository
 }, auditService?: AuditService) {
   return {
@@ -56,6 +59,8 @@ export function createBomService(repos: {
     },
 
     archiveBom(id: string, userId: string): BOM {
+      requireAdmin(repos.users, userId, 'archive BOMs')
+
       const existing = repos.bom.getById(id)
       if (!existing) {
         throw new NotFoundError('BOM', id)
@@ -78,6 +83,8 @@ export function createBomService(repos: {
     },
 
     unarchiveBom(id: string, userId: string): BOM {
+      requireAdmin(repos.users, userId, 'unarchive BOMs')
+
       const existing = repos.bom.getById(id)
       if (!existing) {
         throw new NotFoundError('BOM', id)

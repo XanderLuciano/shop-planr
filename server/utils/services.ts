@@ -88,7 +88,7 @@ export function getServices(): ServiceSet {
 
     // BOM service with version support and audit
     const bomService = createBomService(
-      { bom: repos.bom, parts: repos.parts, jobs: repos.jobs, bomVersions: repos.bomVersions },
+      { bom: repos.bom, parts: repos.parts, jobs: repos.jobs, users: repos.users, bomVersions: repos.bomVersions },
       auditService,
     )
 

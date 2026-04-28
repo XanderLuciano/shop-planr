@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { createBomService } from '../../../server/services/bomService'
-import { NotFoundError, ValidationError } from '../../../server/utils/errors'
+import { NotFoundError, ValidationError, ForbiddenError } from '../../../server/utils/errors'
 import type { BomRepository } from '../../../server/repositories/interfaces/bomRepository'
 import type { PartRepository } from '../../../server/repositories/interfaces/partRepository'
 import type { JobRepository } from '../../../server/repositories/interfaces/jobRepository'
-import type { BOM, Job } from '../../../server/types/domain'
+import type { UserRepository } from '../../../server/repositories/interfaces/userRepository'
+import type { AuditService } from '../../../server/services/auditService'
+import type { BOM, Job, ShopUser } from '../../../server/types/domain'
 
 function createMockBomRepo(): BomRepository {
   const store = new Map<string, BOM>()
@@ -54,6 +56,33 @@ function createMockJobRepo(jobs: Record<string, string> = {}): JobRepository {
     delete: vi.fn(),
     listByIds: vi.fn(),
   }
+}
+
+const ADMIN_ID = 'user_admin'
+const REGULAR_ID = 'user_regular'
+
+function createMockUserRepo(): UserRepository {
+  const now = '2024-01-01T00:00:00.000Z'
+  const users = new Map<string, ShopUser>([
+    [ADMIN_ID, { id: ADMIN_ID, username: 'admin', displayName: 'Admin', isAdmin: true, active: true, createdAt: now, pinHash: null }],
+    [REGULAR_ID, { id: REGULAR_ID, username: 'reg', displayName: 'Regular', isAdmin: false, active: true, createdAt: now, pinHash: null }],
+  ])
+  return {
+    getById: vi.fn((id: string) => users.get(id) ?? null),
+    getByUsername: vi.fn(),
+    list: vi.fn(() => [...users.values()]),
+    listActive: vi.fn(() => [...users.values()].filter(u => u.active)),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  } as unknown as UserRepository
+}
+
+function createMockAuditService(): AuditService {
+  return {
+    recordBomEdited: vi.fn(() => ({ id: 'aud_1' })),
+    recordBomArchived: vi.fn(() => ({ id: 'aud_2' })),
+  } as unknown as AuditService
 }
 
 describe('BomService', () => {
@@ -331,6 +360,84 @@ describe('BomService', () => {
         changeDescription: 'Whitespace name',
         userId: 'user_1',
       })).toThrow(ValidationError)
+    })
+  })
+
+  describe('archiveBom / unarchiveBom', () => {
+    let adminService: ReturnType<typeof createBomService>
+    let auditService: AuditService
+
+    beforeEach(() => {
+      bomRepo = createMockBomRepo()
+      partRepo = createMockPartRepo()
+      jobRepo = createMockJobRepo({ job_a: 'Bracket Job' })
+      auditService = createMockAuditService()
+      adminService = createBomService(
+        { bom: bomRepo, parts: partRepo, jobs: jobRepo, users: createMockUserRepo() },
+        auditService,
+      )
+    })
+
+    it('admin can archive a BOM', () => {
+      const bom = adminService.createBom({ name: 'Archive Me', entries: [{ jobId: 'job_a' }] })
+      const archived = adminService.archiveBom(bom.id, ADMIN_ID)
+      expect(archived.archivedAt).toBeTruthy()
+    })
+
+    it('admin can unarchive a BOM', () => {
+      const bom = adminService.createBom({ name: 'Restore Me', entries: [{ jobId: 'job_a' }] })
+      adminService.archiveBom(bom.id, ADMIN_ID)
+      const restored = adminService.unarchiveBom(bom.id, ADMIN_ID)
+      expect(restored.archivedAt).toBeNull()
+    })
+
+    it('rejects archive with ForbiddenError for non-admin', () => {
+      const bom = adminService.createBom({ name: 'Guarded', entries: [{ jobId: 'job_a' }] })
+      expect(() => adminService.archiveBom(bom.id, REGULAR_ID)).toThrow(ForbiddenError)
+    })
+
+    it('rejects unarchive with ForbiddenError for non-admin', () => {
+      const bom = adminService.createBom({ name: 'Guarded', entries: [{ jobId: 'job_a' }] })
+      adminService.archiveBom(bom.id, ADMIN_ID)
+      expect(() => adminService.unarchiveBom(bom.id, REGULAR_ID)).toThrow(ForbiddenError)
+    })
+
+    it('throws ValidationError when archiving already-archived BOM', () => {
+      const bom = adminService.createBom({ name: 'Double Archive', entries: [{ jobId: 'job_a' }] })
+      adminService.archiveBom(bom.id, ADMIN_ID)
+      expect(() => adminService.archiveBom(bom.id, ADMIN_ID)).toThrow(ValidationError)
+    })
+
+    it('throws ValidationError when unarchiving non-archived BOM', () => {
+      const bom = adminService.createBom({ name: 'Not Archived', entries: [{ jobId: 'job_a' }] })
+      expect(() => adminService.unarchiveBom(bom.id, ADMIN_ID)).toThrow(ValidationError)
+    })
+
+    it('throws NotFoundError for missing BOM on archive', () => {
+      expect(() => adminService.archiveBom('nonexistent', ADMIN_ID)).toThrow(NotFoundError)
+    })
+
+    it('throws NotFoundError for missing BOM on unarchive', () => {
+      expect(() => adminService.unarchiveBom('nonexistent', ADMIN_ID)).toThrow(NotFoundError)
+    })
+
+    it('records audit entry on archive', () => {
+      const bom = adminService.createBom({ name: 'Audited', entries: [{ jobId: 'job_a' }] })
+      adminService.archiveBom(bom.id, ADMIN_ID)
+      expect(auditService.recordBomArchived).toHaveBeenCalledWith({
+        userId: ADMIN_ID,
+        metadata: { bomId: bom.id, bomName: 'Audited', archived: true },
+      })
+    })
+
+    it('records audit entry on unarchive', () => {
+      const bom = adminService.createBom({ name: 'Audited', entries: [{ jobId: 'job_a' }] })
+      adminService.archiveBom(bom.id, ADMIN_ID)
+      adminService.unarchiveBom(bom.id, ADMIN_ID)
+      expect(auditService.recordBomArchived).toHaveBeenCalledWith({
+        userId: ADMIN_ID,
+        metadata: { bomId: bom.id, bomName: 'Audited', archived: false },
+      })
     })
   })
 })

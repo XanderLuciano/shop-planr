@@ -1,8 +1,6 @@
-import { archiveBomSchema } from '../../../schemas/bomSchemas'
-
 export default defineApiHandler(async (event) => {
   const id = getRouterParam(event, 'id')!
-  const body = await parseBody(event, archiveBomSchema)
+  const userId = getAuthUserId(event)
   const { bomService } = getServices()
-  return bomService.unarchiveBom(id, body.userId)
+  return bomService.unarchiveBom(id, userId)
 })
