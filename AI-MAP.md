@@ -73,7 +73,20 @@ server/
     workQueueHelpers.ts  → findFirstActiveStep(), shouldIncludeStep() — first-step visibility logic for work queue entry assembly
     services.ts          → getServices() singleton — wires all 12 services together
     pageToggles.ts       → DEFAULT_PAGE_TOGGLES, ROUTE_TOGGLE_MAP, ALWAYS_ENABLED_ROUTES, mergePageToggles(), isPageEnabled() — auto-imported by Nitro
-  schemas/               → Zod request body schemas by domain (pathSchemas.ts, operatorSchemas.ts, etc.)
+  schemas/
+    _primitives.ts       → Shared Zod building blocks (requiredId, positiveInt, dependencyTypeEnum, advancementModeEnum, scrapReasonEnum, certTypeEnum, batchIds100/500, pinSchema) — imported by all domain schema files
+    authSchemas.ts       → Login, PIN setup/reset, token refresh
+    bomSchemas.ts        → BOM create/update/edit, list query
+    certSchemas.ts       → Certificate create, batch-attach
+    jiraSchemas.ts       → Jira push/link/comment
+    jobSchemas.ts        → Job create/update, priority bulk-update
+    operatorSchemas.ts   → Work queue query (groupBy)
+    partSchemas.ts       → Part create, scrap, force-complete, advance-to, overrides, attach-cert, waive-step, batch advance/statuses
+    pathSchemas.ts       → Path create/update, step config, advancement mode, batch distributions, batch path operations
+    settingsSchemas.ts   → Settings update (Jira connection, field mappings, page toggles)
+    tagSchemas.ts        → Tag create/update, job tags, delete query
+    templateSchemas.ts   → Template create/update, apply
+    userSchemas.ts       → User create/update
   types/
     domain.ts            → 26+ domain types (Job, Path, ProcessStep, SerialNumber, SnStepStatus, SnStepOverride, BomVersion, ProcessLibraryEntry, LocationLibraryEntry, etc.)
     api.ts               → 25+ API input types (ScrapSerialInput, ForceCompleteInput, AdvanceToStepInput, EditBomInput, etc.)

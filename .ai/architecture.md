@@ -83,6 +83,7 @@ Do NOT use `defineEventHandler` with manual try/catch blocks. Do NOT use inline 
 - Repository enforcing "serial must advance sequentially" → move to service
 - API route calling `repos.jobs.create()` directly → call service instead
 - API route using `readBody()` without Zod schema → add `parseBody(event, schema)`
+- Schema file declaring `z.string().min(1)` for an ID or `z.number().int().positive()` for a quantity → import from `server/schemas/_primitives.ts` instead
 
 ## Key Files (Planned)
 
@@ -94,6 +95,7 @@ Do NOT use `defineEventHandler` with manual try/catch blocks. Do NOT use inline 
 | `server/utils/httpError.ts` | `defineApiHandler`, `httpError`, `STATUS_MESSAGES`, `ERROR_STATUS_MAP` |
 | `server/utils/idGenerator.ts` | `generateId(prefix)` + sequential SN counter |
 | `server/utils/validation.ts` | `parseBody()` — Zod schema validation for request bodies |
+| `server/schemas/_primitives.ts` | Shared Zod building blocks (`requiredId`, `positiveInt`, domain enums, batch ID arrays, `pinSchema`) — imported by all domain schema files |
 | `server/repositories/factory.ts` | Returns `RepositorySet` based on config |
 | `server/repositories/sqlite/index.ts` | DB init, WAL mode, migration runner |
 | `server/services/authService.ts` | PIN hashing, JWT sign/verify (ES256), key pair management, token refresh |
