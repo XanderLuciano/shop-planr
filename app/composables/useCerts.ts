@@ -1,6 +1,6 @@
 import { ref, readonly } from 'vue'
 import type { Certificate } from '~/types/domain'
-import type { CreateCertInput, BatchAttachCertInput } from '~/types/api'
+import type { CreateCertInput } from '~/types/api'
 
 const certs = ref<Certificate[]>([])
 const loading = ref(false)
@@ -35,7 +35,7 @@ export function useCerts() {
     return await $api<Certificate>(`/api/certs/${id}`)
   }
 
-  async function batchAttachCert(input: BatchAttachCertInput): Promise<void> {
+  async function batchAttachCert(input: { certId: string, partIds: string[] }): Promise<void> {
     await $api('/api/certs/batch-attach', {
       method: 'POST',
       body: input,
