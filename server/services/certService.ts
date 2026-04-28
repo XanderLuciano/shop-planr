@@ -87,30 +87,50 @@ export function createCertService(
       })
     },
 
+    /** @deprecated Use `batchAttachCertWithSteps` instead — this method sets stepId to empty string which violates the FK constraint. */
     batchAttachCert(input: BatchAttachCertInput): CertAttachment[] {
+      return this.batchAttachCertWithSteps({
+        certId: input.certId,
+        attachments: input.partIds.map(partId => ({ partId, stepId: '' })),
+        userId: input.userId,
+      })
+    },
+
+    batchAttachCertWithSteps(input: {
+      certId: string
+      attachments: readonly { partId: string, stepId: string, jobId?: string, pathId?: string }[]
+      userId: string
+    }): CertAttachment[] {
       const cert = repos.certs.getById(input.certId)
       if (!cert) {
         throw new NotFoundError('Certificate', input.certId)
       }
 
       const now = new Date().toISOString()
-      const attachments: CertAttachment[] = input.partIds.map(partId => ({
-        partId,
+      const rows: CertAttachment[] = input.attachments.map(a => ({
+        partId: a.partId,
         certId: input.certId,
-        stepId: '',
+        stepId: a.stepId,
         attachedAt: now,
         attachedBy: input.userId,
       }))
 
-      const results = repos.certs.batchAttach(attachments)
+      const results = repos.certs.batchAttach(rows)
 
-      // Record audit for each new attachment
-      for (const attachment of results) {
+      // Build a lookup from partId to source attachment for audit enrichment
+      const sourceByPartId = new Map(
+        input.attachments.map(a => [a.partId, a]),
+      )
+
+      for (const result of results) {
+        const source = sourceByPartId.get(result.partId)
         auditService.recordCertAttachment({
           userId: input.userId,
-          partId: attachment.partId,
+          partId: result.partId,
           certId: input.certId,
-          stepId: attachment.stepId,
+          stepId: result.stepId,
+          jobId: source?.jobId,
+          pathId: source?.pathId,
         })
       }
 

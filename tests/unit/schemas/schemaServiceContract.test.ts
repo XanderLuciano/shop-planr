@@ -197,19 +197,36 @@ describe('Cert schemas → certService', () => {
     expect(cert.metadata).toEqual({ temperature: 1200, duration: '2h' })
   })
 
-  it('batchAttachCertSchema output is accepted by certService.batchAttachCert', () => {
-    // Verify schema output shape matches BatchAttachCertInput (minus userId which route adds)
-    const body = parse(batchAttachCertSchema, {
-      certId: 'cert_123',
-      partIds: ['part_1', 'part_2'],
+  it('batchAttachCertSchema output is accepted by certService.batchAttachCertWithSteps', () => {
+    const cert = ctx.certService.createCert({ type: 'material', name: 'Batch Cert' })
+    const job = ctx.jobService.createJob({ name: 'Cert Job', goalQuantity: 10 })
+    const path = ctx.pathService.createPath({
+      jobId: job.id,
+      name: 'Route',
+      goalQuantity: 10,
+      steps: [{ name: 'S1' }],
     })
-    // Schema output must have certId and partIds — the route adds userId
-    expect(body).toEqual({ certId: 'cert_123', partIds: ['part_1', 'part_2'] })
-    // Verify the spread pattern used in the route handler produces a valid service input
-    const serviceInput = { ...body, userId: 'user_1' }
-    expect(serviceInput).toHaveProperty('certId')
-    expect(serviceInput).toHaveProperty('partIds')
-    expect(serviceInput).toHaveProperty('userId')
+    const parts = ctx.partService.batchCreateParts(
+      { jobId: job.id, pathId: path.id, quantity: 2 },
+      'user_1',
+    )
+    const body = parse(batchAttachCertSchema, {
+      certId: cert.id,
+      partIds: parts.map(p => p.id),
+    })
+    // Route handler resolves each part's current step, then calls batchAttachCertWithSteps
+    const attachments = ctx.certService.batchAttachCertWithSteps({
+      certId: body.certId,
+      attachments: parts.map(p => ({
+        partId: p.id,
+        stepId: p.currentStepId!,
+        jobId: p.jobId,
+        pathId: p.pathId,
+      })),
+      userId: 'user_1',
+    })
+    expect(attachments).toHaveLength(2)
+    expect(attachments[0].stepId).toBe(path.steps[0].id)
   })
 })
 
