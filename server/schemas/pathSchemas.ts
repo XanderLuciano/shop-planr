@@ -5,9 +5,7 @@
  * ensuring services receive correctly-typed inputs.
  */
 import { z } from 'zod'
-
-const dependencyTypeEnum = z.enum(['physical', 'preferred', 'completion_gate'])
-const advancementModeEnum = z.enum(['strict', 'flexible', 'per_step'])
+import { requiredId, positiveInt, dependencyTypeEnum, advancementModeEnum } from './_primitives'
 
 /**
  * Validates the `id` route param for single-path endpoints.
@@ -29,16 +27,16 @@ const stepInputSchema = z.object({
 })
 
 export const createPathSchema = z.object({
-  jobId: z.string().min(1, 'jobId is required'),
+  jobId: requiredId,
   name: z.string().min(1, 'name is required'),
-  goalQuantity: z.number().int().positive('goalQuantity must be a positive integer'),
+  goalQuantity: positiveInt,
   advancementMode: advancementModeEnum.optional(),
   steps: z.array(stepInputSchema).min(1, 'At least one step is required'),
 })
 
 export const updatePathSchema = z.object({
   name: z.string().min(1).optional(),
-  goalQuantity: z.number().int().positive().optional(),
+  goalQuantity: positiveInt.optional(),
   advancementMode: advancementModeEnum.optional(),
   steps: z.array(stepInputSchema).min(1).optional(),
 })
@@ -61,7 +59,7 @@ export const updateStepConfigSchema = z.object({
 )
 
 export const batchDistributionsSchema = z.object({
-  pathIds: z.array(z.string().min(1))
+  pathIds: z.array(requiredId)
     .min(1, 'At least one path ID is required')
     .max(100, 'Cannot fetch more than 100 paths at once'),
 })
@@ -70,15 +68,15 @@ export const batchDistributionsSchema = z.object({
 
 const batchPathCreateSchema = z.object({
   name: z.string().min(1, 'name is required'),
-  goalQuantity: z.number().int().positive('goalQuantity must be a positive integer'),
+  goalQuantity: positiveInt,
   advancementMode: advancementModeEnum.optional(),
   steps: z.array(stepInputSchema).min(1, 'At least one step is required'),
 })
 
 const batchPathUpdateSchema = z.object({
-  pathId: z.string().min(1, 'pathId is required'),
+  pathId: requiredId,
   name: z.string().min(1).optional(),
-  goalQuantity: z.number().int().positive().optional(),
+  goalQuantity: positiveInt.optional(),
   advancementMode: advancementModeEnum.optional(),
   steps: z.array(stepInputSchema).min(1).optional(),
 })
@@ -86,7 +84,7 @@ const batchPathUpdateSchema = z.object({
 export const batchPathOperationsSchema = z.object({
   create: z.array(batchPathCreateSchema).default([]),
   update: z.array(batchPathUpdateSchema).default([]),
-  delete: z.array(z.string().min(1)).default([]),
+  delete: z.array(requiredId).default([]),
 }).refine(
   data => data.create.length + data.update.length + data.delete.length > 0,
   { message: 'At least one operation (create, update, or delete) is required' },

@@ -5,17 +5,16 @@
  * receive correctly-typed inputs.
  */
 import { z } from 'zod'
+import { requiredId, positiveInt, dependencyTypeEnum } from './_primitives'
 
 const templateStepSchema = z.object({
   name: z.string().min(1, 'Step name is required'),
   location: z.string().optional(),
 })
 
-const templateStepWithOptionsSchema = z.object({
-  name: z.string().min(1, 'Step name is required'),
-  location: z.string().optional(),
+const templateStepWithOptionsSchema = templateStepSchema.extend({
   optional: z.boolean().optional(),
-  dependencyType: z.enum(['physical', 'preferred', 'completion_gate']).optional(),
+  dependencyType: dependencyTypeEnum.optional(),
 })
 
 export const createTemplateSchema = z.object({
@@ -29,7 +28,7 @@ export const updateTemplateSchema = z.object({
 })
 
 export const applyTemplateSchema = z.object({
-  jobId: z.string().min(1, 'jobId is required'),
+  jobId: requiredId,
   pathName: z.string().optional(),
-  goalQuantity: z.number().int().positive('goalQuantity must be a positive integer'),
+  goalQuantity: positiveInt,
 })

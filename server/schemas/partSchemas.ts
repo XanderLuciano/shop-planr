@@ -5,6 +5,7 @@
  * receive correctly-typed inputs.
  */
 import { z } from 'zod'
+import { requiredId, positiveInt, scrapReasonEnum, batchIds100, batchIds500 } from './_primitives'
 
 /**
  * Validates the `id` route param for single-part endpoints such as
@@ -21,11 +22,7 @@ export const partIdParamSchema = z.object({
  * Accepts an array of 1–100 non-empty part ID strings.
  */
 export const batchAdvanceSchema = z.object({
-  partIds: z.array(
-    z.string().min(1, { error: 'Part ID must be non-empty' }),
-  )
-    .min(1, { error: 'At least one part ID is required' })
-    .max(100, { error: 'Cannot advance more than 100 parts at once' }),
+  partIds: batchIds100,
 })
 
 /**
@@ -33,9 +30,7 @@ export const batchAdvanceSchema = z.object({
  * Accepts an array of 1–500 non-empty part ID strings.
  */
 export const batchStepStatusesSchema = z.object({
-  partIds: z.array(z.string().min(1))
-    .min(1, 'At least one part ID is required')
-    .max(500, 'Cannot fetch more than 500 parts at once'),
+  partIds: batchIds500,
 })
 
 /**
@@ -43,10 +38,8 @@ export const batchStepStatusesSchema = z.object({
  * Accepts an array of 1–100 part IDs, a target step ID, and an optional skip flag.
  */
 export const batchAdvanceToSchema = z.object({
-  partIds: z.array(z.string().min(1))
-    .min(1, 'At least one part ID is required')
-    .max(100, 'Cannot advance more than 100 parts at once'),
-  targetStepId: z.string().min(1, 'targetStepId is required'),
+  partIds: batchIds100,
+  targetStepId: requiredId,
   skip: z.boolean().optional(),
 })
 
@@ -55,17 +48,17 @@ export const batchAdvanceToSchema = z.object({
  * Batch-create parts for a path.
  */
 export const createPartsSchema = z.object({
-  jobId: z.string().min(1, 'jobId is required'),
-  pathId: z.string().min(1, 'pathId is required'),
-  quantity: z.number().int().positive('quantity must be a positive integer'),
-  certId: z.string().min(1).optional(),
+  jobId: requiredId,
+  pathId: requiredId,
+  quantity: positiveInt,
+  certId: requiredId.optional(),
 })
 
 /**
  * Validates the request body for `POST /api/parts/:id/scrap`.
  */
 export const scrapPartSchema = z.object({
-  reason: z.enum(['out_of_tolerance', 'process_defect', 'damaged', 'operator_error', 'other']),
+  reason: scrapReasonEnum,
   explanation: z.string().optional(),
 })
 
@@ -80,7 +73,7 @@ export const forceCompleteSchema = z.object({
  * Validates the request body for `POST /api/parts/:id/advance-to`.
  */
 export const advanceToStepSchema = z.object({
-  targetStepId: z.string().min(1, 'targetStepId is required'),
+  targetStepId: requiredId,
   skip: z.boolean().optional(),
 })
 
@@ -88,9 +81,9 @@ export const advanceToStepSchema = z.object({
  * Validates the request body for `POST /api/parts/:id/overrides`.
  */
 export const createOverrideSchema = z.object({
-  partIds: z.array(z.string().min(1)).min(1, 'At least one partId is required').optional(),
-  serialIds: z.array(z.string().min(1)).min(1).optional(),
-  stepId: z.string().min(1, 'stepId is required'),
+  partIds: z.array(requiredId).min(1, 'At least one partId is required').optional(),
+  serialIds: z.array(requiredId).min(1).optional(),
+  stepId: requiredId,
   reason: z.string().min(1, 'reason is required'),
 })
 
@@ -98,7 +91,7 @@ export const createOverrideSchema = z.object({
  * Validates the request body for `POST /api/parts/:id/attach-cert`.
  */
 export const attachCertSchema = z.object({
-  certId: z.string().min(1, 'certId is required'),
+  certId: requiredId,
 })
 
 /**
