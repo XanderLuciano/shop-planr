@@ -1,5 +1,17 @@
 import { updateEventStatusSchema } from '../../../schemas/webhookSchemas'
 
+defineRouteMeta({
+  openAPI: {
+    tags: ['Webhooks'],
+    description: 'Update the status of a webhook event (sent, failed, or requeue).',
+    requestBody: zodRequestBody(updateEventStatusSchema),
+    responses: {
+      200: { description: 'Updated webhook event' },
+      400: { description: 'Validation error' },
+    },
+  },
+})
+
 export default defineApiHandler(async (event) => {
   const id = getRouterParam(event, 'id')
   if (!id) throw new ValidationError('Event ID is required')

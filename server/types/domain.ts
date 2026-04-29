@@ -406,7 +406,7 @@ export const WEBHOOK_EVENT_TYPES = [
 ] as const
 export type WebhookEventType = typeof WEBHOOK_EVENT_TYPES[number]
 
-export type WebhookEventStatus = 'queued' | 'sent' | 'failed'
+export type WebhookEventStatus = 'queued' | 'sent' | 'failed' | 'cancelled'
 
 export interface WebhookEvent {
   id: string
@@ -424,6 +424,8 @@ export interface WebhookConfig {
   id: string
   endpointUrl: string
   enabledEventTypes: WebhookEventType[]
+  /** ISO 8601 timestamp per event type — only events created after this time are dispatched */
+  enabledSince: Partial<Record<WebhookEventType, string>>
   isActive: boolean
   createdAt: string
   updatedAt: string

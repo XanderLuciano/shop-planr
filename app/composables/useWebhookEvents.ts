@@ -3,6 +3,9 @@ import type { WebhookEvent, WebhookConfig, WebhookEventType } from '~/types/doma
 /**
  * Composable for managing webhook events.
  *
+ * State is shared across all callers via useState — the dispatch plugin
+ * and the webhooks admin page see the same config/events/stats.
+ *
  * Events are persisted server-side in SQLite so they survive across sessions.
  * Dispatching happens client-side — the browser sends events to the configured
  * endpoint URL. This allows the client to reach servers that the backend can't.
@@ -10,12 +13,13 @@ import type { WebhookEvent, WebhookConfig, WebhookEventType } from '~/types/doma
 export function useWebhookEvents() {
   const $api = useAuthFetch()
 
-  const config = ref<WebhookConfig | null>(null)
-  const events = ref<WebhookEvent[]>([])
-  const stats = ref<{ queued: number, sent: number, failed: number }>({ queued: 0, sent: 0, failed: 0 })
-  const loading = ref(false)
-  const dispatching = ref(false)
-  const error = ref<string | null>(null)
+  // Shared state — all callers (plugin + page) see the same refs
+  const config = useState<WebhookConfig | null>('webhook:config', () => null)
+  const events = useState<WebhookEvent[]>('webhook:events', () => [])
+  const stats = useState<{ queued: number, sent: number, failed: number, cancelled: number }>('webhook:stats', () => ({ queued: 0, sent: 0, failed: 0, cancelled: 0 }))
+  const loading = useState<boolean>('webhook:loading', () => false)
+  const dispatching = useState<boolean>('webhook:dispatching', () => false)
+  const error = useState<string | null>('webhook:error', () => null)
 
   async function fetchConfig() {
     try {
@@ -55,7 +59,7 @@ export function useWebhookEvents() {
 
   async function fetchStats() {
     try {
-      stats.value = await $api<{ queued: number, sent: number, failed: number }>('/api/webhooks/events/stats')
+      stats.value = await $api<{ queued: number, sent: number, failed: number, cancelled: number }>('/api/webhooks/events/stats')
     } catch (e: unknown) {
       error.value = extractApiError(e, 'Failed to load stats')
     }
@@ -94,6 +98,10 @@ export function useWebhookEvents() {
   /**
    * Dispatch all queued events to the configured endpoint.
    * Runs client-side — the browser makes the HTTP calls.
+   *
+   * Only dispatches events whose type is enabled AND whose createdAt
+   * is >= the enabledSince timestamp for that type (prevents retroactive
+   * dispatch when a new category is toggled on).
    */
   async function dispatchQueued() {
     if (!config.value?.endpointUrl || !config.value.isActive) return
@@ -106,9 +114,16 @@ export function useWebhookEvents() {
       const queued = await $api<WebhookEvent[]>('/api/webhooks/events/queued')
       if (!queued.length) return
 
-      // Filter to only enabled event types
+      // Filter to only enabled event types, and only events created after the type was enabled
       const enabled = new Set(config.value.enabledEventTypes)
-      const toSend = queued.filter(e => enabled.has(e.eventType))
+      const since = config.value.enabledSince ?? {}
+      const toSend = queued.filter((e) => {
+        if (!enabled.has(e.eventType)) return false
+        const enabledAt = since[e.eventType]
+        // If no enabledSince timestamp, allow (backwards compat for types enabled before this feature)
+        if (!enabledAt) return true
+        return e.createdAt >= enabledAt
+      })
 
       const results: { id: string, status: 'sent' | 'failed', error?: string }[] = []
 
@@ -153,6 +168,44 @@ export function useWebhookEvents() {
     }
   }
 
+  /**
+   * Manually dispatch a single event to the configured endpoint,
+   * regardless of enabledSince or enabled types. For admin use
+   * when reviewing the queue and firing past events.
+   */
+  async function dispatchSingle(evt: WebhookEvent) {
+    if (!config.value?.endpointUrl) {
+      error.value = 'No endpoint URL configured'
+      return
+    }
+
+    try {
+      const response = await fetch(config.value.endpointUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event: evt.eventType,
+          summary: evt.summary,
+          timestamp: evt.createdAt,
+          ...evt.payload,
+        }),
+      })
+
+      const status: 'sent' | 'failed' = response.ok ? 'sent' : 'failed'
+      const errMsg = response.ok ? undefined : `HTTP ${response.status}: ${response.statusText}`
+
+      await $api('/api/webhooks/events/batch-status', {
+        method: 'POST',
+        body: { events: [{ id: evt.id, status, error: errMsg }] },
+      })
+
+      await fetchEvents()
+      await fetchStats()
+    } catch (e: unknown) {
+      error.value = extractApiError(e, 'Failed to dispatch event')
+    }
+  }
+
   return {
     config,
     events,
@@ -168,5 +221,6 @@ export function useWebhookEvents() {
     deleteEvent,
     clearAllEvents,
     dispatchQueued,
+    dispatchSingle,
   }
 }

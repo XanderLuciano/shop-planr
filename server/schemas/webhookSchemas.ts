@@ -26,5 +26,14 @@ export const batchUpdateStatusSchema = z.object({
     id: requiredId,
     status: z.enum(['sent', 'failed']),
     error: z.string().optional(),
-  })),
+  })).min(1, 'At least one event is required'),
+})
+
+export const listEventsQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(1000).default(200),
+  offset: z.coerce.number().int().min(0).default(0),
+})
+
+export const limitQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(1000).default(100),
 })

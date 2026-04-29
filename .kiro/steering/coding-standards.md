@@ -181,3 +181,20 @@ const jobs = await $fetch<Job[]>('/api/jobs')
 Exception: `useAuth()` uses bare `$fetch` (circular dependency with the auth plugin). Its endpoints are auth-exempt or pass the header manually.
 
 Never mutate `globalThis.$fetch`. Access the authenticated user anywhere via `useAuth().authenticatedUser` (decoded from JWT cookie, no network call).
+
+
+## Mobile Overflow — Pre/Code Blocks
+
+`<pre>` blocks inside flex/grid parents (e.g., Nuxt UI Tabs content) will push the entire page wider on mobile. Neither `overflow-x-auto` on the `pre` nor wrapper divs with `overflow-hidden` reliably contain it — flex children expand to fit content.
+
+The fix: cap the `pre` element's max-width to the viewport on mobile, and remove the cap on larger screens:
+
+```html
+<pre class="overflow-x-auto max-w-[calc(100vw-3rem)] sm:max-w-none ...">
+```
+
+- `max-w-[calc(100vw-3rem)]` — constrains to viewport width minus page padding (adjust `3rem` to match your layout's horizontal padding)
+- `sm:max-w-none` — removes the cap on `sm`+ so it fills naturally on desktop
+- `overflow-x-auto` — enables horizontal scroll within the contained block
+
+Do NOT use `overflow-hidden` on page containers or tab wrappers — it clips vertical scroll. Do NOT use `w-0 min-w-full` wrapper tricks — they collapse when the parent isn't a direct flex container.

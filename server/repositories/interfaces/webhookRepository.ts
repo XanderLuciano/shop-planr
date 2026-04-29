@@ -6,6 +6,8 @@ export interface WebhookEventRepository {
   listByStatus(status: WebhookEventStatus, limit?: number): WebhookEvent[]
   list(options?: { limit?: number, offset?: number }): WebhookEvent[]
   updateStatus(id: string, updates: { status: WebhookEventStatus, sentAt?: string, lastError?: string, retryCount?: number }): WebhookEvent
+  /** Mark all queued events of a given type as skipped. Returns count affected. */
+  skipQueuedByType(eventType: string): number
   deleteById(id: string): void
   deleteAll(): number
   countByStatus(status: WebhookEventStatus): number

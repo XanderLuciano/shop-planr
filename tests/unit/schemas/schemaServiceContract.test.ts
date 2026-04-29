@@ -46,6 +46,12 @@ import { pushJiraCommentSchema, linkJiraTicketSchema, jiraPushSchema } from '~/s
 import { createTagSchema, updateTagSchema, setJobTagsSchema } from '~/server/schemas/tagSchemas'
 import { createNoteSchema } from '~/server/schemas/noteSchemas'
 import { addLibraryEntrySchema } from '~/server/schemas/librarySchemas'
+import {
+  queueEventSchema,
+  updateConfigSchema,
+  updateEventStatusSchema,
+  batchUpdateStatusSchema,
+} from '~/server/schemas/webhookSchemas'
 import { createUserService } from '~/server/services/userService'
 import { createSettingsService } from '~/server/services/settingsService'
 import { SQLiteSettingsRepository } from '~/server/repositories/sqlite/settingsRepository'
@@ -926,5 +932,115 @@ describe('Schema rejection — invalid payloads are rejected', () => {
 
   it('batchPathOperationsSchema rejects all-empty operations', () => {
     expect(batchPathOperationsSchema.safeParse({ create: [], update: [], delete: [] }).success).toBe(false)
+  })
+
+  // ── Webhook schemas ──
+
+  it('queueEventSchema rejects invalid event type', () => {
+    expect(queueEventSchema.safeParse({
+      eventType: 'bogus_event',
+      payload: {},
+      summary: 'test',
+    }).success).toBe(false)
+  })
+
+  it('queueEventSchema rejects empty summary', () => {
+    expect(queueEventSchema.safeParse({
+      eventType: 'part_advanced',
+      payload: {},
+      summary: '',
+    }).success).toBe(false)
+  })
+
+  it('queueEventSchema rejects missing payload', () => {
+    expect(queueEventSchema.safeParse({
+      eventType: 'part_advanced',
+      summary: 'test',
+    }).success).toBe(false)
+  })
+
+  it('updateConfigSchema accepts empty object (all fields optional)', () => {
+    expect(updateConfigSchema.safeParse({}).success).toBe(true)
+  })
+
+  it('updateConfigSchema rejects invalid event type in enabledEventTypes', () => {
+    expect(updateConfigSchema.safeParse({
+      enabledEventTypes: ['part_advanced', 'not_a_type'],
+    }).success).toBe(false)
+  })
+
+  it('updateEventStatusSchema rejects invalid status', () => {
+    expect(updateEventStatusSchema.safeParse({ status: 'pending' }).success).toBe(false)
+  })
+
+  it('updateEventStatusSchema accepts valid statuses', () => {
+    expect(updateEventStatusSchema.safeParse({ status: 'sent' }).success).toBe(true)
+    expect(updateEventStatusSchema.safeParse({ status: 'failed', error: 'timeout' }).success).toBe(true)
+    expect(updateEventStatusSchema.safeParse({ status: 'queued' }).success).toBe(true)
+  })
+
+  it('batchUpdateStatusSchema rejects empty events array', () => {
+    expect(batchUpdateStatusSchema.safeParse({ events: [] }).success).toBe(false)
+  })
+
+  it('batchUpdateStatusSchema rejects events with empty id', () => {
+    expect(batchUpdateStatusSchema.safeParse({
+      events: [{ id: '', status: 'sent' }],
+    }).success).toBe(false)
+  })
+})
+
+// ── Webhook schemas → webhookService ──
+
+describe('Webhook schemas → webhookService', () => {
+  const adminUserId = 'admin-contract-test'
+
+  beforeAll(() => {
+    ctx.repos.users.create({
+      id: adminUserId,
+      username: 'webhook_admin',
+      displayName: 'Webhook Admin',
+      isAdmin: true,
+      active: true,
+      createdAt: new Date().toISOString(),
+    })
+  })
+
+  it('queueEventSchema output is accepted by webhookService.queueEvent', () => {
+    const body = parse(queueEventSchema, {
+      eventType: 'part_advanced',
+      payload: { partId: 'p1', stepId: 's1' },
+      summary: 'Part advanced',
+    })
+    const event = ctx.webhookService.queueEvent(body)
+    expect(event.eventType).toBe('part_advanced')
+    expect(event.status).toBe('queued')
+  })
+
+  it('updateConfigSchema output is accepted by webhookService.updateConfig', () => {
+    const body = parse(updateConfigSchema, {
+      endpointUrl: 'https://example.com/hook',
+      enabledEventTypes: ['job_created', 'part_completed'],
+      isActive: true,
+    })
+    const config = ctx.webhookService.updateConfig(adminUserId, body)
+    expect(config.endpointUrl).toBe('https://example.com/hook')
+    expect(config.isActive).toBe(true)
+  })
+
+  it('all 13 event types are accepted by queueEventSchema', () => {
+    const types = [
+      'part_advanced', 'part_completed', 'part_created', 'part_scrapped',
+      'part_force_completed', 'step_skipped', 'step_deferred', 'step_waived',
+      'job_created', 'job_deleted', 'path_deleted', 'note_created', 'cert_attached',
+    ]
+    for (const eventType of types) {
+      const result = queueEventSchema.safeParse({
+        eventType,
+        payload: {},
+        summary: `Test ${eventType}`,
+      })
+      expect(result.success, `Expected ${eventType} to be valid`).toBe(true)
+    }
   })
 })

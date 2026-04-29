@@ -20,6 +20,7 @@ interface WebhookConfigRow {
   id: string
   endpoint_url: string
   enabled_event_types: string
+  enabled_since: string
   is_active: number
   created_at: string
   updated_at: string
@@ -46,6 +47,7 @@ function rowToConfig(row: WebhookConfigRow): WebhookConfig {
     id: row.id,
     endpointUrl: row.endpoint_url,
     enabledEventTypes: JSON.parse(row.enabled_event_types),
+    enabledSince: JSON.parse(row.enabled_since || '{}'),
     isActive: row.is_active === 1,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -105,6 +107,13 @@ export function createSQLiteWebhookEventRepository(db: Database): WebhookEventRe
       db.prepare('DELETE FROM webhook_events WHERE id = ?').run(id)
     },
 
+    skipQueuedByType(eventType: string): number {
+      const result = db.prepare(
+        `UPDATE webhook_events SET status = 'cancelled' WHERE status = 'queued' AND event_type = ?`,
+      ).run(eventType)
+      return result.changes
+    },
+
     deleteAll(): number {
       const result = db.prepare('DELETE FROM webhook_events').run()
       return result.changes
@@ -128,17 +137,19 @@ export function createSQLiteWebhookConfigRepository(db: Database): WebhookConfig
 
     upsert(config: WebhookConfig): WebhookConfig {
       db.prepare(`
-        INSERT INTO webhook_config (id, endpoint_url, enabled_event_types, is_active, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?)
+        INSERT INTO webhook_config (id, endpoint_url, enabled_event_types, enabled_since, is_active, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
           endpoint_url = excluded.endpoint_url,
           enabled_event_types = excluded.enabled_event_types,
+          enabled_since = excluded.enabled_since,
           is_active = excluded.is_active,
           updated_at = excluded.updated_at
       `).run(
         config.id,
         config.endpointUrl,
         JSON.stringify(config.enabledEventTypes),
+        JSON.stringify(config.enabledSince),
         config.isActive ? 1 : 0,
         config.createdAt,
         config.updatedAt,

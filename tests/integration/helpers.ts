@@ -21,6 +21,7 @@ import { SQLiteBomVersionRepository } from '../../server/repositories/sqlite/bom
 import { SQLiteLibraryRepository } from '../../server/repositories/sqlite/libraryRepository'
 import { SQLiteUserRepository } from '../../server/repositories/sqlite/userRepository'
 import { SQLiteCryptoKeyRepository } from '../../server/repositories/sqlite/cryptoKeyRepository'
+import { createSQLiteWebhookEventRepository, createSQLiteWebhookConfigRepository } from '../../server/repositories/sqlite/webhookRepository'
 import { createJobService } from '../../server/services/jobService'
 import { createPathService } from '../../server/services/pathService'
 import { createPartService } from '../../server/services/partService'
@@ -32,6 +33,7 @@ import { createNoteService } from '../../server/services/noteService'
 import { createLifecycleService } from '../../server/services/lifecycleService'
 import { createLibraryService } from '../../server/services/libraryService'
 import { createAuthService } from '../../server/services/authService'
+import { createWebhookService } from '../../server/services/webhookService'
 import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
 
 const MIGRATIONS_DIR = resolve(__dirname, '../../server/repositories/sqlite/migrations')
@@ -62,6 +64,8 @@ export function createTestContext() {
     library: new SQLiteLibraryRepository(db),
     users: new SQLiteUserRepository(db),
     cryptoKeys: new SQLiteCryptoKeyRepository(db),
+    webhookEvents: createSQLiteWebhookEventRepository(db),
+    webhookConfig: createSQLiteWebhookConfigRepository(db),
   }
 
   const partIdGenerator = createSequentialPartIdGenerator({
@@ -113,6 +117,11 @@ export function createTestContext() {
   const noteService = createNoteService({ notes: repos.notes }, auditService)
   const libraryService = createLibraryService({ library: repos.library })
   const authService = createAuthService({ users: repos.users, cryptoKeys: repos.cryptoKeys })
+  const webhookService = createWebhookService({
+    webhookEvents: repos.webhookEvents,
+    webhookConfig: repos.webhookConfig,
+    users: repos.users,
+  })
 
   return {
     db,
@@ -128,6 +137,7 @@ export function createTestContext() {
     lifecycleService,
     libraryService,
     authService,
+    webhookService,
     cleanup: () => db.close(),
   }
 }
