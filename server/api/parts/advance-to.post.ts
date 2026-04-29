@@ -22,6 +22,12 @@ export default defineApiHandler(async (event) => {
   let advanced = 0
   let failed = 0
 
+  // Collect part IDs by outcome for batched webhook events
+  const advancedPartIds: string[] = []
+  const completedPartIds: string[] = []
+  const skippedSteps = new Map<string, { stepName: string, partIds: string[] }>()
+  const deferredSteps = new Map<string, { stepName: string, partIds: string[] }>()
+
   for (const partId of body.partIds) {
     try {
       const result = lifecycleService.advanceToStep(partId, {
@@ -31,30 +37,21 @@ export default defineApiHandler(async (event) => {
       })
       results.push({ partId, success: true })
       advanced++
-      const eventType = result.serial.status === 'completed' ? 'part_completed' : 'part_advanced'
-      emitWebhookEvent(eventType, {
-        user: userName,
-        partId,
-        targetStepId: body.targetStepId,
-        skip: body.skip ?? false,
-        newStatus: result.serial.status,
-      })
-      // Emit step_skipped / step_deferred for any bypassed steps
+
+      if (result.serial.status === 'completed') {
+        completedPartIds.push(partId)
+      } else {
+        advancedPartIds.push(partId)
+      }
+
+      // Collect bypassed steps grouped by stepId
       for (const bypassed of result.bypassed) {
-        if (bypassed.classification === 'skipped') {
-          emitWebhookEvent('step_skipped', {
-            user: userName,
-            partId,
-            stepId: bypassed.stepId,
-            stepName: bypassed.stepName,
-          })
-        } else if (bypassed.classification === 'deferred') {
-          emitWebhookEvent('step_deferred', {
-            user: userName,
-            partId,
-            stepId: bypassed.stepId,
-            stepName: bypassed.stepName,
-          })
+        const map = bypassed.classification === 'skipped' ? skippedSteps : deferredSteps
+        const existing = map.get(bypassed.stepId)
+        if (existing) {
+          existing.partIds.push(partId)
+        } else {
+          map.set(bypassed.stepId, { stepName: bypassed.stepName, partIds: [partId] })
         }
       }
     } catch (error) {
@@ -62,6 +59,47 @@ export default defineApiHandler(async (event) => {
       results.push({ partId, success: false, error: message })
       failed++
     }
+  }
+
+  // Emit batched webhook events
+  if (advancedPartIds.length > 0) {
+    emitWebhookEvent('part_advanced', {
+      user: userName,
+      partIds: advancedPartIds,
+      advancedCount: advancedPartIds.length,
+      failedCount: failed,
+      targetStepId: body.targetStepId,
+      skip: body.skip ?? false,
+    })
+  }
+
+  if (completedPartIds.length > 0) {
+    emitWebhookEvent('part_completed', {
+      user: userName,
+      partIds: completedPartIds,
+      count: completedPartIds.length,
+      targetStepId: body.targetStepId,
+    })
+  }
+
+  for (const [stepId, { stepName, partIds }] of skippedSteps) {
+    emitWebhookEvent('step_skipped', {
+      user: userName,
+      partIds,
+      count: partIds.length,
+      stepId,
+      stepName,
+    })
+  }
+
+  for (const [stepId, { stepName, partIds }] of deferredSteps) {
+    emitWebhookEvent('step_deferred', {
+      user: userName,
+      partIds,
+      count: partIds.length,
+      stepId,
+      stepName,
+    })
   }
 
   return { advanced, failed, results }

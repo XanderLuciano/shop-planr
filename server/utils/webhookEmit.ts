@@ -59,11 +59,16 @@ function buildSummary(eventType: WebhookEventType, data: Record<string, unknown>
 
   if (data.user) parts.push(String(data.user))
 
-  if (data.partId || data.partIds) {
-    const ids = data.partIds
-      ? (data.partIds as string[]).slice(0, 3).join(', ')
-      : String(data.partId)
-    parts.push(ids)
+  if (data.partIds) {
+    const ids = data.partIds as string[]
+    const count = (data.count ?? data.advancedCount ?? ids.length) as number
+    if (ids.length <= 3) {
+      parts.push(ids.join(', '))
+    } else {
+      parts.push(`${ids.slice(0, 3).join(', ')} (+${count - 3} more)`)
+    }
+  } else if (data.partId) {
+    parts.push(String(data.partId))
   }
 
   if (data.fromStep && data.toStep) {

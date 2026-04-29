@@ -16,5 +16,15 @@ export default defineApiHandler(async (event) => {
   const body = await parseBody(event, batchAdvanceSchema)
   const userId = getAuthUserId(event)
   const { partService } = getServices()
-  return partService.batchAdvanceParts(body.partIds, userId)
+  const result = partService.batchAdvanceParts(body.partIds, userId)
+  const advancedPartIds = result.results.filter(r => r.success).map(r => r.partId)
+  if (advancedPartIds.length > 0) {
+    emitWebhookEvent('part_advanced', {
+      user: resolveUserName(userId),
+      partIds: advancedPartIds,
+      advancedCount: result.advanced,
+      failedCount: result.failed,
+    })
+  }
+  return result
 })

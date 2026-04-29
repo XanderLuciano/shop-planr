@@ -20,15 +20,14 @@ export default defineApiHandler(async (event) => {
   const userName = resolveUserName(userId)
   const job = jobService.getJob(body.jobId)
   const path = pathService.getPath(body.pathId)
-  for (const part of parts) {
-    emitWebhookEvent('part_created', {
-      user: userName,
-      partId: part.id,
-      jobId: body.jobId,
-      jobName: job.name,
-      pathId: body.pathId,
-      pathName: path.name,
-    })
-  }
+  emitWebhookEvent('part_created', {
+    user: userName,
+    partIds: parts.map(p => p.id),
+    count: parts.length,
+    jobId: body.jobId,
+    jobName: job.name,
+    pathId: body.pathId,
+    pathName: path.name,
+  })
   return parts
 })

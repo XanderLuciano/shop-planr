@@ -59,33 +59,37 @@ const eventTypeItems = WEBHOOK_EVENT_TYPES.map(t => ({
 const eventPayloadDocs: { type: WebhookEventType, description: string, fields: { name: string, type: string, description: string }[] }[] = [
   {
     type: 'part_advanced',
-    description: 'Fired when a part is advanced to the next process step.',
+    description: 'Fired when one or more parts are advanced to a target step. Single-part calls use partId; batch calls use partIds.',
     fields: [
       { name: 'user', type: 'string', description: 'Display name of the user who performed the action' },
-      { name: 'partId', type: 'string', description: 'Serial number ID (e.g. SN-00042)' },
-      { name: 'targetStepId', type: 'string', description: 'ID of the step the part was advanced to' },
-      { name: 'fromStep', type: 'string', description: 'Name of the previous step' },
-      { name: 'toStep', type: 'string', description: 'Name of the new step' },
+      { name: 'partId', type: 'string?', description: 'Serial number ID — present on single-part advance' },
+      { name: 'partIds', type: 'string[]?', description: 'Serial number IDs — present on batch advance' },
+      { name: 'advancedCount', type: 'number?', description: 'Number of parts successfully advanced (batch only)' },
+      { name: 'failedCount', type: 'number?', description: 'Number of parts that failed to advance (batch only)' },
+      { name: 'targetStepId', type: 'string', description: 'ID of the step the part(s) were advanced to' },
       { name: 'skip', type: 'boolean', description: 'Whether intermediate steps were skipped' },
-      { name: 'newStatus', type: 'string', description: 'Part status after advancement (in_progress)' },
+      { name: 'newStatus', type: 'string?', description: 'Part status after advancement (single-part only)' },
     ],
   },
   {
     type: 'part_completed',
-    description: 'Fired when a part finishes its final process step.',
+    description: 'Fired when one or more parts finish their final process step. Single-part calls use partId; batch calls use partIds.',
     fields: [
       { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partId', type: 'string', description: 'Serial number ID' },
+      { name: 'partId', type: 'string?', description: 'Serial number ID — present on single-part advance' },
+      { name: 'partIds', type: 'string[]?', description: 'Serial number IDs — present on batch advance' },
+      { name: 'count', type: 'number?', description: 'Number of parts completed (batch only)' },
       { name: 'targetStepId', type: 'string', description: 'ID of the final step' },
-      { name: 'newStatus', type: 'string', description: 'Always "completed"' },
+      { name: 'newStatus', type: 'string?', description: '"completed" (single-part only)' },
     ],
   },
   {
     type: 'part_created',
-    description: 'Fired when a new part (serial number) is created.',
+    description: 'Fired when parts are batch-created. Always uses partIds (array) since parts are always created in batches.',
     fields: [
       { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partId', type: 'string', description: 'New serial number ID' },
+      { name: 'partIds', type: 'string[]', description: 'New serial number IDs' },
+      { name: 'count', type: 'number', description: 'Number of parts created' },
       { name: 'jobId', type: 'string', description: 'Parent job ID' },
       { name: 'jobName', type: 'string', description: 'Parent job name' },
       { name: 'pathId', type: 'string', description: 'Route path ID' },
@@ -113,21 +117,24 @@ const eventPayloadDocs: { type: WebhookEventType, description: string, fields: {
   },
   {
     type: 'step_skipped',
-    description: 'Fired when a process step is skipped for a part.',
+    description: 'Fired when a process step is skipped for one or more parts. Single-part calls use partId; batch calls use partIds.',
     fields: [
       { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partId', type: 'string', description: 'Serial number ID' },
+      { name: 'partId', type: 'string?', description: 'Serial number ID — present on single-part advance' },
+      { name: 'partIds', type: 'string[]?', description: 'Serial number IDs — present on batch advance' },
+      { name: 'count', type: 'number?', description: 'Number of parts that skipped this step (batch only)' },
       { name: 'stepId', type: 'string', description: 'Skipped step ID' },
       { name: 'stepName', type: 'string', description: 'Skipped step name' },
-      { name: 'reason', type: 'string?', description: 'Optional reason' },
     ],
   },
   {
     type: 'step_deferred',
-    description: 'Fired when a required step is deferred to be completed later.',
+    description: 'Fired when a required step is deferred for one or more parts. Single-part calls use partId; batch calls use partIds.',
     fields: [
       { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partId', type: 'string', description: 'Serial number ID' },
+      { name: 'partId', type: 'string?', description: 'Serial number ID — present on single-part advance' },
+      { name: 'partIds', type: 'string[]?', description: 'Serial number IDs — present on batch advance' },
+      { name: 'count', type: 'number?', description: 'Number of parts that deferred this step (batch only)' },
       { name: 'stepId', type: 'string', description: 'Deferred step ID' },
       { name: 'stepName', type: 'string', description: 'Deferred step name' },
     ],
@@ -187,15 +194,15 @@ const eventPayloadDocs: { type: WebhookEventType, description: string, fields: {
   },
   {
     type: 'cert_attached',
-    description: 'Fired when a quality certificate is attached to a part at a step.',
+    description: 'Fired when a quality certificate is attached to one or more parts. Always uses partIds (array) since certs are batch-attached.',
     fields: [
       { name: 'user', type: 'string', description: 'Display name of the user' },
       { name: 'certId', type: 'string', description: 'Certificate ID' },
       { name: 'certName', type: 'string', description: 'Certificate name' },
       { name: 'certType', type: 'string', description: 'Certificate type (material or process)' },
-      { name: 'partId', type: 'string', description: 'Part the cert is attached to' },
+      { name: 'partIds', type: 'string[]', description: 'Parts the cert was attached to' },
+      { name: 'count', type: 'number', description: 'Number of parts' },
       { name: 'stepId', type: 'string', description: 'Step where the cert was attached' },
-      { name: 'stepName', type: 'string', description: 'Step name' },
     ],
   },
 ]
@@ -1242,13 +1249,13 @@ onUnmounted(() => {
             <!-- Batch note -->
             <div class="p-3 bg-(--ui-bg-elevated) rounded-lg">
               <p class="text-sm text-(--ui-text-muted)">
-                <span class="font-medium text-(--ui-text-highlighted)">Batch operations:</span>
-                When multiple parts are advanced at once (e.g. via the work queue), a single
-                <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">part_advanced</code> event is emitted with
-                <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">partIds</code> (string array) instead of
-                <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">partId</code>, plus
-                <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">advancedCount</code> and
-                <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">failedCount</code> fields.
+                <span class="font-medium text-(--ui-text-highlighted)">Batch vs single:</span>
+                Batch endpoints (create parts, batch advance, batch cert attach) emit a single event with
+                <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">partIds</code> (string array) and a
+                <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">count</code> field.
+                Single-part endpoints emit with
+                <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">partId</code> (string).
+                Your handler should check for both fields.
               </p>
             </div>
 
