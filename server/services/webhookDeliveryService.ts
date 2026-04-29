@@ -216,6 +216,7 @@ export function createWebhookDeliveryService(repos: {
 
     /**
      * Retry failed deliveries for an event: transition each from failed → queued.
+     * Clears nextRetryAt so the delivery is immediately eligible for dispatch.
      */
     retryFailed(userId: string, eventId: string): WebhookDelivery[] {
       requireAdmin(repos.users, userId, 'retry failed webhook deliveries')
@@ -225,6 +226,7 @@ export function createWebhookDeliveryService(repos: {
 
       for (const delivery of failedDeliveries) {
         const updated = repos.webhookDeliveries.updateStatus(delivery.id, 'queued')
+        repos.webhookDeliveries.setNextRetryAt(delivery.id, '')
         retried.push(updated)
       }
 

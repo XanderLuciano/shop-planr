@@ -15,13 +15,13 @@ export default defineApiHandler(async (event) => {
   const userId = getAuthUserId(event)
   const { pathService } = getServices()
   // Look up path info before deletion for the webhook payload
-  const path = getRepositories().paths.getById(id)
+  const path = pathService.getPath(id)
   const result = pathService.deletePath(id, userId)
   emitWebhookEvent('path_deleted', {
     user: resolveUserName(userId),
     pathId: id,
-    pathName: path?.name ?? '',
-    jobId: path?.jobId ?? '',
+    pathName: path.name,
+    jobId: path.jobId,
     deletedPartIds: result.deletedPartIds,
   })
   return { success: true, ...result }

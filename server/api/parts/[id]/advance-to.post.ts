@@ -28,16 +28,16 @@ export default defineApiHandler(async (event) => {
     skip: body.skip ?? false,
     newStatus: result.serial.status,
   })
-  if (body.skip) {
-    emitWebhookEvent('step_skipped', {
-      user: userName,
-      partId: id,
-      stepId: body.targetStepId,
-    })
-  }
-  // Emit step_deferred for any steps that were deferred during advancement
+  // Emit step_skipped / step_deferred for any bypassed steps during advancement
   for (const bypassed of result.bypassed) {
-    if (bypassed.classification === 'deferred') {
+    if (bypassed.classification === 'skipped') {
+      emitWebhookEvent('step_skipped', {
+        user: userName,
+        partId: id,
+        stepId: bypassed.stepId,
+        stepName: bypassed.stepName,
+      })
+    } else if (bypassed.classification === 'deferred') {
       emitWebhookEvent('step_deferred', {
         user: userName,
         partId: id,
