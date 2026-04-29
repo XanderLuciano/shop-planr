@@ -9,7 +9,7 @@ export interface WebhookDeliveryRepository {
   listByEventId(eventId: string): DeliveryDetail[]
   updateStatus(id: string, status: WebhookDeliveryStatus, error?: string): WebhookDelivery
   updateManyStatus(ids: string[], status: WebhookDeliveryStatus): void
-  incrementAttemptCount(id: string): void
+  incrementAttemptCount(id: string): number
   setNextRetryAt(id: string, nextRetryAt: string): void
   cancelQueuedByRegistrationId(registrationId: string): number
   resetStuckDeliveries(olderThanMinutes: number): number

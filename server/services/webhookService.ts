@@ -2,7 +2,7 @@ import type { WebhookEventRepository } from '../repositories/interfaces/webhookR
 import type { WebhookRegistrationRepository } from '../repositories/interfaces/webhookRegistrationRepository'
 import type { WebhookDeliveryRepository } from '../repositories/interfaces/webhookDeliveryRepository'
 import type { UserRepository } from '../repositories/interfaces/userRepository'
-import type { WebhookEvent, WebhookEventType } from '../types/domain'
+import type { WebhookEvent, WebhookEventType, EventWithDeliveries } from '../types/domain'
 import { WEBHOOK_EVENT_TYPES } from '../types/domain'
 import { generateId } from '../utils/idGenerator'
 import { NotFoundError, ValidationError } from '../utils/errors'
@@ -75,6 +75,33 @@ export function createWebhookService(repos: {
 
     listEvents(options?: { limit?: number, offset?: number }): WebhookEvent[] {
       return repos.webhookEvents.list(options)
+    },
+
+    /**
+     * List events enriched with per-event delivery status summaries.
+     * Used by the event log UI to show delivery counts inline.
+     */
+    listEventsWithDeliveries(options?: { limit?: number, offset?: number }): EventWithDeliveries[] {
+      const events = repos.webhookEvents.list(options)
+      if (events.length === 0) return []
+
+      const eventIds = events.map(e => e.id)
+      const summaries = repos.webhookDeliveries.getDeliverySummariesByEventIds(eventIds)
+
+      return events.map((e) => {
+        const counts = summaries.get(e.id) ?? { queued: 0, delivering: 0, delivered: 0, failed: 0, canceled: 0 }
+        return {
+          id: e.id,
+          eventType: e.eventType,
+          payload: e.payload,
+          summary: e.summary,
+          createdAt: e.createdAt,
+          deliverySummary: {
+            total: counts.queued + counts.delivering + counts.delivered + counts.failed + counts.canceled,
+            ...counts,
+          },
+        }
+      })
     },
 
     deleteEvent(userId: string, id: string): void {

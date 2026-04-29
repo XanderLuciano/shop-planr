@@ -25,6 +25,7 @@ const mockWebhookService = {
     createdAt: '2024-01-01',
   })),
   listEvents: vi.fn(() => []),
+  listEventsWithDeliveries: vi.fn(() => []),
   deleteEvent: vi.fn(),
   clearAllEvents: vi.fn((_userId: string) => 2),
   getQueueStats: vi.fn(() => ({ total: 5 })),
@@ -73,10 +74,6 @@ vi.stubGlobal('getServices', () => ({
   webhookDeliveryService: mockWebhookDeliveryService,
 }))
 
-const mockWebhookDeliveries = {
-  getDeliverySummariesByEventIds: vi.fn(() => new Map()),
-}
-vi.stubGlobal('getRepositories', () => ({ webhookDeliveries: mockWebhookDeliveries }))
 vi.stubGlobal('getAuthUserId', () => 'user_1')
 vi.stubGlobal('sendNoContent', vi.fn())
 vi.stubGlobal('buildTestPayload', buildTestPayload)
@@ -138,49 +135,38 @@ describe('webhook route wiring', () => {
 
   // ---- Event CRUD routes ----
 
-  it('GET /api/webhooks/events calls listEvents with default pagination', async () => {
+  it('GET /api/webhooks/events calls listEventsWithDeliveries with default pagination', async () => {
     await eventsGetHandler(makeFakeEvent())
-    expect(mockWebhookService.listEvents).toHaveBeenCalledWith({ limit: 200, offset: 0 })
+    expect(mockWebhookService.listEventsWithDeliveries).toHaveBeenCalledWith({ limit: 200, offset: 0 })
   })
 
   it('GET /api/webhooks/events respects limit/offset query params', async () => {
     currentQuery = { limit: '50', offset: '10' }
     await eventsGetHandler(makeFakeEvent())
-    expect(mockWebhookService.listEvents).toHaveBeenCalledWith({ limit: 50, offset: 10 })
+    expect(mockWebhookService.listEventsWithDeliveries).toHaveBeenCalledWith({ limit: 50, offset: 10 })
   })
 
-  it('GET /api/webhooks/events returns EventWithDeliveries[] with delivery summaries', async () => {
-    const events = [
-      { id: 'whe_1', eventType: 'part_advanced', payload: { partId: 'p1' }, summary: 'Part advanced', createdAt: '2024-01-01' },
-      { id: 'whe_2', eventType: 'job_created', payload: {}, summary: 'Job created', createdAt: '2024-01-02' },
+  it('GET /api/webhooks/events returns the service result directly', async () => {
+    const enrichedEvents = [
+      {
+        id: 'whe_1',
+        eventType: 'part_advanced',
+        payload: { partId: 'p1' },
+        summary: 'Part advanced',
+        createdAt: '2024-01-01',
+        deliverySummary: { total: 4, queued: 1, delivering: 0, delivered: 2, failed: 1, canceled: 0 },
+      },
     ]
-    mockWebhookService.listEvents.mockReturnValueOnce(events)
-
-    const summaryMap = new Map()
-    summaryMap.set('whe_1', { queued: 1, delivering: 0, delivered: 2, failed: 1, canceled: 0 })
-    summaryMap.set('whe_2', { queued: 0, delivering: 0, delivered: 0, failed: 0, canceled: 0 })
-    mockWebhookDeliveries.getDeliverySummariesByEventIds.mockReturnValueOnce(summaryMap)
+    mockWebhookService.listEventsWithDeliveries.mockReturnValueOnce(enrichedEvents)
 
     const result = await eventsGetHandler(makeFakeEvent())
-
-    expect(mockWebhookDeliveries.getDeliverySummariesByEventIds).toHaveBeenCalledWith(['whe_1', 'whe_2'])
-    expect(result).toHaveLength(2)
-    expect(result[0]).toEqual({
-      id: 'whe_1',
-      eventType: 'part_advanced',
-      payload: { partId: 'p1' },
-      summary: 'Part advanced',
-      createdAt: '2024-01-01',
-      deliverySummary: { total: 4, queued: 1, delivering: 0, delivered: 2, failed: 1, canceled: 0 },
-    })
-    expect(result[1].deliverySummary).toEqual({ total: 0, queued: 0, delivering: 0, delivered: 0, failed: 0, canceled: 0 })
+    expect(result).toEqual(enrichedEvents)
   })
 
   it('GET /api/webhooks/events returns empty array when no events', async () => {
-    mockWebhookService.listEvents.mockReturnValueOnce([])
+    mockWebhookService.listEventsWithDeliveries.mockReturnValueOnce([])
     const result = await eventsGetHandler(makeFakeEvent())
     expect(result).toEqual([])
-    expect(mockWebhookDeliveries.getDeliverySummariesByEventIds).not.toHaveBeenCalled()
   })
 
   it('POST /api/webhooks/events calls queueEvent with parsed body', async () => {

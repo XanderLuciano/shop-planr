@@ -48,3 +48,7 @@ export const updateDeliveryStatusSchema = z.object({
   status: z.enum(WEBHOOK_DELIVERY_STATUSES),
   error: z.string().optional(),
 })
+
+export const listQueuedQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(1000).optional(),
+})

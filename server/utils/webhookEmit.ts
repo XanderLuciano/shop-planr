@@ -40,8 +40,22 @@ export function resolveUserName(userId: string): string {
   }
 }
 
+/**
+ * Format a webhook event type for display.
+ * Single source of truth — used by both server-side summary generation
+ * and the client-side UI (re-exported from app/utils/webhookFormatting.ts).
+ *
+ * "part_advanced" → "Part Advanced"
+ */
+export function formatWebhookEventType(type: string): string {
+  return type
+    .split('_')
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
+}
+
 function buildSummary(eventType: WebhookEventType, data: Record<string, unknown>): string {
-  const parts: string[] = [formatEventType(eventType)]
+  const parts: string[] = [formatWebhookEventType(eventType)]
 
   if (data.user) parts.push(String(data.user))
 
@@ -61,9 +75,4 @@ function buildSummary(eventType: WebhookEventType, data: Record<string, unknown>
   if (data.jobName) parts.push(String(data.jobName))
 
   return parts.join(' | ')
-}
-
-function formatEventType(type: WebhookEventType): string {
-  // PascalCase for summary strings: "part_advanced" → "PartAdvanced"
-  return type.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('')
 }

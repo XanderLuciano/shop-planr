@@ -166,8 +166,11 @@ export function createInMemoryDeliveryRepo(): WebhookDeliveryRepository {
     incrementAttemptCount(id: string) {
       const existing = store.get(id)
       if (existing) {
-        store.set(id, { ...existing, attemptCount: existing.attemptCount + 1, updatedAt: new Date().toISOString() })
+        const newCount = existing.attemptCount + 1
+        store.set(id, { ...existing, attemptCount: newCount, updatedAt: new Date().toISOString() })
+        return newCount
       }
+      return 0
     },
     setNextRetryAt(id: string, nextRetryAt: string) {
       const existing = store.get(id)

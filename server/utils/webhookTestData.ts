@@ -111,6 +111,10 @@ export function buildTestPayload(eventType: WebhookEventType): Record<string, un
         stepId: 'step_abc123',
         stepName: 'Receiving',
       }
+    default: {
+      const _exhaustive: never = eventType
+      throw new Error(`Unhandled event type: ${_exhaustive}`)
+    }
   }
 }
 
@@ -142,5 +146,9 @@ export function buildTestSummary(eventType: WebhookEventType, data: Record<strin
       return `Note on ${data.stepName}: "${String(data.text).slice(0, 50)}"`
     case 'cert_attached':
       return `${data.certName} attached to ${data.partId} at ${data.stepName}`
+    default: {
+      const _exhaustive: never = eventType
+      throw new Error(`Unhandled event type: ${_exhaustive}`)
+    }
   }
 }

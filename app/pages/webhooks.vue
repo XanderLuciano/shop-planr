@@ -332,6 +332,16 @@ const loadingDeliveries = ref<Set<string>>(new Set())
 const actionLoading = ref<Set<string>>(new Set())
 let dispatchInterval: ReturnType<typeof setInterval> | null = null
 
+// ---- Dispatch loop state ----
+const DISPATCH_STORAGE_KEY = 'webhook-dispatch-auto'
+const dispatchLoopRunning = ref(false)
+const autoStartDispatch = ref(false)
+
+// Load auto-start preference from localStorage
+if (import.meta.client) {
+  autoStartDispatch.value = localStorage.getItem(DISPATCH_STORAGE_KEY) === 'true'
+}
+
 // ---- Event Log computed ----
 const combinedError = computed(() => error.value || eventsError.value || deliveryError.value || testEventError.value)
 
@@ -371,44 +381,52 @@ function summaryBadgeColor(summary: { failed: number, queued: number, delivered:
 
 // ---- Event expand/collapse ----
 async function toggleEventExpand(eventId: string) {
-  if (expandedEvents.value.has(eventId)) {
-    expandedEvents.value = new Set([...expandedEvents.value].filter(id => id !== eventId))
+  const next = new Set(expandedEvents.value)
+  if (next.has(eventId)) {
+    next.delete(eventId)
+    expandedEvents.value = next
     return
   }
 
-  expandedEvents.value = new Set([...expandedEvents.value, eventId])
+  next.add(eventId)
+  expandedEvents.value = next
 
   // Fetch deliveries for this event if not already loaded
   if (!eventDeliveries.value.has(eventId)) {
-    loadingDeliveries.value = new Set([...loadingDeliveries.value, eventId])
+    const loading = new Set(loadingDeliveries.value)
+    loading.add(eventId)
+    loadingDeliveries.value = loading
     try {
       const deliveries = await $api<DeliveryDetail[]>(`/api/webhooks/events/${encodeURIComponent(eventId)}/deliveries`)
-      eventDeliveries.value = new Map([...eventDeliveries.value, [eventId, deliveries]])
+      const updated = new Map(eventDeliveries.value)
+      updated.set(eventId, deliveries)
+      eventDeliveries.value = updated
     } catch {
       // Silently handle — the expand will show empty
     } finally {
-      loadingDeliveries.value = new Set([...loadingDeliveries.value].filter(id => id !== eventId))
+      const done = new Set(loadingDeliveries.value)
+      done.delete(eventId)
+      loadingDeliveries.value = done
     }
   }
 }
 
 // ---- Event-level actions ----
 async function handleReplayAll(eventId: string) {
-  actionLoading.value = new Set([...actionLoading.value, `replay-${eventId}`])
+  addLoading(`replay-${eventId}`)
   try {
     await replayEvent(eventId)
     await refreshEventLog()
-    // Refresh expanded deliveries if open
     if (expandedEvents.value.has(eventId)) {
       await refreshEventDeliveries(eventId)
     }
   } finally {
-    actionLoading.value = new Set([...actionLoading.value].filter(id => id !== `replay-${eventId}`))
+    removeLoading(`replay-${eventId}`)
   }
 }
 
 async function handleRetryFailed(eventId: string) {
-  actionLoading.value = new Set([...actionLoading.value, `retry-${eventId}`])
+  addLoading(`retry-${eventId}`)
   try {
     await retryFailed(eventId)
     await refreshEventLog()
@@ -416,41 +434,43 @@ async function handleRetryFailed(eventId: string) {
       await refreshEventDeliveries(eventId)
     }
   } finally {
-    actionLoading.value = new Set([...actionLoading.value].filter(id => id !== `retry-${eventId}`))
+    removeLoading(`retry-${eventId}`)
   }
 }
 
 async function handleDeleteEvent(eventId: string) {
   await deleteEvent(eventId)
-  expandedEvents.value = new Set([...expandedEvents.value].filter(id => id !== eventId))
+  const next = new Set(expandedEvents.value)
+  next.delete(eventId)
+  expandedEvents.value = next
   eventDeliveries.value.delete(eventId)
 }
 
 // ---- Delivery-level actions ----
 async function handleRetryDelivery(deliveryId: string, eventId: string) {
-  actionLoading.value = new Set([...actionLoading.value, `delivery-${deliveryId}`])
+  addLoading(`delivery-${deliveryId}`)
   try {
     await updateDeliveryStatus(deliveryId, 'queued')
     await refreshEventLog()
     await refreshEventDeliveries(eventId)
   } finally {
-    actionLoading.value = new Set([...actionLoading.value].filter(id => id !== `delivery-${deliveryId}`))
+    removeLoading(`delivery-${deliveryId}`)
   }
 }
 
 async function handleCancelDelivery(deliveryId: string, eventId: string) {
-  actionLoading.value = new Set([...actionLoading.value, `delivery-${deliveryId}`])
+  addLoading(`delivery-${deliveryId}`)
   try {
     await cancelDelivery(deliveryId)
     await refreshEventLog()
     await refreshEventDeliveries(eventId)
   } finally {
-    actionLoading.value = new Set([...actionLoading.value].filter(id => id !== `delivery-${deliveryId}`))
+    removeLoading(`delivery-${deliveryId}`)
   }
 }
 
 async function handleFireDelivery(delivery: DeliveryDetail, eventId: string) {
-  actionLoading.value = new Set([...actionLoading.value, `delivery-${delivery.id}`])
+  addLoading(`delivery-${delivery.id}`)
   try {
     // Build a minimal QueuedDeliveryView for dispatchSingle
     const evt = events.value.find(e => e.id === eventId)
@@ -470,8 +490,21 @@ async function handleFireDelivery(delivery: DeliveryDetail, eventId: string) {
     await refreshEventLog()
     await refreshEventDeliveries(eventId)
   } finally {
-    actionLoading.value = new Set([...actionLoading.value].filter(id => id !== `delivery-${delivery.id}`))
+    removeLoading(`delivery-${delivery.id}`)
   }
+}
+
+// ---- Set mutation helpers ----
+function addLoading(key: string) {
+  const next = new Set(actionLoading.value)
+  next.add(key)
+  actionLoading.value = next
+}
+
+function removeLoading(key: string) {
+  const next = new Set(actionLoading.value)
+  next.delete(key)
+  actionLoading.value = next
 }
 
 // ---- Refresh helpers ----
@@ -482,7 +515,9 @@ async function refreshEventLog() {
 async function refreshEventDeliveries(eventId: string) {
   try {
     const deliveries = await $api<DeliveryDetail[]>(`/api/webhooks/events/${encodeURIComponent(eventId)}/deliveries`)
-    eventDeliveries.value = new Map([...eventDeliveries.value, [eventId, deliveries]])
+    const updated = new Map(eventDeliveries.value)
+    updated.set(eventId, deliveries)
+    eventDeliveries.value = updated
   } catch {
     // Silently handle
   }
@@ -491,6 +526,7 @@ async function refreshEventDeliveries(eventId: string) {
 // ---- Dispatch loop ----
 function startDispatchLoop() {
   if (dispatchInterval) return
+  dispatchLoopRunning.value = true
   dispatchInterval = setInterval(async () => {
     if (!dispatching.value) {
       await dispatchQueued()
@@ -504,13 +540,23 @@ function stopDispatchLoop() {
     clearInterval(dispatchInterval)
     dispatchInterval = null
   }
+  dispatchLoopRunning.value = false
+}
+
+function toggleAutoStart(checked: boolean | 'indeterminate') {
+  autoStartDispatch.value = checked === true
+  if (import.meta.client) {
+    localStorage.setItem(DISPATCH_STORAGE_KEY, String(autoStartDispatch.value))
+  }
 }
 
 // ---- Init ----
 onMounted(async () => {
   await fetchRegistrations()
   await fetchEvents()
-  startDispatchLoop()
+  if (autoStartDispatch.value) {
+    startDispatchLoop()
+  }
 })
 
 onUnmounted(() => {
@@ -748,6 +794,18 @@ onUnmounted(() => {
                   {{ events.length }} event{{ events.length !== 1 ? 's' : '' }}
                 </span>
                 <UBadge
+                  v-if="dispatchLoopRunning"
+                  variant="subtle"
+                  color="success"
+                  size="xs"
+                >
+                  <UIcon
+                    name="i-lucide-radio"
+                    class="size-3 mr-1"
+                  />
+                  Live
+                </UBadge>
+                <UBadge
                   v-if="dispatching"
                   variant="subtle"
                   color="info"
@@ -761,6 +819,32 @@ onUnmounted(() => {
                 </UBadge>
               </div>
               <div class="flex items-center gap-2">
+                <UButton
+                  v-if="!dispatchLoopRunning"
+                  label="Start"
+                  icon="i-lucide-play"
+                  variant="soft"
+                  color="success"
+                  size="xs"
+                  @click="startDispatchLoop"
+                />
+                <UButton
+                  v-else
+                  label="Stop"
+                  icon="i-lucide-square"
+                  variant="soft"
+                  color="error"
+                  size="xs"
+                  @click="stopDispatchLoop"
+                />
+                <label class="flex items-center gap-1.5 text-xs text-(--ui-text-muted) cursor-pointer">
+                  <UCheckbox
+                    :model-value="autoStartDispatch"
+                    size="xs"
+                    @update:model-value="toggleAutoStart"
+                  />
+                  Auto-start
+                </label>
                 <UButton
                   label="Refresh"
                   icon="i-lucide-refresh-cw"
@@ -1174,7 +1258,7 @@ onUnmounted(() => {
                 Integration tips
               </p>
               <ul class="text-sm text-(--ui-text-muted) list-disc list-inside space-y-1">
-                <li>Dispatch runs while the webhooks page is open — queued deliveries are sent automatically on a 5-second interval.</li>
+                <li>Dispatch runs while the webhooks page is open and the dispatch loop is started — use the Start/Stop button on the Event Log tab to control it. Enable "Auto-start" to remember your preference.</li>
                 <li>Events are dispatched client-side from the browser, so your endpoint must be reachable from the user's network.</li>
                 <li>Create registrations on the Registrations tab to subscribe specific URLs to specific event types.</li>
                 <li>Each registration gets its own delivery record per event — you can retry or cancel deliveries individually.</li>

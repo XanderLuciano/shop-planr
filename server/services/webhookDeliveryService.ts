@@ -130,7 +130,7 @@ export function createWebhookDeliveryService(repos: {
 
       // Set backoff on failure so the delivery isn't immediately re-queued
       if (status === 'failed') {
-        const currentAttempts = delivery.attemptCount + 1 // +1 because we just incremented
+        const currentAttempts = repos.webhookDeliveries.getById(id)!.attemptCount
         const backoffMs = computeBackoffMs(currentAttempts)
         const nextRetryAt = new Date(Date.now() + backoffMs).toISOString()
         repos.webhookDeliveries.setNextRetryAt(id, nextRetryAt)
@@ -181,9 +181,9 @@ export function createWebhookDeliveryService(repos: {
 
           repos.webhookDeliveries.updateStatus(update.id, update.status, update.error)
 
-          // Set backoff on failure
+          // Set backoff on failure — read the current attempt count from the repo
           if (update.status === 'failed') {
-            const currentAttempts = existing.attemptCount + 1
+            const currentAttempts = repos.webhookDeliveries.getById(update.id)!.attemptCount
             const backoffMs = computeBackoffMs(currentAttempts)
             const nextRetryAt = new Date(Date.now() + backoffMs).toISOString()
             repos.webhookDeliveries.setNextRetryAt(update.id, nextRetryAt)

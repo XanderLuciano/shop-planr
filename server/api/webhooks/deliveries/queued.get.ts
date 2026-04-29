@@ -1,3 +1,5 @@
+import { listQueuedQuerySchema } from '../../../schemas/webhookSchemas'
+
 defineRouteMeta({
   openAPI: {
     tags: ['Webhooks'],
@@ -9,8 +11,7 @@ defineRouteMeta({
 })
 
 export default defineApiHandler(async (event) => {
-  const query = getQuery(event)
-  const limit = query.limit ? Number(query.limit) : undefined
+  const { limit } = parseQuery(event, listQueuedQuerySchema)
   const { webhookDeliveryService } = getServices()
   return webhookDeliveryService.listQueued(limit)
 })

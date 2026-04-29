@@ -224,11 +224,13 @@ export function createSQLiteWebhookDeliveryRepository(db: Database): WebhookDeli
       return result.changes
     },
 
-    incrementAttemptCount(id: string): void {
+    incrementAttemptCount(id: string): number {
       const now = new Date().toISOString()
       db.prepare(`
         UPDATE webhook_deliveries SET attempt_count = attempt_count + 1, updated_at = ? WHERE id = ?
       `).run(now, id)
+      const row = db.prepare('SELECT attempt_count FROM webhook_deliveries WHERE id = ?').get(id) as { attempt_count: number }
+      return row.attempt_count
     },
 
     setNextRetryAt(id: string, nextRetryAt: string): void {
