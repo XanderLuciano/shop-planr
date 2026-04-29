@@ -24,6 +24,7 @@ import { requireAdmin } from '../utils/auth'
 export interface BatchAdvanceResult {
   partId: string
   success: boolean
+  newStatus?: string
   error?: string
 }
 
@@ -306,8 +307,8 @@ export function createPartService(
 
       for (const partId of partIds) {
         try {
-          service.advancePart(partId, userId)
-          results.push({ partId, success: true })
+          const part = service.advancePart(partId, userId)
+          results.push({ partId, success: true, newStatus: part.status })
           advanced++
         } catch (error) {
           const message = error instanceof Error ? error.message : 'Unknown error'

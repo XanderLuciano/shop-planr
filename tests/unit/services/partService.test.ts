@@ -493,7 +493,7 @@ describe('PartService', () => {
 
       expect(result.advanced).toBe(1)
       expect(result.failed).toBe(2)
-      expect(result.results[0]).toEqual({ partId: 'part_00001', success: true })
+      expect(result.results[0]).toEqual({ partId: 'part_00001', success: true, newStatus: 'in_progress' })
       expect(result.results[1]).toMatchObject({ partId: 'part_00002', success: false })
       expect(result.results[1].error).toBeDefined()
       expect(result.results[2]).toMatchObject({ partId: 'part_00003', success: false })
