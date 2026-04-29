@@ -1,4 +1,4 @@
-import { updateRegistrationSchema } from '../../../schemas/webhookRegistrationSchemas'
+import { updateRegistrationSchema } from '../../../schemas/webhookSchemas'
 
 defineRouteMeta({
   openAPI: {

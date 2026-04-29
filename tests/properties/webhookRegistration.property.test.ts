@@ -14,6 +14,7 @@ import {
   createInMemoryRegistrationRepo,
   createInMemoryDeliveryRepo,
   createInMemoryUserRepo,
+  passthroughDb,
   WEBHOOK_ADMIN_USER,
   WEBHOOK_REGULAR_USER,
 } from './helpers/webhookTestHarness'
@@ -55,6 +56,7 @@ function createTestRegistrationService() {
     webhookRegistrations: registrationRepo,
     webhookDeliveries: deliveryRepo,
     users: userRepo,
+    db: passthroughDb,
   })
 
   return { service, registrationRepo }

@@ -12,7 +12,8 @@ defineRouteMeta({
 export default defineApiHandler(async (event) => {
   const id = getRouterParam(event, 'id')
   if (!id) throw new ValidationError('Event ID is required')
+  const userId = getAuthUserId(event)
 
-  getServices().webhookService.deleteEvent(id)
+  getServices().webhookService.deleteEvent(userId, id)
   return { success: true }
 })

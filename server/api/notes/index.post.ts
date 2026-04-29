@@ -16,5 +16,13 @@ export default defineApiHandler(async (event) => {
   const body = await parseBody(event, createNoteSchema)
   const userId = getAuthUserId(event)
   const { noteService } = getServices()
-  return noteService.createNote({ ...body, userId })
+  const note = noteService.createNote({ ...body, userId })
+  emitWebhookEvent('note_created', {
+    user: resolveUserName(userId),
+    noteId: note.id,
+    stepId: body.stepId,
+    partIds: body.partIds,
+    text: body.text,
+  })
+  return note
 })

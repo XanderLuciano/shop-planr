@@ -1,5 +1,5 @@
 import { ref, readonly } from 'vue'
-import type { WebhookRegistration } from '~/types/domain'
+import type { WebhookRegistration, WebhookEventType } from '~/types/domain'
 import { extractApiError } from '~/utils/apiError'
 
 const registrations = ref<WebhookRegistration[]>([])
@@ -21,7 +21,7 @@ export function useWebhookRegistrations() {
     }
   }
 
-  async function createRegistration(input: { name: string, url: string, eventTypes: string[] }): Promise<WebhookRegistration> {
+  async function createRegistration(input: { name: string, url: string, eventTypes: WebhookEventType[] }): Promise<WebhookRegistration> {
     loading.value = true
     error.value = null
     try {
@@ -39,7 +39,7 @@ export function useWebhookRegistrations() {
     }
   }
 
-  async function updateRegistration(id: string, input: { name?: string, url?: string, eventTypes?: string[] }): Promise<WebhookRegistration> {
+  async function updateRegistration(id: string, input: { name?: string, url?: string, eventTypes?: WebhookEventType[] }): Promise<WebhookRegistration> {
     loading.value = true
     error.value = null
     try {

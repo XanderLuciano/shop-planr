@@ -2,7 +2,7 @@ import type { WebhookEventRepository } from '../repositories/interfaces/webhookR
 import type { WebhookRegistrationRepository } from '../repositories/interfaces/webhookRegistrationRepository'
 import type { WebhookDeliveryRepository } from '../repositories/interfaces/webhookDeliveryRepository'
 import type { UserRepository } from '../repositories/interfaces/userRepository'
-import type { WebhookEvent, WebhookEventType, WebhookDelivery, WebhookDeliveryStatus } from '../types/domain'
+import type { WebhookEvent, WebhookEventType } from '../types/domain'
 import { WEBHOOK_EVENT_TYPES } from '../types/domain'
 import { generateId } from '../utils/idGenerator'
 import { NotFoundError, ValidationError } from '../utils/errors'
@@ -13,6 +13,7 @@ export function createWebhookService(repos: {
   webhookRegistrations: WebhookRegistrationRepository
   webhookDeliveries: WebhookDeliveryRepository
   users?: UserRepository
+  db: { transaction: <T>(fn: () => T) => () => T }
 }) {
   return {
     // ---- Event CRUD ----
@@ -21,6 +22,10 @@ export function createWebhookService(repos: {
      * Queue a webhook event. All events are always recorded regardless
      * of registrations. After recording, fan-out creates delivery records
      * for all matching registrations.
+     *
+     * Event creation and delivery fan-out are wrapped in a transaction
+     * so we never end up with an event that has no deliveries due to a
+     * partial failure.
      */
     queueEvent(input: {
       eventType: WebhookEventType
@@ -39,24 +44,29 @@ export function createWebhookService(repos: {
         createdAt: new Date().toISOString(),
       }
 
-      const created = repos.webhookEvents.create(event)
+      const doWork = () => {
+        const created = repos.webhookEvents.create(event)
 
-      // Fan-out: create delivery records for all matching registrations
-      const registrations = repos.webhookRegistrations.listByEventType(created.eventType)
-      if (registrations.length > 0) {
-        const now = new Date().toISOString()
-        const deliveries: WebhookDelivery[] = registrations.map(reg => ({
-          id: generateId('whd'),
-          eventId: created.id,
-          registrationId: reg.id,
-          status: 'queued' as WebhookDeliveryStatus,
-          createdAt: now,
-          updatedAt: now,
-        }))
-        repos.webhookDeliveries.createMany(deliveries)
+        // Fan-out: create delivery records for all matching registrations
+        const registrations = repos.webhookRegistrations.listByEventType(created.eventType)
+        if (registrations.length > 0) {
+          const now = new Date().toISOString()
+          const deliveries = registrations.map(reg => ({
+            id: generateId('whd'),
+            eventId: created.id,
+            registrationId: reg.id,
+            status: 'queued' as const,
+            attemptCount: 0,
+            createdAt: now,
+            updatedAt: now,
+          }))
+          repos.webhookDeliveries.createMany(deliveries)
+        }
+
+        return created
       }
 
-      return created
+      return repos.db.transaction(doWork)()
     },
 
     getEvent(id: string): WebhookEvent | undefined {
@@ -67,7 +77,8 @@ export function createWebhookService(repos: {
       return repos.webhookEvents.list(options)
     },
 
-    deleteEvent(id: string): void {
+    deleteEvent(userId: string, id: string): void {
+      requireAdmin(repos.users, userId, 'delete webhook events')
       const existing = repos.webhookEvents.getById(id)
       if (!existing) throw new NotFoundError('WebhookEvent', id)
       repos.webhookEvents.deleteById(id)
@@ -79,8 +90,7 @@ export function createWebhookService(repos: {
     },
 
     getQueueStats(): { total: number } {
-      const events = repos.webhookEvents.list({ limit: 999999 })
-      return { total: events.length }
+      return { total: repos.webhookEvents.count() }
     },
   }
 }

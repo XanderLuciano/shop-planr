@@ -16,5 +16,15 @@ export default defineApiHandler(async (event) => {
   const body = await parseBody(event, batchAttachCertSchema)
   const userId = getAuthUserId(event)
   const { certService } = getServices()
-  return certService.batchAttachCert({ ...body, userId })
+  const result = certService.batchAttachCert({ ...body, userId })
+  const userName = resolveUserName(userId)
+  for (const attachment of result) {
+    emitWebhookEvent('cert_attached', {
+      user: userName,
+      certId: body.certId,
+      partId: attachment.partId,
+      stepId: attachment.stepId,
+    })
+  }
+  return result
 })

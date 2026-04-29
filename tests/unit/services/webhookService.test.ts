@@ -189,14 +189,14 @@ describe('WebhookService', () => {
     it('removes event from store', () => {
       const spy = vi.spyOn(eventRepo(), 'deleteById')
       const event = svc().queueEvent({ eventType: 'job_created', payload: {}, summary: 'test' })
-      svc().deleteEvent(event.id)
+      svc().deleteEvent(WEBHOOK_ADMIN_USER.id, event.id)
 
       expect(svc().getEvent(event.id)).toBeUndefined()
       expect(spy).toHaveBeenCalledWith(event.id)
     })
 
     it('throws NotFoundError for non-existent event', () => {
-      expect(() => svc().deleteEvent('nonexistent')).toThrow(NotFoundError)
+      expect(() => svc().deleteEvent(WEBHOOK_ADMIN_USER.id, 'nonexistent')).toThrow(NotFoundError)
     })
   })
 

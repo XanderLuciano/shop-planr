@@ -68,7 +68,6 @@ const eventPayloadDocs: { type: WebhookEventType, description: string, fields: {
       { name: 'toStep', type: 'string', description: 'Name of the new step' },
       { name: 'skip', type: 'boolean', description: 'Whether intermediate steps were skipped' },
       { name: 'newStatus', type: 'string', description: 'Part status after advancement (in_progress)' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
     ],
   },
   {
@@ -79,7 +78,6 @@ const eventPayloadDocs: { type: WebhookEventType, description: string, fields: {
       { name: 'partId', type: 'string', description: 'Serial number ID' },
       { name: 'targetStepId', type: 'string', description: 'ID of the final step' },
       { name: 'newStatus', type: 'string', description: 'Always "completed"' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
     ],
   },
   {
@@ -92,7 +90,6 @@ const eventPayloadDocs: { type: WebhookEventType, description: string, fields: {
       { name: 'jobName', type: 'string', description: 'Parent job name' },
       { name: 'pathId', type: 'string', description: 'Route path ID' },
       { name: 'pathName', type: 'string', description: 'Route path name' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
     ],
   },
   {
@@ -103,7 +100,6 @@ const eventPayloadDocs: { type: WebhookEventType, description: string, fields: {
       { name: 'partId', type: 'string', description: 'Serial number ID' },
       { name: 'reason', type: 'string', description: 'Scrap reason code (e.g. dimensional_failure)' },
       { name: 'explanation', type: 'string?', description: 'Optional free-text explanation' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
     ],
   },
   {
@@ -113,7 +109,6 @@ const eventPayloadDocs: { type: WebhookEventType, description: string, fields: {
       { name: 'user', type: 'string', description: 'Display name of the user' },
       { name: 'partId', type: 'string', description: 'Serial number ID' },
       { name: 'reason', type: 'string?', description: 'Optional reason for force completion' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
     ],
   },
   {
@@ -125,7 +120,6 @@ const eventPayloadDocs: { type: WebhookEventType, description: string, fields: {
       { name: 'stepId', type: 'string', description: 'Skipped step ID' },
       { name: 'stepName', type: 'string', description: 'Skipped step name' },
       { name: 'reason', type: 'string?', description: 'Optional reason' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
     ],
   },
   {
@@ -136,7 +130,6 @@ const eventPayloadDocs: { type: WebhookEventType, description: string, fields: {
       { name: 'partId', type: 'string', description: 'Serial number ID' },
       { name: 'stepId', type: 'string', description: 'Deferred step ID' },
       { name: 'stepName', type: 'string', description: 'Deferred step name' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
     ],
   },
   {
@@ -148,7 +141,6 @@ const eventPayloadDocs: { type: WebhookEventType, description: string, fields: {
       { name: 'stepId', type: 'string', description: 'Waived step ID' },
       { name: 'stepName', type: 'string', description: 'Waived step name' },
       { name: 'reason', type: 'string', description: 'Waiver justification' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
     ],
   },
   {
@@ -159,7 +151,6 @@ const eventPayloadDocs: { type: WebhookEventType, description: string, fields: {
       { name: 'jobId', type: 'string', description: 'New job ID' },
       { name: 'jobName', type: 'string', description: 'Job name' },
       { name: 'goalQuantity', type: 'number', description: 'Target quantity' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
     ],
   },
   {
@@ -169,7 +160,6 @@ const eventPayloadDocs: { type: WebhookEventType, description: string, fields: {
       { name: 'user', type: 'string', description: 'Display name of the user' },
       { name: 'jobId', type: 'string', description: 'Deleted job ID' },
       { name: 'jobName', type: 'string', description: 'Deleted job name' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
     ],
   },
   {
@@ -181,7 +171,6 @@ const eventPayloadDocs: { type: WebhookEventType, description: string, fields: {
       { name: 'pathName', type: 'string', description: 'Deleted path name' },
       { name: 'jobId', type: 'string', description: 'Parent job ID' },
       { name: 'deletedPartIds', type: 'string[]', description: 'IDs of parts cascade-deleted with the path' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
     ],
   },
   {
@@ -194,7 +183,6 @@ const eventPayloadDocs: { type: WebhookEventType, description: string, fields: {
       { name: 'stepName', type: 'string', description: 'Step name' },
       { name: 'partIds', type: 'string[]', description: 'Affected part IDs' },
       { name: 'text', type: 'string', description: 'Note content' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
     ],
   },
   {
@@ -208,7 +196,6 @@ const eventPayloadDocs: { type: WebhookEventType, description: string, fields: {
       { name: 'partId', type: 'string', description: 'Part the cert is attached to' },
       { name: 'stepId', type: 'string', description: 'Step where the cert was attached' },
       { name: 'stepName', type: 'string', description: 'Step name' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
     ],
   },
 ]
@@ -247,13 +234,6 @@ const deleting = ref(false)
 const isEditing = computed(() => editingId.value !== null)
 const formValid = computed(() => formName.value.trim().length > 0 && formUrl.value.trim().length > 0)
 const allSelected = computed(() => formEventTypes.value.length === WEBHOOK_EVENT_TYPES.length)
-
-function formatEventType(type: string): string {
-  return type
-    .split('_')
-    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ')
-}
 
 // ---- Subscribe to all ----
 function toggleSubscribeAll(checked: boolean | 'indeterminate') {
@@ -761,14 +741,6 @@ onUnmounted(() => {
             v-if="item.value === 'event-log'"
             class="space-y-5 pt-4"
           >
-            <!-- Event log error banner -->
-            <UAlert
-              v-if="eventsError || deliveryError"
-              color="error"
-              variant="subtle"
-              :title="eventsError || deliveryError || 'An error occurred'"
-            />
-
             <!-- Event log toolbar -->
             <div class="flex items-center justify-between flex-wrap gap-2">
               <div class="flex items-center gap-2">
@@ -984,6 +956,12 @@ onUnmounted(() => {
                         >
                           {{ delivery.error }}
                         </p>
+                        <p
+                          v-if="delivery.attemptCount > 1"
+                          class="text-xs text-(--ui-text-dimmed) mt-0.5"
+                        >
+                          {{ delivery.attemptCount }} attempts
+                        </p>
                       </div>
 
                       <!-- Delivery-level actions -->
@@ -1003,9 +981,22 @@ onUnmounted(() => {
                           title="Re-queue this delivery"
                           @click="handleRetryDelivery(delivery.id, evt.id)"
                         />
-                        <!-- Cancel: queued → canceled -->
+                        <!-- Unstick: delivering → queued (stuck dispatch) -->
                         <UButton
-                          v-if="delivery.status === 'queued'"
+                          v-if="delivery.status === 'delivering'"
+                          label="Unstick"
+                          icon="i-lucide-rotate-ccw"
+                          variant="ghost"
+                          color="warning"
+                          size="xs"
+                          :loading="actionLoading.has(`delivery-${delivery.id}`)"
+                          :disabled="actionLoading.has(`delivery-${delivery.id}`)"
+                          title="Reset stuck delivery back to queued"
+                          @click="handleRetryDelivery(delivery.id, evt.id)"
+                        />
+                        <!-- Cancel: queued or delivering → canceled -->
+                        <UButton
+                          v-if="delivery.status === 'queued' || delivery.status === 'delivering'"
                           label="Cancel"
                           icon="i-lucide-x"
                           variant="ghost"

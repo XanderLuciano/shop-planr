@@ -40,4 +40,4 @@ export type {
   EventWithDeliveries,
 } from '../../server/types/domain'
 
-export { toPublicUser, WEBHOOK_EVENT_TYPES } from '../../server/types/domain'
+export { toPublicUser, WEBHOOK_EVENT_TYPES, WEBHOOK_DELIVERY_STATUSES } from '../../server/types/domain'

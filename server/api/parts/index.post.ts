@@ -16,5 +16,15 @@ export default defineApiHandler(async (event) => {
   const body = await parseBody(event, createPartsSchema)
   const userId = getAuthUserId(event)
   const { partService } = getServices()
-  return partService.batchCreateParts(body, userId)
+  const parts = partService.batchCreateParts(body, userId)
+  const userName = resolveUserName(userId)
+  for (const part of parts) {
+    emitWebhookEvent('part_created', {
+      user: userName,
+      partId: part.id,
+      jobId: body.jobId,
+      pathId: body.pathId,
+    })
+  }
+  return parts
 })

@@ -1,4 +1,4 @@
-import { batchDeliveryStatusSchema } from '../../../schemas/webhookRegistrationSchemas'
+import { batchDeliveryStatusSchema } from '../../../schemas/webhookSchemas'
 
 defineRouteMeta({
   openAPI: {

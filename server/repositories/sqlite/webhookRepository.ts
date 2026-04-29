@@ -54,12 +54,26 @@ export function createSQLiteWebhookEventRepository(db: Database): WebhookEventRe
       return rows.map(rowToEvent)
     },
 
+    count(): number {
+      const row = db.prepare('SELECT COUNT(*) as cnt FROM webhook_events').get() as { cnt: number }
+      return row.cnt
+    },
+
     deleteById(id: string): void {
       db.prepare('DELETE FROM webhook_events WHERE id = ?').run(id)
     },
 
     deleteAll(): number {
       const result = db.prepare('DELETE FROM webhook_events').run()
+      return result.changes
+    },
+
+    purgeOrphaned(): number {
+      const result = db.prepare(`
+        DELETE FROM webhook_events
+        WHERE id NOT IN (SELECT DISTINCT event_id FROM webhook_deliveries)
+          AND created_at < datetime('now', '-30 days')
+      `).run()
       return result.changes
     },
   }

@@ -420,14 +420,15 @@ export interface WebhookRegistration {
   id: string
   name: string
   url: string
-  eventTypes: string[] // Values from WebhookEventType enum only
+  eventTypes: WebhookEventType[]
   createdAt: string
   updatedAt: string
 }
 
 // ---- Webhook Deliveries ----
 
-export type WebhookDeliveryStatus = 'queued' | 'delivering' | 'delivered' | 'failed' | 'canceled'
+export const WEBHOOK_DELIVERY_STATUSES = ['queued', 'delivering', 'delivered', 'failed', 'canceled'] as const
+export type WebhookDeliveryStatus = typeof WEBHOOK_DELIVERY_STATUSES[number]
 
 export interface WebhookDelivery {
   id: string
@@ -435,6 +436,8 @@ export interface WebhookDelivery {
   registrationId: string
   status: WebhookDeliveryStatus
   error?: string
+  attemptCount: number
+  nextRetryAt?: string
   createdAt: string
   updatedAt: string
 }
@@ -460,6 +463,8 @@ export interface DeliveryDetail {
   registrationUrl: string
   status: WebhookDeliveryStatus
   error?: string
+  attemptCount: number
+  nextRetryAt?: string
   createdAt: string
   updatedAt: string
 }

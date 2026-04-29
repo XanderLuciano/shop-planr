@@ -1,4 +1,4 @@
-import { updateDeliveryStatusSchema } from '../../../schemas/webhookRegistrationSchemas'
+import { updateDeliveryStatusSchema } from '../../../schemas/webhookSchemas'
 
 defineRouteMeta({
   openAPI: {

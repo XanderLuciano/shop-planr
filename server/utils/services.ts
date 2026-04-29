@@ -158,6 +158,7 @@ export function getServices(): ServiceSet {
       webhookRegistrations: repos.webhookRegistrations,
       webhookDeliveries: repos.webhookDeliveries,
       users: repos.users,
+      db: repos._db,
     })
 
     const webhookRegistrationService = createWebhookRegistrationService({
@@ -172,6 +173,7 @@ export function getServices(): ServiceSet {
       webhookRegistrations: repos.webhookRegistrations,
       webhookEvents: repos.webhookEvents,
       users: repos.users,
+      db: repos._db,
     })
 
     services = {

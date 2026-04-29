@@ -3,7 +3,6 @@ import type { EventWithDeliveries } from '~/types/domain'
 import { extractApiError } from '~/utils/apiError'
 
 const events = ref<EventWithDeliveries[]>([])
-const stats = ref<{ queued: number, sent: number, failed: number, cancelled: number }>({ queued: 0, sent: 0, failed: 0, cancelled: 0 })
 const loading = ref(false)
 const error = ref<string | null>(null)
 
@@ -33,19 +32,10 @@ export function useWebhookEvents() {
     }
   }
 
-  async function fetchStats() {
-    try {
-      stats.value = await $api<{ queued: number, sent: number, failed: number, cancelled: number }>('/api/webhooks/events/stats')
-    } catch (e: unknown) {
-      error.value = extractApiError(e, 'Failed to load stats')
-    }
-  }
-
   async function deleteEvent(id: string) {
     try {
       await $api(`/api/webhooks/events/${encodeURIComponent(id)}`, { method: 'DELETE' })
       events.value = events.value.filter(e => e.id !== id)
-      await fetchStats()
     } catch (e: unknown) {
       error.value = extractApiError(e, 'Failed to delete event')
     }
@@ -55,7 +45,6 @@ export function useWebhookEvents() {
     try {
       await $api('/api/webhooks/events', { method: 'DELETE' })
       events.value = []
-      await fetchStats()
     } catch (e: unknown) {
       error.value = extractApiError(e, 'Failed to clear events')
     }
@@ -63,11 +52,9 @@ export function useWebhookEvents() {
 
   return {
     events: readonly(events),
-    stats: readonly(stats),
     loading: readonly(loading),
     error: readonly(error),
     fetchEvents,
-    fetchStats,
     deleteEvent,
     clearAllEvents,
   }

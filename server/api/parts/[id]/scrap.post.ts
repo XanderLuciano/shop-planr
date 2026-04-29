@@ -18,5 +18,12 @@ export default defineApiHandler(async (event) => {
   const body = await parseBody(event, scrapPartSchema)
   const userId = getAuthUserId(event)
   const { lifecycleService } = getServices()
-  return lifecycleService.scrapPart(id, { ...body, userId })
+  const result = lifecycleService.scrapPart(id, { ...body, userId })
+  emitWebhookEvent('part_scrapped', {
+    user: resolveUserName(userId),
+    partId: id,
+    reason: body.reason,
+    explanation: body.explanation,
+  })
+  return result
 })

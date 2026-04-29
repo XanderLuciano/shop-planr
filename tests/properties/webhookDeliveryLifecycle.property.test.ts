@@ -15,6 +15,7 @@ import {
   createInMemoryRegistrationRepo,
   createInMemoryDeliveryRepo,
   createInMemoryUserRepo,
+  passthroughDb,
   WEBHOOK_ADMIN_USER,
   WEBHOOK_REGULAR_USER,
 } from './helpers/webhookTestHarness'
@@ -27,7 +28,7 @@ const ALL_STATUSES: WebhookDeliveryStatus[] = ['queued', 'delivering', 'delivere
 /**
  * The complete set of valid transitions as defined by the delivery state machine.
  * queued → delivering, queued → canceled
- * delivering → delivered, delivering → failed
+ * delivering → delivered, delivering → failed, delivering → queued, delivering → canceled
  * failed → queued
  */
 const VALID_TRANSITIONS: [WebhookDeliveryStatus, WebhookDeliveryStatus][] = [
@@ -35,6 +36,8 @@ const VALID_TRANSITIONS: [WebhookDeliveryStatus, WebhookDeliveryStatus][] = [
   ['queued', 'canceled'],
   ['delivering', 'delivered'],
   ['delivering', 'failed'],
+  ['delivering', 'queued'],
+  ['delivering', 'canceled'],
   ['failed', 'queued'],
 ]
 
@@ -91,6 +94,7 @@ describe('Property 5: Delivery status lifecycle enforcement', () => {
             webhookRegistrations: registrationRepo,
             webhookEvents: eventRepo,
             users: userRepo,
+            db: passthroughDb,
           })
 
           // Create a registration that matches the event type
@@ -230,6 +234,7 @@ describe('Property 7: Retry-failed selectivity', () => {
             webhookRegistrations: registrationRepo,
             webhookEvents: createInMemoryEventRepo(), // not needed for status updates
             users: createInMemoryUserRepo([WEBHOOK_ADMIN_USER, WEBHOOK_REGULAR_USER]),
+            db: passthroughDb,
           })
 
           for (let i = 0; i < deliveries.length; i++) {

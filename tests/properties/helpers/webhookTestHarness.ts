@@ -50,12 +50,14 @@ export function createInMemoryEventRepo(): WebhookEventRepository {
       const limit = options?.limit ?? 200
       return all.slice(offset, offset + limit)
     },
+    count() { return store.size },
     deleteById(id: string) { store.delete(id) },
     deleteAll() {
       const c = store.size
       store.clear()
       return c
     },
+    purgeOrphaned() { return 0 },
   }
 }
 
@@ -100,6 +102,9 @@ export function createInMemoryDeliveryRepo(): WebhookDeliveryRepository {
       }
     },
     getById(id: string) { return store.get(id) },
+    getManyByIds(ids: string[]) {
+      return ids.map(id => store.get(id)).filter((d): d is WebhookDelivery => d !== undefined)
+    },
     listQueued(_limit = 100): QueuedDeliveryView[] {
       // Simplified — real implementation joins with registrations and events
       return []
@@ -114,6 +119,8 @@ export function createInMemoryDeliveryRepo(): WebhookDeliveryRepository {
           registrationUrl: '',
           status: d.status,
           error: d.error,
+          attemptCount: d.attemptCount,
+          nextRetryAt: d.nextRetryAt,
           createdAt: d.createdAt,
           updatedAt: d.updatedAt,
         }))
@@ -143,6 +150,33 @@ export function createInMemoryDeliveryRepo(): WebhookDeliveryRepository {
         }
       }
       return count
+    },
+    resetStuckDeliveries(olderThanMinutes: number) {
+      let count = 0
+      const now = new Date().toISOString()
+      const cutoff = new Date(Date.now() - olderThanMinutes * 60_000).toISOString()
+      for (const [id, d] of store) {
+        if (d.status === 'delivering' && d.updatedAt < cutoff) {
+          store.set(id, { ...d, status: 'queued', updatedAt: now })
+          count++
+        }
+      }
+      return count
+    },
+    incrementAttemptCount(id: string) {
+      const existing = store.get(id)
+      if (existing) {
+        store.set(id, { ...existing, attemptCount: existing.attemptCount + 1, updatedAt: new Date().toISOString() })
+      }
+    },
+    setNextRetryAt(id: string, nextRetryAt: string) {
+      const existing = store.get(id)
+      if (existing) {
+        store.set(id, { ...existing, nextRetryAt: nextRetryAt || undefined, updatedAt: new Date().toISOString() })
+      }
+    },
+    purgeOldDeliveries(_olderThanDays: number) {
+      return 0
     },
     listFailedByEventId(eventId: string) {
       return [...store.values()].filter(d => d.eventId === eventId && d.status === 'failed')
@@ -183,6 +217,12 @@ export function createInMemoryUserRepo(users: ShopUser[] = [WEBHOOK_ADMIN_USER])
   } as unknown as UserRepository
 }
 
+// ---- Passthrough transaction shim for in-memory repos ----
+
+export const passthroughDb = {
+  transaction: <T>(fn: () => T) => fn,
+}
+
 // ---- Service factory ----
 
 export function createWebhookTestService(users?: ShopUser[]) {
@@ -196,7 +236,8 @@ export function createWebhookTestService(users?: ShopUser[]) {
     webhookRegistrations: registrationRepo,
     webhookDeliveries: deliveryRepo,
     users: userRepo,
+    db: passthroughDb,
   })
 
-  return { service, eventRepo, registrationRepo, deliveryRepo, userRepo }
+  return { service, eventRepo, registrationRepo, deliveryRepo, userRepo, db: passthroughDb }
 }

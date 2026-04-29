@@ -1,7 +1,7 @@
 import type { WebhookRegistrationRepository } from '../repositories/interfaces/webhookRegistrationRepository'
 import type { WebhookDeliveryRepository } from '../repositories/interfaces/webhookDeliveryRepository'
 import type { UserRepository } from '../repositories/interfaces/userRepository'
-import type { WebhookRegistration } from '../types/domain'
+import type { WebhookRegistration, WebhookEventType } from '../types/domain'
 import { WEBHOOK_EVENT_TYPES } from '../types/domain'
 import { generateId } from '../utils/idGenerator'
 import { ValidationError, NotFoundError } from '../utils/errors'
@@ -11,22 +11,22 @@ import { assertNonEmpty, assertNonEmptyArray } from '../utils/validation'
 export interface CreateRegistrationInput {
   name: string
   url: string
-  eventTypes: string[]
+  eventTypes: WebhookEventType[]
 }
 
 export interface UpdateRegistrationInput {
   name?: string
   url?: string
-  eventTypes?: string[]
+  eventTypes?: WebhookEventType[]
 }
 
 export function createWebhookRegistrationService(repos: {
   webhookRegistrations: WebhookRegistrationRepository
   webhookDeliveries: WebhookDeliveryRepository
   users: UserRepository
-  db?: import('better-sqlite3').Database
+  db: { transaction: <T>(fn: () => T) => () => T }
 }) {
-  function validateEventTypes(eventTypes: string[]): void {
+  function validateEventTypes(eventTypes: WebhookEventType[]): void {
     for (const t of eventTypes) {
       if (!(WEBHOOK_EVENT_TYPES as readonly string[]).includes(t)) {
         throw new ValidationError(`Invalid event type: ${t}`)
@@ -102,16 +102,10 @@ export function createWebhookRegistrationService(repos: {
         throw new NotFoundError('WebhookRegistration', id)
       }
 
-      if (repos.db) {
-        repos.db.transaction(() => {
-          repos.webhookDeliveries.cancelQueuedByRegistrationId(id)
-          repos.webhookRegistrations.delete(id)
-        })()
-      } else {
-        // Fallback for tests without a real DB handle
+      repos.db.transaction(() => {
         repos.webhookDeliveries.cancelQueuedByRegistrationId(id)
         repos.webhookRegistrations.delete(id)
-      }
+      })()
     },
   }
 }

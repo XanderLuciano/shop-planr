@@ -125,6 +125,7 @@ export function createTestContext() {
     webhookRegistrations: repos.webhookRegistrations,
     webhookDeliveries: repos.webhookDeliveries,
     users: repos.users,
+    db,
   })
 
   return {

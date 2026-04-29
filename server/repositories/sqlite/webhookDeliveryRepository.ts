@@ -10,6 +10,8 @@ interface WebhookDeliveryRow {
   registration_id: string
   status: string
   error: string | null
+  attempt_count: number
+  next_retry_at: string | null
   created_at: string
   updated_at: string
 }
@@ -33,6 +35,8 @@ interface DeliveryDetailRow {
   registration_url: string
   status: string
   error: string | null
+  attempt_count: number
+  next_retry_at: string | null
   created_at: string
   updated_at: string
 }
@@ -52,6 +56,8 @@ function rowToDelivery(row: WebhookDeliveryRow): WebhookDelivery {
     registrationId: row.registration_id,
     status: row.status as WebhookDeliveryStatus,
     error: row.error ?? undefined,
+    attemptCount: row.attempt_count,
+    nextRetryAt: row.next_retry_at ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -79,6 +85,8 @@ function rowToDeliveryDetail(row: DeliveryDetailRow): DeliveryDetail {
     registrationUrl: row.registration_url,
     status: row.status as WebhookDeliveryStatus,
     error: row.error ?? undefined,
+    attemptCount: row.attempt_count,
+    nextRetryAt: row.next_retry_at ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -126,7 +134,15 @@ export function createSQLiteWebhookDeliveryRepository(db: Database): WebhookDeli
       return row ? rowToDelivery(row) : undefined
     },
 
+    getManyByIds(ids: string[]): WebhookDelivery[] {
+      if (ids.length === 0) return []
+      const placeholders = ids.map(() => '?').join(', ')
+      const rows = db.prepare(`SELECT * FROM webhook_deliveries WHERE id IN (${placeholders})`).all(...ids) as WebhookDeliveryRow[]
+      return rows.map(rowToDelivery)
+    },
+
     listQueued(limit = 100): QueuedDeliveryView[] {
+      const now = new Date().toISOString()
       const rows = db.prepare(`
         SELECT
           d.id,
@@ -142,9 +158,10 @@ export function createSQLiteWebhookDeliveryRepository(db: Database): WebhookDeli
         JOIN webhook_registrations r ON r.id = d.registration_id
         JOIN webhook_events e ON e.id = d.event_id
         WHERE d.status = 'queued'
+          AND (d.next_retry_at IS NULL OR d.next_retry_at <= ?)
         ORDER BY d.created_at ASC
         LIMIT ?
-      `).all(limit) as QueuedDeliveryViewRow[]
+      `).all(now, limit) as QueuedDeliveryViewRow[]
       return rows.map(rowToQueuedView)
     },
 
@@ -157,6 +174,8 @@ export function createSQLiteWebhookDeliveryRepository(db: Database): WebhookDeli
           r.url AS registration_url,
           d.status,
           d.error,
+          d.attempt_count,
+          d.next_retry_at,
           d.created_at,
           d.updated_at
         FROM webhook_deliveries d
@@ -192,6 +211,39 @@ export function createSQLiteWebhookDeliveryRepository(db: Database): WebhookDeli
         UPDATE webhook_deliveries SET status = 'canceled', updated_at = ?
         WHERE registration_id = ? AND status = 'queued'
       `).run(now, registrationId)
+      return result.changes
+    },
+
+    resetStuckDeliveries(olderThanMinutes: number): number {
+      const now = new Date().toISOString()
+      const cutoff = new Date(Date.now() - olderThanMinutes * 60_000).toISOString()
+      const result = db.prepare(`
+        UPDATE webhook_deliveries SET status = 'queued', updated_at = ?
+        WHERE status = 'delivering' AND updated_at < ?
+      `).run(now, cutoff)
+      return result.changes
+    },
+
+    incrementAttemptCount(id: string): void {
+      const now = new Date().toISOString()
+      db.prepare(`
+        UPDATE webhook_deliveries SET attempt_count = attempt_count + 1, updated_at = ? WHERE id = ?
+      `).run(now, id)
+    },
+
+    setNextRetryAt(id: string, nextRetryAt: string): void {
+      const now = new Date().toISOString()
+      db.prepare(`
+        UPDATE webhook_deliveries SET next_retry_at = ?, updated_at = ? WHERE id = ?
+      `).run(nextRetryAt || null, now, id)
+    },
+
+    purgeOldDeliveries(olderThanDays: number): number {
+      const cutoff = new Date(Date.now() - olderThanDays * 86_400_000).toISOString()
+      const result = db.prepare(`
+        DELETE FROM webhook_deliveries
+        WHERE status IN ('delivered', 'canceled') AND updated_at < ?
+      `).run(cutoff)
       return result.changes
     },
 

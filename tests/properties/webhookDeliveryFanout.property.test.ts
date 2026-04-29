@@ -19,6 +19,7 @@ import {
   createInMemoryRegistrationRepo,
   createInMemoryDeliveryRepo,
   createInMemoryUserRepo,
+  passthroughDb,
   WEBHOOK_ADMIN_USER,
   WEBHOOK_REGULAR_USER,
 } from './helpers/webhookTestHarness'
@@ -269,12 +270,14 @@ describe('Property 6: Registration deletion cascade', () => {
             webhookRegistrations: registrationRepo,
             webhookEvents: eventRepo,
             users: userRepo,
+            db: passthroughDb,
           })
 
           const registrationService = createWebhookRegistrationService({
             webhookRegistrations: registrationRepo,
             webhookDeliveries: deliveryRepo,
             users: userRepo,
+            db: passthroughDb,
           })
 
           // Create one event per desired status to get one delivery each
@@ -387,6 +390,7 @@ describe('Property 8: Replay creates new deliveries', () => {
             webhookRegistrations: registrationRepo,
             webhookEvents: eventRepo,
             users: userRepo,
+            db: passthroughDb,
           })
 
           // We need the event in the delivery service's event repo for replay

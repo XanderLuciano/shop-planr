@@ -8,6 +8,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ValidationError, NotFoundError, ForbiddenError, AuthenticationError } from '~/server/utils/errors'
 
+// Stub auto-imported test data generators
+import { buildTestPayload, buildTestSummary } from '~/server/utils/webhookTestData'
+
 // --- Stub Nitro auto-imports ---
 
 vi.stubGlobal('ValidationError', ValidationError)
@@ -76,6 +79,8 @@ const mockWebhookDeliveries = {
 vi.stubGlobal('getRepositories', () => ({ webhookDeliveries: mockWebhookDeliveries }))
 vi.stubGlobal('getAuthUserId', () => 'user_1')
 vi.stubGlobal('sendNoContent', vi.fn())
+vi.stubGlobal('buildTestPayload', buildTestPayload)
+vi.stubGlobal('buildTestSummary', buildTestSummary)
 
 let currentRouterParam: string | undefined = 'whe_1'
 vi.stubGlobal('getRouterParam', (_event: unknown, _name: string) => currentRouterParam)
@@ -186,7 +191,7 @@ describe('webhook route wiring', () => {
 
   it('DELETE /api/webhooks/events/:id calls deleteEvent', async () => {
     const result = await eventDeleteHandler(makeFakeEvent())
-    expect(mockWebhookService.deleteEvent).toHaveBeenCalledWith('whe_1')
+    expect(mockWebhookService.deleteEvent).toHaveBeenCalledWith('user_1', 'whe_1')
     expect(result).toEqual({ success: true })
   })
 
@@ -237,7 +242,7 @@ describe('webhook test event route wiring', () => {
       const call = mockWebhookService.queueEvent.mock.calls[0][0]
       expect(call.eventType).toBe(eventType)
       expect(call.summary).toContain('[TEST]')
-      expect(call.payload.time).toBeDefined()
+      expect(call.payload.time).toBeUndefined()
     }
   })
 
