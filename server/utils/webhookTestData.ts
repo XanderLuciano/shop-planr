@@ -48,6 +48,13 @@ export function buildTestPayload(eventType: WebhookEventType): Record<string, un
         partId: 'SN-00042',
         reason: 'Customer accepted as-is',
       }
+    case 'part_deleted':
+      return {
+        user: 'Test User',
+        partId: 'SN-00042',
+        jobId: 'job_sample1',
+        pathId: 'path_sample1',
+      }
     case 'step_skipped':
       return {
         user: 'Test User',
@@ -70,6 +77,29 @@ export function buildTestPayload(eventType: WebhookEventType): Record<string, un
         stepId: 'step_abc123',
         stepName: 'Final Inspection',
         reason: 'Waived per engineering approval ECN-2024-031',
+      }
+    case 'deferred_step_completed':
+      return {
+        user: 'Test User',
+        partId: 'SN-00042',
+        stepId: 'step_abc123',
+        stepName: 'Final Inspection',
+      }
+    case 'step_override_created':
+      return {
+        user: 'Test User',
+        partIds: ['SN-00042', 'SN-00043'],
+        count: 2,
+        stepId: 'step_abc123',
+        stepName: 'Heat Treat',
+        reason: 'Customer waiver — skip heat treat for this batch',
+      }
+    case 'step_override_reversed':
+      return {
+        user: 'Test User',
+        partId: 'SN-00042',
+        stepId: 'step_abc123',
+        stepName: 'Heat Treat',
       }
     case 'job_created':
       return {
@@ -130,12 +160,20 @@ export function buildTestSummary(eventType: WebhookEventType, data: Record<strin
       return `${data.partId} scrapped: ${data.reason}`
     case 'part_force_completed':
       return `${data.partId} force-completed`
+    case 'part_deleted':
+      return `${data.partId} deleted`
     case 'step_skipped':
       return `${data.partId} skipped ${data.stepName}`
     case 'step_deferred':
       return `${data.partId} deferred ${data.stepName}`
     case 'step_waived':
       return `${data.partId} waived ${data.stepName}`
+    case 'deferred_step_completed':
+      return `${data.partId} completed deferred ${data.stepName}`
+    case 'step_override_created':
+      return `Override created on ${data.stepName} for ${(data.partIds as string[]).length} parts`
+    case 'step_override_reversed':
+      return `Override reversed on ${data.stepName} for ${data.partId}`
     case 'job_created':
       return `Job "${data.jobName}" created (qty: ${data.goalQuantity})`
     case 'job_deleted':

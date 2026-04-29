@@ -15,5 +15,10 @@ export default defineApiHandler(async (event) => {
   const userId = getAuthUserId(event)
   const { lifecycleService } = getServices()
   lifecycleService.reverseStepOverride(id, stepId, userId)
+  emitWebhookEvent('step_override_reversed', {
+    user: resolveUserName(userId),
+    partId: id,
+    stepId,
+  })
   return { success: true }
 })

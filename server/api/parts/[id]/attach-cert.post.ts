@@ -26,7 +26,7 @@ export default defineApiHandler(async (event) => {
     throw new ValidationError('Part is already completed, cannot attach cert')
   }
 
-  return certService.attachCertToSerial({
+  const attachment = certService.attachCertToSerial({
     certId: body.certId,
     serialId: id,
     stepId: step.id,
@@ -34,4 +34,14 @@ export default defineApiHandler(async (event) => {
     jobId: part.jobId,
     pathId: part.pathId,
   })
+  const cert = certService.getCert(body.certId)
+  emitWebhookEvent('cert_attached', {
+    user: resolveUserName(userId),
+    certId: body.certId,
+    certName: cert.name,
+    certType: cert.type,
+    partId: id,
+    stepId: step.id,
+  })
+  return attachment
 })

@@ -14,5 +14,12 @@ export default defineApiHandler(async (event) => {
   const id = getRouterParam(event, 'id')!
   const userId = getAuthUserId(event)
   const { partService } = getServices()
-  return partService.advancePart(id, userId)
+  const result = partService.advancePart(id, userId)
+  const eventType = result.status === 'completed' ? 'part_completed' : 'part_advanced'
+  emitWebhookEvent(eventType, {
+    user: resolveUserName(userId),
+    partId: id,
+    newStatus: result.status,
+  })
+  return result
 })

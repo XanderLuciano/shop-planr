@@ -151,6 +151,43 @@ const eventPayloadDocs: { type: WebhookEventType, description: string, fields: {
     ],
   },
   {
+    type: 'deferred_step_completed',
+    description: 'Fired when a previously deferred step is completed.',
+    fields: [
+      { name: 'user', type: 'string', description: 'Display name of the user' },
+      { name: 'partId', type: 'string', description: 'Serial number ID' },
+      { name: 'stepId', type: 'string', description: 'Completed step ID' },
+    ],
+  },
+  {
+    type: 'step_override_created',
+    description: 'Fired when a fast-track step override is created for one or more parts.',
+    fields: [
+      { name: 'user', type: 'string', description: 'Display name of the user' },
+      { name: 'partIds', type: 'string[]', description: 'Affected part IDs' },
+      { name: 'count', type: 'number', description: 'Number of parts' },
+      { name: 'stepId', type: 'string', description: 'Overridden step ID' },
+      { name: 'reason', type: 'string?', description: 'Reason for the override' },
+    ],
+  },
+  {
+    type: 'step_override_reversed',
+    description: 'Fired when a step override is reversed (re-enabled).',
+    fields: [
+      { name: 'user', type: 'string', description: 'Display name of the user' },
+      { name: 'partId', type: 'string', description: 'Serial number ID' },
+      { name: 'stepId', type: 'string', description: 'Step ID whose override was reversed' },
+    ],
+  },
+  {
+    type: 'part_deleted',
+    description: 'Fired when a part is admin-deleted (cascade deletes dependents).',
+    fields: [
+      { name: 'user', type: 'string', description: 'Display name of the user' },
+      { name: 'partId', type: 'string', description: 'Deleted serial number ID' },
+    ],
+  },
+  {
     type: 'job_created',
     description: 'Fired when a new production job is created.',
     fields: [
