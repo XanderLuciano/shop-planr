@@ -406,27 +406,77 @@ export const WEBHOOK_EVENT_TYPES = [
 ] as const
 export type WebhookEventType = typeof WEBHOOK_EVENT_TYPES[number]
 
-export type WebhookEventStatus = 'queued' | 'sent' | 'failed' | 'cancelled'
-
 export interface WebhookEvent {
   id: string
   eventType: WebhookEventType
   payload: Record<string, unknown>
   summary: string
-  status: WebhookEventStatus
   createdAt: string
-  sentAt?: string
-  lastError?: string
-  retryCount: number
 }
 
-export interface WebhookConfig {
+// ---- Webhook Registrations ----
+
+export interface WebhookRegistration {
   id: string
-  endpointUrl: string
-  enabledEventTypes: WebhookEventType[]
-  /** ISO 8601 timestamp per event type — only events created after this time are dispatched */
-  enabledSince: Partial<Record<WebhookEventType, string>>
-  isActive: boolean
+  name: string
+  url: string
+  eventTypes: string[] // Values from WebhookEventType enum only
   createdAt: string
   updatedAt: string
+}
+
+// ---- Webhook Deliveries ----
+
+export type WebhookDeliveryStatus = 'queued' | 'delivering' | 'delivered' | 'failed' | 'canceled'
+
+export interface WebhookDelivery {
+  id: string
+  eventId: string
+  registrationId: string
+  status: WebhookDeliveryStatus
+  error?: string
+  createdAt: string
+  updatedAt: string
+}
+
+/** Delivery with joined registration info for the dispatch engine */
+export interface QueuedDeliveryView {
+  id: string
+  eventId: string
+  registrationId: string
+  registrationName: string
+  registrationUrl: string
+  eventType: WebhookEventType
+  payload: Record<string, unknown>
+  summary: string
+  eventCreatedAt: string
+}
+
+/** Delivery with registration info for the event log UI */
+export interface DeliveryDetail {
+  id: string
+  registrationId: string
+  registrationName: string
+  registrationUrl: string
+  status: WebhookDeliveryStatus
+  error?: string
+  createdAt: string
+  updatedAt: string
+}
+
+/** Event with delivery summary for the event log */
+export interface EventWithDeliveries {
+  id: string
+  eventType: WebhookEventType
+  payload: Record<string, unknown>
+  summary: string
+  createdAt: string
+  deliverySummary: {
+    total: number
+    queued: number
+    delivering: number
+    delivered: number
+    failed: number
+    canceled: number
+  }
 }

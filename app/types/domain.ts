@@ -32,8 +32,12 @@ export type {
   Tag,
   WebhookEvent,
   WebhookEventType,
-  WebhookEventStatus,
-  WebhookConfig,
+  WebhookDeliveryStatus,
+  WebhookRegistration,
+  WebhookDelivery,
+  QueuedDeliveryView,
+  DeliveryDetail,
+  EventWithDeliveries,
 } from '../../server/types/domain'
 
 export { toPublicUser, WEBHOOK_EVENT_TYPES } from '../../server/types/domain'

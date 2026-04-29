@@ -21,7 +21,9 @@ import { SQLiteBomVersionRepository } from '../../server/repositories/sqlite/bom
 import { SQLiteLibraryRepository } from '../../server/repositories/sqlite/libraryRepository'
 import { SQLiteUserRepository } from '../../server/repositories/sqlite/userRepository'
 import { SQLiteCryptoKeyRepository } from '../../server/repositories/sqlite/cryptoKeyRepository'
-import { createSQLiteWebhookEventRepository, createSQLiteWebhookConfigRepository } from '../../server/repositories/sqlite/webhookRepository'
+import { createSQLiteWebhookEventRepository } from '../../server/repositories/sqlite/webhookRepository'
+import { createSQLiteWebhookRegistrationRepository } from '../../server/repositories/sqlite/webhookRegistrationRepository'
+import { createSQLiteWebhookDeliveryRepository } from '../../server/repositories/sqlite/webhookDeliveryRepository'
 import { createJobService } from '../../server/services/jobService'
 import { createPathService } from '../../server/services/pathService'
 import { createPartService } from '../../server/services/partService'
@@ -65,7 +67,8 @@ export function createTestContext() {
     users: new SQLiteUserRepository(db),
     cryptoKeys: new SQLiteCryptoKeyRepository(db),
     webhookEvents: createSQLiteWebhookEventRepository(db),
-    webhookConfig: createSQLiteWebhookConfigRepository(db),
+    webhookRegistrations: createSQLiteWebhookRegistrationRepository(db),
+    webhookDeliveries: createSQLiteWebhookDeliveryRepository(db),
   }
 
   const partIdGenerator = createSequentialPartIdGenerator({
@@ -119,7 +122,8 @@ export function createTestContext() {
   const authService = createAuthService({ users: repos.users, cryptoKeys: repos.cryptoKeys })
   const webhookService = createWebhookService({
     webhookEvents: repos.webhookEvents,
-    webhookConfig: repos.webhookConfig,
+    webhookRegistrations: repos.webhookRegistrations,
+    webhookDeliveries: repos.webhookDeliveries,
     users: repos.users,
   })
 

@@ -1,315 +1,337 @@
 <script setup lang="ts">
 import type { TabsItem } from '@nuxt/ui'
-import type { WebhookEventType } from '~/types/domain'
+import type { WebhookEventType, DeliveryDetail, QueuedDeliveryView } from '~/types/domain'
 import { WEBHOOK_EVENT_TYPES } from '~/types/domain'
+import { formatDateTime } from '~/utils/dateFormatting'
+
+// ---- Composables ----
+const {
+  registrations,
+  loading,
+  error,
+  fetchRegistrations,
+  createRegistration,
+  updateRegistration,
+  deleteRegistration,
+} = useWebhookRegistrations()
 
 const {
-  config,
   events,
-  stats,
-  loading,
-  dispatching,
-  error,
-  fetchConfig,
-  updateConfig,
+  loading: eventsLoading,
+  error: eventsError,
   fetchEvents,
-  fetchStats,
-  retryAllFailed,
   deleteEvent,
   clearAllEvents,
-  dispatchQueued,
-  dispatchSingle,
 } = useWebhookEvents()
 
-const { isAdmin } = useAuth()
+const {
+  dispatching,
+  error: deliveryError,
+  dispatchQueued,
+  dispatchSingle,
+  replayEvent,
+  retryFailed,
+  updateDeliveryStatus,
+  cancelDelivery,
+} = useWebhookDeliveries()
+
 const $api = useAuthFetch()
+const { isAdmin } = useAuth()
 
 // ---- Tabs ----
 const tabItems: TabsItem[] = [
-  { label: 'Queue', icon: 'i-lucide-list', value: 'queue', ui: { label: 'hidden sm:inline' } },
-  { label: 'Configuration', icon: 'i-lucide-settings', value: 'config', ui: { label: 'hidden sm:inline' } },
-  { label: 'Developer', icon: 'i-lucide-flask-conical', value: 'developer', ui: { label: 'hidden sm:inline' } },
+  { label: 'Registrations', icon: 'i-lucide-webhook', value: 'registrations' },
+  { label: 'Event Log', icon: 'i-lucide-list', value: 'event-log' },
 ]
 
-// ---- Config form state ----
-const endpointUrl = ref('')
-const enabledTypes = ref<WebhookEventType[]>([])
-const isActive = ref(false)
-const configDirty = ref(false)
-const showClearConfirm = ref(false)
+// ---- Registration form state ----
+const showForm = ref(false)
+const editingId = ref<string | null>(null)
+const formName = ref('')
+const formUrl = ref('')
+const formEventTypes = ref<WebhookEventType[]>([])
+const formError = ref('')
+const saving = ref(false)
 
-// ---- Test event state ----
-const testEventType = ref<WebhookEventType>('part_advanced')
-const sendingTest = ref(false)
+// ---- Delete confirmation state ----
+const showDeleteConfirm = ref(false)
+const deletingRegistration = ref<{ id: string, name: string } | null>(null)
+const deleting = ref(false)
 
-// Event type options for checkboxes and select
-const eventTypeItems = WEBHOOK_EVENT_TYPES.map(t => ({
-  label: formatEventLabel(t),
-  value: t,
-}))
+// ---- Computed ----
+const isEditing = computed(() => editingId.value !== null)
+const formValid = computed(() => formName.value.trim().length > 0 && formUrl.value.trim().length > 0)
+const allSelected = computed(() => formEventTypes.value.length === WEBHOOK_EVENT_TYPES.length)
 
-function formatEventLabel(type: string): string {
+function formatEventType(type: string): string {
   return type
     .split('_')
     .map(w => w.charAt(0).toUpperCase() + w.slice(1))
     .join(' ')
 }
 
-// Sync local form from config
-function syncFormFromConfig() {
-  if (config.value) {
-    endpointUrl.value = config.value.endpointUrl
-    enabledTypes.value = [...config.value.enabledEventTypes]
-    isActive.value = config.value.isActive
-    configDirty.value = false
-  }
-}
-
-watch(config, syncFormFromConfig)
-
-// Track dirty state
-watch([endpointUrl, enabledTypes, isActive], () => {
-  if (!config.value) return
-  configDirty.value
-    = endpointUrl.value !== config.value.endpointUrl
-      || JSON.stringify(enabledTypes.value) !== JSON.stringify(config.value.enabledEventTypes)
-      || isActive.value !== config.value.isActive
-}, { deep: true })
-
-// ---- Guarded actions ----
-const { execute: saveConfig, loading: savingConfig } = useGuardedAction(async () => {
-  await updateConfig({
-    endpointUrl: endpointUrl.value,
-    enabledEventTypes: enabledTypes.value,
-    isActive: isActive.value,
-  })
-  configDirty.value = false
-})
-
-const { execute: toggleActive, loading: togglingActive } = useGuardedAction(async () => {
-  isActive.value = !isActive.value
-  await saveConfig()
-  if (isActive.value) {
-    startDispatchLoop()
+// ---- Subscribe to all ----
+function toggleSubscribeAll(checked: boolean | 'indeterminate') {
+  if (checked === true) {
+    formEventTypes.value = [...WEBHOOK_EVENT_TYPES]
   } else {
-    stopDispatchLoop()
-  }
-})
-
-const { execute: handleRetryAll, loading: retryingAll } = useGuardedAction(async () => {
-  await retryAllFailed()
-})
-
-const { execute: handleClearAll, loading: clearingAll } = useGuardedAction(async () => {
-  await clearAllEvents()
-  showClearConfirm.value = false
-})
-
-const { execute: handleDeleteEvent } = useGuardedAction(async (id: string) => {
-  await deleteEvent(id)
-})
-
-const { execute: handleDispatch } = useGuardedAction(async () => {
-  await dispatchQueued()
-})
-
-const { execute: handleRefresh, loading: refreshing } = useGuardedAction(async () => {
-  await Promise.all([fetchEvents(), fetchStats()])
-})
-
-async function sendTestEvent() {
-  sendingTest.value = true
-  try {
-    await $api('/api/webhooks/events/test', {
-      method: 'POST',
-      body: { eventType: testEventType.value },
-    })
-    await Promise.all([fetchEvents(), fetchStats()])
-  } catch (e: unknown) {
-    error.value = extractApiError(e, 'Failed to send test event')
-  } finally {
-    sendingTest.value = false
+    formEventTypes.value = []
   }
 }
 
-// ---- Developer reference data ----
-const eventPayloadDocs: { type: WebhookEventType, description: string, fields: { name: string, type: string, description: string }[] }[] = [
-  {
-    type: 'part_advanced',
-    description: 'Fired when a part is advanced to the next process step.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user who performed the action' },
-      { name: 'partId', type: 'string', description: 'Serial number ID (e.g. SN-00042)' },
-      { name: 'targetStepId', type: 'string', description: 'ID of the step the part was advanced to' },
-      { name: 'fromStep', type: 'string', description: 'Name of the previous step' },
-      { name: 'toStep', type: 'string', description: 'Name of the new step' },
-      { name: 'skip', type: 'boolean', description: 'Whether intermediate steps were skipped' },
-      { name: 'newStatus', type: 'string', description: 'Part status after advancement (in_progress)' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
-    ],
-  },
-  {
-    type: 'part_completed',
-    description: 'Fired when a part finishes its final process step.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partId', type: 'string', description: 'Serial number ID' },
-      { name: 'targetStepId', type: 'string', description: 'ID of the final step' },
-      { name: 'newStatus', type: 'string', description: 'Always "completed"' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
-    ],
-  },
-  {
-    type: 'part_created',
-    description: 'Fired when a new part (serial number) is created.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partId', type: 'string', description: 'New serial number ID' },
-      { name: 'jobId', type: 'string', description: 'Parent job ID' },
-      { name: 'jobName', type: 'string', description: 'Parent job name' },
-      { name: 'pathId', type: 'string', description: 'Route path ID' },
-      { name: 'pathName', type: 'string', description: 'Route path name' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
-    ],
-  },
-  {
-    type: 'part_scrapped',
-    description: 'Fired when a part is marked as scrap.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partId', type: 'string', description: 'Serial number ID' },
-      { name: 'reason', type: 'string', description: 'Scrap reason code (e.g. dimensional_failure)' },
-      { name: 'explanation', type: 'string?', description: 'Optional free-text explanation' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
-    ],
-  },
-  {
-    type: 'part_force_completed',
-    description: 'Fired when a part is force-completed with remaining steps incomplete.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partId', type: 'string', description: 'Serial number ID' },
-      { name: 'reason', type: 'string?', description: 'Optional reason for force completion' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
-    ],
-  },
-  {
-    type: 'step_skipped',
-    description: 'Fired when a process step is skipped for a part.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partId', type: 'string', description: 'Serial number ID' },
-      { name: 'stepId', type: 'string', description: 'Skipped step ID' },
-      { name: 'stepName', type: 'string', description: 'Skipped step name' },
-      { name: 'reason', type: 'string?', description: 'Optional reason' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
-    ],
-  },
-  {
-    type: 'step_deferred',
-    description: 'Fired when a required step is deferred to be completed later.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partId', type: 'string', description: 'Serial number ID' },
-      { name: 'stepId', type: 'string', description: 'Deferred step ID' },
-      { name: 'stepName', type: 'string', description: 'Deferred step name' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
-    ],
-  },
-  {
-    type: 'step_waived',
-    description: 'Fired when a deferred step is waived by an approver.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partId', type: 'string', description: 'Serial number ID' },
-      { name: 'stepId', type: 'string', description: 'Waived step ID' },
-      { name: 'stepName', type: 'string', description: 'Waived step name' },
-      { name: 'reason', type: 'string', description: 'Waiver justification' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
-    ],
-  },
-  {
-    type: 'job_created',
-    description: 'Fired when a new production job is created.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'jobId', type: 'string', description: 'New job ID' },
-      { name: 'jobName', type: 'string', description: 'Job name' },
-      { name: 'goalQuantity', type: 'number', description: 'Target quantity' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
-    ],
-  },
-  {
-    type: 'job_deleted',
-    description: 'Fired when a job is deleted.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'jobId', type: 'string', description: 'Deleted job ID' },
-      { name: 'jobName', type: 'string', description: 'Deleted job name' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
-    ],
-  },
-  {
-    type: 'path_deleted',
-    description: 'Fired when a route path is deleted (admin cascade delete).',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'pathId', type: 'string', description: 'Deleted path ID' },
-      { name: 'pathName', type: 'string', description: 'Deleted path name' },
-      { name: 'jobId', type: 'string', description: 'Parent job ID' },
-      { name: 'deletedPartIds', type: 'string[]', description: 'IDs of parts cascade-deleted with the path' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
-    ],
-  },
-  {
-    type: 'note_created',
-    description: 'Fired when a defect note is created on a process step.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'noteId', type: 'string', description: 'Note ID' },
-      { name: 'stepId', type: 'string', description: 'Step the note is attached to' },
-      { name: 'stepName', type: 'string', description: 'Step name' },
-      { name: 'partIds', type: 'string[]', description: 'Affected part IDs' },
-      { name: 'text', type: 'string', description: 'Note content' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
-    ],
-  },
-  {
-    type: 'cert_attached',
-    description: 'Fired when a quality certificate is attached to a part at a step.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'certId', type: 'string', description: 'Certificate ID' },
-      { name: 'certName', type: 'string', description: 'Certificate name' },
-      { name: 'certType', type: 'string', description: 'Certificate type (material or process)' },
-      { name: 'partId', type: 'string', description: 'Part the cert is attached to' },
-      { name: 'stepId', type: 'string', description: 'Step where the cert was attached' },
-      { name: 'stepName', type: 'string', description: 'Step name' },
-      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
-    ],
-  },
-]
+function toggleEventType(type: WebhookEventType, checked: boolean | 'indeterminate') {
+  if (checked === true) {
+    if (!formEventTypes.value.includes(type)) {
+      formEventTypes.value = [...formEventTypes.value, type]
+    }
+  } else {
+    formEventTypes.value = formEventTypes.value.filter(t => t !== type)
+  }
+}
 
-// Status badge color
-function statusColor(status: string): 'info' | 'success' | 'error' | 'neutral' | 'warning' {
+// ---- Form actions ----
+function resetForm() {
+  formName.value = ''
+  formUrl.value = ''
+  formEventTypes.value = []
+  formError.value = ''
+  editingId.value = null
+  showForm.value = false
+}
+
+function openAddForm() {
+  resetForm()
+  showForm.value = true
+}
+
+function openEditForm(reg: { id: string, name: string, url: string, eventTypes: readonly string[] }) {
+  editingId.value = reg.id
+  formName.value = reg.name
+  formUrl.value = reg.url
+  formEventTypes.value = [...reg.eventTypes] as WebhookEventType[]
+  formError.value = ''
+  showForm.value = true
+}
+
+async function submitForm() {
+  if (!formValid.value || saving.value) return
+  formError.value = ''
+  saving.value = true
+
+  try {
+    if (isEditing.value) {
+      await updateRegistration(editingId.value!, {
+        name: formName.value.trim(),
+        url: formUrl.value.trim(),
+        eventTypes: [...formEventTypes.value],
+      })
+    } else {
+      await createRegistration({
+        name: formName.value.trim(),
+        url: formUrl.value.trim(),
+        eventTypes: [...formEventTypes.value],
+      })
+    }
+    resetForm()
+  } catch (e: unknown) {
+    formError.value = extractApiError(e, isEditing.value ? 'Failed to update registration' : 'Failed to create registration')
+  } finally {
+    saving.value = false
+  }
+}
+
+// ---- Delete actions ----
+function confirmDelete(reg: { id: string, name: string }) {
+  deletingRegistration.value = { id: reg.id, name: reg.name }
+  showDeleteConfirm.value = true
+}
+
+async function executeDelete() {
+  if (!deletingRegistration.value || deleting.value) return
+  deleting.value = true
+  try {
+    await deleteRegistration(deletingRegistration.value.id)
+    showDeleteConfirm.value = false
+    deletingRegistration.value = null
+  } catch {
+    // Error is handled by the composable
+  } finally {
+    deleting.value = false
+  }
+}
+
+// ---- Event Log state ----
+const expandedEvents = ref<Set<string>>(new Set())
+const eventDeliveries = ref<Map<string, DeliveryDetail[]>>(new Map())
+const loadingDeliveries = ref<Set<string>>(new Set())
+const actionLoading = ref<Set<string>>(new Set())
+let dispatchInterval: ReturnType<typeof setInterval> | null = null
+
+// ---- Event Log computed ----
+const combinedError = computed(() => error.value || eventsError.value || deliveryError.value)
+
+// ---- Event Log helpers ----
+function formatTimestamp(iso: string): string {
+  return formatDateTime(iso)
+}
+
+function deliverySummaryText(summary: { total: number, queued: number, delivering: number, delivered: number, failed: number, canceled: number }): string {
+  if (summary.total === 0) return 'No deliveries'
+  const parts: string[] = []
+  if (summary.delivered > 0) parts.push(`${summary.delivered} delivered`)
+  if (summary.failed > 0) parts.push(`${summary.failed} failed`)
+  if (summary.queued > 0) parts.push(`${summary.queued} queued`)
+  if (summary.delivering > 0) parts.push(`${summary.delivering} delivering`)
+  if (summary.canceled > 0) parts.push(`${summary.canceled} canceled`)
+  return `${summary.total} Webhook${summary.total !== 1 ? 's' : ''}: ${parts.join(', ')}`
+}
+
+function statusColor(status: string): 'success' | 'error' | 'warning' | 'info' | 'neutral' {
   switch (status) {
-    case 'queued': return 'info'
-    case 'sent': return 'success'
+    case 'delivered': return 'success'
     case 'failed': return 'error'
-    case 'cancelled': return 'warning'
+    case 'queued': return 'warning'
+    case 'delivering': return 'info'
+    case 'canceled': return 'neutral'
     default: return 'neutral'
   }
 }
 
-// ---- Dispatch loop (page-scoped) ----
-let dispatchInterval: ReturnType<typeof setInterval> | null = null
+function summaryBadgeColor(summary: { failed: number, queued: number, delivered: number, total: number }): 'success' | 'error' | 'warning' | 'neutral' {
+  if (summary.failed > 0) return 'error'
+  if (summary.queued > 0) return 'warning'
+  if (summary.delivered > 0 && summary.delivered === summary.total) return 'success'
+  return 'neutral'
+}
 
+// ---- Event expand/collapse ----
+async function toggleEventExpand(eventId: string) {
+  if (expandedEvents.value.has(eventId)) {
+    expandedEvents.value = new Set([...expandedEvents.value].filter(id => id !== eventId))
+    return
+  }
+
+  expandedEvents.value = new Set([...expandedEvents.value, eventId])
+
+  // Fetch deliveries for this event if not already loaded
+  if (!eventDeliveries.value.has(eventId)) {
+    loadingDeliveries.value = new Set([...loadingDeliveries.value, eventId])
+    try {
+      const deliveries = await $api<DeliveryDetail[]>(`/api/webhooks/events/${encodeURIComponent(eventId)}/deliveries`)
+      eventDeliveries.value = new Map([...eventDeliveries.value, [eventId, deliveries]])
+    } catch {
+      // Silently handle — the expand will show empty
+    } finally {
+      loadingDeliveries.value = new Set([...loadingDeliveries.value].filter(id => id !== eventId))
+    }
+  }
+}
+
+// ---- Event-level actions ----
+async function handleReplayAll(eventId: string) {
+  actionLoading.value = new Set([...actionLoading.value, `replay-${eventId}`])
+  try {
+    await replayEvent(eventId)
+    await refreshEventLog()
+    // Refresh expanded deliveries if open
+    if (expandedEvents.value.has(eventId)) {
+      await refreshEventDeliveries(eventId)
+    }
+  } finally {
+    actionLoading.value = new Set([...actionLoading.value].filter(id => id !== `replay-${eventId}`))
+  }
+}
+
+async function handleRetryFailed(eventId: string) {
+  actionLoading.value = new Set([...actionLoading.value, `retry-${eventId}`])
+  try {
+    await retryFailed(eventId)
+    await refreshEventLog()
+    if (expandedEvents.value.has(eventId)) {
+      await refreshEventDeliveries(eventId)
+    }
+  } finally {
+    actionLoading.value = new Set([...actionLoading.value].filter(id => id !== `retry-${eventId}`))
+  }
+}
+
+async function handleDeleteEvent(eventId: string) {
+  await deleteEvent(eventId)
+  expandedEvents.value = new Set([...expandedEvents.value].filter(id => id !== eventId))
+  eventDeliveries.value.delete(eventId)
+}
+
+// ---- Delivery-level actions ----
+async function handleRetryDelivery(deliveryId: string, eventId: string) {
+  actionLoading.value = new Set([...actionLoading.value, `delivery-${deliveryId}`])
+  try {
+    await updateDeliveryStatus(deliveryId, 'queued')
+    await refreshEventLog()
+    await refreshEventDeliveries(eventId)
+  } finally {
+    actionLoading.value = new Set([...actionLoading.value].filter(id => id !== `delivery-${deliveryId}`))
+  }
+}
+
+async function handleCancelDelivery(deliveryId: string, eventId: string) {
+  actionLoading.value = new Set([...actionLoading.value, `delivery-${deliveryId}`])
+  try {
+    await cancelDelivery(deliveryId)
+    await refreshEventLog()
+    await refreshEventDeliveries(eventId)
+  } finally {
+    actionLoading.value = new Set([...actionLoading.value].filter(id => id !== `delivery-${deliveryId}`))
+  }
+}
+
+async function handleFireDelivery(delivery: DeliveryDetail, eventId: string) {
+  actionLoading.value = new Set([...actionLoading.value, `delivery-${delivery.id}`])
+  try {
+    // Build a minimal QueuedDeliveryView for dispatchSingle
+    const evt = events.value.find(e => e.id === eventId)
+    if (!evt) return
+    const queuedView: QueuedDeliveryView = {
+      id: delivery.id,
+      eventId,
+      registrationId: delivery.registrationId,
+      registrationName: delivery.registrationName,
+      registrationUrl: delivery.registrationUrl,
+      eventType: evt.eventType,
+      payload: evt.payload,
+      summary: evt.summary,
+      eventCreatedAt: evt.createdAt,
+    }
+    await dispatchSingle(queuedView)
+    await refreshEventLog()
+    await refreshEventDeliveries(eventId)
+  } finally {
+    actionLoading.value = new Set([...actionLoading.value].filter(id => id !== `delivery-${delivery.id}`))
+  }
+}
+
+// ---- Refresh helpers ----
+async function refreshEventLog() {
+  await fetchEvents()
+}
+
+async function refreshEventDeliveries(eventId: string) {
+  try {
+    const deliveries = await $api<DeliveryDetail[]>(`/api/webhooks/events/${encodeURIComponent(eventId)}/deliveries`)
+    eventDeliveries.value = new Map([...eventDeliveries.value, [eventId, deliveries]])
+  } catch {
+    // Silently handle
+  }
+}
+
+// ---- Dispatch loop ----
 function startDispatchLoop() {
   if (dispatchInterval) return
-  dispatchQueued()
-  dispatchInterval = setInterval(() => {
-    dispatchQueued()
-  }, 10000)
+  dispatchInterval = setInterval(async () => {
+    if (!dispatching.value) {
+      await dispatchQueued()
+      await fetchEvents()
+    }
+  }, 5000)
 }
 
 function stopDispatchLoop() {
@@ -321,29 +343,13 @@ function stopDispatchLoop() {
 
 // ---- Init ----
 onMounted(async () => {
-  await Promise.all([fetchConfig(), fetchEvents(), fetchStats()])
-  syncFormFromConfig()
-  if (config.value?.isActive) {
-    startDispatchLoop()
-  }
+  await fetchRegistrations()
+  await fetchEvents()
+  startDispatchLoop()
 })
-
-let refreshInterval: ReturnType<typeof setInterval> | null = null
 
 onUnmounted(() => {
   stopDispatchLoop()
-  if (refreshInterval) {
-    clearInterval(refreshInterval)
-    refreshInterval = null
-  }
-})
-
-// Auto-refresh events every 15s while page is open
-onMounted(() => {
-  refreshInterval = setInterval(() => {
-    fetchEvents()
-    fetchStats()
-  }, 15000)
 })
 </script>
 
@@ -354,187 +360,210 @@ onMounted(() => {
       <h1 class="text-2xl font-bold">
         Webhooks
       </h1>
-      <UBadge
-        :color="isActive ? 'success' : 'neutral'"
-        variant="subtle"
-        size="lg"
-      >
-        {{ isActive ? 'Active' : 'Paused' }}
-      </UBadge>
     </div>
 
-    <!-- Error banner (shared across tabs) -->
+    <!-- Error banner -->
     <UAlert
-      v-if="error"
+      v-if="combinedError"
       color="error"
       variant="subtle"
-      :title="error"
-      :close-button="{ onClick: () => (error = null) }"
+      :title="combinedError"
     />
 
     <!-- Tabs -->
     <UTabs
       :items="tabItems"
-      default-value="queue"
+      default-value="registrations"
       class="w-full"
       :ui="{ list: 'w-full', trigger: 'flex-1 justify-center' }"
     >
       <template #content="{ item }">
         <div class="min-h-[24rem] min-w-0">
-          <!-- ==================== QUEUE TAB ==================== -->
+          <!-- ==================== REGISTRATIONS TAB ==================== -->
           <div
-            v-if="item.value === 'queue'"
+            v-if="item.value === 'registrations'"
             class="space-y-5 pt-4"
           >
-            <!-- Stats cards -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <UCard>
-                <div class="text-center">
-                  <div class="text-2xl font-bold text-(--ui-text-highlighted)">
-                    {{ stats.queued }}
-                  </div>
-                  <div class="text-sm text-(--ui-text-muted)">
-                    Queued
-                  </div>
-                </div>
-              </UCard>
-              <UCard>
-                <div class="text-center">
-                  <div class="text-2xl font-bold text-green-500">
-                    {{ stats.sent }}
-                  </div>
-                  <div class="text-sm text-(--ui-text-muted)">
-                    Sent
-                  </div>
-                </div>
-              </UCard>
-              <UCard>
-                <div class="text-center">
-                  <div class="text-2xl font-bold text-red-500">
-                    {{ stats.failed }}
-                  </div>
-                  <div class="text-sm text-(--ui-text-muted)">
-                    Failed
-                  </div>
-                </div>
-              </UCard>
-              <UCard>
-                <div class="text-center">
-                  <div class="text-2xl font-bold text-amber-500">
-                    {{ stats.cancelled }}
-                  </div>
-                  <div class="text-sm text-(--ui-text-muted)">
-                    Cancelled
-                  </div>
-                </div>
-              </UCard>
-            </div>
-
-            <!-- Actions -->
-            <div class="flex items-center gap-2 flex-wrap">
+            <!-- Add Registration button -->
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-medium text-(--ui-text-muted)">
+                {{ registrations.length }} registration{{ registrations.length !== 1 ? 's' : '' }}
+              </span>
               <UButton
-                v-if="isAdmin"
-                :label="isActive ? 'Stop Dispatch' : 'Start Dispatch'"
-                :color="isActive ? 'error' : 'success'"
-                :icon="isActive ? 'i-lucide-pause' : 'i-lucide-play'"
-                :loading="togglingActive"
-                :disabled="togglingActive"
-                @click="toggleActive"
-              />
-              <UButton
-                label="Dispatch Now"
-                icon="i-lucide-send"
-                color="primary"
-                variant="soft"
-                :loading="dispatching"
-                :disabled="!config?.endpointUrl || !config?.isActive || stats.queued === 0 || dispatching"
-                @click="handleDispatch"
-              />
-              <UButton
-                v-if="isAdmin"
-                label="Retry Failed"
-                icon="i-lucide-refresh-cw"
-                variant="soft"
-                :disabled="stats.failed === 0 || retryingAll"
-                :loading="retryingAll"
-                @click="handleRetryAll"
-              />
-              <UButton
-                v-if="isAdmin"
-                label="Clear All"
-                icon="i-lucide-trash-2"
-                variant="soft"
-                color="error"
-                :disabled="events.length === 0 || clearingAll"
-                :loading="clearingAll"
-                @click="showClearConfirm = true"
-              />
-              <UButton
-                label="Refresh"
-                icon="i-lucide-rotate-cw"
-                variant="ghost"
-                :loading="loading || refreshing"
-                :disabled="refreshing"
-                @click="handleRefresh"
+                v-if="isAdmin && !showForm"
+                label="Add Registration"
+                icon="i-lucide-plus"
+                size="sm"
+                @click="openAddForm"
               />
             </div>
 
-            <!-- Event list — always-present border box keeps Queue tab full width -->
+            <!-- Registration form (add / edit) -->
+            <div
+              v-if="showForm"
+              class="border border-(--ui-border) rounded-lg p-4 space-y-4 bg-(--ui-bg-elevated)/50"
+            >
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-semibold text-(--ui-text-highlighted)">
+                  {{ isEditing ? 'Edit Registration' : 'New Registration' }}
+                </h3>
+                <UButton
+                  icon="i-lucide-x"
+                  variant="ghost"
+                  size="xs"
+                  @click="resetForm"
+                />
+              </div>
+
+              <!-- Name -->
+              <UFormField label="Name">
+                <UInput
+                  v-model="formName"
+                  placeholder="e.g. Production Tracker"
+                  class="w-full"
+                />
+                <template
+                  v-if="formName.length === 0 && showForm"
+                  #hint
+                >
+                  <span class="text-xs text-(--ui-text-muted)">Required</span>
+                </template>
+              </UFormField>
+
+              <!-- URL -->
+              <UFormField label="Endpoint URL">
+                <UInput
+                  v-model="formUrl"
+                  placeholder="https://example.com/webhook"
+                  class="w-full"
+                />
+                <template
+                  v-if="formUrl.length === 0 && showForm"
+                  #hint
+                >
+                  <span class="text-xs text-(--ui-text-muted)">Required</span>
+                </template>
+              </UFormField>
+
+              <!-- Event types -->
+              <UFormField label="Event Types">
+                <div class="space-y-2">
+                  <!-- Subscribe to all -->
+                  <label class="flex items-center gap-2 text-sm font-medium cursor-pointer pb-1 border-b border-(--ui-border)">
+                    <UCheckbox
+                      :model-value="allSelected"
+                      @update:model-value="toggleSubscribeAll"
+                    />
+                    Subscribe to all
+                  </label>
+
+                  <!-- Individual event types -->
+                  <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <label
+                      v-for="evtType in WEBHOOK_EVENT_TYPES"
+                      :key="evtType"
+                      class="flex items-center gap-2 text-sm cursor-pointer"
+                    >
+                      <UCheckbox
+                        :model-value="formEventTypes.includes(evtType)"
+                        @update:model-value="(checked: boolean | 'indeterminate') => toggleEventType(evtType, checked)"
+                      />
+                      {{ formatEventType(evtType) }}
+                    </label>
+                  </div>
+                </div>
+              </UFormField>
+
+              <!-- Form error -->
+              <p
+                v-if="formError"
+                class="text-xs text-red-500"
+              >
+                {{ formError }}
+              </p>
+
+              <!-- Form actions -->
+              <div class="flex items-center gap-2">
+                <UButton
+                  :label="isEditing ? 'Save Changes' : 'Create Registration'"
+                  color="primary"
+                  :disabled="!formValid || saving"
+                  :loading="saving"
+                  @click="submitForm"
+                />
+                <UButton
+                  label="Cancel"
+                  variant="ghost"
+                  @click="resetForm"
+                />
+              </div>
+            </div>
+
+            <!-- Loading state -->
+            <div
+              v-if="loading && registrations.length === 0"
+              class="flex items-center gap-2 text-sm text-(--ui-text-muted) py-8 justify-center"
+            >
+              <UIcon
+                name="i-lucide-loader-2"
+                class="animate-spin size-4"
+              />
+              Loading registrations...
+            </div>
+
+            <!-- Registration list -->
             <div class="border border-(--ui-border) rounded-lg">
               <div
-                v-if="events.length === 0"
+                v-if="registrations.length === 0 && !loading"
                 class="text-center py-8 text-(--ui-text-muted)"
               >
-                No events in the queue yet. Events appear here as actions occur in the app.
+                No webhook registrations yet. Add one to start receiving events.
               </div>
               <div
                 v-else
                 class="divide-y divide-(--ui-border)"
               >
                 <div
-                  v-for="evt in events"
-                  :key="evt.id"
+                  v-for="reg in registrations"
+                  :key="reg.id"
                   class="py-3 px-4 flex items-start gap-3"
                 >
-                  <UBadge
-                    :color="statusColor(evt.status)"
-                    variant="subtle"
-                    size="sm"
-                    class="mt-0.5 shrink-0"
-                  >
-                    {{ evt.status }}
-                  </UBadge>
-
                   <div class="flex-1 min-w-0">
-                    <div class="font-medium text-sm truncate">
-                      {{ evt.summary }}
+                    <div class="font-medium text-sm text-(--ui-text-highlighted)">
+                      {{ reg.name }}
                     </div>
-                    <div class="text-xs text-(--ui-text-muted) mt-0.5">
-                      {{ formatEventLabel(evt.eventType) }} · {{ new Date(evt.createdAt).toLocaleString() }}
-                      <span v-if="evt.sentAt"> · Sent {{ new Date(evt.sentAt).toLocaleString() }}</span>
-                      <span
-                        v-if="evt.lastError"
-                        class="text-red-500"
-                      > · {{ evt.lastError }}</span>
-                      <span v-if="evt.retryCount > 0"> · {{ evt.retryCount }} retries</span>
+                    <div class="text-xs text-(--ui-text-muted) mt-0.5 truncate">
+                      {{ reg.url }}
+                    </div>
+                    <div class="mt-1">
+                      <UBadge
+                        variant="subtle"
+                        color="neutral"
+                        size="xs"
+                      >
+                        {{ reg.eventTypes.length }} event{{ reg.eventTypes.length !== 1 ? 's' : '' }}
+                      </UBadge>
                     </div>
                   </div>
 
-                  <div class="flex items-center gap-1 shrink-0">
+                  <div
+                    v-if="isAdmin"
+                    class="flex items-center gap-1 shrink-0"
+                  >
                     <UButton
-                      v-if="evt.status === 'queued' || evt.status === 'failed' || evt.status === 'cancelled'"
-                      icon="i-lucide-send"
+                      icon="i-lucide-pencil"
                       variant="ghost"
                       size="xs"
-                      title="Dispatch this event now"
-                      @click="dispatchSingle(evt)"
+                      title="Edit registration"
+                      @click="openEditForm(reg)"
                     />
                     <UButton
                       icon="i-lucide-trash-2"
                       variant="ghost"
                       color="error"
                       size="xs"
-                      @click="handleDeleteEvent(evt.id)"
+                      title="Delete registration"
+                      @click="confirmDelete(reg)"
                     />
                   </div>
                 </div>
@@ -542,248 +571,318 @@ onMounted(() => {
             </div>
           </div>
 
-          <!-- ==================== CONFIG TAB ==================== -->
+          <!-- ==================== EVENT LOG TAB ==================== -->
           <div
-            v-if="item.value === 'config'"
+            v-if="item.value === 'event-log'"
             class="space-y-5 pt-4"
           >
-            <div class="space-y-4">
-              <UFormField label="Endpoint URL">
-                <UInput
-                  v-model="endpointUrl"
-                  placeholder="https://example.com/webhook"
-                  class="w-full"
-                  :disabled="!isAdmin"
-                />
-              </UFormField>
+            <!-- Event log error banner -->
+            <UAlert
+              v-if="eventsError || deliveryError"
+              color="error"
+              variant="subtle"
+              :title="eventsError || deliveryError || 'An error occurred'"
+            />
 
-              <UFormField label="Enabled Event Types">
-                <p class="text-xs text-(--ui-text-muted) mb-2">
-                  Controls which queued events get auto-dispatched to your endpoint. All events are always recorded to the queue. Changing this only affects future dispatches — use the send button on individual events to manually fire past ones.
-                </p>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  <label
-                    v-for="evtItem in eventTypeItems"
-                    :key="evtItem.value"
-                    class="flex items-center gap-2 text-sm cursor-pointer"
-                  >
-                    <UCheckbox
-                      :model-value="enabledTypes.includes(evtItem.value)"
-                      :disabled="!isAdmin"
-                      @update:model-value="(checked: boolean | 'indeterminate') => {
-                        if (checked === true) {
-                          enabledTypes.push(evtItem.value)
-                        }
-                        else {
-                          enabledTypes = enabledTypes.filter(t => t !== evtItem.value)
-                        }
-                      }"
-                    />
-                    {{ evtItem.label }}
-                  </label>
-                </div>
-              </UFormField>
-
-              <div
-                v-if="isAdmin"
-                class="flex items-center gap-2"
-              >
-                <UButton
-                  label="Save Configuration"
-                  color="primary"
-                  :disabled="!configDirty || savingConfig"
-                  :loading="savingConfig"
-                  @click="saveConfig"
-                />
-                <UButton
-                  v-if="configDirty"
-                  label="Reset"
-                  variant="ghost"
-                  @click="syncFormFromConfig"
-                />
-              </div>
-            </div>
-          </div>
-
-          <!-- ==================== DEVELOPER TAB ==================== -->
-          <div
-            v-if="item.value === 'developer'"
-            class="space-y-6 pt-4 min-w-0"
-          >
-            <!-- Send Test Event -->
-            <div>
-              <h3 class="text-base font-semibold mb-2">
-                Send Test Event
-              </h3>
-              <p class="text-sm text-(--ui-text-muted) mb-3">
-                Queue a test event with realistic sample data. Useful for verifying your endpoint receives and parses events correctly.
-              </p>
-              <div class="flex items-end gap-3">
-                <UFormField
-                  label="Event Type"
-                  class="flex-1"
+            <!-- Event log toolbar -->
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-medium text-(--ui-text-muted)">
+                  {{ events.length }} event{{ events.length !== 1 ? 's' : '' }}
+                </span>
+                <UBadge
+                  v-if="dispatching"
+                  variant="subtle"
+                  color="info"
+                  size="xs"
                 >
-                  <USelect
-                    v-model="testEventType"
-                    :items="eventTypeItems"
-                    class="w-full"
+                  <UIcon
+                    name="i-lucide-loader-2"
+                    class="animate-spin size-3 mr-1"
                   />
-                </UFormField>
+                  Dispatching
+                </UBadge>
+              </div>
+              <div class="flex items-center gap-2">
                 <UButton
-                  label="Send Test"
-                  icon="i-lucide-flask-conical"
-                  color="primary"
-                  variant="soft"
-                  :loading="sendingTest"
-                  :disabled="sendingTest"
-                  @click="sendTestEvent"
+                  label="Refresh"
+                  icon="i-lucide-refresh-cw"
+                  variant="ghost"
+                  size="xs"
+                  :loading="eventsLoading"
+                  @click="refreshEventLog"
+                />
+                <UButton
+                  v-if="isAdmin && events.length > 0"
+                  label="Clear All"
+                  icon="i-lucide-trash-2"
+                  variant="ghost"
+                  color="error"
+                  size="xs"
+                  @click="clearAllEvents"
                 />
               </div>
             </div>
 
-            <USeparator />
-
-            <!-- HTTP format overview -->
-            <div>
-              <h3 class="text-base font-semibold mb-2">
-                Dispatched HTTP Format
-              </h3>
-              <p class="text-sm text-(--ui-text-muted) mb-3">
-                Each event is sent as a POST request to your configured endpoint with this shape:
-              </p>
-              <pre class="text-xs bg-(--ui-bg-elevated) rounded-lg p-4 overflow-x-auto max-w-[calc(100vw-3rem)] sm:max-w-none"><code>{
-  "event": "part_advanced",        // event type identifier
-  "summary": "SN-00042 advanced…", // human-readable one-liner
-  "timestamp": "2024-01-15T…",     // ISO 8601 — when the event was created
-  // …plus all payload fields spread at the top level
-  "user": "Jane Doe",
-  "partId": "SN-00042",
-  "fromStep": "Machining",
-  "toStep": "Inspection"
-}</code></pre>
-              <p class="text-xs text-(--ui-text-muted) mt-2">
-                <code class="bg-(--ui-bg-elevated) px-1 py-0.5 rounded">event</code>,
-                <code class="bg-(--ui-bg-elevated) px-1 py-0.5 rounded">summary</code>, and
-                <code class="bg-(--ui-bg-elevated) px-1 py-0.5 rounded">timestamp</code>
-                are always present. All other fields come from the event-specific payload below.
-              </p>
+            <!-- Loading state -->
+            <div
+              v-if="eventsLoading && events.length === 0"
+              class="flex items-center gap-2 text-sm text-(--ui-text-muted) py-8 justify-center"
+            >
+              <UIcon
+                name="i-lucide-loader-2"
+                class="animate-spin size-4"
+              />
+              Loading events...
             </div>
 
-            <USeparator />
+            <!-- Empty state -->
+            <div
+              v-else-if="events.length === 0"
+              class="text-center py-12 text-(--ui-text-muted)"
+            >
+              <UIcon
+                name="i-lucide-inbox"
+                class="size-8 mb-2"
+              />
+              <p>No webhook events recorded yet.</p>
+            </div>
 
-            <!-- Per-event-type payload docs -->
-            <div>
-              <div class="flex items-center justify-between mb-3">
-                <h3 class="text-base font-semibold">
-                  Event Payloads
-                </h3>
-              </div>
-              <div class="space-y-4">
+            <!-- Event list -->
+            <div
+              v-else
+              class="border border-(--ui-border) rounded-lg divide-y divide-(--ui-border)"
+            >
+              <div
+                v-for="evt in events"
+                :key="evt.id"
+              >
+                <!-- Event row (clickable to expand) -->
                 <div
-                  v-for="doc in eventPayloadDocs"
-                  :key="doc.type"
-                  class="border border-(--ui-border) rounded-lg overflow-hidden"
+                  class="py-3 px-4 cursor-pointer hover:bg-(--ui-bg-elevated)/50 transition-colors"
+                  @click="toggleEventExpand(evt.id)"
                 >
-                  <div class="bg-(--ui-bg-elevated) px-4 py-2 flex items-center gap-2">
-                    <code class="text-sm font-mono font-semibold">{{ doc.type }}</code>
-                    <span class="text-xs text-(--ui-text-muted)">{{ doc.description }}</span>
-                  </div>
-                  <div class="overflow-x-auto max-w-[calc(100vw-3rem)] sm:max-w-none">
-                    <table class="min-w-[28rem] w-full text-sm">
-                      <thead>
-                        <tr class="border-b border-(--ui-border) text-left">
-                          <th class="px-4 py-2 font-medium text-(--ui-text-muted)">
-                            Field
-                          </th>
-                          <th class="px-4 py-2 font-medium text-(--ui-text-muted)">
-                            Type
-                          </th>
-                          <th class="px-4 py-2 font-medium text-(--ui-text-muted)">
-                            Description
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr
-                          v-for="field in doc.fields"
-                          :key="field.name"
-                          class="border-b border-(--ui-border) last:border-b-0"
+                  <div class="flex items-start gap-3">
+                    <!-- Expand icon -->
+                    <UIcon
+                      :name="expandedEvents.has(evt.id) ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
+                      class="size-4 mt-0.5 shrink-0 text-(--ui-text-muted)"
+                    />
+
+                    <!-- Event info -->
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <span class="font-medium text-sm text-(--ui-text-highlighted)">
+                          {{ formatEventType(evt.eventType) }}
+                        </span>
+                        <UBadge
+                          v-if="evt.deliverySummary.total > 0"
+                          :color="summaryBadgeColor(evt.deliverySummary)"
+                          variant="subtle"
+                          size="xs"
                         >
-                          <td class="px-4 py-1.5">
-                            <code class="text-xs font-mono">{{ field.name }}</code>
-                          </td>
-                          <td class="px-4 py-1.5 text-(--ui-text-muted)">
-                            <code class="text-xs">{{ field.type }}</code>
-                          </td>
-                          <td class="px-4 py-1.5 text-(--ui-text-muted)">
-                            {{ field.description }}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                          {{ deliverySummaryText(evt.deliverySummary) }}
+                        </UBadge>
+                        <UBadge
+                          v-else
+                          color="neutral"
+                          variant="subtle"
+                          size="xs"
+                        >
+                          No deliveries
+                        </UBadge>
+                      </div>
+                      <p class="text-xs text-(--ui-text-muted) mt-0.5 truncate">
+                        {{ evt.summary }}
+                      </p>
+                      <p class="text-xs text-(--ui-text-dimmed) mt-0.5">
+                        {{ formatTimestamp(evt.createdAt) }}
+                      </p>
+                    </div>
+
+                    <!-- Event-level actions -->
+                    <div
+                      v-if="isAdmin"
+                      class="flex items-center gap-1 shrink-0"
+                      @click.stop
+                    >
+                      <UButton
+                        v-if="evt.deliverySummary.total > 0"
+                        label="Replay all"
+                        icon="i-lucide-repeat"
+                        variant="ghost"
+                        size="xs"
+                        :loading="actionLoading.has(`replay-${evt.id}`)"
+                        :disabled="actionLoading.has(`replay-${evt.id}`)"
+                        title="Create new deliveries for all matching registrations"
+                        @click="handleReplayAll(evt.id)"
+                      />
+                      <UButton
+                        v-if="evt.deliverySummary.failed > 0"
+                        label="Retry failed"
+                        icon="i-lucide-rotate-ccw"
+                        variant="ghost"
+                        color="warning"
+                        size="xs"
+                        :loading="actionLoading.has(`retry-${evt.id}`)"
+                        :disabled="actionLoading.has(`retry-${evt.id}`)"
+                        title="Re-queue only failed deliveries"
+                        @click="handleRetryFailed(evt.id)"
+                      />
+                      <UButton
+                        icon="i-lucide-trash-2"
+                        variant="ghost"
+                        color="error"
+                        size="xs"
+                        title="Delete event"
+                        @click="handleDeleteEvent(evt.id)"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Expanded delivery details -->
+                <div
+                  v-if="expandedEvents.has(evt.id)"
+                  class="bg-(--ui-bg-elevated)/30 border-t border-(--ui-border)"
+                >
+                  <!-- Loading deliveries -->
+                  <div
+                    v-if="loadingDeliveries.has(evt.id)"
+                    class="flex items-center gap-2 text-xs text-(--ui-text-muted) py-4 px-8 justify-center"
+                  >
+                    <UIcon
+                      name="i-lucide-loader-2"
+                      class="animate-spin size-3"
+                    />
+                    Loading deliveries...
+                  </div>
+
+                  <!-- No deliveries -->
+                  <div
+                    v-else-if="!eventDeliveries.get(evt.id)?.length"
+                    class="text-xs text-(--ui-text-muted) py-4 px-8 text-center"
+                  >
+                    No delivery records for this event.
+                  </div>
+
+                  <!-- Delivery rows -->
+                  <div
+                    v-else
+                    class="divide-y divide-(--ui-border)/50"
+                  >
+                    <div
+                      v-for="delivery in eventDeliveries.get(evt.id)"
+                      :key="delivery.id"
+                      class="py-2.5 px-8 flex items-start gap-3"
+                    >
+                      <!-- Delivery info -->
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 flex-wrap">
+                          <span class="text-sm font-medium text-(--ui-text-highlighted)">
+                            {{ delivery.registrationName }}
+                          </span>
+                          <UBadge
+                            :color="statusColor(delivery.status)"
+                            variant="subtle"
+                            size="xs"
+                          >
+                            {{ delivery.status }}
+                          </UBadge>
+                        </div>
+                        <p class="text-xs text-(--ui-text-muted) mt-0.5 truncate">
+                          {{ delivery.registrationUrl }}
+                        </p>
+                        <p
+                          v-if="delivery.error"
+                          class="text-xs text-red-500 mt-0.5"
+                        >
+                          {{ delivery.error }}
+                        </p>
+                      </div>
+
+                      <!-- Delivery-level actions -->
+                      <div
+                        v-if="isAdmin"
+                        class="flex items-center gap-1 shrink-0"
+                      >
+                        <!-- Retry: failed → queued -->
+                        <UButton
+                          v-if="delivery.status === 'failed'"
+                          label="Retry"
+                          icon="i-lucide-rotate-ccw"
+                          variant="ghost"
+                          size="xs"
+                          :loading="actionLoading.has(`delivery-${delivery.id}`)"
+                          :disabled="actionLoading.has(`delivery-${delivery.id}`)"
+                          title="Re-queue this delivery"
+                          @click="handleRetryDelivery(delivery.id, evt.id)"
+                        />
+                        <!-- Cancel: queued → canceled -->
+                        <UButton
+                          v-if="delivery.status === 'queued'"
+                          label="Cancel"
+                          icon="i-lucide-x"
+                          variant="ghost"
+                          color="error"
+                          size="xs"
+                          :loading="actionLoading.has(`delivery-${delivery.id}`)"
+                          :disabled="actionLoading.has(`delivery-${delivery.id}`)"
+                          title="Cancel this delivery"
+                          @click="handleCancelDelivery(delivery.id, evt.id)"
+                        />
+                        <!-- Fire: immediately dispatch a queued delivery -->
+                        <UButton
+                          v-if="delivery.status === 'queued'"
+                          label="Fire"
+                          icon="i-lucide-zap"
+                          variant="ghost"
+                          color="warning"
+                          size="xs"
+                          :loading="actionLoading.has(`delivery-${delivery.id}`)"
+                          :disabled="actionLoading.has(`delivery-${delivery.id}`)"
+                          title="Immediately dispatch this delivery"
+                          @click="handleFireDelivery(delivery, evt.id)"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-
-            <!-- Batch note -->
-            <div class="p-3 bg-(--ui-bg-elevated) rounded-lg">
-              <p class="text-sm text-(--ui-text-muted)">
-                <span class="font-medium text-(--ui-text-highlighted)">Batch operations:</span>
-                When multiple parts are advanced at once (e.g. via the work queue), a single
-                <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">part_advanced</code> event is emitted with
-                <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">partIds</code> (string array) instead of
-                <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">partId</code>, plus
-                <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">advancedCount</code> and
-                <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">failedCount</code> fields.
-              </p>
-            </div>
-
-            <!-- Integration tips -->
-            <div class="p-3 bg-(--ui-bg-elevated) rounded-lg space-y-2">
-              <p class="text-sm font-medium text-(--ui-text-highlighted)">
-                Integration tips
-              </p>
-              <ul class="text-sm text-(--ui-text-muted) list-disc list-inside space-y-1">
-                <li>Dispatch runs while the webhooks page is open — events are sent automatically when dispatch is active.</li>
-                <li>Events are dispatched client-side from the browser, so your endpoint must be reachable from the user's network.</li>
-                <li>All events are always recorded to the queue. The "Enabled Event Types" config controls which get auto-dispatched.</li>
-                <li>Changing enabled types only affects future auto-dispatches. Use the per-event send button to manually fire past events.</li>
-                <li>Use the <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">event</code> field to route/filter in your handler.</li>
-                <li>Failed events can be retried — your endpoint should be idempotent.</li>
-                <li>The OpenAPI spec at <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">/_scalar</code> documents all webhook API routes.</li>
-              </ul>
             </div>
           </div>
         </div>
       </template>
     </UTabs>
 
-    <!-- Clear All Confirmation Modal -->
-    <UModal v-model:open="showClearConfirm">
+    <!-- Delete Confirmation Modal -->
+    <UModal v-model:open="showDeleteConfirm">
       <template #content>
         <UCard>
           <template #header>
             <h3 class="text-lg font-semibold">
-              Clear All Events
+              Delete Registration
             </h3>
           </template>
           <p class="text-sm text-(--ui-text-muted)">
-            This will permanently delete all {{ events.length }} webhook events from the queue. This action cannot be undone.
+            Are you sure you want to delete <span class="font-medium text-(--ui-text-highlighted)">{{ deletingRegistration?.name }}</span>?
+          </p>
+          <p class="text-sm text-(--ui-text-muted) mt-2">
+            Any queued deliveries for this registration will be canceled. Delivered and failed records will be preserved as history.
           </p>
           <template #footer>
             <div class="flex justify-end gap-2">
               <UButton
                 label="Cancel"
                 variant="ghost"
-                @click="showClearConfirm = false"
+                @click="showDeleteConfirm = false"
               />
               <UButton
-                label="Clear All Events"
+                label="Delete Registration"
                 color="error"
-                :loading="clearingAll"
-                :disabled="clearingAll"
-                @click="handleClearAll"
+                :loading="deleting"
+                :disabled="deleting"
+                @click="executeDelete"
               />
             </div>
           </template>

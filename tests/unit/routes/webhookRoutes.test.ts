@@ -3,6 +3,7 @@
  *
  * Validates: route handlers correctly forward to webhookService methods,
  * Zod validation is applied on POST/PATCH routes, and query params are parsed.
+ * Also validates registration CRUD, delivery status, and event action routes.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ValidationError, NotFoundError, ForbiddenError, AuthenticationError } from '~/server/utils/errors'
@@ -15,39 +16,66 @@ vi.stubGlobal('ForbiddenError', ForbiddenError)
 vi.stubGlobal('AuthenticationError', AuthenticationError)
 
 const mockWebhookService = {
-  getConfig: vi.fn(() => ({
-    id: 'default',
-    endpointUrl: 'https://example.com/hook',
-    enabledEventTypes: ['part_advanced'],
-    isActive: true,
+  queueEvent: vi.fn((input: any) => ({
+    id: 'whe_1',
+    ...input,
+    createdAt: '2024-01-01',
+  })),
+  listEvents: vi.fn(() => []),
+  deleteEvent: vi.fn(),
+  clearAllEvents: vi.fn((_userId: string) => 2),
+  getQueueStats: vi.fn(() => ({ total: 5 })),
+  getEvent: vi.fn((id: string) => ({ id, eventType: 'part_advanced', payload: {}, summary: 'test', createdAt: '2024-01-01' })),
+}
+
+const mockWebhookRegistrationService = {
+  create: vi.fn((_userId: string, input: any) => ({
+    id: 'whr_1',
+    ...input,
     createdAt: '2024-01-01',
     updatedAt: '2024-01-01',
   })),
-  updateConfig: vi.fn((_userId: string, input: any) => ({
-    id: 'default',
+  list: vi.fn(() => []),
+  update: vi.fn((_userId: string, _id: string, input: any) => ({
+    id: 'whr_1',
+    name: 'Updated',
+    url: 'https://example.com/hook',
+    eventTypes: ['part_advanced'],
     ...input,
     createdAt: '2024-01-01',
     updatedAt: '2024-01-02',
   })),
-  queueEvent: vi.fn((input: any) => ({
-    id: 'whe_1',
-    ...input,
-    status: 'queued',
-    createdAt: '2024-01-01',
-    retryCount: 0,
-  })),
-  listEvents: vi.fn(() => []),
-  listQueuedEvents: vi.fn(() => []),
-  markSent: vi.fn((id: string) => ({ id, status: 'sent' })),
-  markFailed: vi.fn((id: string, error: string) => ({ id, status: 'failed', lastError: error })),
-  requeueEvent: vi.fn((id: string) => ({ id, status: 'queued' })),
-  requeueAllFailed: vi.fn((_userId: string) => 3),
-  deleteEvent: vi.fn(),
-  getQueueStats: vi.fn(() => ({ queued: 5, sent: 10, failed: 2 })),
+  delete: vi.fn(),
 }
 
-vi.stubGlobal('getServices', () => ({ webhookService: mockWebhookService }))
+const mockWebhookDeliveryService = {
+  listQueued: vi.fn(() => []),
+  batchUpdateStatus: vi.fn(),
+  updateStatus: vi.fn((_id: string, status: string, error?: string) => ({
+    id: 'whd_1',
+    eventId: 'whe_1',
+    registrationId: 'whr_1',
+    status,
+    error,
+    createdAt: '2024-01-01',
+    updatedAt: '2024-01-02',
+  })),
+  replayEvent: vi.fn((_userId: string, _eventId: string) => []),
+  retryFailed: vi.fn((_userId: string, _eventId: string) => []),
+}
+
+vi.stubGlobal('getServices', () => ({
+  webhookService: mockWebhookService,
+  webhookRegistrationService: mockWebhookRegistrationService,
+  webhookDeliveryService: mockWebhookDeliveryService,
+}))
+
+const mockWebhookDeliveries = {
+  getDeliverySummariesByEventIds: vi.fn(() => new Map()),
+}
+vi.stubGlobal('getRepositories', () => ({ webhookDeliveries: mockWebhookDeliveries }))
 vi.stubGlobal('getAuthUserId', () => 'user_1')
+vi.stubGlobal('sendNoContent', vi.fn())
 
 let currentRouterParam: string | undefined = 'whe_1'
 vi.stubGlobal('getRouterParam', (_event: unknown, _name: string) => currentRouterParam)
@@ -67,16 +95,25 @@ vi.stubGlobal('zodRequestBody', () => ({}))
 
 // --- Import route handlers AFTER stubs ---
 
-const configGetHandler = (await import('~/server/api/webhooks/config.get')).default
-const configPatchHandler = (await import('~/server/api/webhooks/config.patch')).default
 const eventsGetHandler = (await import('~/server/api/webhooks/events/index.get')).default
 const eventsPostHandler = (await import('~/server/api/webhooks/events/index.post')).default
-const eventPatchHandler = (await import('~/server/api/webhooks/events/[id].patch')).default
 const eventDeleteHandler = (await import('~/server/api/webhooks/events/[id].delete')).default
-const batchStatusHandler = (await import('~/server/api/webhooks/events/batch-status.post')).default
-const queuedGetHandler = (await import('~/server/api/webhooks/events/queued.get')).default
-const retryAllHandler = (await import('~/server/api/webhooks/events/retry-all.post')).default
 const statsGetHandler = (await import('~/server/api/webhooks/events/stats.get')).default
+
+// Registration CRUD routes
+const registrationsGetHandler = (await import('~/server/api/webhooks/registrations/index.get')).default
+const registrationsPostHandler = (await import('~/server/api/webhooks/registrations/index.post')).default
+const registrationPatchHandler = (await import('~/server/api/webhooks/registrations/[id].patch')).default
+const registrationDeleteHandler = (await import('~/server/api/webhooks/registrations/[id].delete')).default
+
+// Delivery routes
+const deliveriesQueuedGetHandler = (await import('~/server/api/webhooks/deliveries/queued.get')).default
+const deliveriesBatchStatusPostHandler = (await import('~/server/api/webhooks/deliveries/batch-status.post')).default
+const deliveryPatchHandler = (await import('~/server/api/webhooks/deliveries/[id].patch')).default
+
+// Event action routes
+const replayPostHandler = (await import('~/server/api/webhooks/events/[eventId]/replay.post')).default
+const retryFailedPostHandler = (await import('~/server/api/webhooks/events/[eventId]/retry-failed.post')).default
 
 function makeFakeEvent() {
   return {
@@ -93,20 +130,6 @@ describe('webhook route wiring', () => {
     currentBody = {}
   })
 
-  // ---- Config routes ----
-
-  it('GET /api/webhooks/config calls webhookService.getConfig', async () => {
-    const result = await configGetHandler(makeFakeEvent())
-    expect(mockWebhookService.getConfig).toHaveBeenCalledOnce()
-    expect(result.endpointUrl).toBe('https://example.com/hook')
-  })
-
-  it('PATCH /api/webhooks/config calls webhookService.updateConfig with userId and parsed body', async () => {
-    currentBody = { endpointUrl: 'https://new.com', isActive: false }
-    await configPatchHandler(makeFakeEvent())
-    expect(mockWebhookService.updateConfig).toHaveBeenCalledWith('user_1', currentBody)
-  })
-
   // ---- Event CRUD routes ----
 
   it('GET /api/webhooks/events calls listEvents with default pagination', async () => {
@@ -120,40 +143,44 @@ describe('webhook route wiring', () => {
     expect(mockWebhookService.listEvents).toHaveBeenCalledWith({ limit: 50, offset: 10 })
   })
 
+  it('GET /api/webhooks/events returns EventWithDeliveries[] with delivery summaries', async () => {
+    const events = [
+      { id: 'whe_1', eventType: 'part_advanced', payload: { partId: 'p1' }, summary: 'Part advanced', createdAt: '2024-01-01' },
+      { id: 'whe_2', eventType: 'job_created', payload: {}, summary: 'Job created', createdAt: '2024-01-02' },
+    ]
+    mockWebhookService.listEvents.mockReturnValueOnce(events)
+
+    const summaryMap = new Map()
+    summaryMap.set('whe_1', { queued: 1, delivering: 0, delivered: 2, failed: 1, canceled: 0 })
+    summaryMap.set('whe_2', { queued: 0, delivering: 0, delivered: 0, failed: 0, canceled: 0 })
+    mockWebhookDeliveries.getDeliverySummariesByEventIds.mockReturnValueOnce(summaryMap)
+
+    const result = await eventsGetHandler(makeFakeEvent())
+
+    expect(mockWebhookDeliveries.getDeliverySummariesByEventIds).toHaveBeenCalledWith(['whe_1', 'whe_2'])
+    expect(result).toHaveLength(2)
+    expect(result[0]).toEqual({
+      id: 'whe_1',
+      eventType: 'part_advanced',
+      payload: { partId: 'p1' },
+      summary: 'Part advanced',
+      createdAt: '2024-01-01',
+      deliverySummary: { total: 4, queued: 1, delivering: 0, delivered: 2, failed: 1, canceled: 0 },
+    })
+    expect(result[1].deliverySummary).toEqual({ total: 0, queued: 0, delivering: 0, delivered: 0, failed: 0, canceled: 0 })
+  })
+
+  it('GET /api/webhooks/events returns empty array when no events', async () => {
+    mockWebhookService.listEvents.mockReturnValueOnce([])
+    const result = await eventsGetHandler(makeFakeEvent())
+    expect(result).toEqual([])
+    expect(mockWebhookDeliveries.getDeliverySummariesByEventIds).not.toHaveBeenCalled()
+  })
+
   it('POST /api/webhooks/events calls queueEvent with parsed body', async () => {
     currentBody = { eventType: 'part_advanced', payload: { partId: 'p1' }, summary: 'test' }
     await eventsPostHandler(makeFakeEvent())
     expect(mockWebhookService.queueEvent).toHaveBeenCalledWith(currentBody)
-  })
-
-  it('PATCH /api/webhooks/events/:id with status=sent calls markSent', async () => {
-    currentBody = { status: 'sent' }
-    await eventPatchHandler(makeFakeEvent())
-    expect(mockWebhookService.markSent).toHaveBeenCalledWith('whe_1')
-  })
-
-  it('PATCH /api/webhooks/events/:id with status=failed calls markFailed', async () => {
-    currentBody = { status: 'failed', error: 'timeout' }
-    await eventPatchHandler(makeFakeEvent())
-    expect(mockWebhookService.markFailed).toHaveBeenCalledWith('whe_1', 'timeout')
-  })
-
-  it('PATCH /api/webhooks/events/:id with status=failed uses default error when none provided', async () => {
-    currentBody = { status: 'failed' }
-    await eventPatchHandler(makeFakeEvent())
-    expect(mockWebhookService.markFailed).toHaveBeenCalledWith('whe_1', 'Unknown error')
-  })
-
-  it('PATCH /api/webhooks/events/:id with status=queued calls requeueEvent', async () => {
-    currentBody = { status: 'queued' }
-    await eventPatchHandler(makeFakeEvent())
-    expect(mockWebhookService.requeueEvent).toHaveBeenCalledWith('whe_1')
-  })
-
-  it('PATCH /api/webhooks/events/:id throws ValidationError when id is missing', async () => {
-    currentRouterParam = undefined
-    currentBody = { status: 'sent' }
-    await expect(eventPatchHandler(makeFakeEvent())).rejects.toThrow(ValidationError)
   })
 
   it('DELETE /api/webhooks/events/:id calls deleteEvent', async () => {
@@ -167,41 +194,177 @@ describe('webhook route wiring', () => {
     await expect(eventDeleteHandler(makeFakeEvent())).rejects.toThrow(ValidationError)
   })
 
-  // ---- Batch & queue routes ----
-
-  it('POST /api/webhooks/events/batch-status processes all events', async () => {
-    currentBody = {
-      events: [
-        { id: 'whe_1', status: 'sent' },
-        { id: 'whe_2', status: 'failed', error: 'err' },
-      ],
-    }
-    const result = await batchStatusHandler(makeFakeEvent())
-    expect(result).toHaveLength(2)
-    expect(mockWebhookService.markSent).toHaveBeenCalledWith('whe_1')
-    expect(mockWebhookService.markFailed).toHaveBeenCalledWith('whe_2', 'err')
-  })
-
-  it('GET /api/webhooks/events/queued calls listQueuedEvents with default limit', async () => {
-    await queuedGetHandler(makeFakeEvent())
-    expect(mockWebhookService.listQueuedEvents).toHaveBeenCalledWith(100)
-  })
-
-  it('GET /api/webhooks/events/queued respects limit query param', async () => {
-    currentQuery = { limit: '25' }
-    await queuedGetHandler(makeFakeEvent())
-    expect(mockWebhookService.listQueuedEvents).toHaveBeenCalledWith(25)
-  })
-
-  it('POST /api/webhooks/events/retry-all calls requeueAllFailed with userId', async () => {
-    const result = await retryAllHandler(makeFakeEvent())
-    expect(mockWebhookService.requeueAllFailed).toHaveBeenCalledWith('user_1')
-    expect(result).toEqual({ requeued: 3 })
-  })
-
   it('GET /api/webhooks/events/stats calls getQueueStats', async () => {
     const result = await statsGetHandler(makeFakeEvent())
     expect(mockWebhookService.getQueueStats).toHaveBeenCalledOnce()
-    expect(result).toEqual({ queued: 5, sent: 10, failed: 2 })
+    expect(result).toEqual({ total: 5 })
+  })
+})
+
+// ---- Registration CRUD routes ----
+
+describe('webhook registration route wiring', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    currentRouterParam = 'whr_1'
+    currentQuery = {}
+    currentBody = {}
+  })
+
+  it('GET /api/webhooks/registrations calls list()', async () => {
+    const registrations = [
+      { id: 'whr_1', name: 'Slack', url: 'https://slack.com/hook', eventTypes: ['part_advanced'], createdAt: '2024-01-01', updatedAt: '2024-01-01' },
+    ]
+    mockWebhookRegistrationService.list.mockReturnValueOnce(registrations)
+
+    const result = await registrationsGetHandler(makeFakeEvent())
+    expect(mockWebhookRegistrationService.list).toHaveBeenCalledOnce()
+    expect(result).toEqual(registrations)
+  })
+
+  it('POST /api/webhooks/registrations calls create with userId and body', async () => {
+    currentBody = { name: 'Slack', url: 'https://slack.com/hook', eventTypes: ['part_advanced'] }
+    const result = await registrationsPostHandler(makeFakeEvent())
+    expect(mockWebhookRegistrationService.create).toHaveBeenCalledWith('user_1', currentBody)
+    expect(result).toMatchObject({ id: 'whr_1', name: 'Slack' })
+  })
+
+  it('POST /api/webhooks/registrations calls getAuthUserId for admin check', async () => {
+    currentBody = { name: 'Test', url: 'https://example.com', eventTypes: ['job_created'] }
+    await registrationsPostHandler(makeFakeEvent())
+    expect(mockWebhookRegistrationService.create).toHaveBeenCalledWith('user_1', expect.any(Object))
+  })
+
+  it('PATCH /api/webhooks/registrations/:id calls update with userId, id, and body', async () => {
+    currentBody = { name: 'Updated Name' }
+    const result = await registrationPatchHandler(makeFakeEvent())
+    expect(mockWebhookRegistrationService.update).toHaveBeenCalledWith('user_1', 'whr_1', currentBody)
+    expect(result).toMatchObject({ name: 'Updated Name' })
+  })
+
+  it('PATCH /api/webhooks/registrations/:id throws ValidationError when id is missing', async () => {
+    currentRouterParam = undefined
+    currentBody = { name: 'Updated' }
+    await expect(registrationPatchHandler(makeFakeEvent())).rejects.toThrow(ValidationError)
+  })
+
+  it('PATCH /api/webhooks/registrations/:id calls getAuthUserId for admin check', async () => {
+    currentBody = { url: 'https://new-url.com' }
+    await registrationPatchHandler(makeFakeEvent())
+    expect(mockWebhookRegistrationService.update).toHaveBeenCalledWith('user_1', 'whr_1', expect.any(Object))
+  })
+
+  it('DELETE /api/webhooks/registrations/:id calls delete with userId and id', async () => {
+    await registrationDeleteHandler(makeFakeEvent())
+    expect(mockWebhookRegistrationService.delete).toHaveBeenCalledWith('user_1', 'whr_1')
+  })
+
+  it('DELETE /api/webhooks/registrations/:id throws ValidationError when id is missing', async () => {
+    currentRouterParam = undefined
+    await expect(registrationDeleteHandler(makeFakeEvent())).rejects.toThrow(ValidationError)
+  })
+
+  it('DELETE /api/webhooks/registrations/:id calls getAuthUserId for admin check', async () => {
+    await registrationDeleteHandler(makeFakeEvent())
+    expect(mockWebhookRegistrationService.delete).toHaveBeenCalledWith('user_1', expect.any(String))
+  })
+
+  it('DELETE /api/webhooks/registrations/:id returns no content', async () => {
+    await registrationDeleteHandler(makeFakeEvent())
+    expect(sendNoContent).toHaveBeenCalled()
+  })
+})
+
+// ---- Delivery routes ----
+
+describe('webhook delivery route wiring', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    currentRouterParam = 'whd_1'
+    currentQuery = {}
+    currentBody = {}
+  })
+
+  it('GET /api/webhooks/deliveries/queued calls listQueued with no limit by default', async () => {
+    await deliveriesQueuedGetHandler(makeFakeEvent())
+    expect(mockWebhookDeliveryService.listQueued).toHaveBeenCalledWith(undefined)
+  })
+
+  it('GET /api/webhooks/deliveries/queued passes limit query param', async () => {
+    currentQuery = { limit: '25' }
+    await deliveriesQueuedGetHandler(makeFakeEvent())
+    expect(mockWebhookDeliveryService.listQueued).toHaveBeenCalledWith(25)
+  })
+
+  it('POST /api/webhooks/deliveries/batch-status calls batchUpdateStatus with body', async () => {
+    currentBody = {
+      deliveries: [
+        { id: 'whd_1', status: 'delivering' },
+        { id: 'whd_2', status: 'delivered' },
+      ],
+    }
+    const result = await deliveriesBatchStatusPostHandler(makeFakeEvent())
+    expect(mockWebhookDeliveryService.batchUpdateStatus).toHaveBeenCalledWith(currentBody.deliveries)
+    expect(result).toEqual({ ok: true })
+  })
+
+  it('PATCH /api/webhooks/deliveries/:id calls updateStatus with id, status, and error', async () => {
+    currentBody = { status: 'failed', error: 'Connection refused' }
+    const result = await deliveryPatchHandler(makeFakeEvent())
+    expect(mockWebhookDeliveryService.updateStatus).toHaveBeenCalledWith('whd_1', 'failed', 'Connection refused')
+    expect(result).toMatchObject({ id: 'whd_1', status: 'failed', error: 'Connection refused' })
+  })
+
+  it('PATCH /api/webhooks/deliveries/:id calls updateStatus without error when not provided', async () => {
+    currentBody = { status: 'delivering' }
+    await deliveryPatchHandler(makeFakeEvent())
+    expect(mockWebhookDeliveryService.updateStatus).toHaveBeenCalledWith('whd_1', 'delivering', undefined)
+  })
+
+  it('PATCH /api/webhooks/deliveries/:id throws ValidationError when id is missing', async () => {
+    currentRouterParam = undefined
+    currentBody = { status: 'delivering' }
+    await expect(deliveryPatchHandler(makeFakeEvent())).rejects.toThrow(ValidationError)
+  })
+})
+
+// ---- Event action routes (replay, retry-failed) ----
+
+describe('webhook event action route wiring', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    currentRouterParam = 'whe_42'
+    currentQuery = {}
+    currentBody = {}
+  })
+
+  it('POST /api/webhooks/events/:eventId/replay calls replayEvent with userId and eventId', async () => {
+    await replayPostHandler(makeFakeEvent())
+    expect(mockWebhookDeliveryService.replayEvent).toHaveBeenCalledWith('user_1', 'whe_42')
+  })
+
+  it('POST /api/webhooks/events/:eventId/replay throws ValidationError when eventId is missing', async () => {
+    currentRouterParam = undefined
+    await expect(replayPostHandler(makeFakeEvent())).rejects.toThrow(ValidationError)
+  })
+
+  it('POST /api/webhooks/events/:eventId/replay calls getAuthUserId for admin check', async () => {
+    await replayPostHandler(makeFakeEvent())
+    expect(mockWebhookDeliveryService.replayEvent).toHaveBeenCalledWith('user_1', expect.any(String))
+  })
+
+  it('POST /api/webhooks/events/:eventId/retry-failed calls retryFailed with userId and eventId', async () => {
+    await retryFailedPostHandler(makeFakeEvent())
+    expect(mockWebhookDeliveryService.retryFailed).toHaveBeenCalledWith('user_1', 'whe_42')
+  })
+
+  it('POST /api/webhooks/events/:eventId/retry-failed throws ValidationError when eventId is missing', async () => {
+    currentRouterParam = undefined
+    await expect(retryFailedPostHandler(makeFakeEvent())).rejects.toThrow(ValidationError)
+  })
+
+  it('POST /api/webhooks/events/:eventId/retry-failed calls getAuthUserId for admin check', async () => {
+    await retryFailedPostHandler(makeFakeEvent())
+    expect(mockWebhookDeliveryService.retryFailed).toHaveBeenCalledWith('user_1', expect.any(String))
   })
 })

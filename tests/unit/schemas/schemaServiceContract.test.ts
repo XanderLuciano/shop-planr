@@ -48,9 +48,6 @@ import { createNoteSchema } from '~/server/schemas/noteSchemas'
 import { addLibraryEntrySchema } from '~/server/schemas/librarySchemas'
 import {
   queueEventSchema,
-  updateConfigSchema,
-  updateEventStatusSchema,
-  batchUpdateStatusSchema,
 } from '~/server/schemas/webhookSchemas'
 import { createUserService } from '~/server/services/userService'
 import { createSettingsService } from '~/server/services/settingsService'
@@ -958,36 +955,6 @@ describe('Schema rejection — invalid payloads are rejected', () => {
       summary: 'test',
     }).success).toBe(false)
   })
-
-  it('updateConfigSchema accepts empty object (all fields optional)', () => {
-    expect(updateConfigSchema.safeParse({}).success).toBe(true)
-  })
-
-  it('updateConfigSchema rejects invalid event type in enabledEventTypes', () => {
-    expect(updateConfigSchema.safeParse({
-      enabledEventTypes: ['part_advanced', 'not_a_type'],
-    }).success).toBe(false)
-  })
-
-  it('updateEventStatusSchema rejects invalid status', () => {
-    expect(updateEventStatusSchema.safeParse({ status: 'pending' }).success).toBe(false)
-  })
-
-  it('updateEventStatusSchema accepts valid statuses', () => {
-    expect(updateEventStatusSchema.safeParse({ status: 'sent' }).success).toBe(true)
-    expect(updateEventStatusSchema.safeParse({ status: 'failed', error: 'timeout' }).success).toBe(true)
-    expect(updateEventStatusSchema.safeParse({ status: 'queued' }).success).toBe(true)
-  })
-
-  it('batchUpdateStatusSchema rejects empty events array', () => {
-    expect(batchUpdateStatusSchema.safeParse({ events: [] }).success).toBe(false)
-  })
-
-  it('batchUpdateStatusSchema rejects events with empty id', () => {
-    expect(batchUpdateStatusSchema.safeParse({
-      events: [{ id: '', status: 'sent' }],
-    }).success).toBe(false)
-  })
 })
 
 // ── Webhook schemas → webhookService ──
@@ -1014,18 +981,7 @@ describe('Webhook schemas → webhookService', () => {
     })
     const event = ctx.webhookService.queueEvent(body)
     expect(event.eventType).toBe('part_advanced')
-    expect(event.status).toBe('queued')
-  })
-
-  it('updateConfigSchema output is accepted by webhookService.updateConfig', () => {
-    const body = parse(updateConfigSchema, {
-      endpointUrl: 'https://example.com/hook',
-      enabledEventTypes: ['job_created', 'part_completed'],
-      isActive: true,
-    })
-    const config = ctx.webhookService.updateConfig(adminUserId, body)
-    expect(config.endpointUrl).toBe('https://example.com/hook')
-    expect(config.isActive).toBe(true)
+    expect(event.createdAt).toBeTruthy()
   })
 
   it('all 13 event types are accepted by queueEventSchema', () => {

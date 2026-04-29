@@ -5,9 +5,11 @@
  * (webhookEventLifecycle.property.test.ts) to avoid duplicating the
  * same Map-backed repo logic in two places.
  */
-import type { WebhookEventRepository, WebhookConfigRepository } from '~/server/repositories/interfaces/webhookRepository'
+import type { WebhookEventRepository } from '~/server/repositories/interfaces/webhookRepository'
+import type { WebhookRegistrationRepository } from '~/server/repositories/interfaces/webhookRegistrationRepository'
+import type { WebhookDeliveryRepository } from '~/server/repositories/interfaces/webhookDeliveryRepository'
 import type { UserRepository } from '~/server/repositories/interfaces/userRepository'
-import type { WebhookEvent, WebhookConfig, WebhookEventStatus, ShopUser } from '~/server/types/domain'
+import type { WebhookEvent, WebhookRegistration, WebhookDelivery, WebhookDeliveryStatus, QueuedDeliveryView, DeliveryDetail, ShopUser } from '~/server/types/domain'
 import { createWebhookService } from '~/server/services/webhookService'
 
 // ---- Shared admin fixture ----
@@ -42,59 +44,130 @@ export function createInMemoryEventRepo(): WebhookEventRepository {
       return event
     },
     getById(id: string) { return store.get(id) },
-    listByStatus(status: WebhookEventStatus, limit = 100) {
-      return [...store.values()]
-        .filter(e => e.status === status)
-        .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
-        .slice(0, limit)
-    },
     list(options?: { limit?: number, offset?: number }) {
       const all = [...store.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       const offset = options?.offset ?? 0
       const limit = options?.limit ?? 200
       return all.slice(offset, offset + limit)
     },
-    updateStatus(id: string, updates: { status: WebhookEventStatus, sentAt?: string, lastError?: string, retryCount?: number }) {
-      const existing = store.get(id)!
-      const updated = {
-        ...existing,
-        status: updates.status,
-        sentAt: updates.sentAt ?? existing.sentAt,
-        lastError: updates.lastError,
-        retryCount: updates.retryCount ?? existing.retryCount,
-      }
-      store.set(id, updated)
-      return updated
-    },
     deleteById(id: string) { store.delete(id) },
-    skipQueuedByType(eventType: string) {
-      let count = 0
-      for (const [id, e] of store) {
-        if (e.status === 'queued' && e.eventType === eventType) {
-          store.set(id, { ...e, status: 'cancelled' })
-          count++
-        }
-      }
-      return count
-    },
     deleteAll() {
       const c = store.size
       store.clear()
       return c
     },
-    countByStatus(status: WebhookEventStatus) {
-      return [...store.values()].filter(e => e.status === status).length
+  }
+}
+
+export function createInMemoryRegistrationRepo(): WebhookRegistrationRepository {
+  const store = new Map<string, WebhookRegistration>()
+  return {
+    create(registration: WebhookRegistration) {
+      store.set(registration.id, registration)
+      return registration
+    },
+    getById(id: string) { return store.get(id) },
+    list() {
+      return [...store.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    },
+    update(id: string, updates: Partial<Pick<WebhookRegistration, 'name' | 'url' | 'eventTypes'>>) {
+      const existing = store.get(id)!
+      const updated = {
+        ...existing,
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      }
+      store.set(id, updated)
+      return updated
+    },
+    delete(id: string) { store.delete(id) },
+    listByEventType(eventType: string) {
+      return [...store.values()].filter(r => r.eventTypes.includes(eventType))
     },
   }
 }
 
-export function createInMemoryConfigRepo(): WebhookConfigRepository {
-  let stored: WebhookConfig | undefined
+export function createInMemoryDeliveryRepo(): WebhookDeliveryRepository {
+  const store = new Map<string, WebhookDelivery>()
   return {
-    get() { return stored },
-    upsert(config: WebhookConfig) {
-      stored = config
-      return config
+    create(delivery: WebhookDelivery) {
+      store.set(delivery.id, delivery)
+      return delivery
+    },
+    createMany(deliveries: WebhookDelivery[]) {
+      for (const d of deliveries) {
+        store.set(d.id, d)
+      }
+    },
+    getById(id: string) { return store.get(id) },
+    listQueued(_limit = 100): QueuedDeliveryView[] {
+      // Simplified — real implementation joins with registrations and events
+      return []
+    },
+    listByEventId(eventId: string): DeliveryDetail[] {
+      return [...store.values()]
+        .filter(d => d.eventId === eventId)
+        .map(d => ({
+          id: d.id,
+          registrationId: d.registrationId,
+          registrationName: '',
+          registrationUrl: '',
+          status: d.status,
+          error: d.error,
+          createdAt: d.createdAt,
+          updatedAt: d.updatedAt,
+        }))
+    },
+    updateStatus(id: string, status: WebhookDeliveryStatus, error?: string) {
+      const existing = store.get(id)!
+      const updated = { ...existing, status, error, updatedAt: new Date().toISOString() }
+      store.set(id, updated)
+      return updated
+    },
+    updateManyStatus(ids: string[], status: WebhookDeliveryStatus) {
+      const now = new Date().toISOString()
+      for (const id of ids) {
+        const existing = store.get(id)
+        if (existing) {
+          store.set(id, { ...existing, status, updatedAt: now })
+        }
+      }
+    },
+    cancelQueuedByRegistrationId(registrationId: string) {
+      let count = 0
+      const now = new Date().toISOString()
+      for (const [id, d] of store) {
+        if (d.registrationId === registrationId && d.status === 'queued') {
+          store.set(id, { ...d, status: 'canceled', updatedAt: now })
+          count++
+        }
+      }
+      return count
+    },
+    listFailedByEventId(eventId: string) {
+      return [...store.values()].filter(d => d.eventId === eventId && d.status === 'failed')
+    },
+    countByEventId(eventId: string) {
+      const counts: Record<WebhookDeliveryStatus, number> = { queued: 0, delivering: 0, delivered: 0, failed: 0, canceled: 0 }
+      for (const d of store.values()) {
+        if (d.eventId === eventId) {
+          counts[d.status]++
+        }
+      }
+      return counts
+    },
+    getDeliverySummariesByEventIds(eventIds: string[]) {
+      const result = new Map<string, Record<WebhookDeliveryStatus, number>>()
+      for (const eid of eventIds) {
+        result.set(eid, { queued: 0, delivering: 0, delivered: 0, failed: 0, canceled: 0 })
+      }
+      for (const d of store.values()) {
+        const counts = result.get(d.eventId)
+        if (counts) {
+          counts[d.status]++
+        }
+      }
+      return result
     },
   }
 }
@@ -114,14 +187,16 @@ export function createInMemoryUserRepo(users: ShopUser[] = [WEBHOOK_ADMIN_USER])
 
 export function createWebhookTestService(users?: ShopUser[]) {
   const eventRepo = createInMemoryEventRepo()
-  const configRepo = createInMemoryConfigRepo()
+  const registrationRepo = createInMemoryRegistrationRepo()
+  const deliveryRepo = createInMemoryDeliveryRepo()
   const userRepo = createInMemoryUserRepo(users ?? [WEBHOOK_ADMIN_USER, WEBHOOK_REGULAR_USER])
 
   const service = createWebhookService({
     webhookEvents: eventRepo,
-    webhookConfig: configRepo,
+    webhookRegistrations: registrationRepo,
+    webhookDeliveries: deliveryRepo,
     users: userRepo,
   })
 
-  return { service, eventRepo, configRepo, userRepo }
+  return { service, eventRepo, registrationRepo, deliveryRepo, userRepo }
 }

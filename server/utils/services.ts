@@ -14,6 +14,8 @@ import { createLibraryService } from '../services/libraryService'
 import { createAuthService } from '../services/authService'
 import { createTagService } from '../services/tagService'
 import { createWebhookService } from '../services/webhookService'
+import { createWebhookRegistrationService } from '../services/webhookRegistrationService'
+import { createWebhookDeliveryService } from '../services/webhookDeliveryService'
 import { createSequentialPartIdGenerator } from '../utils/idGenerator'
 import type { AuditService } from '../services/auditService'
 import type { UserService } from '../services/userService'
@@ -31,6 +33,8 @@ import type { LibraryService } from '../services/libraryService'
 import type { AuthService } from '../services/authService'
 import type { TagService } from '../services/tagService'
 import type { WebhookService } from '../services/webhookService'
+import type { WebhookRegistrationService } from '../services/webhookRegistrationService'
+import type { WebhookDeliveryService } from '../services/webhookDeliveryService'
 
 export interface ServiceSet {
   auditService: AuditService
@@ -49,6 +53,8 @@ export interface ServiceSet {
   authService: AuthService
   tagService: TagService
   webhookService: WebhookService
+  webhookRegistrationService: WebhookRegistrationService
+  webhookDeliveryService: WebhookDeliveryService
   /** @deprecated Use `partService` instead. Backward-compatible alias. */
   serialService: PartService
 }
@@ -149,7 +155,22 @@ export function getServices(): ServiceSet {
 
     const webhookService = createWebhookService({
       webhookEvents: repos.webhookEvents,
-      webhookConfig: repos.webhookConfig,
+      webhookRegistrations: repos.webhookRegistrations,
+      webhookDeliveries: repos.webhookDeliveries,
+      users: repos.users,
+    })
+
+    const webhookRegistrationService = createWebhookRegistrationService({
+      webhookRegistrations: repos.webhookRegistrations,
+      webhookDeliveries: repos.webhookDeliveries,
+      users: repos.users,
+      db: repos._db,
+    })
+
+    const webhookDeliveryService = createWebhookDeliveryService({
+      webhookDeliveries: repos.webhookDeliveries,
+      webhookRegistrations: repos.webhookRegistrations,
+      webhookEvents: repos.webhookEvents,
       users: repos.users,
     })
 
@@ -170,6 +191,8 @@ export function getServices(): ServiceSet {
       libraryService,
       tagService,
       webhookService,
+      webhookRegistrationService,
+      webhookDeliveryService,
       // Backward-compatible alias
       serialService: partService,
     }

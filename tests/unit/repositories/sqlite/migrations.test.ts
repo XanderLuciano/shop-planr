@@ -240,7 +240,10 @@ describe('SQLite migration system', () => {
         'idx_audit_timestamp', 'idx_process_steps_path',
         'idx_step_notes_step', 'idx_step_notes_job',
         'idx_process_steps_assigned_to',
-        'idx_webhook_events_status', 'idx_webhook_events_created_at',
+        'idx_webhook_events_created_at',
+        'idx_webhook_deliveries_event_id',
+        'idx_webhook_deliveries_registration_status',
+        'idx_webhook_deliveries_status',
       ]) {
         expect(indexNames, `missing index: ${idx}`).toContain(idx)
       }
@@ -277,22 +280,39 @@ describe('SQLite migration system', () => {
       }).toThrow()
     })
 
-    it('creates webhook_events and webhook_config tables with all columns', () => {
+    it('creates webhook tables with correct columns after migration 018', () => {
       const tableNames = db.prepare(
         'SELECT name FROM sqlite_master WHERE type=\'table\' AND name LIKE \'webhook_%\' ORDER BY name',
       ).all() as { name: string }[]
-      expect(tableNames.map(t => t.name)).toEqual(['webhook_config', 'webhook_events'])
+      expect(tableNames.map(t => t.name)).toEqual(['webhook_deliveries', 'webhook_events', 'webhook_registrations'])
 
+      // webhook_events: rebuilt to drop status, sent_at, last_error, retry_count
       const eventCols = db.prepare('PRAGMA table_info(webhook_events)').all() as { name: string }[]
-      for (const col of ['id', 'event_type', 'payload', 'summary', 'status', 'created_at', 'sent_at', 'last_error', 'retry_count']) {
-        expect(eventCols.map(c => c.name), `webhook_events missing: ${col}`).toContain(col)
+      const eventColNames = eventCols.map(c => c.name)
+      for (const col of ['id', 'event_type', 'payload', 'summary', 'created_at']) {
+        expect(eventColNames, `webhook_events missing: ${col}`).toContain(col)
+      }
+      for (const col of ['status', 'sent_at', 'last_error', 'retry_count']) {
+        expect(eventColNames, `webhook_events should not have: ${col}`).not.toContain(col)
       }
 
-      // webhook_config includes enabled_since from migration 017
-      const configCols = db.prepare('PRAGMA table_info(webhook_config)').all() as { name: string }[]
-      for (const col of ['id', 'endpoint_url', 'enabled_event_types', 'enabled_since', 'is_active', 'created_at', 'updated_at']) {
-        expect(configCols.map(c => c.name), `webhook_config missing: ${col}`).toContain(col)
+      // webhook_registrations: new table
+      const regCols = db.prepare('PRAGMA table_info(webhook_registrations)').all() as { name: string }[]
+      for (const col of ['id', 'name', 'url', 'event_types', 'created_at', 'updated_at']) {
+        expect(regCols.map(c => c.name), `webhook_registrations missing: ${col}`).toContain(col)
       }
+
+      // webhook_deliveries: new table
+      const delCols = db.prepare('PRAGMA table_info(webhook_deliveries)').all() as { name: string }[]
+      for (const col of ['id', 'event_id', 'registration_id', 'status', 'error', 'created_at', 'updated_at']) {
+        expect(delCols.map(c => c.name), `webhook_deliveries missing: ${col}`).toContain(col)
+      }
+
+      // webhook_config should no longer exist
+      const configTable = db.prepare(
+        'SELECT name FROM sqlite_master WHERE type=\'table\' AND name=\'webhook_config\'',
+      ).all()
+      expect(configTable).toHaveLength(0)
     })
   })
 })

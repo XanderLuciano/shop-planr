@@ -23,13 +23,3 @@ export const arbQueueEventInput = fc.record({
 
 /** Arbitrary that produces a batch of queue event inputs. */
 export const arbQueueEventBatch = fc.array(arbQueueEventInput, { minLength: 1, maxLength: 10 })
-
-/** Arbitrary that produces a valid webhook config update. */
-export const arbConfigUpdate = fc.record({
-  endpointUrl: fc.option(fc.webUrl(), { nil: undefined }),
-  enabledEventTypes: fc.option(
-    fc.subarray([...WEBHOOK_EVENT_TYPES], { minLength: 0 }),
-    { nil: undefined },
-  ),
-  isActive: fc.option(fc.boolean(), { nil: undefined }),
-})
