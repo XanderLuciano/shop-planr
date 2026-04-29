@@ -7,7 +7,7 @@ import type { WebhookDelivery, WebhookDeliveryStatus, QueuedDeliveryView, Delive
 interface WebhookDeliveryRow {
   id: string
   event_id: string
-  registration_id: string
+  registration_id: string | null
   status: string
   error: string | null
   attempt_count: number
@@ -30,7 +30,7 @@ interface QueuedDeliveryViewRow {
 
 interface DeliveryDetailRow {
   id: string
-  registration_id: string
+  registration_id: string | null
   registration_name: string
   registration_url: string
   status: string
@@ -170,8 +170,8 @@ export function createSQLiteWebhookDeliveryRepository(db: Database): WebhookDeli
         SELECT
           d.id,
           d.registration_id,
-          r.name AS registration_name,
-          r.url AS registration_url,
+          COALESCE(r.name, '[deleted]') AS registration_name,
+          COALESCE(r.url, '') AS registration_url,
           d.status,
           d.error,
           d.attempt_count,
@@ -179,7 +179,7 @@ export function createSQLiteWebhookDeliveryRepository(db: Database): WebhookDeli
           d.created_at,
           d.updated_at
         FROM webhook_deliveries d
-        JOIN webhook_registrations r ON r.id = d.registration_id
+        LEFT JOIN webhook_registrations r ON r.id = d.registration_id
         WHERE d.event_id = ?
         ORDER BY d.created_at ASC
       `).all(eventId) as DeliveryDetailRow[]
@@ -279,10 +279,10 @@ export function createSQLiteWebhookDeliveryRepository(db: Database): WebhookDeli
 
       const placeholders = eventIds.map(() => '?').join(', ')
       const rows = db.prepare(`
-        SELECT event_id, status, COUNT(*) as count
-        FROM webhook_deliveries
-        WHERE event_id IN (${placeholders})
-        GROUP BY event_id, status
+        SELECT d.event_id, d.status, COUNT(*) as count
+        FROM webhook_deliveries d
+        WHERE d.event_id IN (${placeholders})
+        GROUP BY d.event_id, d.status
       `).all(...eventIds) as StatusCountRow[]
 
       for (const row of rows) {

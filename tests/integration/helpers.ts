@@ -36,6 +36,7 @@ import { createLifecycleService } from '../../server/services/lifecycleService'
 import { createLibraryService } from '../../server/services/libraryService'
 import { createAuthService } from '../../server/services/authService'
 import { createWebhookService } from '../../server/services/webhookService'
+import { createWebhookDeliveryService } from '../../server/services/webhookDeliveryService'
 import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
 
 const MIGRATIONS_DIR = resolve(__dirname, '../../server/repositories/sqlite/migrations')
@@ -120,13 +121,19 @@ export function createTestContext() {
   const noteService = createNoteService({ notes: repos.notes }, auditService)
   const libraryService = createLibraryService({ library: repos.library })
   const authService = createAuthService({ users: repos.users, cryptoKeys: repos.cryptoKeys })
-  const webhookService = createWebhookService({
-    webhookEvents: repos.webhookEvents,
-    webhookRegistrations: repos.webhookRegistrations,
+  const webhookDeliveryService = createWebhookDeliveryService({
     webhookDeliveries: repos.webhookDeliveries,
+    webhookRegistrations: repos.webhookRegistrations,
+    webhookEvents: repos.webhookEvents,
     users: repos.users,
     db,
   })
+  const webhookService = createWebhookService({
+    webhookEvents: repos.webhookEvents,
+    webhookDeliveries: repos.webhookDeliveries,
+    users: repos.users,
+    db,
+  }, webhookDeliveryService)
 
   return {
     db,

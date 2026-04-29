@@ -221,6 +221,11 @@ export function createWebhookDeliveryService(repos: {
     retryFailed(userId: string, eventId: string): WebhookDelivery[] {
       requireAdmin(repos.users, userId, 'retry failed webhook deliveries')
 
+      const event = repos.webhookEvents.getById(eventId)
+      if (!event) {
+        throw new NotFoundError('WebhookEvent', eventId)
+      }
+
       const failedDeliveries = repos.webhookDeliveries.listFailedByEventId(eventId)
       const retried: WebhookDelivery[] = []
 

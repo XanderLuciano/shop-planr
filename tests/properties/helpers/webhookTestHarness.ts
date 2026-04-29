@@ -11,6 +11,7 @@ import type { WebhookDeliveryRepository } from '~/server/repositories/interfaces
 import type { UserRepository } from '~/server/repositories/interfaces/userRepository'
 import type { WebhookEvent, WebhookRegistration, WebhookDelivery, WebhookDeliveryStatus, QueuedDeliveryView, DeliveryDetail, ShopUser } from '~/server/types/domain'
 import { createWebhookService } from '~/server/services/webhookService'
+import { createWebhookDeliveryService } from '~/server/services/webhookDeliveryService'
 
 // ---- Shared admin fixture ----
 
@@ -234,13 +235,20 @@ export function createWebhookTestService(users?: ShopUser[]) {
   const deliveryRepo = createInMemoryDeliveryRepo()
   const userRepo = createInMemoryUserRepo(users ?? [WEBHOOK_ADMIN_USER, WEBHOOK_REGULAR_USER])
 
-  const service = createWebhookService({
-    webhookEvents: eventRepo,
-    webhookRegistrations: registrationRepo,
+  const deliveryService = createWebhookDeliveryService({
     webhookDeliveries: deliveryRepo,
+    webhookRegistrations: registrationRepo,
+    webhookEvents: eventRepo,
     users: userRepo,
     db: passthroughDb,
   })
 
-  return { service, eventRepo, registrationRepo, deliveryRepo, userRepo, db: passthroughDb }
+  const service = createWebhookService({
+    webhookEvents: eventRepo,
+    webhookDeliveries: deliveryRepo,
+    users: userRepo,
+    db: passthroughDb,
+  }, deliveryService)
+
+  return { service, deliveryService, eventRepo, registrationRepo, deliveryRepo, userRepo, db: passthroughDb }
 }

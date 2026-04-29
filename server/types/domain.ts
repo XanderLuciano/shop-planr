@@ -437,7 +437,7 @@ export type WebhookDeliveryStatus = typeof WEBHOOK_DELIVERY_STATUSES[number]
 export interface WebhookDelivery {
   id: string
   eventId: string
-  registrationId: string
+  registrationId: string | null
   status: WebhookDeliveryStatus
   error?: string
   attemptCount: number
@@ -462,7 +462,7 @@ export interface QueuedDeliveryView {
 /** Delivery with registration info for the event log UI */
 export interface DeliveryDetail {
   id: string
-  registrationId: string
+  registrationId: string | null
   registrationName: string
   registrationUrl: string
   status: WebhookDeliveryStatus

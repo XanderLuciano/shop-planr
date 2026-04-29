@@ -41,6 +41,36 @@ export function resolveUserName(userId: string): string {
 }
 
 /**
+ * Resolve a stepId to its human-readable name via the part's path.
+ * Returns undefined if the lookup fails (caller can omit the field).
+ */
+export function resolveStepName(partId: string, stepId: string): string | undefined {
+  try {
+    const part = getRepositories().parts.getById(partId)
+    if (!part) return undefined
+    const path = getRepositories().paths.getById(part.pathId)
+    if (!path) return undefined
+    return path.steps.find(s => s.id === stepId)?.name
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * Resolve a stepId to its name using a pathId directly (when partId isn't available).
+ * Returns undefined if the lookup fails.
+ */
+export function resolveStepNameByPath(pathId: string, stepId: string): string | undefined {
+  try {
+    const path = getRepositories().paths.getById(pathId)
+    if (!path) return undefined
+    return path.steps.find(s => s.id === stepId)?.name
+  } catch {
+    return undefined
+  }
+}
+
+/**
  * Format a webhook event type for display.
  * Single source of truth — used by both server-side summary generation
  * and the client-side UI (re-exported from app/utils/webhookFormatting.ts).

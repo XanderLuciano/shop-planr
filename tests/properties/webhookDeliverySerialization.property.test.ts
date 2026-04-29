@@ -16,7 +16,7 @@ import type { WebhookDelivery, WebhookDeliveryStatus } from '~/server/types/doma
 interface WebhookDeliveryRow {
   id: string
   event_id: string
-  registration_id: string
+  registration_id: string | null
   status: string
   error: string | null
   created_at: string
@@ -74,7 +74,7 @@ const arbError: fc.Arbitrary<string | undefined> = fc.option(
 const arbWebhookDelivery: fc.Arbitrary<WebhookDelivery> = fc.record({
   id: arbId,
   eventId: arbId,
-  registrationId: arbId,
+  registrationId: fc.option(arbId, { nil: null }),
   status: arbDeliveryStatus,
   error: arbError,
   createdAt: arbIsoDate,

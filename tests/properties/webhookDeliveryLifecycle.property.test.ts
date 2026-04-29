@@ -229,10 +229,13 @@ describe('Property 7: Retry-failed selectivity', () => {
           expect(deliveries).toHaveLength(desiredStatuses.length)
 
           // Walk each delivery to its desired status
+          const eventRepo = createInMemoryEventRepo()
+          // Copy the event into the delivery service's event repo so retryFailed can find it
+          eventRepo.create(event)
           const deliveryService = createWebhookDeliveryService({
             webhookDeliveries: deliveryRepo,
             webhookRegistrations: registrationRepo,
-            webhookEvents: createInMemoryEventRepo(), // not needed for status updates
+            webhookEvents: eventRepo,
             users: createInMemoryUserRepo([WEBHOOK_ADMIN_USER, WEBHOOK_REGULAR_USER]),
             db: passthroughDb,
           })

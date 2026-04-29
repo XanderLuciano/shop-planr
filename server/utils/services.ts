@@ -153,25 +153,24 @@ export function getServices(): ServiceSet {
       auditService,
     )
 
-    const webhookService = createWebhookService({
-      webhookEvents: repos.webhookEvents,
-      webhookRegistrations: repos.webhookRegistrations,
-      webhookDeliveries: repos.webhookDeliveries,
-      users: repos.users,
-      db: repos._db,
-    })
-
-    const webhookRegistrationService = createWebhookRegistrationService({
-      webhookRegistrations: repos.webhookRegistrations,
-      webhookDeliveries: repos.webhookDeliveries,
-      users: repos.users,
-      db: repos._db,
-    })
-
     const webhookDeliveryService = createWebhookDeliveryService({
       webhookDeliveries: repos.webhookDeliveries,
       webhookRegistrations: repos.webhookRegistrations,
       webhookEvents: repos.webhookEvents,
+      users: repos.users,
+      db: repos._db,
+    })
+
+    const webhookService = createWebhookService({
+      webhookEvents: repos.webhookEvents,
+      webhookDeliveries: repos.webhookDeliveries,
+      users: repos.users,
+      db: repos._db,
+    }, webhookDeliveryService)
+
+    const webhookRegistrationService = createWebhookRegistrationService({
+      webhookRegistrations: repos.webhookRegistrations,
+      webhookDeliveries: repos.webhookDeliveries,
       users: repos.users,
       db: repos._db,
     })

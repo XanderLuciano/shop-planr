@@ -157,6 +157,7 @@ const eventPayloadDocs: { type: WebhookEventType, description: string, fields: {
       { name: 'user', type: 'string', description: 'Display name of the user' },
       { name: 'partId', type: 'string', description: 'Serial number ID' },
       { name: 'stepId', type: 'string', description: 'Completed step ID' },
+      { name: 'stepName', type: 'string', description: 'Completed step name' },
     ],
   },
   {
@@ -177,6 +178,7 @@ const eventPayloadDocs: { type: WebhookEventType, description: string, fields: {
       { name: 'user', type: 'string', description: 'Display name of the user' },
       { name: 'partId', type: 'string', description: 'Serial number ID' },
       { name: 'stepId', type: 'string', description: 'Step ID whose override was reversed' },
+      { name: 'stepName', type: 'string', description: 'Step name whose override was reversed' },
     ],
   },
   {
@@ -518,7 +520,7 @@ async function handleFireDelivery(delivery: DeliveryDetail, eventId: string) {
   try {
     // Build a minimal QueuedDeliveryView for dispatchSingle
     const evt = events.value.find(e => e.id === eventId)
-    if (!evt) return
+    if (!evt || !delivery.registrationId) return
     const queuedView: QueuedDeliveryView = {
       id: delivery.id,
       eventId,

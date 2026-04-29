@@ -1,20 +1,22 @@
 import type { WebhookEventRepository } from '../repositories/interfaces/webhookRepository'
-import type { WebhookRegistrationRepository } from '../repositories/interfaces/webhookRegistrationRepository'
 import type { WebhookDeliveryRepository } from '../repositories/interfaces/webhookDeliveryRepository'
 import type { UserRepository } from '../repositories/interfaces/userRepository'
 import type { WebhookEvent, WebhookEventType, EventWithDeliveries } from '../types/domain'
+import type { WebhookDeliveryService } from './webhookDeliveryService'
 import { WEBHOOK_EVENT_TYPES } from '../types/domain'
 import { generateId } from '../utils/idGenerator'
 import { NotFoundError, ValidationError } from '../utils/errors'
 import { requireAdmin } from '../utils/auth'
 
-export function createWebhookService(repos: {
-  webhookEvents: WebhookEventRepository
-  webhookRegistrations: WebhookRegistrationRepository
-  webhookDeliveries: WebhookDeliveryRepository
-  users?: UserRepository
-  db: { transaction: <T>(fn: () => T) => () => T }
-}) {
+export function createWebhookService(
+  repos: {
+    webhookEvents: WebhookEventRepository
+    webhookDeliveries: WebhookDeliveryRepository
+    users?: UserRepository
+    db: { transaction: <T>(fn: () => T) => () => T }
+  },
+  deliveryService: WebhookDeliveryService,
+) {
   return {
     // ---- Event CRUD ----
 
@@ -47,21 +49,8 @@ export function createWebhookService(repos: {
       const doWork = () => {
         const created = repos.webhookEvents.create(event)
 
-        // Fan-out: create delivery records for all matching registrations
-        const registrations = repos.webhookRegistrations.listByEventType(created.eventType)
-        if (registrations.length > 0) {
-          const now = new Date().toISOString()
-          const deliveries = registrations.map(reg => ({
-            id: generateId('whd'),
-            eventId: created.id,
-            registrationId: reg.id,
-            status: 'queued' as const,
-            attemptCount: 0,
-            createdAt: now,
-            updatedAt: now,
-          }))
-          repos.webhookDeliveries.createMany(deliveries)
-        }
+        // Fan-out: delegate to deliveryService (single source of truth)
+        deliveryService.fanOut(created)
 
         return created
       }

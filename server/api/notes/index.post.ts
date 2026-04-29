@@ -21,6 +21,7 @@ export default defineApiHandler(async (event) => {
     user: resolveUserName(userId),
     noteId: note.id,
     stepId: body.stepId,
+    stepName: resolveStepNameByPath(body.pathId, body.stepId),
     partIds: body.partIds,
     text: body.text,
   })
