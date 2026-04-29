@@ -40,9 +40,194 @@ const { isAdmin } = useAuth()
 
 // ---- Tabs ----
 const tabItems: TabsItem[] = [
-  { label: 'Registrations', icon: 'i-lucide-webhook', value: 'registrations' },
-  { label: 'Event Log', icon: 'i-lucide-list', value: 'event-log' },
+  { label: 'Registrations', icon: 'i-lucide-webhook', value: 'registrations', ui: { label: 'hidden sm:inline' } },
+  { label: 'Event Log', icon: 'i-lucide-list', value: 'event-log', ui: { label: 'hidden sm:inline' } },
+  { label: 'Developer', icon: 'i-lucide-flask-conical', value: 'developer', ui: { label: 'hidden sm:inline' } },
 ]
+
+// ---- Test event state ----
+const testEventType = ref<WebhookEventType>('part_advanced')
+const sendingTest = ref(false)
+const testEventError = ref<string | null>(null)
+
+const eventTypeItems = WEBHOOK_EVENT_TYPES.map(t => ({
+  label: formatEventType(t),
+  value: t,
+}))
+
+// ---- Developer reference data ----
+const eventPayloadDocs: { type: WebhookEventType, description: string, fields: { name: string, type: string, description: string }[] }[] = [
+  {
+    type: 'part_advanced',
+    description: 'Fired when a part is advanced to the next process step.',
+    fields: [
+      { name: 'user', type: 'string', description: 'Display name of the user who performed the action' },
+      { name: 'partId', type: 'string', description: 'Serial number ID (e.g. SN-00042)' },
+      { name: 'targetStepId', type: 'string', description: 'ID of the step the part was advanced to' },
+      { name: 'fromStep', type: 'string', description: 'Name of the previous step' },
+      { name: 'toStep', type: 'string', description: 'Name of the new step' },
+      { name: 'skip', type: 'boolean', description: 'Whether intermediate steps were skipped' },
+      { name: 'newStatus', type: 'string', description: 'Part status after advancement (in_progress)' },
+      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
+    ],
+  },
+  {
+    type: 'part_completed',
+    description: 'Fired when a part finishes its final process step.',
+    fields: [
+      { name: 'user', type: 'string', description: 'Display name of the user' },
+      { name: 'partId', type: 'string', description: 'Serial number ID' },
+      { name: 'targetStepId', type: 'string', description: 'ID of the final step' },
+      { name: 'newStatus', type: 'string', description: 'Always "completed"' },
+      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
+    ],
+  },
+  {
+    type: 'part_created',
+    description: 'Fired when a new part (serial number) is created.',
+    fields: [
+      { name: 'user', type: 'string', description: 'Display name of the user' },
+      { name: 'partId', type: 'string', description: 'New serial number ID' },
+      { name: 'jobId', type: 'string', description: 'Parent job ID' },
+      { name: 'jobName', type: 'string', description: 'Parent job name' },
+      { name: 'pathId', type: 'string', description: 'Route path ID' },
+      { name: 'pathName', type: 'string', description: 'Route path name' },
+      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
+    ],
+  },
+  {
+    type: 'part_scrapped',
+    description: 'Fired when a part is marked as scrap.',
+    fields: [
+      { name: 'user', type: 'string', description: 'Display name of the user' },
+      { name: 'partId', type: 'string', description: 'Serial number ID' },
+      { name: 'reason', type: 'string', description: 'Scrap reason code (e.g. dimensional_failure)' },
+      { name: 'explanation', type: 'string?', description: 'Optional free-text explanation' },
+      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
+    ],
+  },
+  {
+    type: 'part_force_completed',
+    description: 'Fired when a part is force-completed with remaining steps incomplete.',
+    fields: [
+      { name: 'user', type: 'string', description: 'Display name of the user' },
+      { name: 'partId', type: 'string', description: 'Serial number ID' },
+      { name: 'reason', type: 'string?', description: 'Optional reason for force completion' },
+      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
+    ],
+  },
+  {
+    type: 'step_skipped',
+    description: 'Fired when a process step is skipped for a part.',
+    fields: [
+      { name: 'user', type: 'string', description: 'Display name of the user' },
+      { name: 'partId', type: 'string', description: 'Serial number ID' },
+      { name: 'stepId', type: 'string', description: 'Skipped step ID' },
+      { name: 'stepName', type: 'string', description: 'Skipped step name' },
+      { name: 'reason', type: 'string?', description: 'Optional reason' },
+      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
+    ],
+  },
+  {
+    type: 'step_deferred',
+    description: 'Fired when a required step is deferred to be completed later.',
+    fields: [
+      { name: 'user', type: 'string', description: 'Display name of the user' },
+      { name: 'partId', type: 'string', description: 'Serial number ID' },
+      { name: 'stepId', type: 'string', description: 'Deferred step ID' },
+      { name: 'stepName', type: 'string', description: 'Deferred step name' },
+      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
+    ],
+  },
+  {
+    type: 'step_waived',
+    description: 'Fired when a deferred step is waived by an approver.',
+    fields: [
+      { name: 'user', type: 'string', description: 'Display name of the user' },
+      { name: 'partId', type: 'string', description: 'Serial number ID' },
+      { name: 'stepId', type: 'string', description: 'Waived step ID' },
+      { name: 'stepName', type: 'string', description: 'Waived step name' },
+      { name: 'reason', type: 'string', description: 'Waiver justification' },
+      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
+    ],
+  },
+  {
+    type: 'job_created',
+    description: 'Fired when a new production job is created.',
+    fields: [
+      { name: 'user', type: 'string', description: 'Display name of the user' },
+      { name: 'jobId', type: 'string', description: 'New job ID' },
+      { name: 'jobName', type: 'string', description: 'Job name' },
+      { name: 'goalQuantity', type: 'number', description: 'Target quantity' },
+      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
+    ],
+  },
+  {
+    type: 'job_deleted',
+    description: 'Fired when a job is deleted.',
+    fields: [
+      { name: 'user', type: 'string', description: 'Display name of the user' },
+      { name: 'jobId', type: 'string', description: 'Deleted job ID' },
+      { name: 'jobName', type: 'string', description: 'Deleted job name' },
+      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
+    ],
+  },
+  {
+    type: 'path_deleted',
+    description: 'Fired when a route path is deleted (admin cascade delete).',
+    fields: [
+      { name: 'user', type: 'string', description: 'Display name of the user' },
+      { name: 'pathId', type: 'string', description: 'Deleted path ID' },
+      { name: 'pathName', type: 'string', description: 'Deleted path name' },
+      { name: 'jobId', type: 'string', description: 'Parent job ID' },
+      { name: 'deletedPartIds', type: 'string[]', description: 'IDs of parts cascade-deleted with the path' },
+      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
+    ],
+  },
+  {
+    type: 'note_created',
+    description: 'Fired when a defect note is created on a process step.',
+    fields: [
+      { name: 'user', type: 'string', description: 'Display name of the user' },
+      { name: 'noteId', type: 'string', description: 'Note ID' },
+      { name: 'stepId', type: 'string', description: 'Step the note is attached to' },
+      { name: 'stepName', type: 'string', description: 'Step name' },
+      { name: 'partIds', type: 'string[]', description: 'Affected part IDs' },
+      { name: 'text', type: 'string', description: 'Note content' },
+      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
+    ],
+  },
+  {
+    type: 'cert_attached',
+    description: 'Fired when a quality certificate is attached to a part at a step.',
+    fields: [
+      { name: 'user', type: 'string', description: 'Display name of the user' },
+      { name: 'certId', type: 'string', description: 'Certificate ID' },
+      { name: 'certName', type: 'string', description: 'Certificate name' },
+      { name: 'certType', type: 'string', description: 'Certificate type (material or process)' },
+      { name: 'partId', type: 'string', description: 'Part the cert is attached to' },
+      { name: 'stepId', type: 'string', description: 'Step where the cert was attached' },
+      { name: 'stepName', type: 'string', description: 'Step name' },
+      { name: 'time', type: 'string', description: 'ISO 8601 timestamp' },
+    ],
+  },
+]
+
+async function sendTestEvent() {
+  sendingTest.value = true
+  testEventError.value = null
+  try {
+    await $api('/api/webhooks/events/test', {
+      method: 'POST',
+      body: { eventType: testEventType.value },
+    })
+    await fetchEvents()
+  } catch (e: unknown) {
+    testEventError.value = extractApiError(e, 'Failed to send test event')
+  } finally {
+    sendingTest.value = false
+  }
+}
 
 // ---- Registration form state ----
 const showForm = ref(false)
@@ -168,7 +353,7 @@ const actionLoading = ref<Set<string>>(new Set())
 let dispatchInterval: ReturnType<typeof setInterval> | null = null
 
 // ---- Event Log computed ----
-const combinedError = computed(() => error.value || eventsError.value || deliveryError.value)
+const combinedError = computed(() => error.value || eventsError.value || deliveryError.value || testEventError.value)
 
 // ---- Event Log helpers ----
 function formatTimestamp(iso: string): string {
@@ -354,7 +539,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
+  <div class="p-4 space-y-3 max-w-6xl">
     <!-- Header -->
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold">
@@ -391,7 +576,7 @@ onUnmounted(() => {
               </span>
               <UButton
                 v-if="isAdmin && !showForm"
-                label="Add Registration"
+                label="Create Webhook"
                 icon="i-lucide-plus"
                 size="sm"
                 @click="openAddForm"
@@ -849,6 +1034,163 @@ onUnmounted(() => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+          <!-- ==================== DEVELOPER TAB ==================== -->
+          <div
+            v-if="item.value === 'developer'"
+            class="space-y-6 pt-4 min-w-0"
+          >
+            <!-- Send Test Event -->
+            <div>
+              <h3 class="text-base font-semibold mb-2">
+                Send Test Event
+              </h3>
+              <p class="text-sm text-(--ui-text-muted) mb-3">
+                Queue a test event with realistic sample data. Useful for verifying your endpoint receives and parses events correctly.
+              </p>
+              <UAlert
+                v-if="testEventError"
+                color="error"
+                variant="subtle"
+                :title="testEventError"
+                class="mb-3"
+              />
+              <div class="flex items-end gap-3">
+                <UFormField
+                  label="Event Type"
+                  class="flex-1"
+                >
+                  <USelect
+                    v-model="testEventType"
+                    :items="eventTypeItems"
+                    class="w-full"
+                  />
+                </UFormField>
+                <UButton
+                  label="Send Test"
+                  icon="i-lucide-flask-conical"
+                  color="primary"
+                  variant="soft"
+                  :loading="sendingTest"
+                  :disabled="sendingTest"
+                  @click="sendTestEvent"
+                />
+              </div>
+            </div>
+
+            <USeparator />
+
+            <!-- HTTP format overview -->
+            <div>
+              <h3 class="text-base font-semibold mb-2">
+                Dispatched HTTP Format
+              </h3>
+              <p class="text-sm text-(--ui-text-muted) mb-3">
+                Each delivery is sent as a POST request to the registration's endpoint URL with this shape:
+              </p>
+              <pre class="text-xs bg-(--ui-bg-elevated) rounded-lg p-4 overflow-x-auto max-w-[calc(100vw-3rem)] sm:max-w-none"><code>{
+  "event": "part_advanced",        // event type identifier
+  "summary": "SN-00042 advanced…", // human-readable one-liner
+  "timestamp": "2024-01-15T…",     // ISO 8601 — when the event was created
+  // …plus all payload fields spread at the top level
+  "user": "Jane Doe",
+  "partId": "SN-00042",
+  "fromStep": "Machining",
+  "toStep": "Inspection"
+}</code></pre>
+              <p class="text-xs text-(--ui-text-muted) mt-2">
+                <code class="bg-(--ui-bg-elevated) px-1 py-0.5 rounded">event</code>,
+                <code class="bg-(--ui-bg-elevated) px-1 py-0.5 rounded">summary</code>, and
+                <code class="bg-(--ui-bg-elevated) px-1 py-0.5 rounded">timestamp</code>
+                are always present. All other fields come from the event-specific payload below.
+              </p>
+            </div>
+
+            <USeparator />
+
+            <!-- Per-event-type payload docs -->
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-base font-semibold">
+                  Event Payloads
+                </h3>
+              </div>
+              <div class="space-y-4">
+                <div
+                  v-for="doc in eventPayloadDocs"
+                  :key="doc.type"
+                  class="border border-(--ui-border) rounded-lg overflow-hidden"
+                >
+                  <div class="bg-(--ui-bg-elevated) px-4 py-2 flex items-center gap-2">
+                    <code class="text-sm font-mono font-semibold">{{ doc.type }}</code>
+                    <span class="text-xs text-(--ui-text-muted)">{{ doc.description }}</span>
+                  </div>
+                  <div class="overflow-x-auto max-w-[calc(100vw-3rem)] sm:max-w-none">
+                    <table class="min-w-[28rem] w-full text-sm">
+                      <thead>
+                        <tr class="border-b border-(--ui-border) text-left">
+                          <th class="px-4 py-2 font-medium text-(--ui-text-muted)">
+                            Field
+                          </th>
+                          <th class="px-4 py-2 font-medium text-(--ui-text-muted)">
+                            Type
+                          </th>
+                          <th class="px-4 py-2 font-medium text-(--ui-text-muted)">
+                            Description
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr
+                          v-for="field in doc.fields"
+                          :key="field.name"
+                          class="border-b border-(--ui-border) last:border-b-0"
+                        >
+                          <td class="px-4 py-1.5">
+                            <code class="text-xs font-mono">{{ field.name }}</code>
+                          </td>
+                          <td class="px-4 py-1.5 text-(--ui-text-muted)">
+                            <code class="text-xs">{{ field.type }}</code>
+                          </td>
+                          <td class="px-4 py-1.5 text-(--ui-text-muted)">
+                            {{ field.description }}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Batch note -->
+            <div class="p-3 bg-(--ui-bg-elevated) rounded-lg">
+              <p class="text-sm text-(--ui-text-muted)">
+                <span class="font-medium text-(--ui-text-highlighted)">Batch operations:</span>
+                When multiple parts are advanced at once (e.g. via the work queue), a single
+                <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">part_advanced</code> event is emitted with
+                <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">partIds</code> (string array) instead of
+                <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">partId</code>, plus
+                <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">advancedCount</code> and
+                <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">failedCount</code> fields.
+              </p>
+            </div>
+
+            <!-- Integration tips -->
+            <div class="p-3 bg-(--ui-bg-elevated) rounded-lg space-y-2">
+              <p class="text-sm font-medium text-(--ui-text-highlighted)">
+                Integration tips
+              </p>
+              <ul class="text-sm text-(--ui-text-muted) list-disc list-inside space-y-1">
+                <li>Dispatch runs while the webhooks page is open — queued deliveries are sent automatically on a 5-second interval.</li>
+                <li>Events are dispatched client-side from the browser, so your endpoint must be reachable from the user's network.</li>
+                <li>Create registrations on the Registrations tab to subscribe specific URLs to specific event types.</li>
+                <li>Each registration gets its own delivery record per event — you can retry or cancel deliveries individually.</li>
+                <li>Use the <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">event</code> field to route/filter in your handler.</li>
+                <li>Failed deliveries can be retried — your endpoint should be idempotent.</li>
+                <li>The OpenAPI spec at <code class="text-xs bg-(--ui-bg) px-1 py-0.5 rounded">/_scalar</code> documents all webhook API routes.</li>
+              </ul>
             </div>
           </div>
         </div>

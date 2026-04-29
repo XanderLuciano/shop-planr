@@ -99,6 +99,7 @@ const eventsGetHandler = (await import('~/server/api/webhooks/events/index.get')
 const eventsPostHandler = (await import('~/server/api/webhooks/events/index.post')).default
 const eventDeleteHandler = (await import('~/server/api/webhooks/events/[id].delete')).default
 const statsGetHandler = (await import('~/server/api/webhooks/events/stats.get')).default
+const testEventHandler = (await import('~/server/api/webhooks/events/test.post')).default
 
 // Registration CRUD routes
 const registrationsGetHandler = (await import('~/server/api/webhooks/registrations/index.get')).default
@@ -198,6 +199,75 @@ describe('webhook route wiring', () => {
     const result = await statsGetHandler(makeFakeEvent())
     expect(mockWebhookService.getQueueStats).toHaveBeenCalledOnce()
     expect(result).toEqual({ total: 5 })
+  })
+})
+
+// ---- Test event route ----
+
+describe('webhook test event route wiring', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    currentBody = {}
+  })
+
+  it('POST /api/webhooks/events/test calls queueEvent with test payload', async () => {
+    currentBody = { eventType: 'part_advanced' }
+    const result = await testEventHandler(makeFakeEvent())
+    expect(mockWebhookService.queueEvent).toHaveBeenCalledOnce()
+    const call = mockWebhookService.queueEvent.mock.calls[0][0]
+    expect(call.eventType).toBe('part_advanced')
+    expect(call.summary).toMatch(/^\[TEST\]/)
+    expect(call.payload).toBeDefined()
+    expect(call.payload.user).toBe('Test User')
+    expect(result).toBeDefined()
+  })
+
+  it('POST /api/webhooks/events/test generates correct payload for each event type', async () => {
+    const eventTypes = [
+      'part_advanced', 'part_completed', 'part_created', 'part_scrapped',
+      'part_force_completed', 'step_skipped', 'step_deferred', 'step_waived',
+      'job_created', 'job_deleted', 'path_deleted', 'note_created', 'cert_attached',
+    ]
+
+    for (const eventType of eventTypes) {
+      vi.clearAllMocks()
+      currentBody = { eventType }
+      await testEventHandler(makeFakeEvent())
+      expect(mockWebhookService.queueEvent).toHaveBeenCalledOnce()
+      const call = mockWebhookService.queueEvent.mock.calls[0][0]
+      expect(call.eventType).toBe(eventType)
+      expect(call.summary).toContain('[TEST]')
+      expect(call.payload.time).toBeDefined()
+    }
+  })
+
+  it('POST /api/webhooks/events/test includes expected fields for part_advanced', async () => {
+    currentBody = { eventType: 'part_advanced' }
+    await testEventHandler(makeFakeEvent())
+    const payload = mockWebhookService.queueEvent.mock.calls[0][0].payload
+    expect(payload.partId).toBe('SN-00042')
+    expect(payload.fromStep).toBe('Machining')
+    expect(payload.toStep).toBe('Inspection')
+    expect(payload.skip).toBe(false)
+  })
+
+  it('POST /api/webhooks/events/test includes expected fields for job_created', async () => {
+    currentBody = { eventType: 'job_created' }
+    await testEventHandler(makeFakeEvent())
+    const payload = mockWebhookService.queueEvent.mock.calls[0][0].payload
+    expect(payload.jobId).toBe('job_sample1')
+    expect(payload.jobName).toBe('Test Job Alpha')
+    expect(payload.goalQuantity).toBe(50)
+  })
+
+  it('POST /api/webhooks/events/test includes expected fields for cert_attached', async () => {
+    currentBody = { eventType: 'cert_attached' }
+    await testEventHandler(makeFakeEvent())
+    const payload = mockWebhookService.queueEvent.mock.calls[0][0].payload
+    expect(payload.certId).toBe('cert_sample1')
+    expect(payload.certName).toBe('Material Test Report')
+    expect(payload.certType).toBe('material')
+    expect(payload.partId).toBe('SN-00042')
   })
 })
 
