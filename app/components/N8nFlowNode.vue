@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Handle, Position } from '@vue-flow/core'
+import { getOutputsForNode, getNodeDefinition } from '~/utils/n8nNodeDefinitions'
 
 interface NodeData {
   label: string
@@ -19,31 +20,19 @@ const props = defineProps<{
 }>()
 
 // ---- Icon lookup ----
-const NODE_ICONS: Record<string, string> = {
-  'shop-planr-trigger': 'i-lucide-webhook',
-  'n8n-nodes-base.set': 'i-lucide-pencil',
-  'n8n-nodes-base.code': 'i-lucide-code',
-  'n8n-nodes-base.if': 'i-lucide-git-branch',
-  'n8n-nodes-base.filter': 'i-lucide-filter',
-  'n8n-nodes-base.httpRequest': 'i-lucide-globe',
-  'n8n-nodes-base.slack': 'i-lucide-message-square',
-  'n8n-nodes-base.jira': 'i-lucide-ticket',
-  'n8n-nodes-base.gmail': 'i-lucide-mail',
-  'n8n-nodes-base.discord': 'i-lucide-hash',
-  'n8n-nodes-base.microsoftTeams': 'i-lucide-users',
-}
-
-const icon = computed(() => NODE_ICONS[props.data.nodeType] ?? 'i-lucide-box')
+const icon = computed(() => {
+  if (props.data.isTrigger) return 'i-lucide-webhook'
+  const def = getNodeDefinition(props.data.nodeType)
+  return def?.icon ?? 'i-lucide-box'
+})
 
 // ---- Color categorization ----
 type NodeCategory = 'trigger' | 'transform' | 'destination' | 'control'
 
 const category = computed<NodeCategory>(() => {
-  const t = props.data.nodeType
-  if (props.data.isTrigger || t === 'shop-planr-trigger') return 'trigger'
-  if (t.includes('if') || t.includes('filter')) return 'control'
-  if (['httpRequest', 'slack', 'jira', 'gmail', 'discord', 'microsoftTeams'].some(x => t.includes(x))) return 'destination'
-  return 'transform'
+  if (props.data.isTrigger) return 'trigger'
+  const def = getNodeDefinition(props.data.nodeType)
+  return def?.category ?? 'transform'
 })
 
 const colorClasses = computed(() => {
@@ -86,15 +75,81 @@ const typeLabel = computed(() =>
   props.data.nodeType.replace('n8n-nodes-base.', '').replace('shop-planr-trigger', 'webhook'),
 )
 
-// ---- Handle: trigger has no input; IF has two outputs (true/false) ----
+// ---- Handles ----
 const hasInput = computed(() => !props.data.isTrigger)
-const isIf = computed(() => props.data.nodeType === 'n8n-nodes-base.if')
+
+/**
+ * Outputs for this node. A node with a single default output has just one
+ * handle; IF has two; Switch can have up to 5 (4 routes + default).
+ */
+const outputs = computed(() => {
+  if (props.data.isTrigger) return [{ id: 'main', label: '', color: undefined as string | undefined }]
+  const defs = getOutputsForNode(props.data.nodeType) ?? []
+  return defs.map(o => ({ id: o.id, label: o.label, color: o.color }))
+})
+
+/** Compute the `top` offset for a given output handle index. */
+function topForIndex(index: number, total: number): string {
+  if (total === 1) return '50%'
+  // Spread handles evenly between ~25% and ~85% of the node body
+  const start = 25
+  const end = 85
+  const step = (end - start) / Math.max(total - 1, 1)
+  return `${start + step * index}%`
+}
+
+function handleColorClass(color?: string): string {
+  switch (color) {
+    case 'green': return '!bg-green-500'
+    case 'red': return '!bg-red-500'
+    case 'amber': return '!bg-amber-500'
+    case 'gray': return '!bg-gray-400'
+    default:
+      // Match category color
+      switch (category.value) {
+        case 'trigger': return '!bg-violet-500'
+        case 'transform': return '!bg-emerald-500'
+        case 'control': return '!bg-amber-500'
+        case 'destination': return '!bg-blue-500'
+      }
+      return '!bg-violet-500'
+  }
+}
+
+function labelColorClass(color?: string): string {
+  switch (color) {
+    case 'green': return 'text-green-600 dark:text-green-400'
+    case 'red': return 'text-red-600 dark:text-red-400'
+    case 'amber': return 'text-amber-600 dark:text-amber-400'
+    case 'gray': return 'text-gray-500 dark:text-gray-400'
+    default: return 'text-(--ui-text-muted)'
+  }
+}
+
+// Input handle border color matches category
+const inputBorderClass = computed(() => {
+  switch (category.value) {
+    case 'trigger': return '!border-violet-500'
+    case 'transform': return '!border-emerald-500'
+    case 'control': return '!border-amber-500'
+    case 'destination': return '!border-blue-500'
+  }
+  return '!border-violet-500'
+})
+
+/** Minimum height per node based on number of output handles. */
+const minHeight = computed(() => {
+  const n = outputs.value.length
+  if (n <= 1) return undefined
+  return `${Math.max(n * 26 + 40, 64)}px`
+})
 </script>
 
 <template>
   <div
-    class="min-w-[160px] max-w-[200px] relative"
+    class="min-w-[170px] max-w-[210px] relative"
     :class="colorClasses"
+    :style="minHeight ? { minHeight } : undefined"
   >
     <!-- Category ribbon -->
     <div
@@ -137,46 +192,30 @@ const isIf = computed(() => props.data.nodeType === 'n8n-nodes-base.if')
       type="target"
       :position="Position.Left"
       class="!w-3 !h-3 !bg-(--ui-bg) !border-2"
-      :class="category === 'trigger' ? '!border-violet-500' : category === 'transform' ? '!border-emerald-500' : category === 'control' ? '!border-amber-500' : '!border-blue-500'"
+      :class="inputBorderClass"
     />
 
-    <!-- Output handle(s) -->
-    <!-- IF node: two outputs (true/false) -->
-    <template v-if="isIf">
+    <!-- Output handles — one per declared output -->
+    <template
+      v-for="(o, idx) in outputs"
+      :key="o.id"
+    >
       <Handle
-        id="true"
+        :id="o.id"
         type="source"
         :position="Position.Right"
-        :style="{ top: '35%' }"
-        class="!w-3 !h-3 !bg-green-500 !border-2 !border-(--ui-bg)"
-      />
-      <Handle
-        id="false"
-        type="source"
-        :position="Position.Right"
-        :style="{ top: '70%' }"
-        class="!w-3 !h-3 !bg-red-500 !border-2 !border-(--ui-bg)"
+        :style="{ top: topForIndex(idx, outputs.length) }"
+        class="!w-3 !h-3 !border-2 !border-(--ui-bg)"
+        :class="handleColorClass(o.color)"
       />
       <div
-        class="absolute right-[-36px] text-[9px] font-bold text-green-600 dark:text-green-400 pointer-events-none"
-        :style="{ top: 'calc(35% - 6px)' }"
+        v-if="o.label"
+        class="absolute right-[-44px] text-[9px] font-bold pointer-events-none whitespace-nowrap"
+        :class="labelColorClass(o.color)"
+        :style="{ top: `calc(${topForIndex(idx, outputs.length)} - 6px)` }"
       >
-        TRUE
-      </div>
-      <div
-        class="absolute right-[-36px] text-[9px] font-bold text-red-600 dark:text-red-400 pointer-events-none"
-        :style="{ top: 'calc(70% - 6px)' }"
-      >
-        FALSE
+        {{ o.label }}
       </div>
     </template>
-    <!-- All other nodes: single output -->
-    <Handle
-      v-else
-      type="source"
-      :position="Position.Right"
-      class="!w-3 !h-3 !bg-(--ui-bg) !border-2"
-      :class="category === 'trigger' ? '!border-violet-500' : category === 'transform' ? '!border-emerald-500' : category === 'control' ? '!border-amber-500' : '!border-blue-500'"
-    />
   </div>
 </template>

@@ -522,78 +522,13 @@ const nodeTypeLabel = computed(() =>
       </UFormField>
     </template>
 
-    <!-- ============ JIRA ============ -->
+    <!-- ============ JIRA (dedicated component) ============ -->
     <template v-else-if="data.nodeType === 'n8n-nodes-base.jira'">
-      <UFormField label="Operation">
-        <USelect
-          :model-value="(getParams().operation as string) ?? 'create'"
-          :items="[
-            { label: 'Create Issue', value: 'create' },
-            { label: 'Update Issue', value: 'update' },
-            { label: 'Add Comment', value: 'addComment' },
-          ]"
-          size="sm"
-          class="w-full"
-          @update:model-value="(v: string) => setParam('operation', v)"
-        />
-      </UFormField>
-      <UFormField
-        v-if="getParams().operation === 'create'"
-        label="Project Key"
-      >
-        <N8nVariableInput
-          :model-value="(getParams().project as string) ?? ''"
-          :variables="variables"
-          placeholder="PROJ"
-          @update:model-value="(v: string) => setParam('project', v)"
-        />
-      </UFormField>
-      <UFormField
-        v-if="getParams().operation === 'create'"
-        label="Issue Type"
-      >
-        <USelect
-          :model-value="(getParams().issueType as string) ?? 'Task'"
-          :items="[
-            { label: 'Task', value: 'Task' },
-            { label: 'Bug', value: 'Bug' },
-            { label: 'Story', value: 'Story' },
-            { label: 'Epic', value: 'Epic' },
-          ]"
-          size="sm"
-          class="w-full"
-          @update:model-value="(v: string) => setParam('issueType', v)"
-        />
-      </UFormField>
-      <UFormField
-        v-if="['update', 'addComment'].includes((getParams().operation as string) ?? 'create')"
-        label="Issue Key"
-      >
-        <N8nVariableInput
-          :model-value="(getParams().issueKey as string) ?? ''"
-          :variables="variables"
-          placeholder="PROJ-123"
-          @update:model-value="(v: string) => setParam('issueKey', v)"
-        />
-      </UFormField>
-      <UFormField label="Summary">
-        <N8nVariableInput
-          :model-value="(getParams().summary as string) ?? ''"
-          :variables="variables"
-          placeholder="{{ $json.body.summary }}"
-          @update:model-value="(v: string) => setParam('summary', v)"
-        />
-      </UFormField>
-      <UFormField label="Description">
-        <N8nVariableInput
-          :model-value="(getParams().description as string) ?? ''"
-          :variables="variables"
-          multiline
-          :rows="3"
-          placeholder="Event: {{ $json.body.event }}&#10;User: {{ $json.body.user }}"
-          @update:model-value="(v: string) => setParam('description', v)"
-        />
-      </UFormField>
+      <N8nJiraEditor
+        :parameters="getParams()"
+        :variables="variables"
+        @update:parameters="(p: Record<string, unknown>) => emit('update:nodeData', { ...data, parameters: p })"
+      />
     </template>
 
     <!-- ============ GMAIL ============ -->
@@ -812,6 +747,151 @@ const nodeTypeLabel = computed(() =>
         >
           Filter passes through items that match all conditions.
         </p>
+      </div>
+    </template>
+
+    <!-- ============ SWITCH (dedicated component) ============ -->
+    <template v-else-if="data.nodeType === 'n8n-nodes-base.switch'">
+      <N8nSwitchEditor
+        :parameters="getParams()"
+        :variables="variables"
+        @update:parameters="(p: Record<string, unknown>) => emit('update:nodeData', { ...data, parameters: p })"
+      />
+    </template>
+
+    <!-- ============ MERGE ============ -->
+    <template v-else-if="data.nodeType === 'n8n-nodes-base.merge'">
+      <UFormField label="Mode">
+        <USelect
+          :model-value="(getParams().mode as string) ?? 'append'"
+          :items="[
+            { label: 'Append (concatenate all inputs)', value: 'append' },
+            { label: 'Combine by position', value: 'combineByPosition' },
+            { label: 'Combine by matching fields', value: 'combineByFields' },
+            { label: 'Choose branch (pass one through)', value: 'chooseBranch' },
+          ]"
+          size="sm"
+          class="w-full"
+          @update:model-value="(v: string) => setParam('mode', v)"
+        />
+      </UFormField>
+      <div class="p-2 bg-(--ui-bg-elevated) rounded text-[11px] text-(--ui-text-muted)">
+        Connect multiple source branches into the Merge node's input. Useful after an IF/Switch
+        when you want to rejoin the flows before a shared destination.
+      </div>
+    </template>
+
+    <!-- ============ LOOP OVER ITEMS (split in batches) ============ -->
+    <template v-else-if="data.nodeType === 'n8n-nodes-base.splitInBatches'">
+      <UFormField label="Batch Size">
+        <UInput
+          :model-value="String(getParams().batchSize ?? 1)"
+          type="number"
+          size="sm"
+          class="w-full"
+          @update:model-value="(v: string) => setParam('batchSize', Number(v) || 1)"
+        />
+      </UFormField>
+      <div class="p-2 bg-(--ui-bg-elevated) rounded text-[11px] text-(--ui-text-muted) space-y-1">
+        <p class="font-medium text-(--ui-text-highlighted)">
+          Looping over partIds
+        </p>
+        <p>
+          Feed this node an array item (e.g. via a <code class="bg-(--ui-bg) px-1 rounded">Code</code>
+          node that returns <code class="bg-(--ui-bg) px-1 rounded">$json.body.partIds.map(id => ({ json: { partId: id } }))</code>).
+          The <strong>LOOP</strong> output fires once per item; wire your per-item destination to it
+          and send back the last node to this Loop node's input to iterate.
+        </p>
+        <p>
+          The <strong>DONE</strong> output fires once when iteration finishes — use it for a
+          final summary Slack/email notification.
+        </p>
+      </div>
+    </template>
+
+    <!-- ============ WAIT ============ -->
+    <template v-else-if="data.nodeType === 'n8n-nodes-base.wait'">
+      <UFormField label="Resume">
+        <USelect
+          :model-value="(getParams().resume as string) ?? 'timeInterval'"
+          :items="[
+            { label: 'After time interval', value: 'timeInterval' },
+            { label: 'At specific time', value: 'specificTime' },
+            { label: 'On webhook call', value: 'webhook' },
+          ]"
+          size="sm"
+          class="w-full"
+          @update:model-value="(v: string) => setParam('resume', v)"
+        />
+      </UFormField>
+      <template v-if="(getParams().resume as string ?? 'timeInterval') === 'timeInterval'">
+        <div class="flex gap-2">
+          <UFormField
+            label="Amount"
+            class="flex-1"
+          >
+            <UInput
+              :model-value="String(getParams().amount ?? 5)"
+              type="number"
+              size="sm"
+              class="w-full"
+              @update:model-value="(v: string) => setParam('amount', Number(v) || 0)"
+            />
+          </UFormField>
+          <UFormField
+            label="Unit"
+            class="flex-1"
+          >
+            <USelect
+              :model-value="(getParams().unit as string) ?? 'seconds'"
+              :items="[
+                { label: 'Seconds', value: 'seconds' },
+                { label: 'Minutes', value: 'minutes' },
+                { label: 'Hours', value: 'hours' },
+                { label: 'Days', value: 'days' },
+              ]"
+              size="sm"
+              class="w-full"
+              @update:model-value="(v: string) => setParam('unit', v)"
+            />
+          </UFormField>
+        </div>
+      </template>
+      <template v-else-if="(getParams().resume as string) === 'specificTime'">
+        <UFormField label="DateTime (ISO 8601)">
+          <N8nVariableInput
+            :model-value="String(getParams().dateTime ?? '')"
+            :variables="variables"
+            placeholder="2026-05-01T09:00:00Z"
+            @update:model-value="(v: string) => setParam('dateTime', v)"
+          />
+        </UFormField>
+      </template>
+    </template>
+
+    <!-- ============ STOP & ERROR ============ -->
+    <template v-else-if="data.nodeType === 'n8n-nodes-base.stopAndError'">
+      <UFormField label="Error Message">
+        <N8nVariableInput
+          :model-value="String(getParams().errorMessage ?? '')"
+          :variables="variables"
+          multiline
+          :rows="3"
+          placeholder="Halted because {{ $json.body.event }} was unexpected"
+          @update:model-value="(v: string) => setParam('errorMessage', v)"
+        />
+      </UFormField>
+      <div class="p-2 bg-(--ui-bg-elevated) rounded text-[11px] text-(--ui-text-muted)">
+        Useful at the end of an IF "false" branch to explicitly fail the run with a
+        readable message (appears in n8n executions log).
+      </div>
+    </template>
+
+    <!-- ============ NO OP ============ -->
+    <template v-else-if="data.nodeType === 'n8n-nodes-base.noOp'">
+      <div class="p-2 bg-(--ui-bg-elevated) rounded text-[11px] text-(--ui-text-muted)">
+        No Op does nothing — pass-through. Use it as a visual join point after an IF or Switch,
+        or as a placeholder to make the diagram clearer.
       </div>
     </template>
 

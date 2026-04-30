@@ -8,6 +8,12 @@ import '@vue-flow/core/dist/theme-default.css'
 import '@vue-flow/controls/dist/style.css'
 import type { N8nWorkflowDefinition, WebhookEventType } from '~/types/domain'
 import { buildVariablesForEventTypes } from '~/utils/n8nVariables'
+import {
+  getPaletteGroups,
+  getDefaultParameters as getDefaultParametersForType,
+  getNodeDefinition,
+  getOutputsForNode,
+} from '~/utils/n8nNodeDefinitions'
 
 const props = defineProps<{
   modelValue: N8nWorkflowDefinition
@@ -19,34 +25,8 @@ const emit = defineEmits<{
   'update:modelValue': [value: N8nWorkflowDefinition]
 }>()
 
-// ---- Node templates for the palette ----
-const NODE_TEMPLATES = [
-  {
-    category: 'Transform',
-    nodes: [
-      { type: 'n8n-nodes-base.set', label: 'Set Fields', icon: 'i-lucide-pencil', description: 'Build a new payload shape with variable interpolation' },
-      { type: 'n8n-nodes-base.code', label: 'Code', icon: 'i-lucide-code', description: 'Run custom JavaScript to transform data' },
-    ],
-  },
-  {
-    category: 'Control Flow',
-    nodes: [
-      { type: 'n8n-nodes-base.if', label: 'IF', icon: 'i-lucide-git-branch', description: 'Route data to true/false branches based on conditions' },
-      { type: 'n8n-nodes-base.filter', label: 'Filter', icon: 'i-lucide-filter', description: 'Pass through items matching all conditions' },
-    ],
-  },
-  {
-    category: 'Destinations',
-    nodes: [
-      { type: 'n8n-nodes-base.httpRequest', label: 'HTTP Request', icon: 'i-lucide-globe', description: 'Send data to any HTTP endpoint with headers, query params, body' },
-      { type: 'n8n-nodes-base.slack', label: 'Slack', icon: 'i-lucide-message-square', description: 'Post messages to Slack channels' },
-      { type: 'n8n-nodes-base.jira', label: 'Jira', icon: 'i-lucide-ticket', description: 'Create or update Jira issues' },
-      { type: 'n8n-nodes-base.gmail', label: 'Email (Gmail)', icon: 'i-lucide-mail', description: 'Send email notifications' },
-      { type: 'n8n-nodes-base.discord', label: 'Discord', icon: 'i-lucide-hash', description: 'Post to Discord via webhook URL' },
-      { type: 'n8n-nodes-base.microsoftTeams', label: 'MS Teams', icon: 'i-lucide-users', description: 'Post to Teams via incoming webhook' },
-    ],
-  },
-] as const
+// ---- Node templates for the palette — sourced from the central registry ----
+const paletteGroups = computed(() => getPaletteGroups())
 
 // ---- Trigger constants ----
 const TRIGGER_NODE_ID = 'trigger-node'
@@ -60,6 +40,28 @@ const variables = computed(() => buildVariablesForEventTypes(props.eventTypes))
 const { onConnect, addEdges, removeNodes, removeEdges, fitView, onNodesChange, onEdgesChange } = useVueFlow()
 
 // ---- Convert workflow JSON <-> Vue Flow nodes/edges ----
+
+/**
+ * Map a source handle id to the branch index in n8n's `connections.main` array.
+ * The n8n convention: each output handle corresponds to a position in the
+ * `main[]` array. For a single-output node, everything goes into `main[0]`.
+ * For IF, handle "true" → index 0, handle "false" → index 1.
+ * For Switch, handles "0","1","2","3" → indices 0-3, "default" → index 4.
+ */
+function handleToBranchIndex(nodeType: string, handleId: string | null | undefined): number {
+  const outputs = getOutputsForNode(nodeType) ?? []
+  if (outputs.length <= 1 || !handleId || handleId === 'main') return 0
+  const idx = outputs.findIndex(o => o.id === handleId)
+  return idx >= 0 ? idx : 0
+}
+
+/** Reverse of the above — used when loading from n8n JSON. */
+function branchIndexToHandle(nodeType: string, branchIdx: number): string | undefined {
+  const outputs = getOutputsForNode(nodeType) ?? []
+  if (outputs.length <= 1) return undefined
+  return outputs[branchIdx]?.id
+}
+
 function workflowToFlow(workflow: N8nWorkflowDefinition): { nodes: Node[], edges: Edge[] } {
   const hasTrigger = workflow.nodes.some(n => n.type === TRIGGER_NODE_TYPE || n.id === TRIGGER_NODE_ID)
 
@@ -103,13 +105,12 @@ function workflowToFlow(workflow: N8nWorkflowDefinition): { nodes: Node[], edges
     const sourceNode = nodes.find(n => (n.data?.label) === sourceName)
     const conns = rawConns as { main?: Array<Array<{ node: string, type: string, index: number }>> } | undefined
     if (!sourceNode || !conns?.main) continue
-    // Each entry in conns.main[] represents one output branch (0 = default, 1 = IF false branch)
+    const sourceType = String(sourceNode.data?.nodeType ?? '')
     conns.main.forEach((outputs, branchIdx) => {
       for (const conn of outputs) {
         const targetNode = nodes.find(n => (n.data?.label) === conn.node)
         if (!targetNode) continue
-        const isIf = sourceNode.data?.nodeType === 'n8n-nodes-base.if'
-        const sourceHandle = isIf ? (branchIdx === 0 ? 'true' : 'false') : undefined
+        const sourceHandle = branchIndexToHandle(sourceType, branchIdx)
         edges.push({
           id: `${sourceNode.id}-${targetNode.id}-${branchIdx}`,
           source: sourceNode.id,
@@ -136,19 +137,27 @@ function flowToWorkflow(currentNodes: Node[], currentEdges: Edge[]): N8nWorkflow
   }))
 
   const connections: Record<string, { main: Array<Array<{ node: string, type: string, index: number }>> }> = {}
+
+  function ensureBranches(sourceName: string, sourceType: string, branchIdx: number) {
+    const outputs = getOutputsForNode(sourceType) ?? []
+    const arity = Math.max(outputs.length, branchIdx + 1, 1)
+    if (!connections[sourceName]) {
+      connections[sourceName] = { main: Array.from({ length: arity }, () => [] as Array<{ node: string, type: string, index: number }>) }
+    }
+    // Extend if we have a later branch than initial size
+    while (connections[sourceName].main.length <= branchIdx) {
+      connections[sourceName].main.push([])
+    }
+  }
+
   for (const edge of currentEdges) {
     const sourceNode = n8nNodes.find(n => n.id === edge.source)
     const targetNode = n8nNodes.find(n => n.id === edge.target)
     if (!sourceNode || !targetNode) continue
 
-    // Initialize with enough branches for IF nodes
-    if (!connections[sourceNode.name]) {
-      const isIf = sourceNode.type === 'n8n-nodes-base.if'
-      connections[sourceNode.name] = { main: isIf ? [[], []] : [[]] }
-    }
+    const branchIdx = handleToBranchIndex(sourceNode.type, edge.sourceHandle ?? null)
+    ensureBranches(sourceNode.name, sourceNode.type, branchIdx)
     const entry = connections[sourceNode.name]!
-    const branchIdx = edge.sourceHandle === 'false' ? 1 : 0
-    if (!entry.main[branchIdx]) entry.main[branchIdx] = []
     entry.main[branchIdx]!.push({
       node: targetNode.name,
       type: 'main',
@@ -265,6 +274,7 @@ function addNode(template: { type: string, label: string }) {
     ? { x: lastNonTrigger.position.x + 240, y: lastNonTrigger.position.y }
     : { x: baseX, y: 160 }
 
+  const def = getNodeDefinition(template.type)
   const newNode: Node = {
     id,
     type: 'shopPlanrNode',
@@ -273,7 +283,7 @@ function addNode(template: { type: string, label: string }) {
       label: candidate,
       nodeType: template.type,
       parameters: getDefaultParameters(template.type),
-      typeVersion: 1,
+      typeVersion: def?.typeVersion ?? 1,
     },
   }
   nodes.value = [...nodes.value, newNode]
@@ -323,40 +333,9 @@ function handleNodeUpdate(newData: { label: string, nodeType: string, parameters
   nodes.value = [...nodes.value]
 }
 
-// ---- Default parameters per node type ----
+// ---- Default parameters per node type — delegated to the registry ----
 function getDefaultParameters(type: string): Record<string, unknown> {
-  switch (type) {
-    case 'n8n-nodes-base.httpRequest':
-      return {
-        method: 'POST',
-        url: '',
-        authentication: 'none',
-        contentType: 'json',
-        body: '',
-        headers: [],
-        queryParameters: [],
-      }
-    case 'n8n-nodes-base.slack':
-      return { channel: '', text: '{{ $json.body.summary }}', authentication: 'oAuth2' }
-    case 'n8n-nodes-base.discord':
-      return { webhookUri: '', content: '{{ $json.body.summary }}' }
-    case 'n8n-nodes-base.jira':
-      return { operation: 'create', project: '', issueType: 'Task', summary: '{{ $json.body.summary }}', description: '' }
-    case 'n8n-nodes-base.gmail':
-      return { to: '', subject: 'Shop Planr: {{ $json.body.event }}', message: '{{ $json.body.summary }}' }
-    case 'n8n-nodes-base.microsoftTeams':
-      return { webhookUri: '', message: '{{ $json.body.summary }}' }
-    case 'n8n-nodes-base.set':
-      return { assignments: { assignments: [] } }
-    case 'n8n-nodes-base.code':
-      return { language: 'javaScript', jsCode: '// Access input at $input.first().json.body\n// Return an array of items to pass downstream\nreturn items;' }
-    case 'n8n-nodes-base.if':
-      return { conditions: { conditions: [] } }
-    case 'n8n-nodes-base.filter':
-      return { conditions: { conditions: [] } }
-    default:
-      return {}
-  }
+  return getDefaultParametersForType(type)
 }
 
 // ---- Warning detection: nodes with empty required fields ----
@@ -380,14 +359,35 @@ function getWarningFor(node: Node): string | undefined {
     case 'n8n-nodes-base.discord':
       if (!p.webhookUri) return 'Webhook URL is empty'
       break
-    case 'n8n-nodes-base.jira':
-      if (!p.project && p.operation === 'create') return 'Project key is empty'
+    case 'n8n-nodes-base.jira': {
+      const op = String(p.operation ?? 'create')
+      if (op === 'create' && !p.project) return 'Project key is empty'
+      if ((op === 'update' || op === 'addComment' || op === 'transition' || op === 'get') && !p.issueKey) {
+        return 'Issue key is empty'
+      }
+      if (op === 'addComment' && !p.commentBody) return 'Comment body is empty'
+      if (op === 'transition' && !p.transitionId) return 'Transition ID is empty'
       break
+    }
     case 'n8n-nodes-base.gmail':
       if (!p.to) return 'To address is empty'
       break
     case 'n8n-nodes-base.microsoftTeams':
       if (!p.webhookUri) return 'Webhook URL is empty'
+      break
+    case 'n8n-nodes-base.switch': {
+      const rules = (p.rules as { values?: unknown[] } | undefined)?.values ?? []
+      if (rules.length === 0) return 'No routing rules defined'
+      break
+    }
+    case 'n8n-nodes-base.wait':
+      if ((p.resume ?? 'timeInterval') === 'timeInterval' && !p.amount) return 'Wait amount is empty'
+      break
+    case 'n8n-nodes-base.stopAndError':
+      if (!p.errorMessage) return 'Error message is empty'
+      break
+    case 'n8n-nodes-base.splitInBatches':
+      if (!p.batchSize || Number(p.batchSize) < 1) return 'Batch size must be ≥ 1'
       break
   }
   return undefined
@@ -422,7 +422,7 @@ onMounted(() => {
       </div>
       <div class="p-2 space-y-3 overflow-y-auto flex-1">
         <div
-          v-for="cat in NODE_TEMPLATES"
+          v-for="cat in paletteGroups"
           :key="cat.category"
         >
           <p class="text-[10px] font-semibold text-(--ui-text-muted) uppercase tracking-wide px-1 mb-1">
