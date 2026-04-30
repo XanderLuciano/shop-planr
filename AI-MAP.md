@@ -54,7 +54,7 @@ server/
   middleware/
     01.rateLimit.ts      → Tiered rate limiting (login/auth/unauth tiers)
     02.auth.ts           → JWT auth: verifies token on /api/ routes, exempt list, cookie fallback for SSR
-  services/              → 14 service modules (business logic layer, including authService, tagService, webhookService)
+  services/              → 19 service modules (business logic layer, including authService, tagService, webhookService, webhookRegistrationService, webhookDeliveryService)
   repositories/
     interfaces/          → 16 repository interfaces + barrel export
     sqlite/              → 16 SQLite implementations + migration system (13 migrations)
@@ -184,8 +184,9 @@ Dependencies flow left-to-right only. All business logic lives in services. See 
 | `/api/paths/:id/advancement-mode` | `pathService` | Path advancement mode (PATCH) |
 | `/api/library/**` | `libraryService` | Process + location library CRUD |
 | `/api/tags/**` | `tagService` | Tag CRUD (admin-gated create/update/delete) |
-| `/api/webhooks/events/**` | `webhookService` | Webhook event queue (CRUD, batch status, retry, stats) |
-| `/api/webhooks/config` | `webhookService` | Webhook endpoint configuration (get/update) |
+| `/api/webhooks/events/**` | `webhookService` | Webhook event queue (list with delivery summaries, queue, delete, stats, test) |
+| `/api/webhooks/registrations/**` | `webhookRegistrationService` | Webhook registration CRUD (admin-gated) |
+| `/api/webhooks/deliveries/**` | `webhookDeliveryService` | Delivery queue (list queued, update status, batch update — admin-gated) |
 | `/api/jobs/:id/tags` | `jobService`, `tagService` | Get/set tags for a job |
 | `POST /api/paths/batch-distributions` | `pathService` | Bulk fetch step distributions + completed counts for multiple paths |
 | `POST /api/parts/batch-step-statuses` | `lifecycleService` | Bulk fetch step statuses for multiple parts |
@@ -211,7 +212,7 @@ Dependencies flow left-to-right only. All business logic lives in services. See 
 | BOM | `app/pages/bom.vue` | Bill of materials roll-ups + edit + version history |
 | Jira | `app/pages/jira.vue` | Jira ticket dashboard (conditional) |
 | Audit | `app/pages/audit.vue` | Audit trail viewer with filters (action type, user, serial, job, date range) |
-| Webhooks | `app/pages/webhooks.vue` | Webhook event queue admin: configure endpoint URL, select event types, start/stop dispatch, retry failed, view queue |
+| Webhooks | `app/pages/webhooks.vue` | Webhook admin: manage registrations (endpoint URLs + event types), view events with delivery summaries, replay/retry failed deliveries |
 | Settings | `app/pages/settings.vue` | Users, Jira connection, field mappings, process/location libraries, page visibility toggles |
 | API Docs | `/_scalar` (Nitro built-in) | Auto-generated OpenAPI 3.1 Scalar UI (no custom page) |
 | Serial browser | `app/pages/serials/index.vue` | Searchable/filterable serial number list |
@@ -239,8 +240,9 @@ Core entities and relationships:
 - **Tag** → user-defined label with name (max 30 chars, case-insensitive unique) and hex color; managed under Settings → Tags (admin-only CRUD)
 - **JobTag** → many-to-many join between Jobs and Tags via `job_tags` table; cascade deletes on both sides
 - **AppSettings** → singleton: Jira connection + field mappings + page toggles (5 default PI project mappings, 10 page visibility toggles)
-- **WebhookEvent** → queued event record: eventType, payload (JSON), summary (human-readable one-liner), status (queued/sent/failed), retryCount; dispatched client-side to configured endpoint
-- **WebhookConfig** → singleton: endpoint URL, enabled event types, isActive flag; controls which events get dispatched and where
+- **WebhookEvent** → recorded event: eventType, payload (JSON), summary (human-readable one-liner), createdAt; emitted server-side via `emitWebhookEvent()`, fan-out creates deliveries per matching registration
+- **WebhookRegistration** → named endpoint: url, eventTypes filter (JSON array), createdAt/updatedAt; admin-managed CRUD
+- **WebhookDelivery** → per-registration delivery record: eventId, registrationId (nullable — SET NULL on registration delete), status (queued/delivering/delivered/failed/canceled), error, attemptCount, nextRetryAt
 
 ## Sub-Maps (`.ai/` folder)
 

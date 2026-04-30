@@ -124,11 +124,12 @@ export function createSQLiteWebhookEventRepository(db: Database): WebhookEventRe
     },
 
     purgeOrphaned(): number {
+      const cutoff = new Date(Date.now() - 30 * 86_400_000).toISOString()
       const result = db.prepare(`
         DELETE FROM webhook_events
         WHERE id NOT IN (SELECT DISTINCT event_id FROM webhook_deliveries)
-          AND created_at < datetime('now', '-30 days')
-      `).run()
+          AND created_at < ?
+      `).run(cutoff)
       return result.changes
     },
   }

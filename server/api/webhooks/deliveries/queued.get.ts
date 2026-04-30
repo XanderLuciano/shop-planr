@@ -11,6 +11,8 @@ defineRouteMeta({
 })
 
 export default defineApiHandler(async (event) => {
+  const userId = getAuthUserId(event)
+  requireAdmin(getRepositories().users, userId, 'list queued webhook deliveries')
   const { limit } = parseQuery(event, listQueuedQuerySchema)
   const { webhookDeliveryService } = getServices()
   return webhookDeliveryService.listQueued(limit)

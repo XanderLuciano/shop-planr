@@ -274,14 +274,14 @@ describe('webhook registration route wiring', () => {
     currentBody = {}
   })
 
-  it('GET /api/webhooks/registrations calls list()', async () => {
+  it('GET /api/webhooks/registrations calls list() with userId', async () => {
     const registrations = [
       { id: 'whr_1', name: 'Slack', url: 'https://slack.com/hook', eventTypes: ['part_advanced'], createdAt: '2024-01-01', updatedAt: '2024-01-01' },
     ]
     mockWebhookRegistrationService.list.mockReturnValueOnce(registrations)
 
     const result = await registrationsGetHandler(makeFakeEvent())
-    expect(mockWebhookRegistrationService.list).toHaveBeenCalledOnce()
+    expect(mockWebhookRegistrationService.list).toHaveBeenCalledWith('user_1')
     expect(result).toEqual(registrations)
   })
 

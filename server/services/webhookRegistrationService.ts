@@ -55,7 +55,8 @@ export function createWebhookRegistrationService(repos: {
       return repos.webhookRegistrations.create(registration)
     },
 
-    list(): WebhookRegistration[] {
+    list(userId: string): WebhookRegistration[] {
+      requireAdmin(repos.users, userId, 'list webhook registrations')
       return repos.webhookRegistrations.list()
     },
 

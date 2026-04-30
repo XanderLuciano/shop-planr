@@ -1,7 +1,7 @@
 defineRouteMeta({
   openAPI: {
     tags: ['Webhooks'],
-    description: 'Get webhook event queue statistics (counts by status: queued, sent, failed).',
+    description: 'Get webhook event queue statistics (total event count).',
     responses: {
       200: { description: 'Queue statistics' },
     },

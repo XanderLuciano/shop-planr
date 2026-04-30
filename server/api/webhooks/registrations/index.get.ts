@@ -8,7 +8,8 @@ defineRouteMeta({
   },
 })
 
-export default defineApiHandler(async () => {
+export default defineApiHandler(async (event) => {
+  const userId = getAuthUserId(event)
   const { webhookRegistrationService } = getServices()
-  return webhookRegistrationService.list()
+  return webhookRegistrationService.list(userId)
 })

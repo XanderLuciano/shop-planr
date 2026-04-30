@@ -14,6 +14,8 @@ defineRouteMeta({
 })
 
 export default defineApiHandler(async (event) => {
+  const userId = getAuthUserId(event)
+  requireAdmin(getRepositories().users, userId, 'batch update webhook delivery statuses')
   const body = await parseBody(event, batchDeliveryStatusSchema)
   const { webhookDeliveryService } = getServices()
   webhookDeliveryService.batchUpdateStatus(body.deliveries)

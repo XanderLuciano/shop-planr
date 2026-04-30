@@ -13,6 +13,8 @@ defineRouteMeta({
 })
 
 export default defineApiHandler(async (event) => {
+  const userId = getAuthUserId(event)
+  requireAdmin(getRepositories().users, userId, 'queue webhook events')
   const body = await parseBody(event, queueEventSchema)
   return getServices().webhookService.queueEvent(body)
 })

@@ -14,6 +14,8 @@ defineRouteMeta({
 })
 
 export default defineApiHandler(async (event) => {
+  const userId = getAuthUserId(event)
+  requireAdmin(getRepositories().users, userId, 'update webhook delivery status')
   const id = getRouterParam(event, 'id')
   if (!id) throw new ValidationError('Delivery ID is required')
   const body = await parseBody(event, updateDeliveryStatusSchema)

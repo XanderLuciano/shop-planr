@@ -130,7 +130,6 @@ export function createTestContext() {
   })
   const webhookService = createWebhookService({
     webhookEvents: repos.webhookEvents,
-    webhookDeliveries: repos.webhookDeliveries,
     users: repos.users,
     db,
   }, webhookDeliveryService)
