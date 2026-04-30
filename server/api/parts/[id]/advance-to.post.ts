@@ -20,6 +20,7 @@ export default defineApiHandler(async (event) => {
   const { lifecycleService } = getServices()
   const result = lifecycleService.advanceToStep(id, { ...body, userId })
   const userName = resolveUserName(userId)
+  const pathInfo = resolvePathInfo(id)
   const eventType = result.serial.status === 'completed' ? 'part_completed' : 'part_advanced'
   emitWebhookEvent(eventType, {
     user: userName,
@@ -27,6 +28,7 @@ export default defineApiHandler(async (event) => {
     targetStepId: body.targetStepId,
     skip: body.skip ?? false,
     newStatus: result.serial.status,
+    ...pathInfo,
   })
   // Emit step_skipped / step_deferred for any bypassed steps during advancement
   for (const bypassed of result.bypassed) {
@@ -36,6 +38,7 @@ export default defineApiHandler(async (event) => {
         partId: id,
         stepId: bypassed.stepId,
         stepName: bypassed.stepName,
+        ...pathInfo,
       })
     } else if (bypassed.classification === 'deferred') {
       emitWebhookEvent('step_deferred', {
@@ -43,6 +46,7 @@ export default defineApiHandler(async (event) => {
         partId: id,
         stepId: bypassed.stepId,
         stepName: bypassed.stepName,
+        ...pathInfo,
       })
     }
   }

@@ -83,6 +83,67 @@ export function resolveStepNameByPath(pathId: string, stepId: string): string | 
 }
 
 /**
+ * Resolve a partId to its full path + job context for webhook payload
+ * enrichment. Returning this bundle lets n8n workflows branch on the
+ * path name (e.g. "route by path" nodes) without chasing the API.
+ *
+ * For batch events, callers should pass the first partId — all parts
+ * in a single request share a path/job in every current call site.
+ *
+ * Returns undefined if any lookup fails; callers should spread the
+ * result conditionally so missing info doesn't break the payload.
+ */
+export function resolvePathInfo(partId: string): {
+  pathId: string
+  pathName: string
+  jobId: string
+  jobName: string
+} | undefined {
+  try {
+    const part = getRepositories().parts.getById(partId)
+    if (!part) return undefined
+    const path = getRepositories().paths.getById(part.pathId)
+    if (!path) return undefined
+    const job = getRepositories().jobs.getById(part.jobId)
+    if (!job) return undefined
+    return {
+      pathId: path.id,
+      pathName: path.name,
+      jobId: job.id,
+      jobName: job.name,
+    }
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * Resolve just the path name/id for a partId. Lighter-weight than
+ * resolvePathInfo when the caller doesn't also need job context.
+ */
+export function resolvePathInfoByPath(pathId: string): {
+  pathId: string
+  pathName: string
+  jobId: string
+  jobName: string
+} | undefined {
+  try {
+    const path = getRepositories().paths.getById(pathId)
+    if (!path) return undefined
+    const job = getRepositories().jobs.getById(path.jobId)
+    if (!job) return undefined
+    return {
+      pathId: path.id,
+      pathName: path.name,
+      jobId: job.id,
+      jobName: job.name,
+    }
+  } catch {
+    return undefined
+  }
+}
+
+/**
  * Format a webhook event type for display.
  * Single source of truth — used by both server-side summary generation
  * and the client-side UI (re-exported from app/utils/webhookFormatting.ts).
@@ -119,6 +180,7 @@ function buildSummary(eventType: WebhookEventType, data: Record<string, unknown>
     parts.push(String(data.stepName))
   }
 
+  if (data.pathName) parts.push(`path: ${data.pathName}`)
   if (data.jobName) parts.push(String(data.jobName))
 
   return parts.join(' | ')

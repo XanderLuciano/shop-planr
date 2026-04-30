@@ -42,6 +42,8 @@ export default defineApiHandler(async (event) => {
     certType: cert.type,
     partId: id,
     stepId: step.id,
+    stepName: step.name,
+    ...resolvePathInfo(id),
   })
   return attachment
 })

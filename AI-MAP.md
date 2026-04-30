@@ -240,7 +240,7 @@ Core entities and relationships:
 - **Tag** → user-defined label with name (max 30 chars, case-insensitive unique) and hex color; managed under Settings → Tags (admin-only CRUD)
 - **JobTag** → many-to-many join between Jobs and Tags via `job_tags` table; cascade deletes on both sides
 - **AppSettings** → singleton: Jira connection + field mappings + page toggles (5 default PI project mappings, 10 page visibility toggles)
-- **WebhookEvent** → recorded event: eventType, payload (JSON), summary (human-readable one-liner), createdAt; emitted server-side via `emitWebhookEvent()`, fan-out creates deliveries per matching registration
+- **WebhookEvent** → recorded event: eventType, payload (JSON), summary (human-readable one-liner), createdAt; emitted server-side via `emitWebhookEvent()`, fan-out creates deliveries per matching registration. Payloads auto-enriched with path/job context (`pathId`, `pathName`, `jobId`, `jobName`) for part- and step-scoped events via `resolvePathInfo(partId)` / `resolvePathInfoByPath(pathId)` helpers in `server/utils/webhookEmit.ts` — lets n8n workflows branch/filter on route without chasing the API.
 - **WebhookRegistration** → named endpoint: url, eventTypes filter (JSON array), createdAt/updatedAt; admin-managed CRUD
 - **WebhookDelivery** → per-registration delivery record: eventId, registrationId (nullable — SET NULL on registration delete), status (queued/delivering/delivered/failed/canceled), error, attemptCount, nextRetryAt
 

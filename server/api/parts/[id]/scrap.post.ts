@@ -24,6 +24,7 @@ export default defineApiHandler(async (event) => {
     partId: id,
     reason: body.reason,
     explanation: body.explanation,
+    ...resolvePathInfo(id),
   })
   return result
 })

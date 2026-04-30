@@ -24,6 +24,7 @@ export default defineApiHandler(async (event) => {
     stepName: resolveStepNameByPath(body.pathId, body.stepId),
     partIds: body.partIds,
     text: body.text,
+    ...resolvePathInfoByPath(body.pathId),
   })
   return note
 })
