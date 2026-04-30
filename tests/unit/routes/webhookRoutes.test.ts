@@ -78,6 +78,8 @@ vi.stubGlobal('getAuthUserId', () => 'user_1')
 vi.stubGlobal('sendNoContent', vi.fn())
 vi.stubGlobal('buildTestPayload', buildTestPayload)
 vi.stubGlobal('buildTestSummary', buildTestSummary)
+vi.stubGlobal('requireAdmin', vi.fn())
+vi.stubGlobal('getRepositories', () => ({ users: {} }))
 
 let currentRouterParam: string | undefined = 'whe_1'
 vi.stubGlobal('getRouterParam', (_event: unknown, _name: string) => currentRouterParam)
@@ -237,8 +239,7 @@ describe('webhook test event route wiring', () => {
     await testEventHandler(makeFakeEvent())
     const payload = mockWebhookService.queueEvent.mock.calls[0][0].payload
     expect(payload.partId).toBe('SN-00042')
-    expect(payload.fromStep).toBe('Machining')
-    expect(payload.toStep).toBe('Inspection')
+    expect(payload.targetStepId).toBe('step_abc123')
     expect(payload.skip).toBe(false)
   })
 

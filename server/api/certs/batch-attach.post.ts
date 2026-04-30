@@ -27,7 +27,7 @@ export default defineApiHandler(async (event) => {
       certType: cert.type,
       partIds: result.map(a => a.partId),
       count: result.length,
-      stepId: result[0]?.stepId,
+      stepId: result[0]!.stepId,
     })
   }
   return result

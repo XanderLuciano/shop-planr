@@ -1,5 +1,6 @@
 import { ref, readonly } from 'vue'
 import type { QueuedDeliveryView, WebhookDeliveryStatus, WebhookDelivery } from '~/types/domain'
+import { DELIVERY_STATUS } from '~/types/domain'
 import { extractApiError } from '~/utils/apiError'
 
 const dispatching = ref(false)
@@ -55,13 +56,13 @@ export function useWebhookDeliveries() {
       })
 
       if (response.ok) {
-        return { id: delivery.id, status: 'delivered' }
+        return { id: delivery.id, status: DELIVERY_STATUS.DELIVERED }
       } else {
-        return { id: delivery.id, status: 'failed', error: `HTTP ${response.status}: ${response.statusText}` }
+        return { id: delivery.id, status: DELIVERY_STATUS.FAILED, error: `HTTP ${response.status}: ${response.statusText}` }
       }
     } catch (fetchErr: unknown) {
       const msg = fetchErr instanceof Error ? fetchErr.message : 'Network error'
-      return { id: delivery.id, status: 'failed', error: msg }
+      return { id: delivery.id, status: DELIVERY_STATUS.FAILED, error: msg }
     }
   }
 
@@ -83,7 +84,7 @@ export function useWebhookDeliveries() {
       if (!queued.length) return
 
       // Mark all as 'delivering' before starting
-      const deliveringUpdates = queued.map(d => ({ id: d.id, status: 'delivering' as WebhookDeliveryStatus }))
+      const deliveringUpdates = queued.map(d => ({ id: d.id, status: DELIVERY_STATUS.DELIVERING }))
       await $api('/api/webhooks/deliveries/batch-status', {
         method: 'POST',
         body: { deliveries: deliveringUpdates },
@@ -133,7 +134,7 @@ export function useWebhookDeliveries() {
       // Mark as delivering
       await $api(`/api/webhooks/deliveries/${encodeURIComponent(delivery.id)}`, {
         method: 'PATCH',
-        body: { status: 'delivering' },
+        body: { status: DELIVERY_STATUS.DELIVERING },
       })
 
       // Send to endpoint
@@ -191,7 +192,7 @@ export function useWebhookDeliveries() {
 
   /** Cancel a queued delivery (queued → canceled). */
   async function cancelDelivery(id: string): Promise<WebhookDelivery | undefined> {
-    return updateDeliveryStatus(id, 'canceled')
+    return updateDeliveryStatus(id, DELIVERY_STATUS.CANCELED)
   }
 
   return {

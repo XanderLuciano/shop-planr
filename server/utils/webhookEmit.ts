@@ -1,21 +1,33 @@
 import type { WebhookEventType } from '../types/domain'
+import type { WebhookPayloadMap } from '../schemas/webhookPayloadSchemas'
+import { WEBHOOK_PAYLOAD_SCHEMAS } from '../schemas/webhookPayloadSchemas'
 
 /**
  * Queue a webhook event server-side. Fire-and-forget — errors are
  * silently swallowed so event emission never disrupts the primary
  * API response.
  *
- * This replaces the old client-side useWebhookEmit composable.
- * Events are now recorded at the API boundary so every client
- * (any browser, any user) generates events. The webhooks page
- * dispatch loop picks them up and fires the HTTP POSTs.
+ * The generic parameter links the event type to its payload schema,
+ * so every call site gets compile-time type checking. Payloads are
+ * also validated at runtime in dev mode as a safety net.
  */
-export function emitWebhookEvent(
-  eventType: WebhookEventType,
-  payload: Record<string, unknown>,
+export function emitWebhookEvent<T extends WebhookEventType>(
+  eventType: T,
+  payload: WebhookPayloadMap[T],
   summary?: string,
 ): void {
   try {
+    // Dev-time validation: warn if payload doesn't match the schema
+    if (import.meta.dev) {
+      const schema = WEBHOOK_PAYLOAD_SCHEMAS[eventType]
+      if (schema) {
+        const result = schema.safeParse(payload)
+        if (!result.success) {
+          console.warn(`[webhook] payload validation warning for ${eventType}:`, result.error.flatten().fieldErrors)
+        }
+      }
+    }
+
     const autoSummary = summary ?? buildSummary(eventType, payload)
     getServices().webhookService.queueEvent({
       eventType,

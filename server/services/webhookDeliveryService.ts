@@ -42,6 +42,12 @@ const STUCK_THRESHOLD_MINUTES = 5
 /** Delivered/canceled deliveries older than this are purged. */
 const RETENTION_DAYS = 30
 
+/** Minimum interval between housekeeping runs (milliseconds). */
+const HOUSEKEEPING_INTERVAL_MS = 60_000
+
+/** Timestamp of the last housekeeping run. */
+let lastHousekeepingAt = 0
+
 /**
  * Compute the next retry delay using exponential backoff.
  */
@@ -69,7 +75,7 @@ export function createWebhookDeliveryService(repos: {
       id: generateId('whd'),
       eventId: event.id,
       registrationId: reg.id,
-      status: 'queued' as WebhookDeliveryStatus,
+      status: 'queued',
       attemptCount: 0,
       createdAt: now,
       updatedAt: now,
@@ -97,9 +103,13 @@ export function createWebhookDeliveryService(repos: {
      * - Purges orphaned events with no remaining deliveries (older than 30 days)
      */
     listQueued(limit?: number) {
-      repos.webhookDeliveries.resetStuckDeliveries(STUCK_THRESHOLD_MINUTES)
-      repos.webhookDeliveries.purgeOldDeliveries(RETENTION_DAYS)
-      repos.webhookEvents.purgeOrphaned()
+      const now = Date.now()
+      if (now - lastHousekeepingAt >= HOUSEKEEPING_INTERVAL_MS) {
+        lastHousekeepingAt = now
+        repos.webhookDeliveries.resetStuckDeliveries(STUCK_THRESHOLD_MINUTES)
+        repos.webhookDeliveries.purgeOldDeliveries(RETENTION_DAYS)
+        repos.webhookEvents.purgeOrphaned()
+      }
       return repos.webhookDeliveries.listQueued(limit)
     },
 

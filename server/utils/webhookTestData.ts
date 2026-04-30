@@ -14,8 +14,6 @@ export function buildTestPayload(eventType: WebhookEventType): Record<string, un
         user: 'Test User',
         partId: 'SN-00042',
         targetStepId: 'step_abc123',
-        fromStep: 'Machining',
-        toStep: 'Inspection',
         skip: false,
         newStatus: 'in_progress',
       }
@@ -141,7 +139,6 @@ export function buildTestPayload(eventType: WebhookEventType): Record<string, un
         partIds: ['SN-00042', 'SN-00043'],
         count: 2,
         stepId: 'step_abc123',
-        stepName: 'Receiving',
       }
     default: {
       const _exhaustive: never = eventType
@@ -153,7 +150,7 @@ export function buildTestPayload(eventType: WebhookEventType): Record<string, un
 export function buildTestSummary(eventType: WebhookEventType, data: Record<string, unknown>): string {
   switch (eventType) {
     case 'part_advanced':
-      return `${data.partId} advanced: ${data.fromStep} → ${data.toStep}`
+      return `${data.partId} advanced to step ${data.targetStepId}`
     case 'part_completed':
       return `${data.partId} completed all steps`
     case 'part_created':
@@ -185,7 +182,7 @@ export function buildTestSummary(eventType: WebhookEventType, data: Record<strin
     case 'note_created':
       return `Note on ${data.stepName}: "${String(data.text).slice(0, 50)}"`
     case 'cert_attached':
-      return `${data.certName} attached to ${(data.partIds as string[]).length} parts at ${data.stepName}`
+      return `${data.certName} attached to ${(data.partIds as string[]).length} parts at step ${data.stepId}`
     default: {
       const _exhaustive: never = eventType
       throw new Error(`Unhandled event type: ${_exhaustive}`)

@@ -18,6 +18,8 @@ defineRouteMeta({
 })
 
 export default defineApiHandler(async (event) => {
+  const userId = getAuthUserId(event)
+  requireAdmin(getRepositories().users, userId, 'send test webhook events')
   const body = await parseBody(event, testEventSchema)
   const payload = buildTestPayload(body.eventType)
   const summary = `[TEST] ${buildTestSummary(body.eventType, payload)}`

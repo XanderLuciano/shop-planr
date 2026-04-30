@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { TabsItem } from '@nuxt/ui'
 import type { WebhookEventType, DeliveryDetail, QueuedDeliveryView } from '~/types/domain'
-import { WEBHOOK_EVENT_TYPES } from '~/types/domain'
+import { WEBHOOK_EVENT_TYPES, DELIVERY_STATUS } from '~/types/domain'
 import { formatDateTime } from '~/utils/dateFormatting'
 
 // ---- Composables ----
@@ -55,197 +55,14 @@ const eventTypeItems = WEBHOOK_EVENT_TYPES.map(t => ({
   value: t,
 }))
 
-// ---- Developer reference data ----
-const eventPayloadDocs: { type: WebhookEventType, description: string, fields: { name: string, type: string, description: string }[] }[] = [
-  {
-    type: 'part_advanced',
-    description: 'Fired when one or more parts are advanced to a target step. Single-part calls use partId; batch calls use partIds.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user who performed the action' },
-      { name: 'partId', type: 'string?', description: 'Serial number ID — present on single-part advance' },
-      { name: 'partIds', type: 'string[]?', description: 'Serial number IDs — present on batch advance' },
-      { name: 'advancedCount', type: 'number?', description: 'Number of parts successfully advanced (batch only)' },
-      { name: 'failedCount', type: 'number?', description: 'Number of parts that failed to advance (batch only)' },
-      { name: 'targetStepId', type: 'string', description: 'ID of the step the part(s) were advanced to' },
-      { name: 'skip', type: 'boolean', description: 'Whether intermediate steps were skipped' },
-      { name: 'newStatus', type: 'string?', description: 'Part status after advancement (single-part only)' },
-    ],
-  },
-  {
-    type: 'part_completed',
-    description: 'Fired when one or more parts finish their final process step. Single-part calls use partId; batch calls use partIds.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partId', type: 'string?', description: 'Serial number ID — present on single-part advance' },
-      { name: 'partIds', type: 'string[]?', description: 'Serial number IDs — present on batch advance' },
-      { name: 'count', type: 'number?', description: 'Number of parts completed (batch only)' },
-      { name: 'targetStepId', type: 'string', description: 'ID of the final step' },
-      { name: 'newStatus', type: 'string?', description: '"completed" (single-part only)' },
-    ],
-  },
-  {
-    type: 'part_created',
-    description: 'Fired when parts are batch-created. Always uses partIds (array) since parts are always created in batches.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partIds', type: 'string[]', description: 'New serial number IDs' },
-      { name: 'count', type: 'number', description: 'Number of parts created' },
-      { name: 'jobId', type: 'string', description: 'Parent job ID' },
-      { name: 'jobName', type: 'string', description: 'Parent job name' },
-      { name: 'pathId', type: 'string', description: 'Route path ID' },
-      { name: 'pathName', type: 'string', description: 'Route path name' },
-    ],
-  },
-  {
-    type: 'part_scrapped',
-    description: 'Fired when a part is marked as scrap.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partId', type: 'string', description: 'Serial number ID' },
-      { name: 'reason', type: 'string', description: 'Scrap reason code (e.g. dimensional_failure)' },
-      { name: 'explanation', type: 'string?', description: 'Optional free-text explanation' },
-    ],
-  },
-  {
-    type: 'part_force_completed',
-    description: 'Fired when a part is force-completed with remaining steps incomplete.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partId', type: 'string', description: 'Serial number ID' },
-      { name: 'reason', type: 'string?', description: 'Optional reason for force completion' },
-    ],
-  },
-  {
-    type: 'step_skipped',
-    description: 'Fired when a process step is skipped for one or more parts. Single-part calls use partId; batch calls use partIds.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partId', type: 'string?', description: 'Serial number ID — present on single-part advance' },
-      { name: 'partIds', type: 'string[]?', description: 'Serial number IDs — present on batch advance' },
-      { name: 'count', type: 'number?', description: 'Number of parts that skipped this step (batch only)' },
-      { name: 'stepId', type: 'string', description: 'Skipped step ID' },
-      { name: 'stepName', type: 'string', description: 'Skipped step name' },
-    ],
-  },
-  {
-    type: 'step_deferred',
-    description: 'Fired when a required step is deferred for one or more parts. Single-part calls use partId; batch calls use partIds.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partId', type: 'string?', description: 'Serial number ID — present on single-part advance' },
-      { name: 'partIds', type: 'string[]?', description: 'Serial number IDs — present on batch advance' },
-      { name: 'count', type: 'number?', description: 'Number of parts that deferred this step (batch only)' },
-      { name: 'stepId', type: 'string', description: 'Deferred step ID' },
-      { name: 'stepName', type: 'string', description: 'Deferred step name' },
-    ],
-  },
-  {
-    type: 'step_waived',
-    description: 'Fired when a deferred step is waived by an approver.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partId', type: 'string', description: 'Serial number ID' },
-      { name: 'stepId', type: 'string', description: 'Waived step ID' },
-      { name: 'stepName', type: 'string', description: 'Waived step name' },
-      { name: 'reason', type: 'string', description: 'Waiver justification' },
-    ],
-  },
-  {
-    type: 'deferred_step_completed',
-    description: 'Fired when a previously deferred step is completed.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partId', type: 'string', description: 'Serial number ID' },
-      { name: 'stepId', type: 'string', description: 'Completed step ID' },
-      { name: 'stepName', type: 'string', description: 'Completed step name' },
-    ],
-  },
-  {
-    type: 'step_override_created',
-    description: 'Fired when a fast-track step override is created for one or more parts.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partIds', type: 'string[]', description: 'Affected part IDs' },
-      { name: 'count', type: 'number', description: 'Number of parts' },
-      { name: 'stepId', type: 'string', description: 'Overridden step ID' },
-      { name: 'reason', type: 'string?', description: 'Reason for the override' },
-    ],
-  },
-  {
-    type: 'step_override_reversed',
-    description: 'Fired when a step override is reversed (re-enabled).',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partId', type: 'string', description: 'Serial number ID' },
-      { name: 'stepId', type: 'string', description: 'Step ID whose override was reversed' },
-      { name: 'stepName', type: 'string', description: 'Step name whose override was reversed' },
-    ],
-  },
-  {
-    type: 'part_deleted',
-    description: 'Fired when a part is admin-deleted (cascade deletes dependents).',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'partId', type: 'string', description: 'Deleted serial number ID' },
-    ],
-  },
-  {
-    type: 'job_created',
-    description: 'Fired when a new production job is created.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'jobId', type: 'string', description: 'New job ID' },
-      { name: 'jobName', type: 'string', description: 'Job name' },
-      { name: 'goalQuantity', type: 'number', description: 'Target quantity' },
-    ],
-  },
-  {
-    type: 'job_deleted',
-    description: 'Fired when a job is deleted.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'jobId', type: 'string', description: 'Deleted job ID' },
-      { name: 'jobName', type: 'string', description: 'Deleted job name' },
-    ],
-  },
-  {
-    type: 'path_deleted',
-    description: 'Fired when a route path is deleted (admin cascade delete).',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'pathId', type: 'string', description: 'Deleted path ID' },
-      { name: 'pathName', type: 'string', description: 'Deleted path name' },
-      { name: 'jobId', type: 'string', description: 'Parent job ID' },
-      { name: 'deletedPartIds', type: 'string[]', description: 'IDs of parts cascade-deleted with the path' },
-    ],
-  },
-  {
-    type: 'note_created',
-    description: 'Fired when a defect note is created on a process step.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'noteId', type: 'string', description: 'Note ID' },
-      { name: 'stepId', type: 'string', description: 'Step the note is attached to' },
-      { name: 'stepName', type: 'string', description: 'Step name' },
-      { name: 'partIds', type: 'string[]', description: 'Affected part IDs' },
-      { name: 'text', type: 'string', description: 'Note content' },
-    ],
-  },
-  {
-    type: 'cert_attached',
-    description: 'Fired when a quality certificate is attached to parts. Single-part attach uses partId; batch attach uses partIds.',
-    fields: [
-      { name: 'user', type: 'string', description: 'Display name of the user' },
-      { name: 'certId', type: 'string', description: 'Certificate ID' },
-      { name: 'certName', type: 'string', description: 'Certificate name' },
-      { name: 'certType', type: 'string', description: 'Certificate type (material or process)' },
-      { name: 'partId', type: 'string?', description: 'Part ID — present on single-part attach' },
-      { name: 'partIds', type: 'string[]?', description: 'Part IDs — present on batch attach' },
-      { name: 'count', type: 'number?', description: 'Number of parts (batch only)' },
-      { name: 'stepId', type: 'string', description: 'Step where the cert was attached' },
-    ],
-  },
-]
+// ---- Developer reference data (auto-generated from Zod schemas) ----
+const eventPayloadDocs = computed(() =>
+  WEBHOOK_EVENT_TYPES.map(type => ({
+    type,
+    description: WEBHOOK_PAYLOAD_SCHEMAS[type].description ?? '',
+    fields: extractPayloadFields(WEBHOOK_PAYLOAD_SCHEMAS[type]),
+  })),
+)
 
 async function sendTestEvent() {
   sendingTest.value = true
@@ -316,11 +133,11 @@ function openAddForm() {
   showForm.value = true
 }
 
-function openEditForm(reg: { id: string, name: string, url: string, eventTypes: readonly string[] }) {
+function openEditForm(reg: { id: string, name: string, url: string, eventTypes: readonly WebhookEventType[] }) {
   editingId.value = reg.id
   formName.value = reg.name
   formUrl.value = reg.url
-  formEventTypes.value = [...reg.eventTypes] as WebhookEventType[]
+  formEventTypes.value = [...reg.eventTypes]
   formError.value = ''
   showForm.value = true
 }
@@ -410,11 +227,11 @@ function deliverySummaryText(summary: { total: number, queued: number, deliverin
 
 function statusColor(status: string): 'success' | 'error' | 'warning' | 'info' | 'neutral' {
   switch (status) {
-    case 'delivered': return 'success'
-    case 'failed': return 'error'
-    case 'queued': return 'warning'
-    case 'delivering': return 'info'
-    case 'canceled': return 'neutral'
+    case DELIVERY_STATUS.DELIVERED: return 'success'
+    case DELIVERY_STATUS.FAILED: return 'error'
+    case DELIVERY_STATUS.QUEUED: return 'warning'
+    case DELIVERY_STATUS.DELIVERING: return 'info'
+    case DELIVERY_STATUS.CANCELED: return 'neutral'
     default: return 'neutral'
   }
 }
@@ -497,7 +314,7 @@ async function handleDeleteEvent(eventId: string) {
 async function handleRetryDelivery(deliveryId: string, eventId: string) {
   addLoading(`delivery-${deliveryId}`)
   try {
-    await updateDeliveryStatus(deliveryId, 'queued')
+    await updateDeliveryStatus(deliveryId, DELIVERY_STATUS.QUEUED)
     await refreshEventLog()
     await refreshEventDeliveries(eventId)
   } finally {

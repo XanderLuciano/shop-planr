@@ -49,6 +49,9 @@ import { addLibraryEntrySchema } from '~/server/schemas/librarySchemas'
 import {
   queueEventSchema,
 } from '~/server/schemas/webhookSchemas'
+import { WEBHOOK_PAYLOAD_SCHEMAS } from '~/server/schemas/webhookPayloadSchemas'
+import { WEBHOOK_EVENT_TYPES } from '~/server/types/domain'
+import { buildTestPayload } from '~/server/utils/webhookTestData'
 import { createUserService } from '~/server/services/userService'
 import { createSettingsService } from '~/server/services/settingsService'
 import { SQLiteSettingsRepository } from '~/server/repositories/sqlite/settingsRepository'
@@ -984,19 +987,29 @@ describe('Webhook schemas → webhookService', () => {
     expect(event.createdAt).toBeTruthy()
   })
 
-  it('all 13 event types are accepted by queueEventSchema', () => {
-    const types = [
-      'part_advanced', 'part_completed', 'part_created', 'part_scrapped',
-      'part_force_completed', 'step_skipped', 'step_deferred', 'step_waived',
-      'job_created', 'job_deleted', 'path_deleted', 'note_created', 'cert_attached',
-    ]
-    for (const eventType of types) {
+  it('all event types are accepted by queueEventSchema', () => {
+    for (const eventType of WEBHOOK_EVENT_TYPES) {
       const result = queueEventSchema.safeParse({
         eventType,
         payload: {},
         summary: `Test ${eventType}`,
       })
       expect(result.success, `Expected ${eventType} to be valid`).toBe(true)
+    }
+  })
+
+  it('buildTestPayload output validates against the payload schema for every event type', () => {
+    for (const eventType of WEBHOOK_EVENT_TYPES) {
+      const payload = buildTestPayload(eventType)
+      const schema = WEBHOOK_PAYLOAD_SCHEMAS[eventType]
+      const result = schema.safeParse(payload)
+      expect(result.success, `Test payload for ${eventType} failed schema validation: ${JSON.stringify((result as any).error?.flatten?.()?.fieldErrors)}`).toBe(true)
+    }
+  })
+
+  it('every WEBHOOK_EVENT_TYPES entry has a corresponding payload schema', () => {
+    for (const eventType of WEBHOOK_EVENT_TYPES) {
+      expect(WEBHOOK_PAYLOAD_SCHEMAS[eventType], `Missing payload schema for ${eventType}`).toBeDefined()
     }
   })
 })
