@@ -52,6 +52,7 @@ function jiraDefaults(): Record<string, unknown> {
   return {
     resource: 'issue',
     operation: 'create',
+    jiraVersion: 'serverPat',
     project: '',
     issueType: 'Task',
     summary: '{{ $json.body.summary }}',
@@ -69,13 +70,12 @@ function jiraDefaults(): Record<string, unknown> {
       assignee: '',
       labels: [],
       priority: '',
-      status: '',
+      statusId: '',
       customFieldsUi: { customFieldsValues: [] },
     },
     issueKey: '',
-    commentBody: '',
+    comment: '',
     transitionId: '',
-    transitionName: '',
   }
 }
 

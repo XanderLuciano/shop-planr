@@ -1,9 +1,13 @@
 import type { N8nAutomationRepository } from '../repositories/interfaces/n8nAutomationRepository'
+import type { WebhookRegistrationRepository } from '../repositories/interfaces/webhookRegistrationRepository'
+import type { WebhookDeliveryRepository } from '../repositories/interfaces/webhookDeliveryRepository'
 import type { UserRepository } from '../repositories/interfaces/userRepository'
-import type { N8nAutomation, N8nWorkflowDefinition, WebhookEventType } from '../types/domain'
+import type { SettingsService } from './settingsService'
+import type { N8nAutomation, N8nWorkflowDefinition, WebhookEventType, WebhookRegistration } from '../types/domain'
 import { generateId } from '../utils/idGenerator'
 import { NotFoundError, ValidationError } from '../utils/errors'
 import { requireAdmin } from '../utils/auth'
+import { extractN8nError } from '../utils/n8nErrors'
 
 export interface N8nAutomationService {
   list(): N8nAutomation[]
@@ -29,11 +33,100 @@ export interface N8nAutomationService {
 
 interface Deps {
   n8nAutomations: N8nAutomationRepository
+  webhookRegistrations: WebhookRegistrationRepository
+  webhookDeliveries: WebhookDeliveryRepository
   users: UserRepository
+  /**
+   * Source of truth for n8n baseUrl / apiKey. Values flow from the
+   * `app_settings` row (editable in Settings → n8n) with env var fallback
+   * for bootstrap-by-env-only deployments.
+   */
+  settings: SettingsService
+  db: { transaction: <T>(fn: () => T) => () => T }
+}
+
+/**
+ * Name prefix used for registrations paired with an n8n automation.
+ * Visible in the Registrations tab so admins can see that these rows are
+ * owned by an automation (editing them there is allowed but will be
+ * overwritten on the next deploy/update of the automation).
+ */
+const AUTO_REGISTRATION_PREFIX = 'n8n: '
+
+/**
+ * Build the n8n webhook URL that events should be POSTed to.
+ * Matches the `path` on the Webhook trigger node set in `deploy()`.
+ */
+function buildN8nWebhookUrl(baseUrl: string, automationId: string): string {
+  const trimmed = baseUrl.replace(/\/+$/, '')
+  return `${trimmed}/webhook/shop-planr/${automationId}`
+}
+
+function registrationNameFor(automationName: string): string {
+  return `${AUTO_REGISTRATION_PREFIX}${automationName}`
 }
 
 export function createN8nAutomationService(deps: Deps): N8nAutomationService {
-  const { n8nAutomations } = deps
+  const { n8nAutomations, webhookRegistrations, webhookDeliveries, settings, db } = deps
+
+  /**
+   * Create or update the registration paired with this automation so events
+   * are routed to the n8n webhook trigger. Called from `deploy()` after the
+   * n8n workflow itself has been successfully created/updated.
+   */
+  function upsertLinkedRegistration(automation: N8nAutomation, n8nBaseUrl: string): WebhookRegistration {
+    const url = buildN8nWebhookUrl(n8nBaseUrl, automation.id)
+    const name = registrationNameFor(automation.name)
+
+    // Try the existing link first. If it was manually deleted, the FK
+    // SET NULL in the migration will have cleared the column, so we fall
+    // through to creating a fresh one.
+    if (automation.linkedRegistrationId) {
+      const existing = webhookRegistrations.getById(automation.linkedRegistrationId)
+      if (existing) {
+        return webhookRegistrations.update(existing.id, {
+          name,
+          url,
+          eventTypes: automation.eventTypes,
+        })
+      }
+    }
+
+    const now = new Date().toISOString()
+    const registration: WebhookRegistration = {
+      id: generateId('whr'),
+      name,
+      url,
+      eventTypes: automation.eventTypes,
+      createdAt: now,
+      updatedAt: now,
+    }
+    return webhookRegistrations.create(registration)
+  }
+
+  /**
+   * Sync name + eventTypes into the linked registration. Called from
+   * `update()` so the registration stays in lockstep with the automation
+   * without requiring a redeploy. URL is not touched here because it's
+   * derived from the n8n base URL + automation id — neither changes on
+   * a metadata edit.
+   */
+  function syncLinkedRegistration(
+    automation: N8nAutomation,
+    changes: { name?: string, eventTypes?: WebhookEventType[] },
+  ): void {
+    if (!automation.linkedRegistrationId) return
+    const existing = webhookRegistrations.getById(automation.linkedRegistrationId)
+    if (!existing) return
+
+    const patch: Partial<Pick<WebhookRegistration, 'name' | 'eventTypes'>> = {}
+    if (changes.name !== undefined) patch.name = registrationNameFor(changes.name)
+    if (changes.eventTypes !== undefined) patch.eventTypes = changes.eventTypes
+
+    if (Object.keys(patch).length > 0) {
+      webhookRegistrations.update(existing.id, patch)
+    }
+  }
 
   return {
     list(): N8nAutomation[] {
@@ -58,6 +151,7 @@ export function createN8nAutomationService(deps: Deps): N8nAutomationService {
         workflowJson: input.workflowJson,
         enabled: input.enabled ?? false,
         n8nWorkflowId: null,
+        linkedRegistrationId: null,
         createdAt: now,
         updatedAt: now,
       }
@@ -71,7 +165,17 @@ export function createN8nAutomationService(deps: Deps): N8nAutomationService {
       const existing = n8nAutomations.getById(id)
       if (!existing) throw new NotFoundError('N8nAutomation', id)
 
-      return n8nAutomations.update(id, updates)
+      // Update the automation and mirror name/eventTypes into the linked
+      // registration atomically — otherwise a crash between the two writes
+      // would leave the registration out of sync.
+      return db.transaction(() => {
+        const updated = n8nAutomations.update(id, updates)
+        syncLinkedRegistration(updated, {
+          name: updates.name,
+          eventTypes: updates.eventTypes,
+        })
+        return updated
+      })()
     },
 
     delete(id, userId) {
@@ -80,7 +184,19 @@ export function createN8nAutomationService(deps: Deps): N8nAutomationService {
       const existing = n8nAutomations.getById(id)
       if (!existing) throw new NotFoundError('N8nAutomation', id)
 
-      n8nAutomations.delete(id)
+      // Clean up the paired registration and any queued deliveries for it
+      // so future events don't target a URL that's about to disappear from
+      // the n8n side too.
+      db.transaction(() => {
+        if (existing.linkedRegistrationId) {
+          const linked = webhookRegistrations.getById(existing.linkedRegistrationId)
+          if (linked) {
+            webhookDeliveries.cancelQueuedByRegistrationId(linked.id)
+            webhookRegistrations.delete(linked.id)
+          }
+        }
+        n8nAutomations.delete(id)
+      })()
     },
 
     async deploy(id, userId) {
@@ -89,12 +205,12 @@ export function createN8nAutomationService(deps: Deps): N8nAutomationService {
       const automation = n8nAutomations.getById(id)
       if (!automation) throw new NotFoundError('N8nAutomation', id)
 
-      const config = useRuntimeConfig()
-      const baseUrl = config.n8nBaseUrl
-      const apiKey = config.n8nApiKey
+      const conn = settings.getN8nConnection()
+      const baseUrl = (conn.baseUrl || '').replace(/\/+$/, '')
+      const apiKey = conn.apiKey
 
-      if (!baseUrl || !apiKey) {
-        throw new ValidationError('n8n is not configured. Set N8N_BASE_URL and N8N_API_KEY in your environment.')
+      if (!baseUrl || !apiKey || !conn.enabled) {
+        throw new ValidationError('n8n is not configured. Add your n8n URL and API key in Settings → n8n.')
       }
 
       // The editor saves nodes WITHOUT the trigger, but preserves any connections
@@ -132,11 +248,81 @@ export function createN8nAutomationService(deps: Deps): N8nAutomationService {
         }
       }
 
+      // ── Auto-attach n8n credentials ──────────────────────────────────
+      // Nodes that require credentials show a "credentials not set" warning
+      // in n8n unless we include a `credentials` block in the node JSON.
+      //
+      // We try two strategies:
+      // 1. Query n8n's public API for available credentials and match by type
+      // 2. Fall back to setting just the credential type name — n8n will
+      //    auto-resolve if there's exactly one credential of that type
+      const NODE_CREDENTIAL_TYPES: Record<string, string[]> = {
+        'n8n-nodes-base.jira': ['jiraSoftwareServerPatApi', 'jiraSoftwareServerApi', 'jiraSoftwareCloudApi'],
+        'n8n-nodes-base.slack': ['slackOAuth2Api', 'slackApi'],
+        'n8n-nodes-base.gmail': ['gmailOAuth2'],
+        'n8n-nodes-base.discord': ['discordWebhookApi'],
+        'n8n-nodes-base.microsoftTeams': ['microsoftTeamsOAuth2Api'],
+      }
+
+      // Map of jiraVersion parameter → credential type for the Jira node
+      const JIRA_VERSION_CRED: Record<string, string> = {
+        serverPat: 'jiraSoftwareServerPatApi',
+        server: 'jiraSoftwareServerApi',
+        cloud: 'jiraSoftwareCloudApi',
+      }
+
+      let credentialsByType: Record<string, { id: string, name: string }> = {}
+      try {
+        const creds = await $fetch<{ data: Array<{ id: string, name: string, type: string }> }>(
+          `${baseUrl}/api/v1/credentials`,
+          { method: 'GET', headers: { 'X-N8N-API-KEY': apiKey } },
+        )
+        for (const c of creds.data ?? []) {
+          if (!credentialsByType[c.type]) {
+            credentialsByType[c.type] = { id: c.id, name: c.name }
+          }
+        }
+      } catch {
+        // Public API not available — fall back to type-only credential hints
+        credentialsByType = {}
+      }
+
+      // Inject credentials into nodes that need them
+      const nodesWithCredentials = [webhookNode, ...automation.workflowJson.nodes].map((node) => {
+        const candidateTypes = NODE_CREDENTIAL_TYPES[node.type]
+        if (!candidateTypes) return node
+
+        // For Jira nodes, use the jiraVersion parameter to pick the right credential type
+        if (node.type === 'n8n-nodes-base.jira') {
+          const jiraVersion = String((node.parameters as Record<string, unknown>).jiraVersion ?? 'serverPat')
+          const credType = JIRA_VERSION_CRED[jiraVersion] ?? 'jiraSoftwareServerPatApi'
+          const cred = credentialsByType[credType]
+          if (cred) {
+            return { ...node, credentials: { [credType]: { id: cred.id, name: cred.name } } }
+          }
+          // No API match — set type-only so n8n auto-resolves
+          return { ...node, credentials: { [credType]: {} } }
+        }
+
+        // Generic: try API lookup first, then type-only fallback
+        for (const credType of candidateTypes) {
+          const cred = credentialsByType[credType]
+          if (cred) {
+            return { ...node, credentials: { [credType]: { id: cred.id, name: cred.name } } }
+          }
+        }
+        // Fallback: set the first candidate type with empty object
+        return { ...node, credentials: { [candidateTypes[0]!]: {} } }
+      })
+
+      // n8n's REST API rejects unknown/extra fields (e.g. `active`) on
+      // POST /workflows. We handle activation via the dedicated /activate
+      // endpoint below, so the create/update payload only carries the
+      // structural fields the API accepts.
       const workflowPayload = {
         name: `Shop Planr: ${automation.name}`,
-        nodes: [webhookNode, ...automation.workflowJson.nodes],
+        nodes: nodesWithCredentials,
         connections: finalConnections,
-        active: automation.enabled,
         settings: automation.workflowJson.settings ?? {},
       }
 
@@ -146,7 +332,7 @@ export function createN8nAutomationService(deps: Deps): N8nAutomationService {
         if (n8nWorkflowId) {
           // Update existing workflow
           await $fetch(`${baseUrl}/api/v1/workflows/${n8nWorkflowId}`, {
-            method: 'PATCH',
+            method: 'PUT',
             headers: { 'X-N8N-API-KEY': apiKey },
             body: workflowPayload,
           })
@@ -168,20 +354,33 @@ export function createN8nAutomationService(deps: Deps): N8nAutomationService {
           })
         }
 
-        return n8nAutomations.update(automation.id, { n8nWorkflowId })
+        // Close the loop: the workflow now exists on n8n with a webhook
+        // trigger listening at /webhook/shop-planr/<automation.id>. Point
+        // a WebhookRegistration at it so events from emitWebhookEvent()
+        // actually reach n8n through the existing delivery pipeline.
+        return db.transaction(() => {
+          const linked = upsertLinkedRegistration(automation, baseUrl)
+          return n8nAutomations.update(automation.id, {
+            n8nWorkflowId,
+            linkedRegistrationId: linked.id,
+          })
+        })()
       } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : 'Unknown error deploying to n8n'
-        throw new ValidationError(`Failed to deploy to n8n: ${message}`)
+        throw new ValidationError(`Failed to deploy to n8n: ${extractN8nError(e)}`)
       }
     },
 
     async getN8nStatus() {
-      const config = useRuntimeConfig()
-      const baseUrl = config.n8nBaseUrl || ''
-      const apiKey = config.n8nApiKey || ''
+      const conn = settings.getN8nConnection()
+      const baseUrl = (conn.baseUrl || '').replace(/\/+$/, '')
+      const apiKey = conn.apiKey || ''
 
       if (!baseUrl || !apiKey) {
-        return { connected: false, baseUrl, error: 'n8n not configured (N8N_BASE_URL / N8N_API_KEY missing)' }
+        return { connected: false, baseUrl }
+      }
+
+      if (!conn.enabled) {
+        return { connected: false, baseUrl, error: 'n8n integration is disabled. Enable it in Settings → n8n.' }
       }
 
       try {
@@ -192,8 +391,7 @@ export function createN8nAutomationService(deps: Deps): N8nAutomationService {
         })
         return { connected: true, baseUrl }
       } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : 'Connection failed'
-        return { connected: false, baseUrl, error: message }
+        return { connected: false, baseUrl, error: extractN8nError(e) }
       }
     },
   }

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { WorkflowVariable } from '~/utils/n8nVariables'
 
+const JIRA_VERSION_STORAGE_KEY = 'shopPlanr:n8n:jiraVersion'
+
 const props = defineProps<{
   parameters: Record<string, unknown>
   variables: WorkflowVariable[]
@@ -18,6 +20,30 @@ function set(key: string, value: unknown) {
   emit('update:parameters', { ...props.parameters, [key]: value })
 }
 
+// ---- Jira Version (persisted in localStorage) ----
+
+/** Read the saved default from localStorage, falling back to 'serverPat'. */
+function getSavedJiraVersion(): string {
+  if (import.meta.client) {
+    return localStorage.getItem(JIRA_VERSION_STORAGE_KEY) ?? 'serverPat'
+  }
+  return 'serverPat'
+}
+
+// On mount, if the node doesn't have a jiraVersion yet, apply the saved default
+onMounted(() => {
+  if (!get('jiraVersion')) {
+    set('jiraVersion', getSavedJiraVersion())
+  }
+})
+
+function setJiraVersion(v: string) {
+  set('jiraVersion', v)
+  if (import.meta.client) {
+    localStorage.setItem(JIRA_VERSION_STORAGE_KEY, v)
+  }
+}
+
 function setNested(path: string[], value: unknown) {
   const params = structuredClone(props.parameters)
   let cursor: Record<string, unknown> = params
@@ -32,7 +58,31 @@ function setNested(path: string[], value: unknown) {
   emit('update:parameters', params)
 }
 
-const operation = computed<string>(() => String(get('operation') ?? 'create'))
+const operation = computed<string>(() => {
+  // n8n's Jira node uses separate `resource` and `operation` fields.
+  // "Add Comment" lives under resource=issueComment, operation=add.
+  // "Transition" is resource=issue, operation=update with updateFields.statusId.
+  // We expose a single composite value in the UI for simplicity.
+  const resource = String(get('resource') ?? 'issue')
+  const op = String(get('operation') ?? 'create')
+  if (resource === 'issueComment' && op === 'add') return 'addComment'
+  // Detect transition mode: update with our _uiMode marker, or legacy operation=transition
+  if (get('_uiMode') === 'transition') return 'transition'
+  return op
+})
+
+/** When the user picks an operation from the dropdown, set both `resource` and `operation`. */
+function setOperation(composite: string) {
+  if (composite === 'addComment') {
+    emit('update:parameters', { ...props.parameters, resource: 'issueComment', operation: 'add', _uiMode: undefined })
+  } else if (composite === 'transition') {
+    // n8n performs transitions via the update operation with updateFields.statusId.
+    // We keep a dedicated UI for transitions but map to the correct n8n structure.
+    emit('update:parameters', { ...props.parameters, resource: 'issue', operation: 'update', _uiMode: 'transition' })
+  } else {
+    emit('update:parameters', { ...props.parameters, resource: 'issue', operation: composite, _uiMode: undefined })
+  }
+}
 
 // ---- Custom fields (used by both create and update) ----
 
@@ -162,7 +212,7 @@ const INCREMENT_EXAMPLE = `{{ ($input.first().json.currentValue || 0) + ($json.b
         ]"
         size="sm"
         class="w-full"
-        @update:model-value="(v: string) => set('operation', v)"
+        @update:model-value="(v: string) => setOperation(v)"
       />
     </UFormField>
 
@@ -369,12 +419,12 @@ const INCREMENT_EXAMPLE = `{{ ($input.first().json.currentValue || 0) + ($json.b
 
       <UFormField label="Comment Body">
         <N8nVariableInput
-          :model-value="String(get('commentBody') ?? '')"
+          :model-value="String(get('comment') ?? '')"
           :variables="variables"
           multiline
           :rows="5"
           placeholder="{{ $json.body.user }} advanced {{ ($json.body.partIds || []).length }} part(s): {{ $json.body.summary }}"
-          @update:model-value="(v: string) => set('commentBody', v)"
+          @update:model-value="(v: string) => set('comment', v)"
         />
       </UFormField>
 
@@ -539,5 +589,39 @@ const INCREMENT_EXAMPLE = `{{ ($input.first().json.currentValue || 0) + ($json.b
         </div>
       </div>
     </template>
+
+    <!-- ========== Configure (collapsible) ========== -->
+    <USeparator />
+    <UCollapsible>
+      <UButton
+        variant="ghost"
+        size="xs"
+        class="w-full justify-between"
+        trailing-icon="i-lucide-chevron-down"
+      >
+        <span class="text-[11px] text-(--ui-text-muted)">Configure</span>
+      </UButton>
+
+      <template #content>
+        <div class="pt-2 space-y-2">
+          <UFormField label="Jira Version">
+            <USelect
+              :model-value="String(get('jiraVersion') ?? getSavedJiraVersion())"
+              :items="[
+                { label: 'Server (PAT)', value: 'serverPat' },
+                { label: 'Server (Basic Auth)', value: 'server' },
+                { label: 'Cloud', value: 'cloud' },
+              ]"
+              size="sm"
+              class="w-full"
+              @update:model-value="(v: string) => setJiraVersion(v)"
+            />
+          </UFormField>
+          <p class="text-[10px] text-(--ui-text-dimmed)">
+            Must match the credential type configured in n8n. Saved as default for new Jira nodes.
+          </p>
+        </div>
+      </template>
+    </UCollapsible>
   </div>
 </template>

@@ -97,6 +97,27 @@ function workflowToFlow(workflow: N8nWorkflowDefinition): { nodes: Node[], edges
   }
 
   for (const n of workflow.nodes) {
+    // Normalize legacy Jira parameters so they match n8n's actual node structure:
+    //   - addComment → resource=issueComment, operation=add, comment (not commentBody)
+    //   - transition → resource=issue, operation=update, _uiMode=transition
+    let params = n.parameters
+    if (n.type === 'n8n-nodes-base.jira') {
+      const p = { ...params }
+      if (p.operation === 'addComment') {
+        p.resource = 'issueComment'
+        p.operation = 'add'
+      }
+      if ('commentBody' in p && !('comment' in p)) {
+        p.comment = p.commentBody
+        delete p.commentBody
+      }
+      if (p.operation === 'transition') {
+        p.operation = 'update'
+        p._uiMode = 'transition'
+      }
+      params = p
+    }
+
     nodes.push({
       id: n.id,
       type: 'shopPlanrNode',
@@ -105,7 +126,7 @@ function workflowToFlow(workflow: N8nWorkflowDefinition): { nodes: Node[], edges
       data: {
         label: n.name,
         nodeType: n.type,
-        parameters: n.parameters,
+        parameters: params,
         typeVersion: n.typeVersion,
         isTrigger: n.type === TRIGGER_NODE_TYPE || n.id === TRIGGER_NODE_ID,
       },
@@ -139,14 +160,42 @@ function workflowToFlow(workflow: N8nWorkflowDefinition): { nodes: Node[], edges
 }
 
 function flowToWorkflow(currentNodes: Node[], currentEdges: Edge[]): N8nWorkflowDefinition {
-  const n8nNodes = currentNodes.map(n => ({
-    id: n.id,
-    name: String(n.data?.label ?? ''),
-    type: String(n.data?.nodeType ?? ''),
-    typeVersion: Number(n.data?.typeVersion ?? 1),
-    position: [Math.round(n.position.x), Math.round(n.position.y)] as [number, number],
-    parameters: (n.data?.parameters as Record<string, unknown>) ?? {},
-  }))
+  const n8nNodes = currentNodes.map((n) => {
+    const node = {
+      id: n.id,
+      name: String(n.data?.label ?? ''),
+      type: String(n.data?.nodeType ?? ''),
+      typeVersion: Number(n.data?.typeVersion ?? 1),
+      position: [Math.round(n.position.x), Math.round(n.position.y)] as [number, number],
+      parameters: { ...((n.data?.parameters as Record<string, unknown>) ?? {}) },
+    }
+
+    // Normalize Jira parameters for n8n compatibility before emitting.
+    if (node.type === 'n8n-nodes-base.jira') {
+      const p = node.parameters
+
+      // Strip editor-only marker
+      delete p._uiMode
+
+      // Transition mode: our UI stores transitionId at the top level, but
+      // n8n expects updateFields.statusId on the update operation.
+      if (p.transitionId) {
+        const uf = (typeof p.updateFields === 'object' && p.updateFields !== null)
+          ? { ...(p.updateFields as Record<string, unknown>) }
+          : {}
+        uf.statusId = p.transitionId
+        p.updateFields = uf
+        delete p.transitionId
+      }
+
+      // Clean up fields n8n doesn't recognize
+      delete p.transitionName
+      delete p.transitionComment
+      delete p.resolution
+    }
+
+    return node
+  })
 
   const connections: Record<string, { main: Array<Array<{ node: string, type: string, index: number }>> }> = {}
 
@@ -432,13 +481,21 @@ function getWarningFor(node: Node): string | undefined {
       if (!p.webhookUri) return 'Webhook URL is empty'
       break
     case 'n8n-nodes-base.jira': {
+      const resource = String(p.resource ?? 'issue')
       const op = String(p.operation ?? 'create')
-      if (op === 'create' && !p.project) return 'Project key is empty'
-      if ((op === 'update' || op === 'addComment' || op === 'transition' || op === 'get') && !p.issueKey) {
+      if (resource === 'issue' && op === 'create' && !p.project) return 'Project key is empty'
+      if (resource === 'issue' && (op === 'update' || op === 'get') && !p.issueKey) {
         return 'Issue key is empty'
       }
-      if (op === 'addComment' && !p.commentBody) return 'Comment body is empty'
-      if (op === 'transition' && !p.transitionId) return 'Transition ID is empty'
+      if (resource === 'issueComment' && op === 'add') {
+        if (!p.issueKey) return 'Issue key is empty'
+        if (!p.comment) return 'Comment body is empty'
+      }
+      // Transition mode: operation=update with _uiMode=transition
+      if (resource === 'issue' && op === 'update' && p._uiMode === 'transition') {
+        if (!p.issueKey) return 'Issue key is empty'
+        if (!p.transitionId) return 'Transition ID is empty'
+      }
       break
     }
     case 'n8n-nodes-base.gmail':
