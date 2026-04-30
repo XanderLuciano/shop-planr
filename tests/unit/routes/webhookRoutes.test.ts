@@ -258,7 +258,8 @@ describe('webhook test event route wiring', () => {
     expect(payload.certId).toBe('cert_sample1')
     expect(payload.certName).toBe('Material Test Report')
     expect(payload.certType).toBe('material')
-    expect(payload.partId).toBe('SN-00042')
+    expect(payload.partIds).toEqual(['SN-00042', 'SN-00043'])
+    expect(payload.count).toBe(2)
   })
 })
 

@@ -29,7 +29,8 @@ export function buildTestPayload(eventType: WebhookEventType): Record<string, un
     case 'part_created':
       return {
         user: 'Test User',
-        partId: 'SN-00099',
+        partIds: ['SN-00099', 'SN-00100', 'SN-00101'],
+        count: 3,
         jobId: 'job_sample1',
         jobName: 'Test Job Alpha',
         pathId: 'path_sample1',
@@ -137,7 +138,8 @@ export function buildTestPayload(eventType: WebhookEventType): Record<string, un
         certId: 'cert_sample1',
         certName: 'Material Test Report',
         certType: 'material',
-        partId: 'SN-00042',
+        partIds: ['SN-00042', 'SN-00043'],
+        count: 2,
         stepId: 'step_abc123',
         stepName: 'Receiving',
       }
@@ -155,7 +157,7 @@ export function buildTestSummary(eventType: WebhookEventType, data: Record<strin
     case 'part_completed':
       return `${data.partId} completed all steps`
     case 'part_created':
-      return `${data.partId} created in ${data.jobName}`
+      return `${(data.partIds as string[]).length} parts created in ${data.jobName}`
     case 'part_scrapped':
       return `${data.partId} scrapped: ${data.reason}`
     case 'part_force_completed':
@@ -183,7 +185,7 @@ export function buildTestSummary(eventType: WebhookEventType, data: Record<strin
     case 'note_created':
       return `Note on ${data.stepName}: "${String(data.text).slice(0, 50)}"`
     case 'cert_attached':
-      return `${data.certName} attached to ${data.partId} at ${data.stepName}`
+      return `${data.certName} attached to ${(data.partIds as string[]).length} parts at ${data.stepName}`
     default: {
       const _exhaustive: never = eventType
       throw new Error(`Unhandled event type: ${_exhaustive}`)

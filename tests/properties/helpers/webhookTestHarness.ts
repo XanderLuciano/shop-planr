@@ -9,7 +9,7 @@ import type { WebhookEventRepository } from '~/server/repositories/interfaces/we
 import type { WebhookRegistrationRepository } from '~/server/repositories/interfaces/webhookRegistrationRepository'
 import type { WebhookDeliveryRepository } from '~/server/repositories/interfaces/webhookDeliveryRepository'
 import type { UserRepository } from '~/server/repositories/interfaces/userRepository'
-import type { WebhookEvent, WebhookRegistration, WebhookDelivery, WebhookDeliveryStatus, QueuedDeliveryView, DeliveryDetail, ShopUser } from '~/server/types/domain'
+import type { WebhookEvent, WebhookRegistration, WebhookDelivery, WebhookDeliveryStatus, QueuedDeliveryView, DeliveryDetail, EventWithDeliveries, ShopUser } from '~/server/types/domain'
 import { createWebhookService } from '~/server/services/webhookService'
 import { createWebhookDeliveryService } from '~/server/services/webhookDeliveryService'
 
@@ -37,7 +37,7 @@ export const WEBHOOK_REGULAR_USER: ShopUser = {
 
 // ---- In-memory repos ----
 
-export function createInMemoryEventRepo(): WebhookEventRepository {
+export function createInMemoryEventRepo(deliveryStoreRef?: { store: Map<string, WebhookDelivery> }): WebhookEventRepository {
   const store = new Map<string, WebhookEvent>()
   return {
     create(event: WebhookEvent) {
@@ -50,6 +50,21 @@ export function createInMemoryEventRepo(): WebhookEventRepository {
       const offset = options?.offset ?? 0
       const limit = options?.limit ?? 200
       return all.slice(offset, offset + limit)
+    },
+    listWithDeliverySummaries(options?: { limit?: number, offset?: number }): EventWithDeliveries[] {
+      const events = this.list(options)
+      return events.map((e) => {
+        const counts = { queued: 0, delivering: 0, delivered: 0, failed: 0, canceled: 0 }
+        if (deliveryStoreRef) {
+          for (const d of deliveryStoreRef.store.values()) {
+            if (d.eventId === e.id) {
+              counts[d.status]++
+            }
+          }
+        }
+        const total = counts.queued + counts.delivering + counts.delivered + counts.failed + counts.canceled
+        return { ...e, deliverySummary: { total, ...counts } }
+      })
     },
     count() { return store.size },
     deleteById(id: string) { store.delete(id) },
@@ -90,8 +105,9 @@ export function createInMemoryRegistrationRepo(): WebhookRegistrationRepository 
   }
 }
 
-export function createInMemoryDeliveryRepo(): WebhookDeliveryRepository {
-  const store = new Map<string, WebhookDelivery>()
+export function createInMemoryDeliveryRepo(externalStore?: { store: Map<string, WebhookDelivery> }): WebhookDeliveryRepository {
+  const store = externalStore?.store ?? new Map<string, WebhookDelivery>()
+  if (externalStore) externalStore.store = store
   return {
     create(delivery: WebhookDelivery) {
       store.set(delivery.id, delivery)
@@ -230,9 +246,11 @@ export const passthroughDb = {
 // ---- Service factory ----
 
 export function createWebhookTestService(users?: ShopUser[]) {
-  const eventRepo = createInMemoryEventRepo()
+  // Shared delivery store ref so the event repo can compute delivery summaries
+  const deliveryStoreRef = { store: new Map<string, WebhookDelivery>() }
+  const eventRepo = createInMemoryEventRepo(deliveryStoreRef)
   const registrationRepo = createInMemoryRegistrationRepo()
-  const deliveryRepo = createInMemoryDeliveryRepo()
+  const deliveryRepo = createInMemoryDeliveryRepo(deliveryStoreRef)
   const userRepo = createInMemoryUserRepo(users ?? [WEBHOOK_ADMIN_USER, WEBHOOK_REGULAR_USER])
 
   const deliveryService = createWebhookDeliveryService({
@@ -245,7 +263,6 @@ export function createWebhookTestService(users?: ShopUser[]) {
 
   const service = createWebhookService({
     webhookEvents: eventRepo,
-    webhookDeliveries: deliveryRepo,
     users: userRepo,
     db: passthroughDb,
   }, deliveryService)

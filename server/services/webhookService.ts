@@ -1,5 +1,4 @@
 import type { WebhookEventRepository } from '../repositories/interfaces/webhookRepository'
-import type { WebhookDeliveryRepository } from '../repositories/interfaces/webhookDeliveryRepository'
 import type { UserRepository } from '../repositories/interfaces/userRepository'
 import type { WebhookEvent, WebhookEventType, EventWithDeliveries } from '../types/domain'
 import type { WebhookDeliveryService } from './webhookDeliveryService'
@@ -11,7 +10,6 @@ import { requireAdmin } from '../utils/auth'
 export function createWebhookService(
   repos: {
     webhookEvents: WebhookEventRepository
-    webhookDeliveries: WebhookDeliveryRepository
     users?: UserRepository
     db: { transaction: <T>(fn: () => T) => () => T }
   },
@@ -68,29 +66,11 @@ export function createWebhookService(
 
     /**
      * List events enriched with per-event delivery status summaries.
-     * Used by the event log UI to show delivery counts inline.
+     * Uses a single JOIN query at the repository level — no JS-side
+     * Map assembly or second round-trip.
      */
     listEventsWithDeliveries(options?: { limit?: number, offset?: number }): EventWithDeliveries[] {
-      const events = repos.webhookEvents.list(options)
-      if (events.length === 0) return []
-
-      const eventIds = events.map(e => e.id)
-      const summaries = repos.webhookDeliveries.getDeliverySummariesByEventIds(eventIds)
-
-      return events.map((e) => {
-        const counts = summaries.get(e.id) ?? { queued: 0, delivering: 0, delivered: 0, failed: 0, canceled: 0 }
-        return {
-          id: e.id,
-          eventType: e.eventType,
-          payload: e.payload,
-          summary: e.summary,
-          createdAt: e.createdAt,
-          deliverySummary: {
-            total: counts.queued + counts.delivering + counts.delivered + counts.failed + counts.canceled,
-            ...counts,
-          },
-        }
-      })
+      return repos.webhookEvents.listWithDeliverySummaries(options)
     },
 
     deleteEvent(userId: string, id: string): void {

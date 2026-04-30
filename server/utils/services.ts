@@ -163,7 +163,6 @@ export function getServices(): ServiceSet {
 
     const webhookService = createWebhookService({
       webhookEvents: repos.webhookEvents,
-      webhookDeliveries: repos.webhookDeliveries,
       users: repos.users,
       db: repos._db,
     }, webhookDeliveryService)

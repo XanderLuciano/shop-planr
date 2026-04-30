@@ -233,14 +233,15 @@ const eventPayloadDocs: { type: WebhookEventType, description: string, fields: {
   },
   {
     type: 'cert_attached',
-    description: 'Fired when a quality certificate is attached to one or more parts. Always uses partIds (array) since certs are batch-attached.',
+    description: 'Fired when a quality certificate is attached to parts. Single-part attach uses partId; batch attach uses partIds.',
     fields: [
       { name: 'user', type: 'string', description: 'Display name of the user' },
       { name: 'certId', type: 'string', description: 'Certificate ID' },
       { name: 'certName', type: 'string', description: 'Certificate name' },
       { name: 'certType', type: 'string', description: 'Certificate type (material or process)' },
-      { name: 'partIds', type: 'string[]', description: 'Parts the cert was attached to' },
-      { name: 'count', type: 'number', description: 'Number of parts' },
+      { name: 'partId', type: 'string?', description: 'Part ID — present on single-part attach' },
+      { name: 'partIds', type: 'string[]?', description: 'Part IDs — present on batch attach' },
+      { name: 'count', type: 'number?', description: 'Number of parts (batch only)' },
       { name: 'stepId', type: 'string', description: 'Step where the cert was attached' },
     ],
   },
