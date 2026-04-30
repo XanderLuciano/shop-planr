@@ -42,6 +42,7 @@ const { isAdmin } = useAuth()
 const tabItems: TabsItem[] = [
   { label: 'Registrations', icon: 'i-lucide-webhook', value: 'registrations', ui: { label: 'hidden sm:inline' } },
   { label: 'Event Log', icon: 'i-lucide-list', value: 'event-log', ui: { label: 'hidden sm:inline' } },
+  { label: 'Automations', icon: 'i-lucide-workflow', value: 'automations', ui: { label: 'hidden sm:inline' } },
   { label: 'Developer', icon: 'i-lucide-flask-conical', value: 'developer', ui: { label: 'hidden sm:inline' } },
 ]
 
@@ -974,6 +975,13 @@ onUnmounted(() => {
                 </div>
               </div>
             </div>
+          </div>
+          <!-- ==================== DEVELOPER TAB ==================== -->
+          <div
+            v-if="item.value === 'automations'"
+            class="min-w-0"
+          >
+            <N8nAutomationsTab />
           </div>
           <!-- ==================== DEVELOPER TAB ==================== -->
           <div

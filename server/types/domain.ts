@@ -507,3 +507,44 @@ export interface EventWithDeliveries {
     canceled: number
   }
 }
+
+// ---- n8n Automations ----
+
+/** A saved automation that transforms webhook events via an n8n workflow */
+export interface N8nAutomation {
+  id: string
+  name: string
+  description: string
+  /** Which Shop Planr event types trigger this automation */
+  eventTypes: WebhookEventType[]
+  /** The n8n workflow definition (nodes + connections) */
+  workflowJson: N8nWorkflowDefinition
+  /** Whether this automation is active */
+  enabled: boolean
+  /** The n8n workflow ID once deployed to the n8n instance */
+  n8nWorkflowId: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+/** Minimal n8n workflow definition — enough to create/update via the API */
+export interface N8nWorkflowDefinition {
+  nodes: N8nNode[]
+  connections: Record<string, unknown>
+  settings?: Record<string, unknown>
+}
+
+/** A single node in an n8n workflow */
+export interface N8nNode {
+  id: string
+  name: string
+  type: string
+  typeVersion: number
+  position: [number, number]
+  parameters: Record<string, unknown>
+}
+
+/** Connection map for a single source node */
+export interface N8nNodeConnections {
+  main: Array<Array<{ node: string, type: string, index: number }>>
+}

@@ -38,6 +38,9 @@ export type {
   QueuedDeliveryView,
   DeliveryDetail,
   EventWithDeliveries,
+  N8nAutomation,
+  N8nWorkflowDefinition,
+  N8nNode,
 } from '../../server/types/domain'
 
 export { toPublicUser, WEBHOOK_EVENT_TYPES, WEBHOOK_DELIVERY_STATUSES, DELIVERY_STATUS } from '../../server/types/domain'
