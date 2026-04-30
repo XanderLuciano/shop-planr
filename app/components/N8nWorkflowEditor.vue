@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { VueFlow, useVueFlow } from '@vue-flow/core'
+import { VueFlow, useVueFlow, ConnectionMode } from '@vue-flow/core'
 import type { Node, Edge, Connection } from '@vue-flow/core'
 import { Background } from '@vue-flow/background'
 import { Controls } from '@vue-flow/controls'
@@ -37,7 +37,19 @@ const TRIGGER_NODE_TYPE = 'shop-planr-trigger'
 const variables = computed(() => buildVariablesForEventTypes(props.eventTypes))
 
 // ---- Vue Flow setup ----
-const { onConnect, addEdges, removeNodes, removeEdges, fitView, onNodesChange, onEdgesChange } = useVueFlow()
+const {
+  onConnect,
+  addEdges,
+  removeNodes,
+  removeEdges,
+  fitView,
+  onNodesChange,
+  onEdgesChange,
+  onNodeDragStart,
+  onNodeDragStop,
+  onConnectStart,
+  onConnectEnd,
+} = useVueFlow()
 
 // ---- Convert workflow JSON <-> Vue Flow nodes/edges ----
 
@@ -235,8 +247,46 @@ onEdgesChange(() => {
 })
 
 // ---- Connection handling ----
+// Track the handle type the user started dragging from. Vue Flow normalizes
+// the `source`/`target` of the resulting Connection to data-flow direction
+// (source = upstream, target = downstream) regardless of drag direction,
+// so we use the start handle type to infer user intent:
+//   - Started on an OUTPUT handle → they were picking a destination → select target
+//   - Started on an INPUT handle → they were picking a source → select source
+// This is more reliable than looking at the drop position because Vue Flow
+// snaps to nearby handles (release doesn't have to be pixel-perfect).
+const connectStartHandleType = ref<'source' | 'target' | null>(null)
+const connectStartParamsRef = ref<{ nodeId?: string, handleId: string | null, handleType?: 'source' | 'target' } | null>(null)
+// Tracks whether onConnect fired successfully during the current connection
+// gesture. Set by onConnect, reset by onConnectStart. Used by onConnectEnd
+// to decide whether to nudge the user about a same-type handle rejection.
+const connectionSucceeded = ref(false)
+
+onConnectStart((params) => {
+  connectStartHandleType.value = (params.handleType as 'source' | 'target' | undefined) ?? null
+  connectStartParamsRef.value = {
+    nodeId: params.nodeId,
+    handleId: params.handleId,
+    handleType: params.handleType as 'source' | 'target' | undefined,
+  }
+  connectionSucceeded.value = false
+})
+
+// Guard used by VueFlow to validate a connection while the user is dragging.
+// Returning false gives immediate visual feedback (the connection line is
+// rejected on drop) instead of silently swallowing it in onConnect.
+function isValidConnection(connection: Connection): boolean {
+  // Self-loops don't make sense in a workflow — a node can't feed itself.
+  if (connection.source === connection.target) return false
+  // Nothing should target the trigger (it's the entry point).
+  if (connection.target === TRIGGER_NODE_ID) return false
+  return true
+}
+
 onConnect((connection: Connection) => {
-  // Prevent connecting from the trigger back to itself or creating cycles to trigger
+  // Defensive: these are also enforced by isValidConnection, but we keep
+  // them here so onConnect is safe even if called directly.
+  if (connection.source === connection.target) return
   if (connection.target === TRIGGER_NODE_ID) return
 
   // Avoid duplicate connections (same source + handle + target)
@@ -252,6 +302,17 @@ onConnect((connection: Connection) => {
     id: `${connection.source}-${connection.target}-${connection.sourceHandle ?? 'main'}-${Date.now()}`,
     animated: true,
   }])
+  connectionSucceeded.value = true
+
+  // Select the node on the side the user was searching for. Only auto-select
+  // when nothing else is currently selected (avoids hijacking the user's focus).
+  if (!selectedNodeId.value) {
+    const selectId = connectStartHandleType.value === 'target'
+      ? connection.source
+      : connection.target
+    if (selectId) selectedNodeId.value = selectId
+  }
+  connectStartHandleType.value = null
 })
 
 // ---- Node operations ----
@@ -305,11 +366,22 @@ function deleteSelectedNode() {
   selectedNodeId.value = null
 }
 
+// A one-shot gate: when a connection ends, the pointer gesture that ended
+// it can produce a trailing pane-click which would otherwise clear the
+// selection we care about. We consume that single trailing click here.
+// This is set in onConnectEnd and cleared the next time it's checked —
+// either by the stray click itself or by any subsequent real interaction.
+const suppressNextPaneClick = ref(false)
+
 function onNodeClick(event: { node: { id: string } }) {
   selectedNodeId.value = event.node.id
 }
 
 function onPaneClick() {
+  if (suppressNextPaneClick.value) {
+    suppressNextPaneClick.value = false
+    return
+  }
   selectedNodeId.value = null
 }
 
@@ -402,6 +474,108 @@ watchEffect(() => {
   }
 })
 
+// ---- Canvas spotlight: cursor-tracking radial glow ----
+// The spotlight dims while the user is actively dragging a node or drawing
+// a connection — keeps focus on the action instead of the ambient glow.
+const canvasRef = ref<HTMLDivElement | null>(null)
+const spotlightX = ref(50)
+const spotlightY = ref(50)
+const spotlightActive = ref(false)
+const spotlightDimmed = ref(false)
+
+const spotlightStyle = computed(() => {
+  let opacity = '0'
+  if (spotlightActive.value) {
+    opacity = spotlightDimmed.value ? '0.25' : '1'
+  }
+  return {
+    '--spotlight-x': `${spotlightX.value}%`,
+    '--spotlight-y': `${spotlightY.value}%`,
+    '--spotlight-opacity': opacity,
+  }
+})
+
+function onCanvasMove(e: MouseEvent) {
+  const el = canvasRef.value
+  if (!el) return
+  const rect = el.getBoundingClientRect()
+  spotlightX.value = ((e.clientX - rect.left) / rect.width) * 100
+  spotlightY.value = ((e.clientY - rect.top) / rect.height) * 100
+  spotlightActive.value = true
+}
+
+function onCanvasLeave() {
+  spotlightActive.value = false
+}
+
+// Dim the spotlight during node drags and connection draws
+function dimSpotlight() {
+  spotlightDimmed.value = true
+}
+
+function undimSpotlight() {
+  spotlightDimmed.value = false
+}
+
+onNodeDragStart(dimSpotlight)
+onNodeDragStop(undimSpotlight)
+onConnectStart(dimSpotlight)
+onConnectEnd(undimSpotlight)
+
+// Nudge the user when they release on a same-type handle (output→output
+// or input→input). Vue Flow's strict mode silently refuses those, which
+// can feel like a broken drag. We detect the pattern by looking at where
+// the drop landed — if it was on a handle DOM node but onConnect didn't
+// fire, the likely cause is a type mismatch.
+const toast = useToast()
+let lastNudgeAt = 0
+
+onConnectEnd((event) => {
+  // Arm the pane-click suppressor; the trailing click on pane (if any)
+  // will consume the flag. If no trailing click arrives, clear the flag
+  // on the next frame so a future real click still works.
+  suppressNextPaneClick.value = true
+  requestAnimationFrame(() => {
+    suppressNextPaneClick.value = false
+  })
+
+  if (connectionSucceeded.value) return
+
+  const startType = connectStartHandleType.value
+  connectStartHandleType.value = null
+  if (!startType || !event) return
+
+  // Vue Flow passes a MouseEvent/TouchEvent here; the DOM target tells us
+  // where the user released. If it's a handle whose type matches the type
+  // we started on, the drop was same-type-to-same-type and got rejected.
+  const target = 'target' in event ? (event.target as HTMLElement | null) : null
+  const handleEl = target?.closest?.('.vue-flow__handle') as HTMLElement | null
+  if (!handleEl) return
+
+  // Same-handle drop (release on the origin) is a plain cancel — don't nudge
+  const startHandleId = connectStartParamsRef.value?.nodeId && connectStartParamsRef.value?.handleId
+    ? `${connectStartParamsRef.value.nodeId}-${connectStartParamsRef.value.handleId}-${connectStartParamsRef.value.handleType}`
+    : null
+  if (startHandleId && handleEl.dataset.id === startHandleId) return
+
+  const droppedOnSource = handleEl.classList.contains('source')
+  const droppedOnTarget = handleEl.classList.contains('target')
+  const droppedType = droppedOnSource ? 'source' : droppedOnTarget ? 'target' : null
+  if (droppedType !== startType) return
+
+  // Debounce so rapid fiddling doesn't spawn a wall of toasts
+  const now = Date.now()
+  if (now - lastNudgeAt < 1500) return
+  lastNudgeAt = now
+
+  toast.add({
+    title: startType === 'source' ? 'Outputs connect to inputs' : 'Inputs connect to outputs',
+    description: 'Drag from an output handle on one node to an input handle on another.',
+    icon: 'i-lucide-cable',
+    color: 'warning',
+  })
+})
+
 // ---- Fit view on mount ----
 onMounted(() => {
   setTimeout(() => fitView({ padding: 0.2 }), 100)
@@ -455,7 +629,12 @@ onMounted(() => {
     </div>
 
     <!-- Canvas -->
-    <div class="flex-1 border border-(--ui-border) rounded-lg overflow-hidden relative bg-(--ui-bg-elevated)">
+    <div
+      ref="canvasRef"
+      class="canvas-wrap flex-1 border border-(--ui-border) rounded-lg overflow-hidden relative"
+      @mousemove="onCanvasMove"
+      @mouseleave="onCanvasLeave"
+    >
       <VueFlow
         v-model:nodes="nodes"
         v-model:edges="edges"
@@ -464,17 +643,30 @@ onMounted(() => {
         :max-zoom="2"
         :nodes-draggable="true"
         :nodes-connectable="true"
+        :connection-mode="ConnectionMode.Strict"
+        :is-valid-connection="isValidConnection"
         :default-edge-options="{ type: 'default', animated: true }"
         fit-view-on-init
         class="h-full"
         @node-click="onNodeClick"
         @pane-click="onPaneClick"
       >
+        <!-- Minor grid dots — dense, low contrast -->
         <Background
+          id="minor"
           pattern-color="var(--ui-border)"
           :gap="20"
           :size="1"
         />
+        <!-- Major grid dots — sparse intersections, brighter -->
+        <Background
+          id="major"
+          variant="dots"
+          color="rgb(139 92 246 / 0.22)"
+          :gap="100"
+          :size="1.8"
+        />
+
         <Controls
           :show-interactive="false"
           position="bottom-left"
@@ -489,22 +681,36 @@ onMounted(() => {
         </template>
       </VueFlow>
 
+      <!-- Cursor-following spotlight — layered ABOVE vue flow with screen blend -->
+      <div
+        class="canvas-spotlight pointer-events-none absolute inset-0"
+        :style="spotlightStyle"
+      />
+
+      <!-- Corner brackets — subtle targeting reticle feel -->
+      <div class="canvas-corners pointer-events-none absolute inset-0">
+        <span class="corner corner-tl" />
+        <span class="corner corner-tr" />
+        <span class="corner corner-bl" />
+        <span class="corner corner-br" />
+      </div>
+
       <!-- Legend overlay -->
-      <div class="absolute top-2 right-2 bg-(--ui-bg)/90 backdrop-blur border border-(--ui-border) rounded-md px-2 py-1.5 text-[10px] flex items-center gap-3 pointer-events-none">
+      <div class="legend-overlay absolute top-3 right-6 bg-(--ui-bg)/85 backdrop-blur border border-(--ui-border) rounded-md px-2 py-1.5 text-[10px] flex items-center gap-3 pointer-events-none">
         <div class="flex items-center gap-1">
-          <div class="size-2 rounded-full bg-violet-500" />
+          <div class="size-2 rounded-full bg-violet-500 shadow-[0_0_6px_rgb(139_92_246_/_0.8)]" />
           <span>Trigger</span>
         </div>
         <div class="flex items-center gap-1">
-          <div class="size-2 rounded-full bg-emerald-500" />
+          <div class="size-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgb(16_185_129_/_0.6)]" />
           <span>Transform</span>
         </div>
         <div class="flex items-center gap-1">
-          <div class="size-2 rounded-full bg-amber-500" />
+          <div class="size-2 rounded-full bg-amber-500 shadow-[0_0_6px_rgb(245_158_11_/_0.6)]" />
           <span>Control</span>
         </div>
         <div class="flex items-center gap-1">
-          <div class="size-2 rounded-full bg-blue-500" />
+          <div class="size-2 rounded-full bg-blue-500 shadow-[0_0_6px_rgb(59_130_246_/_0.6)]" />
           <span>Destination</span>
         </div>
       </div>
@@ -559,9 +765,126 @@ onMounted(() => {
 </template>
 
 <style>
-/* Vue Flow theme overrides */
+/* ───────── Canvas wrapper: layered tech background ───────── */
+.canvas-wrap {
+  /* Base: subtle vertical gradient so the surface has depth */
+  background:
+    radial-gradient(
+      ellipse 80% 60% at 50% 0%,
+      rgb(139 92 246 / 0.07),
+      transparent 70%
+    ),
+    linear-gradient(
+      to bottom,
+      var(--ui-bg-elevated),
+      color-mix(in srgb, var(--ui-bg-elevated) 92%, var(--ui-bg))
+    );
+  /* A very faint inner glow on the edge */
+  box-shadow: inset 0 0 40px rgb(139 92 246 / 0.04);
+  position: relative;
+}
+
+/* Diagonal scan-line sheen — barely visible, animates slowly */
+.canvas-wrap::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    135deg,
+    transparent 0px,
+    transparent 28px,
+    rgb(139 92 246 / 0.025) 28px,
+    rgb(139 92 246 / 0.025) 30px
+  );
+  mask-image: radial-gradient(ellipse 100% 80% at 50% 50%, black 40%, transparent 100%);
+  animation: scansweep 16s linear infinite;
+  z-index: 0;
+}
+
+@keyframes scansweep {
+  from { background-position: 0 0; }
+  to { background-position: 120px 120px; }
+}
+
+/* Cursor spotlight — sits above Vue Flow content with screen blend for a gentle glow */
+.canvas-spotlight {
+  background: radial-gradient(
+    circle 320px at var(--spotlight-x) var(--spotlight-y),
+    rgb(139 92 246 / 0.09),
+    rgb(139 92 246 / 0.04) 30%,
+    transparent 65%
+  );
+  opacity: var(--spotlight-opacity);
+  transition: opacity 200ms ease;
+  mix-blend-mode: screen;
+  z-index: 5;
+}
+
+/* Corner brackets — tastefully faint */
+.canvas-corners {
+  z-index: 6;
+}
+
+/* Legend sits on top of everything */
+.legend-overlay {
+  z-index: 7;
+}
+
+.corner {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: rgb(139 92 246 / 0.45);
+  border-style: solid;
+  border-width: 0;
+}
+
+.corner-tl {
+  top: 8px;
+  left: 8px;
+  border-top-width: 1px;
+  border-left-width: 1px;
+}
+
+.corner-tr {
+  top: 8px;
+  right: 8px;
+  border-top-width: 1px;
+  border-right-width: 1px;
+}
+
+.corner-bl {
+  bottom: 8px;
+  left: 8px;
+  border-bottom-width: 1px;
+  border-left-width: 1px;
+}
+
+.corner-br {
+  bottom: 8px;
+  right: 8px;
+  border-bottom-width: 1px;
+  border-right-width: 1px;
+}
+
+/* ───────── Vue Flow theme overrides ───────── */
+.vue-flow {
+  /* VueFlow itself must be transparent so our layered bg shows through */
+  background: transparent !important;
+}
+
+.vue-flow__background {
+  opacity: 0.8;
+}
+
+/* Major-grid dots slightly larger + glow */
+.vue-flow__background[data-id="major"] circle {
+  filter: drop-shadow(0 0 2px rgb(139 92 246 / 0.3));
+}
+
 .vue-flow__edge-path {
-  stroke: var(--ui-border);
+  stroke: color-mix(in srgb, var(--ui-border) 60%, rgb(139 92 246 / 0.3));
   stroke-width: 2;
 }
 
@@ -569,11 +892,13 @@ onMounted(() => {
   stroke: rgb(139 92 246);
   stroke-dasharray: 5;
   animation: dashdraw 0.5s linear infinite;
+  filter: drop-shadow(0 0 3px rgb(139 92 246 / 0.5));
 }
 
 .vue-flow__edge.selected .vue-flow__edge-path {
   stroke: rgb(139 92 246);
   stroke-width: 3;
+  filter: drop-shadow(0 0 5px rgb(139 92 246 / 0.7));
 }
 
 @keyframes dashdraw {
@@ -584,24 +909,55 @@ onMounted(() => {
 
 .vue-flow__handle {
   cursor: crosshair;
+  transition: box-shadow 150ms ease, width 150ms ease, height 150ms ease;
 }
 
+/*
+ * Growing a handle on hover — we animate width/height instead of using
+ * `transform: scale()` because scale() would overwrite Vue Flow's own
+ * position-centering translate and cause the handle to grow toward the
+ * bottom-right corner. Animating the box dimensions keeps the handle
+ * growing outward from its centered anchor point.
+ */
 .vue-flow__handle:hover {
-  transform: scale(1.3);
+  width: 14px !important;
+  height: 14px !important;
+  box-shadow: 0 0 10px 2px currentColor;
 }
 
+/* Node drop-shadow for a more 3D feel */
+.vue-flow__node {
+  filter: drop-shadow(0 2px 6px rgb(0 0 0 / 0.12));
+  transition: filter 200ms ease;
+}
+
+.vue-flow__node:hover {
+  filter: drop-shadow(0 4px 10px rgb(139 92 246 / 0.2));
+}
+
+.vue-flow__node.selected {
+  filter: drop-shadow(0 0 12px rgb(139 92 246 / 0.4));
+}
+
+/* Controls styling */
 .vue-flow__controls {
-  box-shadow: none;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+  backdrop-filter: blur(8px);
+  background: color-mix(in srgb, var(--ui-bg) 85%, transparent);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--ui-border) 60%, rgb(139 92 246 / 0.15));
 }
 
 .vue-flow__controls-button {
-  background: var(--ui-bg);
-  border-color: var(--ui-border);
+  background: transparent;
+  border-color: color-mix(in srgb, var(--ui-border) 60%, transparent);
   color: var(--ui-text-muted);
 }
 
 .vue-flow__controls-button:hover {
-  background: var(--ui-bg-elevated);
+  background: rgb(139 92 246 / 0.12);
+  color: rgb(139 92 246);
 }
 
 .vue-flow__controls-button svg {
