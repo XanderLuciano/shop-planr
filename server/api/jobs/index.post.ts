@@ -14,6 +14,14 @@ defineRouteMeta({
 
 export default defineApiHandler(async (event) => {
   const body = await parseBody(event, createJobSchema)
+  const userId = getAuthUserId(event)
   const { jobService } = getServices()
-  return jobService.createJob(body)
+  const job = jobService.createJob(body)
+  emitWebhookEvent('job_created', {
+    user: resolveUserName(userId),
+    jobId: job.id,
+    jobName: job.name,
+    goalQuantity: job.goalQuantity,
+  })
+  return job
 })

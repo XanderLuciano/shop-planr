@@ -27,6 +27,7 @@ const pages: PageItem[] = [
   { key: 'certs', label: 'Certs', icon: 'i-lucide-shield-check', alwaysOn: false },
   { key: 'jira', label: 'Jira', icon: 'i-lucide-ticket', alwaysOn: false },
   { key: 'audit', label: 'Audit', icon: 'i-lucide-scroll-text', alwaysOn: false },
+  { key: 'webhooks', label: 'Webhooks', icon: 'i-lucide-webhook', alwaysOn: false },
   { key: null, label: 'Settings', icon: 'i-lucide-settings', alwaysOn: true },
 ]
 

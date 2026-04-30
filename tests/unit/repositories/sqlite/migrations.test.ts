@@ -1,9 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import Database from 'better-sqlite3'
 import { mkdtempSync, writeFileSync, rmSync } from 'fs'
-import { join } from 'path'
+import { join, resolve } from 'path'
 import { tmpdir } from 'os'
 import { initDatabase, loadMigrationFiles, runMigrations } from '../../../../server/repositories/sqlite/index'
+
+const REAL_MIGRATIONS_DIR = resolve(__dirname, '../../../../server/repositories/sqlite/migrations')
 
 describe('SQLite migration system', () => {
   let tempDir: string
@@ -79,13 +81,11 @@ describe('SQLite migration system', () => {
       const db = new Database(dbPath)
       runMigrations(db, migrationsDir)
 
-      // Table should exist
       const tables = db.prepare(
         'SELECT name FROM sqlite_master WHERE type=\'table\' AND name=\'foo\'',
       ).all()
       expect(tables).toHaveLength(1)
 
-      // Migration should be recorded
       const applied = db.prepare('SELECT * FROM _migrations').all() as any[]
       expect(applied).toHaveLength(1)
       expect(applied[0].version).toBe(1)
@@ -99,7 +99,6 @@ describe('SQLite migration system', () => {
 
       const db = new Database(dbPath)
       runMigrations(db, migrationsDir)
-      // Run again — should not fail or re-apply
       runMigrations(db, migrationsDir)
 
       const applied = db.prepare('SELECT * FROM _migrations').all() as any[]
@@ -114,7 +113,6 @@ describe('SQLite migration system', () => {
       const db = new Database(dbPath)
       runMigrations(db, migrationsDir)
 
-      // Add a second migration
       writeFileSync(join(migrationsDir, '002_create_bar.sql'), 'CREATE TABLE bar (id TEXT PRIMARY KEY);')
       runMigrations(db, migrationsDir)
 
@@ -159,58 +157,62 @@ describe('SQLite migration system', () => {
     })
   })
 
-  describe('real migrations', () => {
-    it('applies 001_initial_schema.sql successfully', () => {
-      const db = initDatabase(dbPath)
+  // ---- Real migration tests ----
+  // These all share a single DB instance since they're read-only checks
+  // against the final schema state after all migrations have run.
 
-      // Verify key tables exist
+  describe('real migrations', () => {
+    let db: Database.Database
+
+    beforeEach(() => {
+      db = initDatabase(dbPath)
+    })
+
+    afterEach(() => {
+      db.close()
+    })
+
+    it('records all migrations — count and order match files on disk', () => {
+      const filesOnDisk = loadMigrationFiles(REAL_MIGRATIONS_DIR)
+      const applied = db.prepare('SELECT version, name FROM _migrations ORDER BY version').all() as { version: number, name: string }[]
+
+      expect(applied).toHaveLength(filesOnDisk.length)
+
+      for (let i = 0; i < filesOnDisk.length; i++) {
+        expect(applied[i].version).toBe(filesOnDisk[i].version)
+        expect(applied[i].name).toBe(filesOnDisk[i].name)
+      }
+    })
+
+    it('creates core tables from initial schema', () => {
       const tableNames = db.prepare(
         'SELECT name FROM sqlite_master WHERE type=\'table\' ORDER BY name',
       ).all() as { name: string }[]
 
       const names = tableNames.map(t => t.name)
-      expect(names).toContain('jobs')
-      expect(names).toContain('paths')
-      expect(names).toContain('process_steps')
-      expect(names).toContain('parts')
-      expect(names).toContain('certs')
-      expect(names).toContain('cert_attachments')
-      expect(names).toContain('templates')
-      expect(names).toContain('template_steps')
-      expect(names).toContain('boms')
-      expect(names).toContain('bom_entries')
-      expect(names).toContain('users')
-      expect(names).toContain('audit_entries')
-      expect(names).toContain('settings')
-      expect(names).toContain('step_notes')
-
-      db.close()
+      for (const table of [
+        'jobs', 'paths', 'process_steps', 'parts', 'certs',
+        'cert_attachments', 'templates', 'template_steps',
+        'boms', 'bom_entries', 'users', 'audit_entries',
+        'settings', 'step_notes',
+      ]) {
+        expect(names, `missing table: ${table}`).toContain(table)
+      }
     })
 
-    it('applies 002_add_counters_table.sql successfully', () => {
-      const db = initDatabase(dbPath)
-
-      const tableNames = db.prepare(
+    it('creates counters table', () => {
+      const tables = db.prepare(
         'SELECT name FROM sqlite_master WHERE type=\'table\' AND name=\'counters\'',
       ).all()
-      expect(tableNames).toHaveLength(1)
-
-      db.close()
+      expect(tables).toHaveLength(1)
     })
 
-    it('applies 003_add_step_assignment.sql successfully', () => {
-      const db = initDatabase(dbPath)
-
+    it('adds assigned_to column to process_steps', () => {
       const columns = db.prepare('PRAGMA table_info(process_steps)').all() as { name: string }[]
-      const columnNames = columns.map(c => c.name)
-      expect(columnNames).toContain('assigned_to')
-
-      db.close()
+      expect(columns.map(c => c.name)).toContain('assigned_to')
     })
 
-    it('applies 005_add_page_toggles.sql successfully', () => {
-      const db = initDatabase(dbPath)
-
+    it('adds page_toggles column to settings with correct defaults', () => {
       const columns = db.prepare('PRAGMA table_info(settings)').all() as {
         name: string
         type: string
@@ -223,63 +225,49 @@ describe('SQLite migration system', () => {
       expect(col!.type).toBe('TEXT')
       expect(col!.notnull).toBe(1)
       expect(col!.dflt_value).toBe('\'{}\'')
-
-      db.close()
     })
 
     it('creates all expected indexes', () => {
-      const db = initDatabase(dbPath)
-
       const indexes = db.prepare(
         'SELECT name FROM sqlite_master WHERE type=\'index\' AND name LIKE \'idx_%\' ORDER BY name',
       ).all() as { name: string }[]
 
       const indexNames = indexes.map(i => i.name)
-      expect(indexNames).toContain('idx_paths_job_id')
-      expect(indexNames).toContain('idx_parts_job_id')
-      expect(indexNames).toContain('idx_parts_path_id')
-      expect(indexNames).toContain('idx_parts_current_step_id')
-      expect(indexNames).toContain('idx_cert_attachments_part')
-      expect(indexNames).toContain('idx_cert_attachments_cert')
-      expect(indexNames).toContain('idx_audit_part')
-      expect(indexNames).toContain('idx_audit_job')
-      expect(indexNames).toContain('idx_audit_timestamp')
-      expect(indexNames).toContain('idx_process_steps_path')
-      expect(indexNames).toContain('idx_step_notes_step')
-      expect(indexNames).toContain('idx_step_notes_job')
-      expect(indexNames).toContain('idx_process_steps_assigned_to')
-
-      db.close()
+      for (const idx of [
+        'idx_paths_job_id', 'idx_parts_job_id', 'idx_parts_path_id',
+        'idx_parts_current_step_id', 'idx_cert_attachments_part',
+        'idx_cert_attachments_cert', 'idx_audit_part', 'idx_audit_job',
+        'idx_audit_timestamp', 'idx_process_steps_path',
+        'idx_step_notes_step', 'idx_step_notes_job',
+        'idx_process_steps_assigned_to',
+        'idx_webhook_events_created_at',
+        'idx_webhook_deliveries_event_id',
+        'idx_webhook_deliveries_registration_status',
+        'idx_webhook_deliveries_status',
+      ]) {
+        expect(indexNames, `missing index: ${idx}`).toContain(idx)
+      }
     })
 
     it('enforces CHECK constraint on jobs.goal_quantity', () => {
-      const db = initDatabase(dbPath)
       db.pragma('foreign_keys = ON')
-
       expect(() => {
         db.prepare(
           'INSERT INTO jobs (id, name, goal_quantity, created_at, updated_at) VALUES (?, ?, ?, ?, ?)',
         ).run('j1', 'Test', 0, new Date().toISOString(), new Date().toISOString())
       }).toThrow()
-
-      db.close()
     })
 
     it('enforces CHECK constraint on certs.type', () => {
-      const db = initDatabase(dbPath)
-
       expect(() => {
         db.prepare(
           'INSERT INTO certs (id, type, name, created_at) VALUES (?, ?, ?, ?)',
         ).run('c1', 'invalid', 'Test Cert', new Date().toISOString())
       }).toThrow()
-
-      db.close()
     })
 
     it('enforces UNIQUE constraint on process_steps(path_id, step_order)', () => {
-      const db = initDatabase(dbPath)
-      db.pragma('foreign_keys = OFF') // Disable FK for this isolated test
+      db.pragma('foreign_keys = OFF')
 
       db.prepare(
         'INSERT INTO process_steps (id, path_id, name, step_order) VALUES (?, ?, ?, ?)',
@@ -288,49 +276,43 @@ describe('SQLite migration system', () => {
       expect(() => {
         db.prepare(
           'INSERT INTO process_steps (id, path_id, name, step_order) VALUES (?, ?, ?, ?)',
-        ).run('s2', 'p1', 'Step 2', 0) // same path_id + step_order
+        ).run('s2', 'p1', 'Step 2', 0)
       }).toThrow()
-
-      db.close()
     })
 
-    it('records all migrations in _migrations table', () => {
-      const db = initDatabase(dbPath)
+    it('creates webhook tables with correct columns after migration 018', () => {
+      const tableNames = db.prepare(
+        'SELECT name FROM sqlite_master WHERE type=\'table\' AND name LIKE \'webhook_%\' ORDER BY name',
+      ).all() as { name: string }[]
+      expect(tableNames.map(t => t.name)).toEqual(['webhook_deliveries', 'webhook_events', 'webhook_registrations'])
 
-      const applied = db.prepare('SELECT version, name FROM _migrations ORDER BY version').all() as any[]
-      expect(applied).toHaveLength(15)
-      expect(applied[0].version).toBe(1)
-      expect(applied[0].name).toBe('initial_schema')
-      expect(applied[1].version).toBe(2)
-      expect(applied[1].name).toBe('add_counters_table')
-      expect(applied[2].version).toBe(3)
-      expect(applied[2].name).toBe('add_step_assignment')
-      expect(applied[3].version).toBe(4)
-      expect(applied[3].name).toBe('lifecycle_management')
-      expect(applied[4].version).toBe(5)
-      expect(applied[4].name).toBe('add_page_toggles')
-      expect(applied[5].version).toBe(6)
-      expect(applied[5].name).toBe('rename_serial_to_part')
-      expect(applied[6].version).toBe(7)
-      expect(applied[6].name).toBe('step_id_tracking')
-      expect(applied[7].version).toBe(8)
-      expect(applied[7].name).toBe('nullable_step_order')
-      expect(applied[8].version).toBe(9)
-      expect(applied[8].name).toBe('user_admin_roles')
-      expect(applied[9].version).toBe(10)
-      expect(applied[9].name).toBe('add_job_priority')
-      expect(applied[10].version).toBe(11)
-      expect(applied[10].name).toBe('priority_not_null_resequence')
-      expect(applied[11].version).toBe(12)
-      expect(applied[11].name).toBe('pin_auth')
-      expect(applied[12].version).toBe(13)
-      expect(applied[12].name).toBe('add_job_tags')
-      expect(applied[13].version).toBe(14)
-      expect(applied[13].name).toBe('simplify_bom_entries')
-      expect(applied[14].version).toBe(15)
-      expect(applied[14].name).toBe('bom_archived_at')
+      // webhook_events: rebuilt to drop status, sent_at, last_error, retry_count
+      const eventCols = db.prepare('PRAGMA table_info(webhook_events)').all() as { name: string }[]
+      const eventColNames = eventCols.map(c => c.name)
+      for (const col of ['id', 'event_type', 'payload', 'summary', 'created_at']) {
+        expect(eventColNames, `webhook_events missing: ${col}`).toContain(col)
+      }
+      for (const col of ['status', 'sent_at', 'last_error', 'retry_count']) {
+        expect(eventColNames, `webhook_events should not have: ${col}`).not.toContain(col)
+      }
 
-      db.close()
+      // webhook_registrations: new table
+      const regCols = db.prepare('PRAGMA table_info(webhook_registrations)').all() as { name: string }[]
+      for (const col of ['id', 'name', 'url', 'event_types', 'created_at', 'updated_at']) {
+        expect(regCols.map(c => c.name), `webhook_registrations missing: ${col}`).toContain(col)
+      }
+
+      // webhook_deliveries: new table
+      const delCols = db.prepare('PRAGMA table_info(webhook_deliveries)').all() as { name: string }[]
+      for (const col of ['id', 'event_id', 'registration_id', 'status', 'error', 'created_at', 'updated_at']) {
+        expect(delCols.map(c => c.name), `webhook_deliveries missing: ${col}`).toContain(col)
+      }
+
+      // webhook_config should no longer exist
+      const configTable = db.prepare(
+        'SELECT name FROM sqlite_master WHERE type=\'table\' AND name=\'webhook_config\'',
+      ).all()
+      expect(configTable).toHaveLength(0)
     })
   })
 })

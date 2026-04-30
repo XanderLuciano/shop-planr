@@ -18,5 +18,11 @@ export default defineApiHandler(async (event) => {
   const body = await parseBody(event, forceCompleteSchema)
   const userId = getAuthUserId(event)
   const { lifecycleService } = getServices()
-  return lifecycleService.forceComplete(id, { ...body, userId })
+  const result = lifecycleService.forceComplete(id, { ...body, userId })
+  emitWebhookEvent('part_force_completed', {
+    user: resolveUserName(userId),
+    partId: id,
+    reason: body.reason,
+  })
+  return result
 })

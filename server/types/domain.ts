@@ -269,6 +269,7 @@ export interface PageToggles {
   certs: boolean
   jira: boolean
   audit: boolean
+  webhooks: boolean
 }
 
 // ---- Settings ----
@@ -384,4 +385,125 @@ export interface Tag {
   color: string
   createdAt: string
   updatedAt: string
+}
+
+// ---- Webhook Events ----
+
+export const WEBHOOK_EVENT_TYPES = [
+  'part_advanced',
+  'part_completed',
+  'part_created',
+  'part_scrapped',
+  'part_force_completed',
+  'part_deleted',
+  'step_skipped',
+  'step_deferred',
+  'step_waived',
+  'deferred_step_completed',
+  'step_override_created',
+  'step_override_reversed',
+  'job_created',
+  'job_deleted',
+  'path_deleted',
+  'note_created',
+  'cert_attached',
+] as const
+export type WebhookEventType = typeof WEBHOOK_EVENT_TYPES[number]
+
+export interface WebhookEvent {
+  id: string
+  eventType: WebhookEventType
+  payload: Record<string, unknown>
+  summary: string
+  createdAt: string
+}
+
+// ---- Webhook Registrations ----
+
+export interface WebhookRegistration {
+  id: string
+  name: string
+  url: string
+  eventTypes: WebhookEventType[]
+  createdAt: string
+  updatedAt: string
+}
+
+// ---- Webhook Deliveries ----
+
+/**
+ * Iterable array of all delivery status values.
+ * Used to derive the `WebhookDeliveryStatus` union type and the Zod enum.
+ * For referencing individual statuses in code, use `DELIVERY_STATUS.*` instead.
+ */
+export const WEBHOOK_DELIVERY_STATUSES = ['queued', 'delivering', 'delivered', 'failed', 'canceled'] as const
+export type WebhookDeliveryStatus = typeof WEBHOOK_DELIVERY_STATUSES[number]
+
+/**
+ * Named constants for individual delivery statuses.
+ * Use these at call sites instead of magic strings (e.g. `DELIVERY_STATUS.QUEUED`).
+ * Values are kept in sync with `WEBHOOK_DELIVERY_STATUSES` via `satisfies`.
+ */
+export const DELIVERY_STATUS = {
+  QUEUED: 'queued',
+  DELIVERING: 'delivering',
+  DELIVERED: 'delivered',
+  FAILED: 'failed',
+  CANCELED: 'canceled',
+} as const satisfies Record<string, WebhookDeliveryStatus>
+
+export interface WebhookDelivery {
+  id: string
+  eventId: string
+  registrationId: string | null
+  status: WebhookDeliveryStatus
+  error?: string
+  attemptCount: number
+  nextRetryAt?: string
+  createdAt: string
+  updatedAt: string
+}
+
+/** Delivery with joined registration info for the dispatch engine */
+export interface QueuedDeliveryView {
+  id: string
+  eventId: string
+  registrationId: string
+  registrationName: string
+  registrationUrl: string
+  eventType: WebhookEventType
+  payload: Record<string, unknown>
+  summary: string
+  eventCreatedAt: string
+}
+
+/** Delivery with registration info for the event log UI */
+export interface DeliveryDetail {
+  id: string
+  registrationId: string | null
+  registrationName: string
+  registrationUrl: string
+  status: WebhookDeliveryStatus
+  error?: string
+  attemptCount: number
+  nextRetryAt?: string
+  createdAt: string
+  updatedAt: string
+}
+
+/** Event with delivery summary for the event log */
+export interface EventWithDeliveries {
+  id: string
+  eventType: WebhookEventType
+  payload: Record<string, unknown>
+  summary: string
+  createdAt: string
+  deliverySummary: {
+    total: number
+    queued: number
+    delivering: number
+    delivered: number
+    failed: number
+    canceled: number
+  }
 }

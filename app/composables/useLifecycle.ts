@@ -20,7 +20,7 @@ export function useLifecycle() {
         body: input,
       })
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to scrap part'
+      error.value = extractApiError(e, 'Failed to scrap part')
       throw e
     } finally {
       loading.value = false
@@ -33,12 +33,13 @@ export function useLifecycle() {
     loading.value = true
     error.value = null
     try {
-      return await $api<Part>(`/api/parts/${encodeURIComponent(partId)}/force-complete`, {
+      const result = await $api<Part>(`/api/parts/${encodeURIComponent(partId)}/force-complete`, {
         method: 'POST',
         body: input,
       })
+      return result
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to force complete part'
+      error.value = extractApiError(e, 'Failed to force complete part')
       throw e
     } finally {
       loading.value = false
@@ -52,12 +53,13 @@ export function useLifecycle() {
     loading.value = true
     error.value = null
     try {
-      return await $api<AdvancementResult>(`/api/parts/${encodeURIComponent(partId)}/advance-to`, {
+      const result = await $api<AdvancementResult>(`/api/parts/${encodeURIComponent(partId)}/advance-to`, {
         method: 'POST',
         body: input,
       })
+      return result
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to advance part'
+      error.value = extractApiError(e, 'Failed to advance part')
       throw e
     } finally {
       loading.value = false
@@ -72,7 +74,7 @@ export function useLifecycle() {
         method: 'POST',
       })
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to complete deferred step'
+      error.value = extractApiError(e, 'Failed to complete deferred step')
       throw e
     } finally {
       loading.value = false
@@ -85,12 +87,13 @@ export function useLifecycle() {
     loading.value = true
     error.value = null
     try {
-      return await $api<PartStepStatus>(`/api/parts/${encodeURIComponent(partId)}/waive-step/${encodeURIComponent(stepId)}`, {
+      const result = await $api<PartStepStatus>(`/api/parts/${encodeURIComponent(partId)}/waive-step/${encodeURIComponent(stepId)}`, {
         method: 'POST',
         body: input,
       })
+      return result
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to waive step'
+      error.value = extractApiError(e, 'Failed to waive step')
       throw e
     } finally {
       loading.value = false
@@ -110,7 +113,7 @@ export function useLifecycle() {
         body: input,
       })
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to create step override'
+      error.value = extractApiError(e, 'Failed to create step override')
       throw e
     } finally {
       loading.value = false
@@ -125,7 +128,7 @@ export function useLifecycle() {
         method: 'DELETE',
       })
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to reverse step override'
+      error.value = extractApiError(e, 'Failed to reverse step override')
       throw e
     } finally {
       loading.value = false
@@ -138,7 +141,7 @@ export function useLifecycle() {
     try {
       return await $api<PartStepStatusView[]>(`/api/parts/${encodeURIComponent(partId)}/step-statuses`)
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch step statuses'
+      error.value = extractApiError(e, 'Failed to fetch step statuses')
       throw e
     } finally {
       loading.value = false
@@ -153,12 +156,13 @@ export function useLifecycle() {
     loading.value = true
     error.value = null
     try {
-      return await $api('/api/parts/advance-to', {
+      const result = await $api<{ advanced: number, failed: number, results: { partId: string, success: boolean, error?: string }[] }>('/api/parts/advance-to', {
         method: 'POST',
         body: input,
       })
+      return result
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to advance parts'
+      error.value = extractApiError(e, 'Failed to advance parts')
       throw e
     } finally {
       loading.value = false
@@ -171,7 +175,7 @@ export function useLifecycle() {
     try {
       return await $api<{ canComplete: boolean, blockers: string[] }>(`/api/parts/${encodeURIComponent(partId)}/can-complete`)
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to check completion status'
+      error.value = extractApiError(e, 'Failed to check completion status')
       throw e
     } finally {
       loading.value = false

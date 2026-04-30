@@ -46,6 +46,12 @@ import { pushJiraCommentSchema, linkJiraTicketSchema, jiraPushSchema } from '~/s
 import { createTagSchema, updateTagSchema, setJobTagsSchema } from '~/server/schemas/tagSchemas'
 import { createNoteSchema } from '~/server/schemas/noteSchemas'
 import { addLibraryEntrySchema } from '~/server/schemas/librarySchemas'
+import {
+  queueEventSchema,
+} from '~/server/schemas/webhookSchemas'
+import { WEBHOOK_PAYLOAD_SCHEMAS } from '~/server/schemas/webhookPayloadSchemas'
+import { WEBHOOK_EVENT_TYPES } from '~/server/types/domain'
+import { buildTestPayload } from '~/server/utils/webhookTestData'
 import { createUserService } from '~/server/services/userService'
 import { createSettingsService } from '~/server/services/settingsService'
 import { SQLiteSettingsRepository } from '~/server/repositories/sqlite/settingsRepository'
@@ -926,5 +932,84 @@ describe('Schema rejection — invalid payloads are rejected', () => {
 
   it('batchPathOperationsSchema rejects all-empty operations', () => {
     expect(batchPathOperationsSchema.safeParse({ create: [], update: [], delete: [] }).success).toBe(false)
+  })
+
+  // ── Webhook schemas ──
+
+  it('queueEventSchema rejects invalid event type', () => {
+    expect(queueEventSchema.safeParse({
+      eventType: 'bogus_event',
+      payload: {},
+      summary: 'test',
+    }).success).toBe(false)
+  })
+
+  it('queueEventSchema rejects empty summary', () => {
+    expect(queueEventSchema.safeParse({
+      eventType: 'part_advanced',
+      payload: {},
+      summary: '',
+    }).success).toBe(false)
+  })
+
+  it('queueEventSchema rejects missing payload', () => {
+    expect(queueEventSchema.safeParse({
+      eventType: 'part_advanced',
+      summary: 'test',
+    }).success).toBe(false)
+  })
+})
+
+// ── Webhook schemas → webhookService ──
+
+describe('Webhook schemas → webhookService', () => {
+  const adminUserId = 'admin-contract-test'
+
+  beforeAll(() => {
+    ctx.repos.users.create({
+      id: adminUserId,
+      username: 'webhook_admin',
+      displayName: 'Webhook Admin',
+      isAdmin: true,
+      active: true,
+      createdAt: new Date().toISOString(),
+    })
+  })
+
+  it('queueEventSchema output is accepted by webhookService.queueEvent', () => {
+    const body = parse(queueEventSchema, {
+      eventType: 'part_advanced',
+      payload: { partId: 'p1', stepId: 's1' },
+      summary: 'Part advanced',
+    })
+    const event = ctx.webhookService.queueEvent(body)
+    expect(event.eventType).toBe('part_advanced')
+    expect(event.createdAt).toBeTruthy()
+  })
+
+  it('all event types are accepted by queueEventSchema', () => {
+    for (const eventType of WEBHOOK_EVENT_TYPES) {
+      const result = queueEventSchema.safeParse({
+        eventType,
+        payload: {},
+        summary: `Test ${eventType}`,
+      })
+      expect(result.success, `Expected ${eventType} to be valid`).toBe(true)
+    }
+  })
+
+  it('buildTestPayload output validates against the payload schema for every event type', () => {
+    for (const eventType of WEBHOOK_EVENT_TYPES) {
+      const payload = buildTestPayload(eventType)
+      const schema = WEBHOOK_PAYLOAD_SCHEMAS[eventType]
+      const result = schema.safeParse(payload)
+      expect(result.success, `Test payload for ${eventType} failed schema validation: ${JSON.stringify((result as any).error?.flatten?.()?.fieldErrors)}`).toBe(true)
+    }
+  })
+
+  it('every WEBHOOK_EVENT_TYPES entry has a corresponding payload schema', () => {
+    for (const eventType of WEBHOOK_EVENT_TYPES) {
+      expect(WEBHOOK_PAYLOAD_SCHEMAS[eventType], `Missing payload schema for ${eventType}`).toBeDefined()
+    }
   })
 })

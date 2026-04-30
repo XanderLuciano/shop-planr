@@ -19,5 +19,13 @@ export default defineApiHandler(async (event) => {
   const userId = getAuthUserId(event)
   const body = await parseBody(event, waiveStepSchema)
   const { lifecycleService } = getServices()
-  return lifecycleService.waiveStep(id, stepId, { ...body, approverId: userId })
+  const result = lifecycleService.waiveStep(id, stepId, { ...body, approverId: userId })
+  emitWebhookEvent('step_waived', {
+    user: resolveUserName(userId),
+    partId: id,
+    stepId,
+    stepName: resolveStepName(id, stepId),
+    reason: body.reason,
+  })
+  return result
 })

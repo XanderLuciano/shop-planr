@@ -23,5 +23,9 @@ export default defineApiHandler((event) => {
   const userId = getAuthUserId(event)
   const { partService } = getServices()
   const result = partService.deletePart(id, userId)
+  emitWebhookEvent('part_deleted', {
+    user: resolveUserName(userId),
+    partId: id,
+  })
   return { success: true, ...result }
 })

@@ -21,6 +21,9 @@ import { SQLiteBomVersionRepository } from '../../server/repositories/sqlite/bom
 import { SQLiteLibraryRepository } from '../../server/repositories/sqlite/libraryRepository'
 import { SQLiteUserRepository } from '../../server/repositories/sqlite/userRepository'
 import { SQLiteCryptoKeyRepository } from '../../server/repositories/sqlite/cryptoKeyRepository'
+import { createSQLiteWebhookEventRepository } from '../../server/repositories/sqlite/webhookRepository'
+import { createSQLiteWebhookRegistrationRepository } from '../../server/repositories/sqlite/webhookRegistrationRepository'
+import { createSQLiteWebhookDeliveryRepository } from '../../server/repositories/sqlite/webhookDeliveryRepository'
 import { createJobService } from '../../server/services/jobService'
 import { createPathService } from '../../server/services/pathService'
 import { createPartService } from '../../server/services/partService'
@@ -32,6 +35,8 @@ import { createNoteService } from '../../server/services/noteService'
 import { createLifecycleService } from '../../server/services/lifecycleService'
 import { createLibraryService } from '../../server/services/libraryService'
 import { createAuthService } from '../../server/services/authService'
+import { createWebhookService } from '../../server/services/webhookService'
+import { createWebhookDeliveryService } from '../../server/services/webhookDeliveryService'
 import { createSequentialPartIdGenerator } from '../../server/utils/idGenerator'
 
 const MIGRATIONS_DIR = resolve(__dirname, '../../server/repositories/sqlite/migrations')
@@ -62,6 +67,9 @@ export function createTestContext() {
     library: new SQLiteLibraryRepository(db),
     users: new SQLiteUserRepository(db),
     cryptoKeys: new SQLiteCryptoKeyRepository(db),
+    webhookEvents: createSQLiteWebhookEventRepository(db),
+    webhookRegistrations: createSQLiteWebhookRegistrationRepository(db),
+    webhookDeliveries: createSQLiteWebhookDeliveryRepository(db),
   }
 
   const partIdGenerator = createSequentialPartIdGenerator({
@@ -113,6 +121,18 @@ export function createTestContext() {
   const noteService = createNoteService({ notes: repos.notes }, auditService)
   const libraryService = createLibraryService({ library: repos.library })
   const authService = createAuthService({ users: repos.users, cryptoKeys: repos.cryptoKeys })
+  const webhookDeliveryService = createWebhookDeliveryService({
+    webhookDeliveries: repos.webhookDeliveries,
+    webhookRegistrations: repos.webhookRegistrations,
+    webhookEvents: repos.webhookEvents,
+    users: repos.users,
+    db,
+  })
+  const webhookService = createWebhookService({
+    webhookEvents: repos.webhookEvents,
+    users: repos.users,
+    db,
+  }, webhookDeliveryService)
 
   return {
     db,
@@ -128,6 +148,7 @@ export function createTestContext() {
     lifecycleService,
     libraryService,
     authService,
+    webhookService,
     cleanup: () => db.close(),
   }
 }

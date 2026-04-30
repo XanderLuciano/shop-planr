@@ -16,5 +16,15 @@ export default defineApiHandler(async (event) => {
   const body = await parseBody(event, createOverrideSchema)
   const userId = getAuthUserId(event)
   const { lifecycleService } = getServices()
-  return lifecycleService.createStepOverride(body.partIds || body.serialIds!, body.stepId, body.reason, userId)
+  const partIds = body.partIds || body.serialIds!
+  const result = lifecycleService.createStepOverride(partIds, body.stepId, body.reason, userId)
+  emitWebhookEvent('step_override_created', {
+    user: resolveUserName(userId),
+    partIds,
+    count: partIds.length,
+    stepId: body.stepId,
+    stepName: partIds.length > 0 ? resolveStepName(partIds[0]!, body.stepId) : undefined,
+    reason: body.reason,
+  })
+  return result
 })

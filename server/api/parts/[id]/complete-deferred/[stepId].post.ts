@@ -15,5 +15,12 @@ export default defineApiHandler(async (event) => {
   const stepId = getRouterParam(event, 'stepId')!
   const userId = getAuthUserId(event)
   const { lifecycleService } = getServices()
-  return lifecycleService.completeDeferredStep(id, stepId, userId)
+  const result = lifecycleService.completeDeferredStep(id, stepId, userId)
+  emitWebhookEvent('deferred_step_completed', {
+    user: resolveUserName(userId),
+    partId: id,
+    stepId,
+    stepName: resolveStepName(id, stepId),
+  })
+  return result
 })

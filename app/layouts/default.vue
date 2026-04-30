@@ -12,6 +12,7 @@ const navItems: NavigationMenuItem[] = [
   { label: 'Certs', icon: 'i-lucide-shield-check', to: '/certs' },
   { label: 'Jira', icon: 'i-lucide-ticket', to: '/jira' },
   { label: 'Audit', icon: 'i-lucide-scroll-text', to: '/audit' },
+  { label: 'Webhooks', icon: 'i-lucide-webhook', to: '/webhooks' },
   { label: 'Settings', icon: 'i-lucide-settings', to: '/settings' },
 ]
 

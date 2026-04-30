@@ -104,6 +104,8 @@ vi.stubGlobal('defineApiHandler', (fn: unknown) => fn)
 vi.stubGlobal('defineRouteMeta', () => {})
 vi.stubGlobal('zodRequestBody', () => ({}))
 vi.stubGlobal('getAuthUserId', () => 'test-user-id')
+vi.stubGlobal('resolveUserName', () => 'Test User')
+vi.stubGlobal('emitWebhookEvent', vi.fn())
 
 const handler = (await import('~/server/api/parts/advance-to.post')).default
 
@@ -123,7 +125,10 @@ describe('POST /api/parts/advance-to route', () => {
    * Route returns correct advanced/failed counts for all-success case.
    */
   it('returns correct advanced/failed counts when all parts succeed', async () => {
-    mockLifecycleService.advanceToStep.mockImplementation(() => {})
+    mockLifecycleService.advanceToStep.mockImplementation(() => ({
+      serial: { status: 'in_progress' },
+      bypassed: [],
+    }))
 
     vi.mocked(globalThis.parseBody as any).mockResolvedValue({
       partIds: ['part_a', 'part_b', 'part_c'],
@@ -147,6 +152,7 @@ describe('POST /api/parts/advance-to route', () => {
     mockLifecycleService.advanceToStep
       .mockImplementation((partId: string) => {
         if (partId === 'part_bad') throw new Error('Part is locked')
+        return { serial: { status: 'in_progress' }, bypassed: [] }
       })
 
     vi.mocked(globalThis.parseBody as any).mockResolvedValue({
@@ -174,6 +180,7 @@ describe('POST /api/parts/advance-to route', () => {
       .mockImplementation((partId: string) => {
         if (partId === 'part_1') throw new Error('fail 1')
         if (partId === 'part_2') throw new Error('fail 2')
+        return { serial: { status: 'in_progress' }, bypassed: [] }
       })
 
     vi.mocked(globalThis.parseBody as any).mockResolvedValue({
@@ -198,6 +205,7 @@ describe('POST /api/parts/advance-to route', () => {
     mockLifecycleService.advanceToStep
       .mockImplementation((partId: string) => {
         if (partId === 'part_2' || partId === 'part_4') throw new Error('fail')
+        return { serial: { status: 'in_progress' }, bypassed: [] }
       })
 
     const partIds = ['part_1', 'part_2', 'part_3', 'part_4', 'part_5']
@@ -216,7 +224,10 @@ describe('POST /api/parts/advance-to route', () => {
    * Route passes correct arguments to lifecycleService.advanceToStep.
    */
   it('passes targetStepId, skip, and userId to advanceToStep', async () => {
-    mockLifecycleService.advanceToStep.mockImplementation(() => {})
+    mockLifecycleService.advanceToStep.mockImplementation(() => ({
+      serial: { status: 'in_progress' },
+      bypassed: [],
+    }))
 
     vi.mocked(globalThis.parseBody as any).mockResolvedValue({
       partIds: ['part_a'],

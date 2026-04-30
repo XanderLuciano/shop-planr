@@ -103,7 +103,7 @@ describe('SettingsService', () => {
       const toggles = settings.pageToggles
 
       expect(Object.keys(toggles).sort()).toEqual(
-        ['audit', 'bom', 'certs', 'jira', 'jobs', 'parts', 'partsBrowser', 'queue', 'templates'],
+        ['audit', 'bom', 'certs', 'jira', 'jobs', 'parts', 'partsBrowser', 'queue', 'templates', 'webhooks'],
       )
       expect(Object.values(toggles).every(v => v === true)).toBe(true)
     })
@@ -219,7 +219,7 @@ describe('SettingsService', () => {
         expect((updated.pageToggles as any).dashboard).toBeUndefined()
         // All valid keys still present
         expect(Object.keys(updated.pageToggles).sort()).toEqual(
-          ['audit', 'bom', 'certs', 'jira', 'jobs', 'parts', 'partsBrowser', 'queue', 'templates'],
+          ['audit', 'bom', 'certs', 'jira', 'jobs', 'parts', 'partsBrowser', 'queue', 'templates', 'webhooks'],
         )
       })
 
