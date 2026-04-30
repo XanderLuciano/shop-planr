@@ -124,7 +124,7 @@ describe('Property 2: Registration list ordering', () => {
             createdIds.push(reg.id)
           }
 
-          const listed = service.list()
+          const listed = service.list(WEBHOOK_ADMIN_USER.id)
 
           // Should have all registrations
           expect(listed).toHaveLength(inputs.length)
@@ -164,7 +164,7 @@ describe('Property 3: Invalid registration input rejection', () => {
           ).toThrow(ValidationError)
 
           // No record should have been created
-          expect(service.list()).toHaveLength(0)
+          expect(service.list(WEBHOOK_ADMIN_USER.id)).toHaveLength(0)
         },
       ),
       { numRuns: 100 },
@@ -184,7 +184,7 @@ describe('Property 3: Invalid registration input rejection', () => {
             service.create(WEBHOOK_ADMIN_USER.id, { name, url: badUrl, eventTypes }),
           ).toThrow(ValidationError)
 
-          expect(service.list()).toHaveLength(0)
+          expect(service.list(WEBHOOK_ADMIN_USER.id)).toHaveLength(0)
         },
       ),
       { numRuns: 100 },
@@ -210,7 +210,7 @@ describe('Property 3: Invalid registration input rejection', () => {
             }),
           ).toThrow(ValidationError)
 
-          expect(service.list()).toHaveLength(0)
+          expect(service.list(WEBHOOK_ADMIN_USER.id)).toHaveLength(0)
         },
       ),
       { numRuns: 100 },
