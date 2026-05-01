@@ -77,7 +77,7 @@ async function handleSave() {
     })
     emit('saved')
   } catch (e) {
-    error.value = e?.data?.message ?? e?.message ?? 'Failed to update template'
+    error.value = extractApiError(e, 'Failed to update template')
   } finally {
     loading.value = false
   }

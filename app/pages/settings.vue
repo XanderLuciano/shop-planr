@@ -51,7 +51,7 @@ async function onCreateUser(data: { username: string, displayName: string, depar
     await loadAllUsers()
     await fetchUsers()
   } catch (e) {
-    userError.value = e?.data?.message ?? e?.message ?? 'Failed to create user'
+    userError.value = extractApiError(e, 'Failed to create user')
   } finally {
     userSaving.value = false
   }
@@ -69,7 +69,7 @@ async function onUpdateUser(data: { username?: string, displayName?: string, dep
     await loadAllUsers()
     await fetchUsers()
   } catch (e) {
-    userError.value = e?.data?.message ?? e?.message ?? 'Failed to update user'
+    userError.value = extractApiError(e, 'Failed to update user')
   } finally {
     userSaving.value = false
   }
@@ -85,7 +85,7 @@ async function toggleUserActive(user: PublicUser) {
     await loadAllUsers()
     await fetchUsers()
   } catch (e) {
-    userError.value = e?.data?.message ?? e?.message ?? 'Failed to update user'
+    userError.value = extractApiError(e, 'Failed to update user')
   }
 }
 
@@ -100,8 +100,7 @@ async function resetUserPin(user: PublicUser) {
     userSuccess.value = `PIN reset for ${user.displayName}. They will set a new PIN on next login.`
     await loadAllUsers()
   } catch (e: unknown) {
-    const err = e as { data?: { message?: string }, message?: string }
-    userError.value = err?.data?.message ?? err?.message ?? 'Failed to reset PIN'
+    userError.value = extractApiError(e, 'Failed to reset PIN')
   }
 }
 
@@ -113,7 +112,7 @@ async function onSaveConnection(connection: Partial<JiraConnectionSettings>) {
     await updateSettings({ jiraConnection: connection })
     settingsSuccess.value = 'Connection settings saved'
   } catch (e) {
-    settingsError.value = e?.data?.message ?? e?.message ?? 'Failed to save settings'
+    settingsError.value = extractApiError(e, 'Failed to save settings')
   } finally {
     settingsSaving.value = false
   }
@@ -127,7 +126,7 @@ async function onSaveN8nConnection(connection: Partial<N8nConnectionSettings>) {
     await updateSettings({ n8nConnection: connection })
     settingsSuccess.value = 'n8n connection saved'
   } catch (e) {
-    settingsError.value = e?.data?.message ?? e?.message ?? 'Failed to save n8n connection'
+    settingsError.value = extractApiError(e, 'Failed to save n8n connection')
   } finally {
     settingsSaving.value = false
   }
@@ -141,7 +140,7 @@ async function onSaveMappings(mappings: JiraFieldMapping[]) {
     await updateSettings({ jiraFieldMappings: mappings })
     settingsSuccess.value = 'Field mappings saved'
   } catch (e) {
-    settingsError.value = e?.data?.message ?? e?.message ?? 'Failed to save mappings'
+    settingsError.value = extractApiError(e, 'Failed to save mappings')
   } finally {
     settingsSaving.value = false
   }
@@ -155,7 +154,7 @@ async function onSaveToggles(toggles: PageToggles) {
     await updateSettings({ pageToggles: toggles })
     settingsSuccess.value = 'Page visibility saved'
   } catch (e) {
-    settingsError.value = e?.data?.message ?? e?.message ?? 'Failed to save page visibility'
+    settingsError.value = extractApiError(e, 'Failed to save page visibility')
     // Revert toggles on failure — re-fetch settings to restore previous state
     await fetchSettings()
   } finally {

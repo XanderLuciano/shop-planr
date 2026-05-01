@@ -5,6 +5,20 @@ description: "Coding standards for Shop Planr: import resolution, architecture l
 
 # Coding Standards
 
+## Hands Off Tooling Config
+
+Do NOT modify any of the following configuration files unless the user explicitly asks for a direct change to fix a specific issue in that config:
+
+- `vitest.config.ts` / `vitest.config.js` — test runner config
+- `tsconfig.json` / `tsconfig.*.json` — TypeScript compiler options
+- `nuxt.config.ts` — Nuxt framework config
+- `eslint.config.*` / `.eslintrc.*` — lint rules
+- `tailwind.config.*` — Tailwind CSS config
+- `.prettierrc` / `prettier.config.*` — formatter config
+- `package.json` scripts / devDependencies (unless installing a dep the task requires)
+
+If a test, typecheck, or lint failure occurs, fix the **source code** — not the config. Loosening rules, disabling checks, or tweaking compiler options to make errors disappear is not a fix. The only exception is when the user says something like "update the vitest config to do X" or "add this ESLint rule."
+
 ## Quality Rules
 
 1. Fix root causes, not symptoms. Understand WHY before changing code.
@@ -43,7 +57,7 @@ When adding a new sentinel, add it to `selectSentinel.ts` with a typed constant,
 
 `~` resolves to `app/` at runtime, but to project root in vitest. This causes runtime errors if misused.
 
-**Server code (`server/`):** NEVER use `~`. Use relative paths only. `server/utils/` exports are auto-imported by Nitro (no import needed for `ValidationError`, `NotFoundError`, `getServices`, `getRepositories`, `defineApiHandler`, `readBody`, `getRouterParam`, etc).
+**Server code (`server/`):** NEVER use `~`. Use relative paths only. `server/utils/` exports are auto-imported by Nitro (no import needed for `ValidationError`, `NotFoundError`, `getServices`, `getRepositories`, `defineApiHandler`, `readBody`, `getRouterParam`, `getAuthUserId`, `requireAdmin`, `emitWebhookEvent`, `zodRequestBody`, `parseBody`, `parseQuery`, etc).
 
 **App code (`app/`):** NEVER write `~/app/` (doubles to `app/app/`). Use `~/` which already points to `app/`. Composables, components, and utils are auto-imported. For types not auto-imported, inline the definition.
 
@@ -78,19 +92,32 @@ export default defineEventHandler(async (event) => {
 })
 ```
 
-For input validation errors in route handlers, throw `ValidationError` (auto-imported). For missing resources, throw `NotFoundError` (auto-imported). Do NOT use inline `createError()` for 400/404 errors — it bypasses the centralized status message mapping and produces incorrect `statusMessage` values.
+Error throwing (all auto-imported, never use `createError()` directly):
 
 ```ts
-// CORRECT
-if (!id) throw new ValidationError('ID is required')
+// ValidationError — single message or with structured code+meta
+throw new ValidationError('ID is required')
+throw new ValidationError('Step already completed', {
+  code: 'STEP_ALREADY_COMPLETE',
+  meta: { stepId, partId },
+})
 
-// WRONG — missing statusMessage, produces "Server Error"
-if (!id) throw createError({ statusCode: 400, message: 'ID is required' })
+// NotFoundError — two args: (resourceType, id)
+throw new NotFoundError('Job', id)    // CORRECT
+throw new NotFoundError('Job not found') // WRONG — single-arg doesn't match constructor
 ```
 
 ## Request Body Validation (Zod Schemas)
 
-API routes that accept request bodies MUST validate them with Zod schemas using `parseBody()` (auto-imported from `server/utils/validation.ts`). This ensures invalid input returns a 400 instead of a 500.
+**MANDATORY:** Every API route that accepts a request body or query params MUST have a corresponding Zod schema and use `parseBody()` or `parseQuery()`. Every API route MUST include `defineRouteMeta()` with OpenAPI metadata. This is not optional — no route ships without validation and documentation.
+
+When creating or editing ANY API route, you MUST:
+1. Define (or update) a Zod schema in the appropriate `server/schemas/*.ts` file
+2. Use `parseBody(event, schema)` or `parseQuery(event, schema)` — never raw `readBody()` or `getQuery()`
+3. Add `defineRouteMeta()` with tags, description, and `zodRequestBody(schema)` for POST/PUT/PATCH routes
+4. Use shared primitives from `server/schemas/_primitives.ts` for common field patterns
+
+If you are editing an existing route that lacks validation, add it as part of the change. Do NOT leave unvalidated routes behind.
 
 Schemas live in `server/schemas/` and are colocated by domain (e.g., `pathSchemas.ts`, `jobSchemas.ts`). Each route imports its schema and calls `parseBody(event, schema)` instead of raw `readBody(event)`.
 
@@ -158,10 +185,10 @@ A 404 means the resource itself doesn't exist — not that it has zero children.
 
 ```ts
 // WRONG — empty list is not a 404
-if (serials.length === 0) throw new NotFoundError('No active parts')
+if (serials.length === 0) throw new NotFoundError('Part', partId)
 
 // CORRECT — 404 only when the parent resource is missing
-if (!step) throw new NotFoundError('ProcessStep not found')
+if (!step) throw new NotFoundError('ProcessStep', stepId)
 return { items: serials, count: serials.length } // empty is fine
 ```
 
@@ -182,6 +209,23 @@ Exception: `useAuth()` uses bare `$fetch` (circular dependency with the auth plu
 
 Never mutate `globalThis.$fetch`. Access the authenticated user anywhere via `useAuth().authenticatedUser` (decoded from JWT cookie, no network call).
 
+## Client-Side Error Extraction (`extractApiError`)
+
+Use `extractApiError` / `extractApiErrorCode` from `app/utils/apiError.ts` (auto-imported) in all catch blocks. Never inline the unwrapping.
+
+```ts
+// CORRECT
+catch (e) {
+  error.value = extractApiError(e, 'Failed to create job')
+  if (extractApiErrorCode(e) === 'STEP_ALREADY_COMPLETE') { /* branch */ }
+}
+
+// WRONG — do not reintroduce inline unwrapping
+catch (e) {
+  error.value = e?.data?.message ?? e?.message ?? 'Failed to create job'
+}
+```
+
 
 ## Mobile Overflow — Pre/Code Blocks
 
@@ -198,3 +242,13 @@ The fix: cap the `pre` element's max-width to the viewport on mobile, and remove
 - `overflow-x-auto` — enables horizontal scroll within the contained block
 
 Do NOT use `overflow-hidden` on page containers or tab wrappers — it clips vertical scroll. Do NOT use `w-0 min-w-full` wrapper tricks — they collapse when the parent isn't a direct flex container.
+
+## Date Formatting — No Inline `toLocale*String()`
+
+ESLint bans `toLocaleString()`, `toLocaleDateString()`, `toLocaleTimeString()` in `app/` and `server/`. Use helpers from `app/utils/dateFormatting.ts` (auto-imported):
+
+```ts
+formatDate(timestamp)       // "Jan 15, 2025"
+formatDateTime(timestamp)   // "Jan 15, 2025, 2:30 PM"
+formatShortDate(timestamp)  // "1/15/25"
+```

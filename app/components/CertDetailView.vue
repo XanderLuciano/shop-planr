@@ -21,7 +21,7 @@ onMounted(async () => {
     cert.value = certData
     attachments.value = attachData
   } catch (e) {
-    error.value = e?.data?.message ?? e?.message ?? 'Failed to load certificate'
+    error.value = extractApiError(e, 'Failed to load certificate')
   } finally {
     loading.value = false
   }

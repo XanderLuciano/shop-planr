@@ -68,7 +68,7 @@ async function confirmLink() {
     // Re-fetch jobs so the filter updates
     await fetchJobs()
   } catch (e) {
-    linkError.value = e?.data?.message ?? e?.message ?? 'Failed to link ticket'
+    linkError.value = extractApiError(e, 'Failed to link ticket')
   } finally {
     linking.value = false
   }

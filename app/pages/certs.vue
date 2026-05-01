@@ -28,7 +28,7 @@ async function onCreateCert(data: { type: 'material' | 'process', name: string, 
   try {
     await onCreateCertInner(data)
   } catch (e) {
-    formError.value = e?.data?.message ?? e?.message ?? 'Failed to create certificate'
+    formError.value = extractApiError(e, 'Failed to create certificate')
   }
 }
 
@@ -82,7 +82,7 @@ async function onBatchAttach() {
     batchSuccess.value = `Attached certificate to ${ids.length} part(s)`
     batchPartIds.value = ''
   } catch (e) {
-    batchError.value = e?.data?.message ?? e?.message ?? 'Failed to batch attach'
+    batchError.value = extractApiError(e, 'Failed to batch attach')
   } finally {
     batchSaving.value = false
   }

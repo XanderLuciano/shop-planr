@@ -63,7 +63,7 @@ async function onSubmit() {
   try {
     await onSubmitInner()
   } catch (e) {
-    error.value = e?.data?.message ?? e?.message ?? 'Failed to create parts'
+    error.value = extractApiError(e, 'Failed to create parts')
   }
 }
 

@@ -14,7 +14,7 @@ export function useSettings() {
     try {
       settings.value = await $api<AppSettings>('/api/settings')
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch settings'
+      error.value = extractApiError(e, 'Failed to fetch settings')
       settings.value = null
     } finally {
       loading.value = false

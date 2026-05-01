@@ -51,7 +51,7 @@ async function saveChanges() {
     })
     emit('updated')
   } catch (e) {
-    error.value = e?.data?.message ?? e?.message ?? 'Failed to update step config'
+    error.value = extractApiError(e, 'Failed to update step config')
   } finally {
     loading.value = false
   }

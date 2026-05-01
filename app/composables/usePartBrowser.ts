@@ -93,7 +93,7 @@ export function usePartBrowser() {
     try {
       parts.value = await $api<EnrichedPart[]>('/api/parts')
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch parts'
+      error.value = extractApiError(e, 'Failed to fetch parts')
       parts.value = []
     } finally {
       loading.value = false

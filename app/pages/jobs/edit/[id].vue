@@ -18,7 +18,7 @@ async function loadJob() {
     const { paths, ...job } = data
     jobWithPaths.value = { ...job, paths }
   } catch (e) {
-    error.value = e?.data?.message ?? e?.message ?? 'Job not found'
+    error.value = extractApiError(e, 'Job not found')
   } finally {
     loading.value = false
   }

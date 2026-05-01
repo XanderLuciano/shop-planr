@@ -329,18 +329,17 @@ export function createN8nAutomationService(deps: Deps): N8nAutomationService {
         settings: n8nSettings,
       }
 
-      try {
-        let n8nWorkflowId = automation.n8nWorkflowId
+      let n8nWorkflowId = automation.n8nWorkflowId
 
+      // Step 1: Create or update the workflow on n8n
+      try {
         if (n8nWorkflowId) {
-          // Update existing workflow
           await $fetch(`${baseUrl}/api/v1/workflows/${n8nWorkflowId}`, {
             method: 'PUT',
             headers: { 'X-N8N-API-KEY': apiKey },
             body: workflowPayload,
           })
         } else {
-          // Create new workflow
           const result = await $fetch<{ id: string }>(`${baseUrl}/api/v1/workflows`, {
             method: 'POST',
             headers: { 'X-N8N-API-KEY': apiKey },
@@ -348,8 +347,18 @@ export function createN8nAutomationService(deps: Deps): N8nAutomationService {
           })
           n8nWorkflowId = result.id
         }
+      } catch (e: unknown) {
+        throw new ValidationError(`Failed to deploy to n8n: ${extractN8nError(e)}`)
+      }
 
-        // Sync activation state with n8n
+      // Step 2: Persist the workflow ID immediately so we don't orphan it
+      // if activation fails below.
+      db.transaction(() => {
+        n8nAutomations.update(automation.id, { n8nWorkflowId })
+      })()
+
+      // Step 3: Sync activation state with n8n
+      try {
         if (automation.enabled) {
           await $fetch(`${baseUrl}/api/v1/workflows/${n8nWorkflowId}/activate`, {
             method: 'POST',
@@ -361,21 +370,19 @@ export function createN8nAutomationService(deps: Deps): N8nAutomationService {
             headers: { 'X-N8N-API-KEY': apiKey },
           })
         }
-
-        // Close the loop: the workflow now exists on n8n with a webhook
-        // trigger listening at /webhook/shop-planr/<automation.id>. Point
-        // a WebhookRegistration at it so events from emitWebhookEvent()
-        // actually reach n8n through the existing delivery pipeline.
-        return db.transaction(() => {
-          const linked = upsertLinkedRegistration(automation, baseUrl)
-          return n8nAutomations.update(automation.id, {
-            n8nWorkflowId,
-            linkedRegistrationId: linked.id,
-          })
-        })()
       } catch (e: unknown) {
-        throw new ValidationError(`Failed to deploy to n8n: ${extractN8nError(e)}`)
+        throw new ValidationError(`Workflow deployed but activation sync failed: ${extractN8nError(e)}`)
       }
+
+      // Step 4: Link a WebhookRegistration so events from emitWebhookEvent()
+      // reach n8n through the existing delivery pipeline.
+      return db.transaction(() => {
+        const linked = upsertLinkedRegistration(automation, baseUrl)
+        return n8nAutomations.update(automation.id, {
+          n8nWorkflowId,
+          linkedRegistrationId: linked.id,
+        })
+      })()
     },
 
     async getN8nStatus() {

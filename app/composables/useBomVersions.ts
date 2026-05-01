@@ -15,7 +15,7 @@ export function useBomVersions() {
     try {
       versions.value = await $api<BomVersion[]>(`/api/bom/${encodeURIComponent(bomId)}/versions`)
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch BOM versions'
+      error.value = extractApiError(e, 'Failed to fetch BOM versions')
     } finally {
       loading.value = false
     }
@@ -31,7 +31,7 @@ export function useBomVersions() {
       })
       await fetchVersions(bomId)
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to edit BOM'
+      error.value = extractApiError(e, 'Failed to edit BOM')
       throw e
     } finally {
       loading.value = false

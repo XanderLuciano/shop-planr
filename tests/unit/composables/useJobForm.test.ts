@@ -28,6 +28,11 @@ vi.stubGlobal('useAuth', () => ({
   authenticatedUser: ref({ id: 'test-user-id', username: 'test', displayName: 'Test User', isAdmin: true, active: true, createdAt: '2024-01-01' }),
 }))
 
+// Stub auto-imported utils
+vi.stubGlobal('extractApiError', (err: any, fallback: string) => {
+  return err?.data?.message ?? err?.message ?? fallback
+})
+
 // ---- Helpers ----
 
 function makeStep(overrides?: Partial<ProcessStep>): ProcessStep {

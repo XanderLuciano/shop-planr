@@ -45,7 +45,7 @@ export function useOperatorWorkQueue() {
         query: params?.groupBy ? { groupBy: params.groupBy } : undefined,
       })
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch work queue'
+      error.value = extractApiError(e, 'Failed to fetch work queue')
       response.value = null
     } finally {
       loading.value = false

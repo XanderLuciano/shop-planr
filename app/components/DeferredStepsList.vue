@@ -27,7 +27,7 @@ async function handleComplete(stepId: string) {
     await completeDeferredStep(props.partId, stepId)
     emit('completed', stepId)
   } catch (e) {
-    actionError.value = e?.data?.message ?? e?.message ?? 'Failed to complete step'
+    actionError.value = extractApiError(e, 'Failed to complete step')
   }
 }
 
@@ -56,7 +56,7 @@ async function confirmWaive() {
     cancelWaive()
     emit('waived', waived)
   } catch (e) {
-    actionError.value = e?.data?.message ?? e?.message ?? 'Failed to waive step'
+    actionError.value = extractApiError(e, 'Failed to waive step')
   }
 }
 </script>

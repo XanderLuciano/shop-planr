@@ -24,9 +24,9 @@ export function useStepView(stepId: string) {
     } catch (e) {
       if (e?.response?.status === 404 || e?.status === 404 || e?.statusCode === 404) {
         notFound.value = true
-        error.value = e?.data?.message ?? 'Step not found'
+        error.value = extractApiError(e, 'Step not found')
       } else {
-        error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch step data'
+        error.value = extractApiError(e, 'Failed to fetch step data')
       }
       job.value = null
       notes.value = []
