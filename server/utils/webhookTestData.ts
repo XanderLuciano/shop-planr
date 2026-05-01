@@ -78,7 +78,6 @@ export function buildTestPayload(eventType: WebhookEventType): Record<string, un
         partId: 'SN-00042',
         stepId: 'step_abc123',
         stepName: 'Deburring',
-        reason: 'Optional step not required for this order',
         pathId: 'path_sample1',
         pathName: 'Main Route',
         jobId: 'job_sample1',

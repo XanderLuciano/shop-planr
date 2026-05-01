@@ -126,8 +126,19 @@ async function handleDeploy(id: string) {
   deploying.value = id
   try {
     await deployAutomation(id)
-  } catch {
-    // Error handled by composable
+    toast.add({
+      title: 'Deployed successfully',
+      description: 'Workflow is live on your n8n instance.',
+      icon: 'i-lucide-rocket',
+      color: 'success',
+    })
+  } catch (e: unknown) {
+    toast.add({
+      title: 'Deploy failed',
+      description: extractApiError(e, 'Failed to deploy automation to n8n'),
+      icon: 'i-lucide-alert-circle',
+      color: 'error',
+    })
   } finally {
     deploying.value = null
   }

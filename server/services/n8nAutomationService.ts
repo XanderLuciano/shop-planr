@@ -349,9 +349,14 @@ export function createN8nAutomationService(deps: Deps): N8nAutomationService {
           n8nWorkflowId = result.id
         }
 
-        // Activate the workflow
+        // Sync activation state with n8n
         if (automation.enabled) {
           await $fetch(`${baseUrl}/api/v1/workflows/${n8nWorkflowId}/activate`, {
+            method: 'POST',
+            headers: { 'X-N8N-API-KEY': apiKey },
+          })
+        } else {
+          await $fetch(`${baseUrl}/api/v1/workflows/${n8nWorkflowId}/deactivate`, {
             method: 'POST',
             headers: { 'X-N8N-API-KEY': apiKey },
           })
