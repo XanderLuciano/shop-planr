@@ -3,6 +3,8 @@ import type { WebhookEventType, N8nWorkflowDefinition } from '~/types/domain'
 import { WEBHOOK_EVENT_TYPES } from '~/types/domain'
 
 const { isAdmin } = useAuth()
+const $api = useAuthFetch()
+const toast = useToast()
 
 const {
   automations,
@@ -16,6 +18,8 @@ const {
   deleteAutomation,
   deployAutomation,
 } = useN8nAutomations()
+
+const { dispatchQueued } = useWebhookDeliveries()
 
 // ---- Form state ----
 const showForm = ref(false)
@@ -129,6 +133,41 @@ async function handleDeploy(id: string) {
   }
 }
 
+// ---- Test flow ----
+const testingAutomation = ref<string | null>(null)
+const testEventTypeOpen = ref<string | null>(null)
+
+async function handleTestFlow(autoId: string, eventType: WebhookEventType) {
+  testEventTypeOpen.value = null
+  testingAutomation.value = autoId
+  try {
+    // 1. Send a test event for the chosen event type
+    await $api('/api/webhooks/events/test', {
+      method: 'POST',
+      body: { eventType },
+    })
+
+    // 2. Immediately dispatch so the event reaches n8n
+    await dispatchQueued()
+
+    toast.add({
+      title: 'Test event sent',
+      description: `Sent a "${formatEventType(eventType)}" test event and dispatched to n8n. Check your n8n execution log to verify.`,
+      icon: 'i-lucide-check-circle',
+      color: 'success',
+    })
+  } catch (e: unknown) {
+    toast.add({
+      title: 'Test failed',
+      description: extractApiError(e, 'Failed to send test event'),
+      icon: 'i-lucide-alert-circle',
+      color: 'error',
+    })
+  } finally {
+    testingAutomation.value = null
+  }
+}
+
 // ---- Toggle enabled ----
 async function toggleEnabled(auto: { id: string, enabled: boolean }) {
   try {
@@ -203,24 +242,9 @@ onMounted(async () => {
       color="info"
       variant="subtle"
       icon="i-lucide-info"
-    >
-      <template #title>
-        n8n Instance Not Connected
-      </template>
-      <template #description>
-        <p class="text-sm">
-          Set <code class="bg-(--ui-bg-elevated) px-1 py-0.5 rounded text-xs">N8N_BASE_URL</code> and
-          <code class="bg-(--ui-bg-elevated) px-1 py-0.5 rounded text-xs">N8N_API_KEY</code> in your environment
-          to connect to your n8n instance. You can still design automations — they'll be deployed when n8n is connected.
-        </p>
-        <p
-          v-if="n8nStatus.error"
-          class="text-xs mt-1 opacity-70"
-        >
-          {{ n8nStatus.error }}
-        </p>
-      </template>
-    </UAlert>
+      title="n8n not connected"
+      :description="n8nStatus.error || 'Configure it in Settings → n8n. You can still design automations — they\'ll deploy once connected.'"
+    />
 
     <!-- Error banner -->
     <UAlert
@@ -432,6 +456,40 @@ onMounted(async () => {
               :disabled="deploying === auto.id || !n8nStatus?.connected"
               @click="handleDeploy(auto.id)"
             />
+            <UPopover
+              :open="testEventTypeOpen === auto.id"
+              @update:open="(open: boolean) => testEventTypeOpen = open ? auto.id : null"
+            >
+              <UButton
+                icon="i-lucide-flask-conical"
+                variant="ghost"
+                color="success"
+                size="xs"
+                title="Test this automation flow"
+                :loading="testingAutomation === auto.id"
+                :disabled="testingAutomation === auto.id || !auto.n8nWorkflowId || !auto.linkedRegistrationId"
+              />
+              <template #content>
+                <div class="p-3 space-y-2 w-56">
+                  <p class="text-xs font-semibold text-(--ui-text-highlighted)">
+                    Send test event
+                  </p>
+                  <p class="text-[10px] text-(--ui-text-muted)">
+                    Pick an event type to send through this automation's n8n workflow.
+                  </p>
+                  <div class="space-y-0.5 max-h-48 overflow-y-auto">
+                    <button
+                      v-for="evtType in auto.eventTypes"
+                      :key="evtType"
+                      class="w-full text-left px-2 py-1.5 rounded-md text-xs hover:bg-(--ui-bg-elevated) transition-colors cursor-pointer"
+                      @click="handleTestFlow(auto.id, evtType)"
+                    >
+                      {{ formatEventType(evtType) }}
+                    </button>
+                  </div>
+                </div>
+              </template>
+            </UPopover>
             <UButton
               icon="i-lucide-pencil"
               variant="ghost"
@@ -462,6 +520,9 @@ onMounted(async () => {
         <li>Design your workflow visually: add transform nodes (Set Fields, Code) and destination nodes (Slack, Jira, HTTP, Email).</li>
         <li>When a matching event fires, Shop Planr sends the payload to n8n, which executes your workflow pipeline.</li>
         <li>Deploy automations to your n8n instance with one click. Edit and redeploy anytime.</li>
+        <li>
+          <strong>Test flows</strong> after deploying: use the green play button to send a test event through the full pipeline and verify your n8n workflow works end-to-end.
+        </li>
         <li>n8n handles credentials, retries, and error handling for external service connections.</li>
       </ul>
     </div>

@@ -19,6 +19,7 @@ export type {
   PageToggles,
   AppSettings,
   JiraConnectionSettings,
+  N8nConnectionSettings,
   JiraFieldMapping,
   FilterState,
   PartStepStatus,

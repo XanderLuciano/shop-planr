@@ -81,10 +81,11 @@ function workflowToFlow(workflow: N8nWorkflowDefinition): { nodes: Node[], edges
 
   // Always prepend the trigger node if it's not already in the workflow
   if (!hasTrigger) {
+    const savedPos = workflow.settings?._triggerPosition as [number, number] | undefined
     nodes.push({
       id: TRIGGER_NODE_ID,
       type: 'shopPlanrNode',
-      position: { x: 40, y: 160 },
+      position: savedPos ? { x: savedPos[0], y: savedPos[1] } : { x: 40, y: 160 },
       deletable: false,
       data: {
         label: TRIGGER_NODE_NAME,
@@ -265,9 +266,18 @@ function scheduleEmit() {
   if (emitTimer) clearTimeout(emitTimer)
   emitTimer = setTimeout(() => {
     const workflow = flowToWorkflow(nodes.value, edges.value)
-    // Strip the synthetic trigger node from `nodes` (the service re-adds it at deploy time),
-    // but preserve any connections FROM the trigger so the service knows where to wire it.
+    // Strip the synthetic trigger node from `nodes` (the service re-adds
+    // the real webhook node at deploy time), but preserve its position so
+    // the deployed layout matches the editor canvas. Connections FROM the
+    // trigger are kept so the service knows where to wire it.
+    const triggerNode = workflow.nodes.find(n => n.type === TRIGGER_NODE_TYPE || n.id === TRIGGER_NODE_ID)
     workflow.nodes = workflow.nodes.filter(n => n.type !== TRIGGER_NODE_TYPE && n.id !== TRIGGER_NODE_ID)
+    if (triggerNode) {
+      workflow.settings = {
+        ...workflow.settings,
+        _triggerPosition: triggerNode.position,
+      }
+    }
     emit('update:modelValue', workflow)
   }, 100)
 }

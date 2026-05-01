@@ -213,7 +213,7 @@ Dependencies flow left-to-right only. All business logic lives in services. See 
 | Jira | `app/pages/jira.vue` | Jira ticket dashboard (conditional) |
 | Audit | `app/pages/audit.vue` | Audit trail viewer with filters (action type, user, serial, job, date range) |
 | Webhooks | `app/pages/webhooks.vue` | Webhook admin: manage registrations (endpoint URLs + event types), view events with delivery summaries, replay/retry failed deliveries |
-| Settings | `app/pages/settings.vue` | Users, Jira connection, field mappings, process/location libraries, page visibility toggles |
+| Settings | `app/pages/settings.vue` | Users, Jira connection, field mappings, n8n connection (admin-managed, env fallback), process/location libraries, page visibility toggles |
 | API Docs | `/_scalar` (Nitro built-in) | Auto-generated OpenAPI 3.1 Scalar UI (no custom page) |
 | Serial browser | `app/pages/serials/index.vue` | Searchable/filterable serial number list |
 | Part detail | `app/pages/serials/[id].vue` | Tabbed part view: routing (SectionCard sections: routing, certificates, notes, advance process; lifecycle features, deferred steps, overrides, certs) + sibling serials |
@@ -239,10 +239,11 @@ Core entities and relationships:
 - **StepNote** → defect/note on serial(s) at a process step
 - **Tag** → user-defined label with name (max 30 chars, case-insensitive unique) and hex color; managed under Settings → Tags (admin-only CRUD)
 - **JobTag** → many-to-many join between Jobs and Tags via `job_tags` table; cascade deletes on both sides
-- **AppSettings** → singleton: Jira connection + field mappings + page toggles (5 default PI project mappings, 10 page visibility toggles)
+- **AppSettings** → singleton: Jira connection + field mappings + page toggles + n8n connection (5 default PI project mappings, 10 page visibility toggles). Credential-bearing fields (`jiraConnection`, `n8nConnection`) are admin-gated on write; `n8nConnection` (baseUrl, apiKey, enabled) lives in the `n8n_connection` column, with env vars (`N8N_BASE_URL` / `N8N_API_KEY`) acting as bootstrap defaults that fill in until an admin saves real values under Settings → n8n.
 - **WebhookEvent** → recorded event: eventType, payload (JSON), summary (human-readable one-liner), createdAt; emitted server-side via `emitWebhookEvent()`, fan-out creates deliveries per matching registration. Payloads auto-enriched with path/job context (`pathId`, `pathName`, `jobId`, `jobName`) for part- and step-scoped events via `resolvePathInfo(partId)` / `resolvePathInfoByPath(pathId)` helpers in `server/utils/webhookEmit.ts` — lets n8n workflows branch/filter on route without chasing the API.
-- **WebhookRegistration** → named endpoint: url, eventTypes filter (JSON array), createdAt/updatedAt; admin-managed CRUD
+- **WebhookRegistration** → named endpoint: url, eventTypes filter (JSON array), createdAt/updatedAt; admin-managed CRUD. Registrations prefixed `n8n: ` are owned by an N8nAutomation — created/synced on deploy, deleted when the automation is deleted.
 - **WebhookDelivery** → per-registration delivery record: eventId, registrationId (nullable — SET NULL on registration delete), status (queued/delivering/delivered/failed/canceled), error, attemptCount, nextRetryAt
+- **N8nAutomation** → saved workflow: name, description, eventTypes, workflowJson, enabled, n8nWorkflowId (null before deploy), linkedRegistrationId (null before deploy — points to the paired WebhookRegistration that routes events to n8n's `/webhook/shop-planr/<id>` trigger). Deploy creates/updates the n8n workflow via REST API and upserts the linked registration so the existing event delivery pipeline carries events into n8n.
 
 ## Sub-Maps (`.ai/` folder)
 

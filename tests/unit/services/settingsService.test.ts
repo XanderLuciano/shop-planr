@@ -20,6 +20,8 @@ const defaultRuntimeConfig: SettingsRuntimeConfig = {
   jiraProjectKey: '',
   jiraUsername: '',
   jiraApiToken: '',
+  n8nBaseUrl: '',
+  n8nApiKey: '',
 }
 
 describe('SettingsService', () => {
@@ -51,6 +53,8 @@ describe('SettingsService', () => {
         jiraProjectKey: 'CUSTOM',
         jiraUsername: 'admin',
         jiraApiToken: 'secret-token',
+        n8nBaseUrl: '',
+        n8nApiKey: '',
       }
       const svc = createSettingsService({ settings: settingsRepo }, config)
       const settings = svc.getSettings()
@@ -74,6 +78,7 @@ describe('SettingsService', () => {
         },
         jiraFieldMappings: [],
         pageToggles: { jobs: true, partsBrowser: true, parts: true, queue: true, templates: true, bom: true, certs: true, jira: true, audit: true },
+        n8nConnection: { baseUrl: '', apiKey: '', enabled: false },
         updatedAt: '2024-01-01T00:00:00.000Z',
       }
       settingsRepo.upsert(dbSettings)
@@ -121,6 +126,7 @@ describe('SettingsService', () => {
         },
         jiraFieldMappings: [],
         pageToggles: { jobs: false, partsBrowser: false, parts: true, queue: true, templates: true, bom: false, certs: true, jira: true, audit: false },
+        n8nConnection: { baseUrl: '', apiKey: '', enabled: false },
         updatedAt: '2024-01-01T00:00:00.000Z',
       }
       settingsRepo.upsert(dbSettings)

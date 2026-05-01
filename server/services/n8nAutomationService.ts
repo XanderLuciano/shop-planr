@@ -225,7 +225,7 @@ export function createN8nAutomationService(deps: Deps): N8nAutomationService {
         name: TRIGGER_NAME,
         type: 'n8n-nodes-base.webhook',
         typeVersion: 2,
-        position: [0, 0] as [number, number],
+        position: (automation.workflowJson.settings?._triggerPosition as [number, number]) ?? [0, 0],
         parameters: {
           httpMethod: 'POST',
           path: `shop-planr/${automation.id}`,
@@ -319,11 +319,14 @@ export function createN8nAutomationService(deps: Deps): N8nAutomationService {
       // POST /workflows. We handle activation via the dedicated /activate
       // endpoint below, so the create/update payload only carries the
       // structural fields the API accepts.
+      // Strip editor-only keys from settings before sending to n8n
+      const { _triggerPosition, ...n8nSettings } = (automation.workflowJson.settings ?? {}) as Record<string, unknown>
+
       const workflowPayload = {
         name: `Shop Planr: ${automation.name}`,
         nodes: nodesWithCredentials,
         connections: finalConnections,
-        settings: automation.workflowJson.settings ?? {},
+        settings: n8nSettings,
       }
 
       try {

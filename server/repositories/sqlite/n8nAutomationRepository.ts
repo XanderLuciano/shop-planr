@@ -12,6 +12,7 @@ interface N8nAutomationRow {
   workflow_json: string
   enabled: number
   n8n_workflow_id: string | null
+  linked_registration_id: string | null
   created_at: string
   updated_at: string
 }
@@ -27,6 +28,7 @@ function rowToAutomation(row: N8nAutomationRow): N8nAutomation {
     workflowJson: JSON.parse(row.workflow_json),
     enabled: row.enabled === 1,
     n8nWorkflowId: row.n8n_workflow_id,
+    linkedRegistrationId: row.linked_registration_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -38,8 +40,8 @@ export function createSQLiteN8nAutomationRepository(db: Database): N8nAutomation
   return {
     create(automation: N8nAutomation): N8nAutomation {
       db.prepare(`
-        INSERT INTO n8n_automations (id, name, description, event_types, workflow_json, enabled, n8n_workflow_id, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO n8n_automations (id, name, description, event_types, workflow_json, enabled, n8n_workflow_id, linked_registration_id, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).run(
         automation.id,
         automation.name,
@@ -48,6 +50,7 @@ export function createSQLiteN8nAutomationRepository(db: Database): N8nAutomation
         JSON.stringify(automation.workflowJson),
         automation.enabled ? 1 : 0,
         automation.n8nWorkflowId,
+        automation.linkedRegistrationId,
         automation.createdAt,
         automation.updatedAt,
       )
@@ -64,7 +67,7 @@ export function createSQLiteN8nAutomationRepository(db: Database): N8nAutomation
       return rows.map(rowToAutomation)
     },
 
-    update(id: string, updates: Partial<Pick<N8nAutomation, 'name' | 'description' | 'eventTypes' | 'workflowJson' | 'enabled' | 'n8nWorkflowId'>>): N8nAutomation {
+    update(id: string, updates: Partial<Pick<N8nAutomation, 'name' | 'description' | 'eventTypes' | 'workflowJson' | 'enabled' | 'n8nWorkflowId' | 'linkedRegistrationId'>>): N8nAutomation {
       const setClauses: string[] = []
       const params: unknown[] = []
 
@@ -91,6 +94,10 @@ export function createSQLiteN8nAutomationRepository(db: Database): N8nAutomation
       if (updates.n8nWorkflowId !== undefined) {
         setClauses.push('n8n_workflow_id = ?')
         params.push(updates.n8nWorkflowId)
+      }
+      if (updates.linkedRegistrationId !== undefined) {
+        setClauses.push('linked_registration_id = ?')
+        params.push(updates.linkedRegistrationId)
       }
 
       if (setClauses.length > 0) {

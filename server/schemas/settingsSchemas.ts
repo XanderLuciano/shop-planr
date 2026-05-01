@@ -35,8 +35,22 @@ const pageTogglesSchema = z.object({
   audit: z.boolean().optional(),
 })
 
+const n8nConnectionSchema = z.object({
+  baseUrl: z.string().optional(),
+  apiKey: z.string().optional(),
+  enabled: z.boolean().optional(),
+})
+
 export const updateSettingsSchema = z.object({
   jiraConnection: jiraConnectionSchema.optional(),
   jiraFieldMappings: z.array(jiraFieldMappingSchema).optional(),
   pageToggles: pageTogglesSchema.optional(),
+  n8nConnection: n8nConnectionSchema.optional(),
+})
+
+/** Shape for the ad-hoc "Test Connection" endpoint — neither field is required
+ *  so the UI can pass only what the admin has filled in so far. */
+export const testN8nConnectionSchema = z.object({
+  baseUrl: z.string().optional(),
+  apiKey: z.string().optional(),
 })

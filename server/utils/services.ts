@@ -135,12 +135,14 @@ export function getServices(): ServiceSet {
     const certService = createCertService({ certs: repos.certs, parts: repos.parts, paths: repos.paths }, auditService)
     const noteService = createNoteService({ notes: repos.notes }, auditService)
 
-    // Settings service depends on runtimeConfig
-    const settingsService = createSettingsService({ settings: repos.settings }, {
+    // Settings service depends on runtimeConfig + users repo (for admin gating)
+    const settingsService = createSettingsService({ settings: repos.settings, users: repos.users }, {
       jiraBaseUrl: config.jiraBaseUrl,
       jiraProjectKey: config.jiraProjectKey,
       jiraUsername: config.jiraUsername,
       jiraApiToken: config.jiraApiToken,
+      n8nBaseUrl: config.n8nBaseUrl,
+      n8nApiKey: config.n8nApiKey,
     })
 
     // Jira service depends on settingsService and jobService
@@ -179,7 +181,11 @@ export function getServices(): ServiceSet {
 
     const n8nAutomationService = createN8nAutomationService({
       n8nAutomations: repos.n8nAutomations,
+      webhookRegistrations: repos.webhookRegistrations,
+      webhookDeliveries: repos.webhookDeliveries,
       users: repos.users,
+      settings: settingsService,
+      db: repos._db,
     })
 
     services = {

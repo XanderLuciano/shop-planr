@@ -279,6 +279,7 @@ export interface AppSettings {
   jiraConnection: JiraConnectionSettings
   jiraFieldMappings: JiraFieldMapping[]
   pageToggles: PageToggles
+  n8nConnection: N8nConnectionSettings
   updatedAt: string
 }
 
@@ -289,6 +290,17 @@ export interface JiraConnectionSettings {
   apiToken: string
   enabled: boolean
   pushEnabled: boolean
+}
+
+/**
+ * n8n connection settings for the Automations feature.
+ * Stored in the `app_settings` row; overrides `N8N_BASE_URL` / `N8N_API_KEY`
+ * env vars (which act as bootstrap defaults for fresh installs).
+ */
+export interface N8nConnectionSettings {
+  baseUrl: string
+  apiKey: string
+  enabled: boolean
 }
 
 export interface JiraFieldMapping {
@@ -523,6 +535,13 @@ export interface N8nAutomation {
   enabled: boolean
   /** The n8n workflow ID once deployed to the n8n instance */
   n8nWorkflowId: string | null
+  /**
+   * The WebhookRegistration that delivers events to this automation's
+   * n8n webhook trigger. Populated on first deploy; null before deploy or
+   * if the linked registration was manually deleted. On next deploy the
+   * link is recreated.
+   */
+  linkedRegistrationId: string | null
   createdAt: string
   updatedAt: string
 }
