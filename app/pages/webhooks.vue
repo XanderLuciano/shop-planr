@@ -98,26 +98,7 @@ const deleting = ref(false)
 // ---- Computed ----
 const isEditing = computed(() => editingId.value !== null)
 const formValid = computed(() => formName.value.trim().length > 0 && formUrl.value.trim().length > 0)
-const allSelected = computed(() => formEventTypes.value.length === WEBHOOK_EVENT_TYPES.length)
-
-// ---- Subscribe to all ----
-function toggleSubscribeAll(checked: boolean | 'indeterminate') {
-  if (checked === true) {
-    formEventTypes.value = [...WEBHOOK_EVENT_TYPES]
-  } else {
-    formEventTypes.value = []
-  }
-}
-
-function toggleEventType(type: WebhookEventType, checked: boolean | 'indeterminate') {
-  if (checked === true) {
-    if (!formEventTypes.value.includes(type)) {
-      formEventTypes.value = [...formEventTypes.value, type]
-    }
-  } else {
-    formEventTypes.value = formEventTypes.value.filter(t => t !== type)
-  }
-}
+const { allSelected, toggleSubscribeAll, toggleEventType } = useEventTypeSelection(formEventTypes)
 
 // ---- Form actions ----
 function resetForm() {

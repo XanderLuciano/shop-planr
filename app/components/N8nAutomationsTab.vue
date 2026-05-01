@@ -178,25 +178,7 @@ async function toggleEnabled(auto: { id: string, enabled: boolean }) {
 }
 
 // ---- Event type checkbox helpers ----
-const allSelected = computed(() => formEventTypes.value.length === WEBHOOK_EVENT_TYPES.length)
-
-function toggleSubscribeAll(checked: boolean | 'indeterminate') {
-  if (checked === true) {
-    formEventTypes.value = [...WEBHOOK_EVENT_TYPES]
-  } else {
-    formEventTypes.value = []
-  }
-}
-
-function toggleEventType(type: WebhookEventType, checked: boolean | 'indeterminate') {
-  if (checked === true) {
-    if (!formEventTypes.value.includes(type)) {
-      formEventTypes.value = [...formEventTypes.value, type]
-    }
-  } else {
-    formEventTypes.value = formEventTypes.value.filter(t => t !== type)
-  }
-}
+const { allSelected, toggleSubscribeAll, toggleEventType } = useEventTypeSelection(formEventTypes)
 
 // ---- Init ----
 onMounted(async () => {
