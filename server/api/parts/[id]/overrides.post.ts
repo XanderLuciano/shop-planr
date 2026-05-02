@@ -18,13 +18,15 @@ export default defineApiHandler(async (event) => {
   const { lifecycleService } = getServices()
   const partIds = body.partIds || body.serialIds!
   const result = lifecycleService.createStepOverride(partIds, body.stepId, body.reason, userId)
+  const firstPartId = partIds[0]
   emitWebhookEvent('step_override_created', {
     user: resolveUserName(userId),
     partIds,
     count: partIds.length,
     stepId: body.stepId,
-    stepName: partIds.length > 0 ? resolveStepName(partIds[0]!, body.stepId) : undefined,
+    stepName: firstPartId ? resolveStepName(firstPartId, body.stepId) : undefined,
     reason: body.reason,
+    ...(firstPartId ? resolvePathInfo(firstPartId) : {}),
   })
   return result
 })

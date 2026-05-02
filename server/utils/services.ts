@@ -16,6 +16,7 @@ import { createTagService } from '../services/tagService'
 import { createWebhookService } from '../services/webhookService'
 import { createWebhookRegistrationService } from '../services/webhookRegistrationService'
 import { createWebhookDeliveryService } from '../services/webhookDeliveryService'
+import { createN8nAutomationService } from '../services/n8nAutomationService'
 import { createSequentialPartIdGenerator } from '../utils/idGenerator'
 import type { AuditService } from '../services/auditService'
 import type { UserService } from '../services/userService'
@@ -35,6 +36,7 @@ import type { TagService } from '../services/tagService'
 import type { WebhookService } from '../services/webhookService'
 import type { WebhookRegistrationService } from '../services/webhookRegistrationService'
 import type { WebhookDeliveryService } from '../services/webhookDeliveryService'
+import type { N8nAutomationService } from '../services/n8nAutomationService'
 
 export interface ServiceSet {
   auditService: AuditService
@@ -55,6 +57,7 @@ export interface ServiceSet {
   webhookService: WebhookService
   webhookRegistrationService: WebhookRegistrationService
   webhookDeliveryService: WebhookDeliveryService
+  n8nAutomationService: N8nAutomationService
   /** @deprecated Use `partService` instead. Backward-compatible alias. */
   serialService: PartService
 }
@@ -132,12 +135,14 @@ export function getServices(): ServiceSet {
     const certService = createCertService({ certs: repos.certs, parts: repos.parts, paths: repos.paths }, auditService)
     const noteService = createNoteService({ notes: repos.notes }, auditService)
 
-    // Settings service depends on runtimeConfig
-    const settingsService = createSettingsService({ settings: repos.settings }, {
+    // Settings service depends on runtimeConfig + users repo (for admin gating)
+    const settingsService = createSettingsService({ settings: repos.settings, users: repos.users }, {
       jiraBaseUrl: config.jiraBaseUrl,
       jiraProjectKey: config.jiraProjectKey,
       jiraUsername: config.jiraUsername,
       jiraApiToken: config.jiraApiToken,
+      n8nBaseUrl: config.n8nBaseUrl,
+      n8nApiKey: config.n8nApiKey,
     })
 
     // Jira service depends on settingsService and jobService
@@ -174,6 +179,15 @@ export function getServices(): ServiceSet {
       db: repos._db,
     })
 
+    const n8nAutomationService = createN8nAutomationService({
+      n8nAutomations: repos.n8nAutomations,
+      webhookRegistrations: repos.webhookRegistrations,
+      webhookDeliveries: repos.webhookDeliveries,
+      users: repos.users,
+      settings: settingsService,
+      db: repos._db,
+    })
+
     services = {
       auditService,
       userService,
@@ -193,6 +207,7 @@ export function getServices(): ServiceSet {
       webhookService,
       webhookRegistrationService,
       webhookDeliveryService,
+      n8nAutomationService,
       // Backward-compatible alias
       serialService: partService,
     }

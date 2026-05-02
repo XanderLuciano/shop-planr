@@ -61,8 +61,13 @@ export default defineApiHandler(async (event) => {
     }
   }
 
-  // Emit batched webhook events
-  if (advancedPartIds.length > 0) {
+  // Emit batched webhook events. Resolve path/job info from the first
+  // part — in practice all parts in a single request share the same
+  // path (the UI submits per-step selections), so one lookup is fine.
+  const firstAdvanced = advancedPartIds[0]
+  const firstCompleted = completedPartIds[0]
+
+  if (advancedPartIds.length > 0 && firstAdvanced) {
     emitWebhookEvent('part_advanced', {
       user: userName,
       partIds: advancedPartIds,
@@ -70,35 +75,41 @@ export default defineApiHandler(async (event) => {
       failedCount: failed,
       targetStepId: body.targetStepId,
       skip: body.skip ?? false,
+      ...resolvePathInfo(firstAdvanced),
     })
   }
 
-  if (completedPartIds.length > 0) {
+  if (completedPartIds.length > 0 && firstCompleted) {
     emitWebhookEvent('part_completed', {
       user: userName,
       partIds: completedPartIds,
       count: completedPartIds.length,
       targetStepId: body.targetStepId,
+      ...resolvePathInfo(firstCompleted),
     })
   }
 
   for (const [stepId, { stepName, partIds }] of skippedSteps) {
+    const first = partIds[0]
     emitWebhookEvent('step_skipped', {
       user: userName,
       partIds,
       count: partIds.length,
       stepId,
       stepName,
+      ...(first ? resolvePathInfo(first) : {}),
     })
   }
 
   for (const [stepId, { stepName, partIds }] of deferredSteps) {
+    const first = partIds[0]
     emitWebhookEvent('step_deferred', {
       user: userName,
       partIds,
       count: partIds.length,
       stepId,
       stepName,
+      ...(first ? resolvePathInfo(first) : {}),
     })
   }
 

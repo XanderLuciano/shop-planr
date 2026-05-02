@@ -15,7 +15,7 @@ export function useTemplates() {
     try {
       templates.value = await $api<TemplateRoute[]>('/api/templates')
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch templates'
+      error.value = extractApiError(e, 'Failed to fetch templates')
       templates.value = []
     } finally {
       loading.value = false

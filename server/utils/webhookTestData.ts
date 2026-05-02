@@ -16,6 +16,10 @@ export function buildTestPayload(eventType: WebhookEventType): Record<string, un
         targetStepId: 'step_abc123',
         skip: false,
         newStatus: 'in_progress',
+        pathId: 'path_sample1',
+        pathName: 'Main Route',
+        jobId: 'job_sample1',
+        jobName: 'Test Job Alpha',
       }
     case 'part_completed':
       return {
@@ -23,6 +27,10 @@ export function buildTestPayload(eventType: WebhookEventType): Record<string, un
         partId: 'SN-00042',
         targetStepId: 'step_final',
         newStatus: 'completed',
+        pathId: 'path_sample1',
+        pathName: 'Main Route',
+        jobId: 'job_sample1',
+        jobName: 'Test Job Alpha',
       }
     case 'part_created':
       return {
@@ -40,19 +48,29 @@ export function buildTestPayload(eventType: WebhookEventType): Record<string, un
         partId: 'SN-00042',
         reason: 'dimensional_failure',
         explanation: 'OD out of tolerance by 0.005"',
+        pathId: 'path_sample1',
+        pathName: 'Main Route',
+        jobId: 'job_sample1',
+        jobName: 'Test Job Alpha',
       }
     case 'part_force_completed':
       return {
         user: 'Test User',
         partId: 'SN-00042',
         reason: 'Customer accepted as-is',
+        pathId: 'path_sample1',
+        pathName: 'Main Route',
+        jobId: 'job_sample1',
+        jobName: 'Test Job Alpha',
       }
     case 'part_deleted':
       return {
         user: 'Test User',
         partId: 'SN-00042',
         jobId: 'job_sample1',
+        jobName: 'Test Job Alpha',
         pathId: 'path_sample1',
+        pathName: 'Main Route',
       }
     case 'step_skipped':
       return {
@@ -60,7 +78,10 @@ export function buildTestPayload(eventType: WebhookEventType): Record<string, un
         partId: 'SN-00042',
         stepId: 'step_abc123',
         stepName: 'Deburring',
-        reason: 'Optional step not required for this order',
+        pathId: 'path_sample1',
+        pathName: 'Main Route',
+        jobId: 'job_sample1',
+        jobName: 'Test Job Alpha',
       }
     case 'step_deferred':
       return {
@@ -68,6 +89,10 @@ export function buildTestPayload(eventType: WebhookEventType): Record<string, un
         partId: 'SN-00042',
         stepId: 'step_abc123',
         stepName: 'Final Inspection',
+        pathId: 'path_sample1',
+        pathName: 'Main Route',
+        jobId: 'job_sample1',
+        jobName: 'Test Job Alpha',
       }
     case 'step_waived':
       return {
@@ -76,6 +101,10 @@ export function buildTestPayload(eventType: WebhookEventType): Record<string, un
         stepId: 'step_abc123',
         stepName: 'Final Inspection',
         reason: 'Waived per engineering approval ECN-2024-031',
+        pathId: 'path_sample1',
+        pathName: 'Main Route',
+        jobId: 'job_sample1',
+        jobName: 'Test Job Alpha',
       }
     case 'deferred_step_completed':
       return {
@@ -83,6 +112,10 @@ export function buildTestPayload(eventType: WebhookEventType): Record<string, un
         partId: 'SN-00042',
         stepId: 'step_abc123',
         stepName: 'Final Inspection',
+        pathId: 'path_sample1',
+        pathName: 'Main Route',
+        jobId: 'job_sample1',
+        jobName: 'Test Job Alpha',
       }
     case 'step_override_created':
       return {
@@ -92,6 +125,10 @@ export function buildTestPayload(eventType: WebhookEventType): Record<string, un
         stepId: 'step_abc123',
         stepName: 'Heat Treat',
         reason: 'Customer waiver — skip heat treat for this batch',
+        pathId: 'path_sample1',
+        pathName: 'Main Route',
+        jobId: 'job_sample1',
+        jobName: 'Test Job Alpha',
       }
     case 'step_override_reversed':
       return {
@@ -99,6 +136,10 @@ export function buildTestPayload(eventType: WebhookEventType): Record<string, un
         partId: 'SN-00042',
         stepId: 'step_abc123',
         stepName: 'Heat Treat',
+        pathId: 'path_sample1',
+        pathName: 'Main Route',
+        jobId: 'job_sample1',
+        jobName: 'Test Job Alpha',
       }
     case 'job_created':
       return {
@@ -129,6 +170,10 @@ export function buildTestPayload(eventType: WebhookEventType): Record<string, un
         stepName: 'Machining',
         partIds: ['SN-00042', 'SN-00043'],
         text: 'Surface finish below spec on these parts',
+        pathId: 'path_sample1',
+        pathName: 'Main Route',
+        jobId: 'job_sample1',
+        jobName: 'Test Job Alpha',
       }
     case 'cert_attached':
       return {
@@ -139,6 +184,11 @@ export function buildTestPayload(eventType: WebhookEventType): Record<string, un
         partIds: ['SN-00042', 'SN-00043'],
         count: 2,
         stepId: 'step_abc123',
+        stepName: 'Incoming Inspection',
+        pathId: 'path_sample1',
+        pathName: 'Main Route',
+        jobId: 'job_sample1',
+        jobName: 'Test Job Alpha',
       }
     default: {
       const _exhaustive: never = eventType

@@ -31,8 +31,9 @@ After making changes, always verify in this order:
 ```
 tests/
   unit/
-    services/           → jobService, pathService, serialService, reconcileSteps, etc. (11 files)
-    utils/              → serialization, validation, idGenerator, errors, progressBar, services, workQueueGrouping, workQueueFilters, workQueueApiGrouping (9 files)
+    services/           → jobService, pathService, serialService, reconcileSteps, n8nAutomationService, webhookService, etc. (12 files)
+    utils/              → serialization, validation, idGenerator, errors, progressBar, services, workQueueGrouping, workQueueFilters, workQueueApiGrouping, n8nErrors (10 files)
+    schemas/            → n8nAutomationSchemas (1 file)
     composables/        → useBarcode, useViewFilters, useJobForm, workQueueSearch, useWorkQueueFilters.preset (5 files)
     components/         → SerialCreationPanel, serialNoteAdd, EndpointCard, DocsSidebar, JobEditNavigation, JobViewToolbar, WorkQueueFilterBar, PartDeleteButton (8 files)
     repositories/       → hasStepDependents (1 file)
@@ -74,6 +75,11 @@ tests/
     jobViewCachePreservation.property.test.ts → PBT-JV1: Cache preservation on collapse (1 test)
     jobViewBulkExpand.property.test.ts   → PBT-JV3: Bulk expand populates all distributions (1 test)
     jobViewExpandedState.property.test.ts → PBT-JV2: ExpandedState validity (2 tests)
+    n8nNodeDefinitions.property.test.ts  → N8N-P1-4: Node definition validity, output handles, palette coverage, lookup consistency (15 tests)
+    n8nVariables.property.test.ts        → N8N-V1-5: Envelope presence, computed helpers, label uniqueness, availability tracking, schema coverage (11 tests)
+    n8nAutomationCrud.property.test.ts   → N8N-C1-4: Create round-trip, update preservation, delete cascade, admin gating (9 tests)
+    n8nAutomationDeploy.property.test.ts → N8N-D1-3: Deploy config validation, not-found rejection, admin gating (3 tests)
+    n8nAutomationLinkedRegistration.property.test.ts → N8N-L1-5: Name sync, eventTypes sync, delete cascade, delivery cancel, no-link no-op (5 tests)
   integration/
     helpers.ts                           → createTestContext() with all services
     jobLifecycle.test.ts                 → Full job lifecycle (6 tests)

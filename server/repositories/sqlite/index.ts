@@ -23,6 +23,7 @@ import { SQLiteJobTagRepository } from './jobTagRepository'
 import { createSQLiteWebhookEventRepository } from './webhookRepository'
 import { createSQLiteWebhookRegistrationRepository } from './webhookRegistrationRepository'
 import { createSQLiteWebhookDeliveryRepository } from './webhookDeliveryRepository'
+import { createSQLiteN8nAutomationRepository } from './n8nAutomationRepository'
 import type { JobRepository } from '../interfaces/jobRepository'
 import type { PathRepository } from '../interfaces/pathRepository'
 import type { PartRepository } from '../interfaces/partRepository'
@@ -43,6 +44,7 @@ import type { JobTagRepository } from '../interfaces/jobTagRepository'
 import type { WebhookEventRepository } from '../interfaces/webhookRepository'
 import type { WebhookRegistrationRepository } from '../interfaces/webhookRegistrationRepository'
 import type { WebhookDeliveryRepository } from '../interfaces/webhookDeliveryRepository'
+import type { N8nAutomationRepository } from '../interfaces/n8nAutomationRepository'
 
 export interface RepositorySet {
   jobs: JobRepository
@@ -65,6 +67,7 @@ export interface RepositorySet {
   webhookEvents: WebhookEventRepository
   webhookRegistrations: WebhookRegistrationRepository
   webhookDeliveries: WebhookDeliveryRepository
+  n8nAutomations: N8nAutomationRepository
   /** Raw DB handle — used by the service layer for the counter. */
   _db: import('better-sqlite3').Database
 
@@ -221,6 +224,7 @@ export function createSQLiteRepositories(dbPath: string, migrationsDir?: string)
     webhookEvents: createSQLiteWebhookEventRepository(db),
     webhookRegistrations: createSQLiteWebhookRegistrationRepository(db),
     webhookDeliveries: createSQLiteWebhookDeliveryRepository(db),
+    n8nAutomations: createSQLiteN8nAutomationRepository(db),
     _db: db,
     // Backward-compatible aliases
     serials: partRepo,

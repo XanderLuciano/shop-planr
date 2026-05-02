@@ -22,10 +22,14 @@ export default defineApiHandler((event) => {
   const { id } = parseResult.data
   const userId = getAuthUserId(event)
   const { partService } = getServices()
+  // Resolve path/job info before the part is deleted — afterwards the
+  // lookups will miss.
+  const pathInfo = resolvePathInfo(id)
   const result = partService.deletePart(id, userId)
   emitWebhookEvent('part_deleted', {
     user: resolveUserName(userId),
     partId: id,
+    ...pathInfo,
   })
   return { success: true, ...result }
 })

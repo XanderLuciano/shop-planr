@@ -20,6 +20,7 @@ export default defineApiHandler(async (event) => {
     user: resolveUserName(userId),
     partId: id,
     newStatus: result.status,
+    ...resolvePathInfo(id),
   })
   return result
 })

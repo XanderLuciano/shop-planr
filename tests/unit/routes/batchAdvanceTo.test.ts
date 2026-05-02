@@ -105,6 +105,7 @@ vi.stubGlobal('defineRouteMeta', () => {})
 vi.stubGlobal('zodRequestBody', () => ({}))
 vi.stubGlobal('getAuthUserId', () => 'test-user-id')
 vi.stubGlobal('resolveUserName', () => 'Test User')
+vi.stubGlobal('resolvePathInfo', () => undefined)
 vi.stubGlobal('emitWebhookEvent', vi.fn())
 
 const handler = (await import('~/server/api/parts/advance-to.post')).default

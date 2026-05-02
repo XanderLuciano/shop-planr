@@ -17,7 +17,7 @@ export function useFullRoute(partId: string) {
       entries.value = data.entries
       isCompleted.value = data.isCompleted
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch full route'
+      error.value = extractApiError(e, 'Failed to fetch full route')
       entries.value = []
       isCompleted.value = false
     } finally {

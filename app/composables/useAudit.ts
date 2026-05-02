@@ -43,7 +43,7 @@ export function useAudit() {
       }
       return result
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch audit entries'
+      error.value = extractApiError(e, 'Failed to fetch audit entries')
       return []
     } finally {
       loading.value = false

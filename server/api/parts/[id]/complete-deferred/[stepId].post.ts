@@ -21,6 +21,7 @@ export default defineApiHandler(async (event) => {
     partId: id,
     stepId,
     stepName: resolveStepName(id, stepId),
+    ...resolvePathInfo(id),
   })
   return result
 })

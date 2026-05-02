@@ -241,8 +241,7 @@ export function useJobForm(mode: 'create' | 'edit', existingJob?: Job & { paths:
         return await submitEdit()
       }
     } catch (e) {
-      const msg = e?.data?.message ?? e?.message ?? 'An unexpected error occurred'
-      submitError.value = msg
+      submitError.value = extractApiError(e, 'An unexpected error occurred')
       throw e
     } finally {
       submitting.value = false

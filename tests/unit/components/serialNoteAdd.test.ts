@@ -8,6 +8,7 @@
  * Feature: part-notes-add
  */
 import { describe, it, expect } from 'vitest'
+import { extractApiError } from '~/app/utils/apiError'
 
 // ---- Pure logic functions extracted from parts-browser/[id].vue ----
 
@@ -35,7 +36,7 @@ export function buildSuccessToast(): { title: string, color: string } {
 export function buildErrorToast(e: any): { title: string, description: string, color: string } {
   return {
     title: 'Failed to create note',
-    description: e?.data?.message ?? e?.message ?? 'Failed to create note',
+    description: extractApiError(e, 'Failed to create note'),
     color: 'error',
   }
 }
@@ -62,7 +63,7 @@ export function getLoadingState(noteSaving: boolean): {
 
 /** Extracts error message from various error shapes (matching handleSaveNote catch block). */
 export function extractErrorMessage(e: any): string {
-  return e?.data?.message ?? e?.message ?? 'Failed to create note'
+  return extractApiError(e, 'Failed to create note')
 }
 
 // ---- Tests ----

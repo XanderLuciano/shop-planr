@@ -30,6 +30,10 @@ export const partAdvancedPayload = z.object({
   targetStepId: z.string().optional().describe('ID of the target step (advance-to only, absent on simple next-step advance)'),
   skip: z.boolean().optional().describe('Whether intermediate steps were skipped (advance-to only)'),
   newStatus: z.string().optional().describe('Part status after advancement (single-part only)'),
+  pathId: z.string().optional().describe('Route path ID the part belongs to'),
+  pathName: z.string().optional().describe('Route path name the part belongs to'),
+  jobId: z.string().optional().describe('Parent job ID'),
+  jobName: z.string().optional().describe('Parent job name'),
 }).describe('Fired when one or more parts are advanced. Simple advance emits partId only; advance-to adds targetStepId and skip; batch variants use partIds.')
 
 export const partCompletedPayload = z.object({
@@ -40,6 +44,10 @@ export const partCompletedPayload = z.object({
   targetStepId: z.string().optional().describe('ID of the final step (advance-to only)'),
   skip: z.boolean().optional().describe('Whether intermediate steps were skipped (single-part advance-to only)'),
   newStatus: z.string().optional().describe('"completed" (single-part only)'),
+  pathId: z.string().optional().describe('Route path ID the part belongs to'),
+  pathName: z.string().optional().describe('Route path name the part belongs to'),
+  jobId: z.string().optional().describe('Parent job ID'),
+  jobName: z.string().optional().describe('Parent job name'),
 }).describe('Fired when one or more parts finish their final process step.')
 
 export const partCreatedPayload = z.object({
@@ -57,17 +65,29 @@ export const partScrappedPayload = z.object({
   partId: z.string().describe('Serial number ID'),
   reason: z.string().describe('Scrap reason code (e.g. out_of_tolerance)'),
   explanation: z.string().optional().describe('Optional free-text explanation'),
+  pathId: z.string().optional().describe('Route path ID the part belongs to'),
+  pathName: z.string().optional().describe('Route path name the part belongs to'),
+  jobId: z.string().optional().describe('Parent job ID'),
+  jobName: z.string().optional().describe('Parent job name'),
 }).describe('Fired when a part is marked as scrap.')
 
 export const partForceCompletedPayload = z.object({
   user: z.string().describe('Display name of the user'),
   partId: z.string().describe('Serial number ID'),
   reason: z.string().optional().describe('Optional reason for force completion'),
+  pathId: z.string().optional().describe('Route path ID the part belongs to'),
+  pathName: z.string().optional().describe('Route path name the part belongs to'),
+  jobId: z.string().optional().describe('Parent job ID'),
+  jobName: z.string().optional().describe('Parent job name'),
 }).describe('Fired when a part is force-completed with remaining steps incomplete.')
 
 export const partDeletedPayload = z.object({
   user: z.string().describe('Display name of the user'),
   partId: z.string().describe('Deleted serial number ID'),
+  pathId: z.string().optional().describe('Route path ID the part belonged to'),
+  pathName: z.string().optional().describe('Route path name the part belonged to'),
+  jobId: z.string().optional().describe('Parent job ID'),
+  jobName: z.string().optional().describe('Parent job name'),
 }).describe('Fired when a part is admin-deleted (cascade deletes dependents).')
 
 export const stepSkippedPayload = z.object({
@@ -77,6 +97,10 @@ export const stepSkippedPayload = z.object({
   count: z.number().optional().describe('Number of parts that skipped this step (batch only)'),
   stepId: z.string().describe('Skipped step ID'),
   stepName: z.string().describe('Skipped step name'),
+  pathId: z.string().optional().describe('Route path ID the step belongs to'),
+  pathName: z.string().optional().describe('Route path name the step belongs to'),
+  jobId: z.string().optional().describe('Parent job ID'),
+  jobName: z.string().optional().describe('Parent job name'),
 }).describe('Fired when a process step is skipped during advancement.')
 
 export const stepDeferredPayload = z.object({
@@ -86,6 +110,10 @@ export const stepDeferredPayload = z.object({
   count: z.number().optional().describe('Number of parts that deferred this step (batch only)'),
   stepId: z.string().describe('Deferred step ID'),
   stepName: z.string().describe('Deferred step name'),
+  pathId: z.string().optional().describe('Route path ID the step belongs to'),
+  pathName: z.string().optional().describe('Route path name the step belongs to'),
+  jobId: z.string().optional().describe('Parent job ID'),
+  jobName: z.string().optional().describe('Parent job name'),
 }).describe('Fired when a required step is deferred during advancement.')
 
 export const stepWaivedPayload = z.object({
@@ -94,6 +122,10 @@ export const stepWaivedPayload = z.object({
   stepId: z.string().describe('Waived step ID'),
   stepName: z.string().optional().describe('Waived step name'),
   reason: z.string().describe('Waiver justification'),
+  pathId: z.string().optional().describe('Route path ID the step belongs to'),
+  pathName: z.string().optional().describe('Route path name the step belongs to'),
+  jobId: z.string().optional().describe('Parent job ID'),
+  jobName: z.string().optional().describe('Parent job name'),
 }).describe('Fired when a deferred step is waived by an approver.')
 
 export const deferredStepCompletedPayload = z.object({
@@ -101,6 +133,10 @@ export const deferredStepCompletedPayload = z.object({
   partId: z.string().describe('Serial number ID'),
   stepId: z.string().describe('Completed step ID'),
   stepName: z.string().optional().describe('Completed step name'),
+  pathId: z.string().optional().describe('Route path ID the step belongs to'),
+  pathName: z.string().optional().describe('Route path name the step belongs to'),
+  jobId: z.string().optional().describe('Parent job ID'),
+  jobName: z.string().optional().describe('Parent job name'),
 }).describe('Fired when a previously deferred step is completed.')
 
 export const stepOverrideCreatedPayload = z.object({
@@ -110,6 +146,10 @@ export const stepOverrideCreatedPayload = z.object({
   stepId: z.string().describe('Overridden step ID'),
   stepName: z.string().optional().describe('Overridden step name (resolved from first part)'),
   reason: z.string().optional().describe('Reason for the override'),
+  pathId: z.string().optional().describe('Route path ID the step belongs to'),
+  pathName: z.string().optional().describe('Route path name the step belongs to'),
+  jobId: z.string().optional().describe('Parent job ID'),
+  jobName: z.string().optional().describe('Parent job name'),
 }).describe('Fired when a fast-track step override is created for one or more parts.')
 
 export const stepOverrideReversedPayload = z.object({
@@ -117,6 +157,10 @@ export const stepOverrideReversedPayload = z.object({
   partId: z.string().describe('Serial number ID'),
   stepId: z.string().describe('Step ID whose override was reversed'),
   stepName: z.string().optional().describe('Step name whose override was reversed'),
+  pathId: z.string().optional().describe('Route path ID the step belongs to'),
+  pathName: z.string().optional().describe('Route path name the step belongs to'),
+  jobId: z.string().optional().describe('Parent job ID'),
+  jobName: z.string().optional().describe('Parent job name'),
 }).describe('Fired when a step override is reversed (re-enabled).')
 
 export const jobCreatedPayload = z.object({
@@ -147,6 +191,10 @@ export const noteCreatedPayload = z.object({
   stepName: z.string().optional().describe('Step name'),
   partIds: z.array(z.string()).describe('Affected part IDs'),
   text: z.string().describe('Note content'),
+  pathId: z.string().optional().describe('Route path ID the step belongs to'),
+  pathName: z.string().optional().describe('Route path name the step belongs to'),
+  jobId: z.string().optional().describe('Parent job ID'),
+  jobName: z.string().optional().describe('Parent job name'),
 }).describe('Fired when a defect note is created on a process step.')
 
 export const certAttachedPayload = z.object({
@@ -158,6 +206,11 @@ export const certAttachedPayload = z.object({
   partIds: z.array(z.string()).optional().describe('Part IDs — present on batch attach'),
   count: z.number().optional().describe('Number of parts (batch only)'),
   stepId: z.string().describe('Step where the cert was attached'),
+  stepName: z.string().optional().describe('Step name where the cert was attached'),
+  pathId: z.string().optional().describe('Route path ID the step belongs to'),
+  pathName: z.string().optional().describe('Route path name the step belongs to'),
+  jobId: z.string().optional().describe('Parent job ID'),
+  jobName: z.string().optional().describe('Parent job name'),
 }).describe('Fired when a quality certificate is attached to parts.')
 
 // ---- Registry: event type → payload schema ----

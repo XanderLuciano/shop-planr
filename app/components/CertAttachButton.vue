@@ -48,7 +48,7 @@ async function handleAttach() {
     searchQuery.value = ''
     emit('attached')
   } catch (e) {
-    attachError.value = e?.data?.message ?? e?.message ?? 'Failed to attach certificate'
+    attachError.value = extractApiError(e, 'Failed to attach certificate')
   } finally {
     attaching.value = false
   }

@@ -20,19 +20,23 @@ export default defineApiHandler(async (event) => {
   const userName = resolveUserName(userId)
   const advancedPartIds = result.results.filter(r => r.success && r.newStatus !== 'completed').map(r => r.partId)
   const completedPartIds = result.results.filter(r => r.success && r.newStatus === 'completed').map(r => r.partId)
-  if (advancedPartIds.length > 0) {
+  const firstAdvanced = advancedPartIds[0]
+  const firstCompleted = completedPartIds[0]
+  if (advancedPartIds.length > 0 && firstAdvanced) {
     emitWebhookEvent('part_advanced', {
       user: userName,
       partIds: advancedPartIds,
       advancedCount: advancedPartIds.length,
       failedCount: result.failed,
+      ...resolvePathInfo(firstAdvanced),
     })
   }
-  if (completedPartIds.length > 0) {
+  if (completedPartIds.length > 0 && firstCompleted) {
     emitWebhookEvent('part_completed', {
       user: userName,
       partIds: completedPartIds,
       count: completedPartIds.length,
+      ...resolvePathInfo(firstCompleted),
     })
   }
   return result

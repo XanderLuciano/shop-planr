@@ -15,7 +15,7 @@ export function useCerts() {
     try {
       certs.value = await $api<Certificate[]>('/api/certs')
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch certificates'
+      error.value = extractApiError(e, 'Failed to fetch certificates')
       certs.value = []
     } finally {
       loading.value = false

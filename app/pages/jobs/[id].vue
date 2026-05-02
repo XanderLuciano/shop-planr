@@ -111,8 +111,7 @@ async function savePathEdit() {
     editingPathId.value = null
     await loadJob()
   } catch (e: unknown) {
-    const err = e as { data?: { message?: string }, message?: string }
-    saveError.value = err?.data?.message || err?.message || 'Failed to save path'
+    saveError.value = extractApiError(e, 'Failed to save path')
   } finally {
     saving.value = false
   }
@@ -141,8 +140,7 @@ async function saveNewPath() {
     newPathSteps.value = [createStepDraft()]
     await loadJob()
   } catch (e: unknown) {
-    const err = e as { data?: { message?: string }, message?: string }
-    saveError.value = err?.data?.message || err?.message || 'Failed to create path'
+    saveError.value = extractApiError(e, 'Failed to create path')
   } finally {
     saving.value = false
   }
@@ -243,7 +241,7 @@ async function loadJob() {
     progress.value = detail.progress
     await loadAllDistributions()
   } catch (e) {
-    error.value = e?.data?.message ?? e?.message ?? 'Failed to load job'
+    error.value = extractApiError(e, 'Failed to load job')
   } finally {
     loading.value = false
   }
@@ -307,7 +305,7 @@ async function saveGoalQty() {
     editingGoalQty.value = false
     await loadJob()
   } catch (e) {
-    error.value = e?.data?.message ?? e?.message ?? 'Failed to update goal quantity'
+    error.value = extractApiError(e, 'Failed to update goal quantity')
   } finally {
     goalQtySaving.value = false
   }
@@ -344,7 +342,7 @@ async function onApplyTemplate() {
     applyGoalQty.value = job.value?.goalQuantity ?? 1
     await loadJob()
   } catch (e) {
-    applyError.value = e?.data?.message ?? e?.message ?? 'Failed to apply template'
+    applyError.value = extractApiError(e, 'Failed to apply template')
   } finally {
     applyingTemplate.value = false
   }
@@ -359,7 +357,7 @@ async function onPushDescription() {
     jiraPushMessage.value = result.success ? 'Status table pushed to Jira description' : (result.error ?? 'Push failed')
     jiraPushError.value = !result.success
   } catch (e) {
-    jiraPushMessage.value = e?.data?.message ?? e?.message ?? 'Push failed'
+    jiraPushMessage.value = extractApiError(e, 'Push failed')
     jiraPushError.value = true
   } finally {
     pushingDescription.value = false
@@ -375,7 +373,7 @@ async function onPushComment() {
     jiraPushMessage.value = result.success ? 'Comment summary pushed to Jira' : (result.error ?? 'Push failed')
     jiraPushError.value = !result.success
   } catch (e) {
-    jiraPushMessage.value = e?.data?.message ?? e?.message ?? 'Push failed'
+    jiraPushMessage.value = extractApiError(e, 'Push failed')
     jiraPushError.value = true
   } finally {
     pushingComment.value = false
@@ -390,7 +388,7 @@ async function confirmDelete() {
   } catch (e) {
     toast.add({
       title: 'Cannot delete job',
-      description: e?.data?.message ?? e?.message ?? 'Failed to delete job',
+      description: extractApiError(e, 'Failed to delete job'),
       color: 'error',
     })
   } finally {

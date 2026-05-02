@@ -15,7 +15,7 @@ export function useOperatorView() {
     try {
       data.value = await $api<OperatorStepView>(`/api/operator/${encodeURIComponent(stepName)}`)
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch operator view'
+      error.value = extractApiError(e, 'Failed to fetch operator view')
     } finally {
       loading.value = false
     }

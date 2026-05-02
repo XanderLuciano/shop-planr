@@ -25,7 +25,7 @@ export function useNotes() {
       notes.value = [note, ...notes.value]
       return note
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to create note'
+      error.value = extractApiError(e, 'Failed to create note')
       throw e
     } finally {
       loading.value = false
@@ -40,7 +40,7 @@ export function useNotes() {
       notes.value = result
       return result
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch notes'
+      error.value = extractApiError(e, 'Failed to fetch notes')
       return []
     } finally {
       loading.value = false
@@ -55,7 +55,7 @@ export function useNotes() {
       notes.value = result
       return result
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch notes'
+      error.value = extractApiError(e, 'Failed to fetch notes')
       return []
     } finally {
       loading.value = false

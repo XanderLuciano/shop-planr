@@ -36,7 +36,7 @@ async function performDelete() {
     if (status === 403) {
       error.value = 'Admin access required'
     } else {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to delete path'
+      error.value = extractApiError(e, 'Failed to delete path')
     }
   } finally {
     loading.value = false

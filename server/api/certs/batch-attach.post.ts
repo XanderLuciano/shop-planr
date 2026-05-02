@@ -19,7 +19,8 @@ export default defineApiHandler(async (event) => {
   const userName = resolveUserName(userId)
   const cert = certService.getCert(body.certId)
   const result = certService.batchAttachCert({ ...body, userId })
-  if (result.length > 0) {
+  const firstAttachment = result[0]
+  if (result.length > 0 && firstAttachment) {
     emitWebhookEvent('cert_attached', {
       user: userName,
       certId: body.certId,
@@ -27,7 +28,9 @@ export default defineApiHandler(async (event) => {
       certType: cert.type,
       partIds: result.map(a => a.partId),
       count: result.length,
-      stepId: result[0]!.stepId,
+      stepId: firstAttachment.stepId,
+      stepName: resolveStepName(firstAttachment.partId, firstAttachment.stepId),
+      ...resolvePathInfo(firstAttachment.partId),
     })
   }
   return result

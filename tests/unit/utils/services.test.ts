@@ -88,6 +88,8 @@ describe('Service Factory (getServices pattern)', () => {
       jiraProjectKey: 'PI',
       jiraUsername: '',
       jiraApiToken: '',
+      n8nBaseUrl: '',
+      n8nApiKey: '',
     })
 
     // Verify all services are defined

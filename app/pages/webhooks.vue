@@ -42,6 +42,7 @@ const { isAdmin } = useAuth()
 const tabItems: TabsItem[] = [
   { label: 'Registrations', icon: 'i-lucide-webhook', value: 'registrations', ui: { label: 'hidden sm:inline' } },
   { label: 'Event Log', icon: 'i-lucide-list', value: 'event-log', ui: { label: 'hidden sm:inline' } },
+  { label: 'Automations', icon: 'i-lucide-workflow', value: 'automations', ui: { label: 'hidden sm:inline' } },
   { label: 'Developer', icon: 'i-lucide-flask-conical', value: 'developer', ui: { label: 'hidden sm:inline' } },
 ]
 
@@ -97,26 +98,7 @@ const deleting = ref(false)
 // ---- Computed ----
 const isEditing = computed(() => editingId.value !== null)
 const formValid = computed(() => formName.value.trim().length > 0 && formUrl.value.trim().length > 0)
-const allSelected = computed(() => formEventTypes.value.length === WEBHOOK_EVENT_TYPES.length)
-
-// ---- Subscribe to all ----
-function toggleSubscribeAll(checked: boolean | 'indeterminate') {
-  if (checked === true) {
-    formEventTypes.value = [...WEBHOOK_EVENT_TYPES]
-  } else {
-    formEventTypes.value = []
-  }
-}
-
-function toggleEventType(type: WebhookEventType, checked: boolean | 'indeterminate') {
-  if (checked === true) {
-    if (!formEventTypes.value.includes(type)) {
-      formEventTypes.value = [...formEventTypes.value, type]
-    }
-  } else {
-    formEventTypes.value = formEventTypes.value.filter(t => t !== type)
-  }
-}
+const { allSelected, toggleSubscribeAll, toggleEventType } = useEventTypeSelection(formEventTypes)
 
 // ---- Form actions ----
 function resetForm() {
@@ -974,6 +956,13 @@ onUnmounted(() => {
                 </div>
               </div>
             </div>
+          </div>
+          <!-- ==================== DEVELOPER TAB ==================== -->
+          <div
+            v-if="item.value === 'automations'"
+            class="min-w-0"
+          >
+            <N8nAutomationsTab />
           </div>
           <!-- ==================== DEVELOPER TAB ==================== -->
           <div

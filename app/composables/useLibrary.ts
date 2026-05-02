@@ -15,7 +15,7 @@ export function useLibrary() {
     try {
       processes.value = await $api<ProcessLibraryEntry[]>('/api/library/processes')
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch processes'
+      error.value = extractApiError(e, 'Failed to fetch processes')
     } finally {
       loading.value = false
     }
@@ -27,7 +27,7 @@ export function useLibrary() {
     try {
       locations.value = await $api<LocationLibraryEntry[]>('/api/library/locations')
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch locations'
+      error.value = extractApiError(e, 'Failed to fetch locations')
     } finally {
       loading.value = false
     }
@@ -44,7 +44,7 @@ export function useLibrary() {
       processes.value = [...processes.value, entry]
       return entry
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to add process'
+      error.value = extractApiError(e, 'Failed to add process')
       throw e
     } finally {
       loading.value = false
@@ -58,7 +58,7 @@ export function useLibrary() {
       await $api(`/api/library/processes/${encodeURIComponent(id)}`, { method: 'DELETE' })
       processes.value = processes.value.filter(p => p.id !== id)
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to remove process'
+      error.value = extractApiError(e, 'Failed to remove process')
       throw e
     } finally {
       loading.value = false
@@ -76,7 +76,7 @@ export function useLibrary() {
       locations.value = [...locations.value, entry]
       return entry
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to add location'
+      error.value = extractApiError(e, 'Failed to add location')
       throw e
     } finally {
       loading.value = false
@@ -90,7 +90,7 @@ export function useLibrary() {
       await $api(`/api/library/locations/${encodeURIComponent(id)}`, { method: 'DELETE' })
       locations.value = locations.value.filter(l => l.id !== id)
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to remove location'
+      error.value = extractApiError(e, 'Failed to remove location')
       throw e
     } finally {
       loading.value = false

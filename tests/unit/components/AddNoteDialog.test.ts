@@ -10,6 +10,7 @@
  */
 import { describe, it, expect, vi } from 'vitest'
 import type { StepNote } from '~/server/types/domain'
+import { extractApiError } from '~/app/utils/apiError'
 
 // ---- Pure logic functions extracted from AddNoteDialog.vue ----
 
@@ -67,14 +68,14 @@ export function buildSuccessToast(selectedCount: number): { title: string, descr
 export function buildErrorToast(e: any): { title: string, description: string, color: string } {
   return {
     title: 'Failed to add note',
-    description: e?.data?.message ?? e?.message ?? 'An error occurred',
+    description: extractApiError(e, 'An error occurred'),
     color: 'error',
   }
 }
 
 /** Extracts error message from various error shapes. */
 export function extractErrorMessage(e: any): string {
-  return e?.data?.message ?? e?.message ?? 'An error occurred'
+  return extractApiError(e, 'An error occurred')
 }
 
 /** Builds the createNote input payload. */

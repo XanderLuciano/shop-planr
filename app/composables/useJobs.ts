@@ -16,7 +16,7 @@ export function useJobs() {
     try {
       jobs.value = await $api<(Job & { tags: Tag[] })[]>('/api/jobs')
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to fetch jobs'
+      error.value = extractApiError(e, 'Failed to fetch jobs')
       jobs.value = []
     } finally {
       loading.value = false

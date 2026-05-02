@@ -24,7 +24,7 @@ async function loadJobProgress() {
   try {
     jobProgressList.value = await $api<JobProgress[]>('/api/jobs/progress')
   } catch (e) {
-    progressError.value = e?.data?.message ?? e?.message ?? 'Failed to load job progress'
+    progressError.value = extractApiError(e, 'Failed to load job progress')
   } finally {
     progressLoading.value = false
   }

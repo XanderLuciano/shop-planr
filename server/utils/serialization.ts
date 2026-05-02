@@ -258,6 +258,14 @@ const validators: Record<DomainType, (obj: Record<string, unknown>) => void> = {
       throw new ValidationError('Deserialization error: AppSettings.jiraConnection — expected object')
     }
     requireArray(obj, 'jiraFieldMappings', 'AppSettings')
+    // n8nConnection was added after initial ship; tolerate older rows that
+    // predate the column. When present it must be an object, but it's not
+    // required because migrations backfill with an empty default.
+    if (obj.n8nConnection !== undefined && obj.n8nConnection !== null) {
+      if (typeof obj.n8nConnection !== 'object') {
+        throw new ValidationError('Deserialization error: AppSettings.n8nConnection — expected object')
+      }
+    }
     requireString(obj, 'updatedAt', 'AppSettings')
   },
 

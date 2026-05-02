@@ -79,6 +79,8 @@ describe('JiraService', () => {
       jiraProjectKey: 'PI',
       jiraUsername: 'testuser',
       jiraApiToken: 'testtoken',
+      n8nBaseUrl: '',
+      n8nApiKey: '',
     })
     const jobsRepo = new SQLiteJobRepository(db)
     const pathsRepo = new SQLitePathRepository(db)

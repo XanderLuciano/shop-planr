@@ -621,12 +621,21 @@ describe('User schemas → userService', () => {
 
 // ── Settings ──
 
+const TEST_SETTINGS_RUNTIME_CONFIG = {
+  jiraBaseUrl: '',
+  jiraProjectKey: 'PI',
+  jiraUsername: '',
+  jiraApiToken: '',
+  n8nBaseUrl: '',
+  n8nApiKey: '',
+}
+
 describe('Settings schema → settingsService', () => {
   it('updateSettingsSchema output is accepted by settingsService.updateSettings', () => {
     const settingsRepo = new SQLiteSettingsRepository(ctx.db)
     const settingsService = createSettingsService(
       { settings: settingsRepo },
-      { jiraBaseUrl: '', jiraProjectKey: 'PI', jiraUsername: '', jiraApiToken: '' },
+      TEST_SETTINGS_RUNTIME_CONFIG,
     )
     const body = parse(updateSettingsSchema, {
       pageToggles: { jobs: false, audit: true },
@@ -640,7 +649,7 @@ describe('Settings schema → settingsService', () => {
     const settingsRepo = new SQLiteSettingsRepository(ctx.db)
     const settingsService = createSettingsService(
       { settings: settingsRepo },
-      { jiraBaseUrl: '', jiraProjectKey: 'PI', jiraUsername: '', jiraApiToken: '' },
+      TEST_SETTINGS_RUNTIME_CONFIG,
     )
     const body = parse(updateSettingsSchema, {
       jiraConnection: { enabled: true, baseUrl: 'https://jira.example.com' },
@@ -653,7 +662,7 @@ describe('Settings schema → settingsService', () => {
     const settingsRepo = new SQLiteSettingsRepository(ctx.db)
     const settingsService = createSettingsService(
       { settings: settingsRepo },
-      { jiraBaseUrl: '', jiraProjectKey: 'PI', jiraUsername: '', jiraApiToken: '' },
+      TEST_SETTINGS_RUNTIME_CONFIG,
     )
     const body = parse(updateSettingsSchema, {
       jiraFieldMappings: [{

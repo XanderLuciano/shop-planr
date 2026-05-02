@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PublicUser, JiraConnectionSettings, JiraFieldMapping, PageToggles } from '~/types/domain'
+import type { PublicUser, JiraConnectionSettings, JiraFieldMapping, N8nConnectionSettings, PageToggles } from '~/types/domain'
 
 const { settings, loading, fetchSettings, updateSettings } = useSettings()
 const { fetchUsers, isAdmin, authenticatedUser } = useAuth()
@@ -11,6 +11,7 @@ const tabs = [
   { label: 'Users', value: 'users', icon: 'i-lucide-users' },
   { label: 'Jira Connection', value: 'jira', icon: 'i-lucide-plug' },
   { label: 'Field Mappings', value: 'mappings', icon: 'i-lucide-columns-3' },
+  { label: 'n8n', value: 'n8n', icon: 'i-lucide-workflow' },
   { label: 'Process Library', value: 'libraries', icon: 'i-lucide-library' },
   { label: 'Tags', value: 'tags', icon: 'i-lucide-tag' },
   { label: 'Page Visibility', value: 'pages', icon: 'i-lucide-eye' },
@@ -50,7 +51,7 @@ async function onCreateUser(data: { username: string, displayName: string, depar
     await loadAllUsers()
     await fetchUsers()
   } catch (e) {
-    userError.value = e?.data?.message ?? e?.message ?? 'Failed to create user'
+    userError.value = extractApiError(e, 'Failed to create user')
   } finally {
     userSaving.value = false
   }
@@ -68,7 +69,7 @@ async function onUpdateUser(data: { username?: string, displayName?: string, dep
     await loadAllUsers()
     await fetchUsers()
   } catch (e) {
-    userError.value = e?.data?.message ?? e?.message ?? 'Failed to update user'
+    userError.value = extractApiError(e, 'Failed to update user')
   } finally {
     userSaving.value = false
   }
@@ -84,7 +85,7 @@ async function toggleUserActive(user: PublicUser) {
     await loadAllUsers()
     await fetchUsers()
   } catch (e) {
-    userError.value = e?.data?.message ?? e?.message ?? 'Failed to update user'
+    userError.value = extractApiError(e, 'Failed to update user')
   }
 }
 
@@ -99,8 +100,7 @@ async function resetUserPin(user: PublicUser) {
     userSuccess.value = `PIN reset for ${user.displayName}. They will set a new PIN on next login.`
     await loadAllUsers()
   } catch (e: unknown) {
-    const err = e as { data?: { message?: string }, message?: string }
-    userError.value = err?.data?.message ?? err?.message ?? 'Failed to reset PIN'
+    userError.value = extractApiError(e, 'Failed to reset PIN')
   }
 }
 
@@ -112,7 +112,21 @@ async function onSaveConnection(connection: Partial<JiraConnectionSettings>) {
     await updateSettings({ jiraConnection: connection })
     settingsSuccess.value = 'Connection settings saved'
   } catch (e) {
-    settingsError.value = e?.data?.message ?? e?.message ?? 'Failed to save settings'
+    settingsError.value = extractApiError(e, 'Failed to save settings')
+  } finally {
+    settingsSaving.value = false
+  }
+}
+
+async function onSaveN8nConnection(connection: Partial<N8nConnectionSettings>) {
+  settingsError.value = ''
+  settingsSuccess.value = ''
+  settingsSaving.value = true
+  try {
+    await updateSettings({ n8nConnection: connection })
+    settingsSuccess.value = 'n8n connection saved'
+  } catch (e) {
+    settingsError.value = extractApiError(e, 'Failed to save n8n connection')
   } finally {
     settingsSaving.value = false
   }
@@ -126,7 +140,7 @@ async function onSaveMappings(mappings: JiraFieldMapping[]) {
     await updateSettings({ jiraFieldMappings: mappings })
     settingsSuccess.value = 'Field mappings saved'
   } catch (e) {
-    settingsError.value = e?.data?.message ?? e?.message ?? 'Failed to save mappings'
+    settingsError.value = extractApiError(e, 'Failed to save mappings')
   } finally {
     settingsSaving.value = false
   }
@@ -140,7 +154,7 @@ async function onSaveToggles(toggles: PageToggles) {
     await updateSettings({ pageToggles: toggles })
     settingsSuccess.value = 'Page visibility saved'
   } catch (e) {
-    settingsError.value = e?.data?.message ?? e?.message ?? 'Failed to save page visibility'
+    settingsError.value = extractApiError(e, 'Failed to save page visibility')
     // Revert toggles on failure — re-fetch settings to restore previous state
     await fetchSettings()
   } finally {
@@ -155,6 +169,12 @@ const defaultConnection: JiraConnectionSettings = {
   apiToken: '',
   enabled: false,
   pushEnabled: false,
+}
+
+const defaultN8nConnection: N8nConnectionSettings = {
+  baseUrl: '',
+  apiKey: '',
+  enabled: false,
 }
 
 onMounted(async () => {
@@ -349,6 +369,46 @@ onMounted(async () => {
           <JiraFieldMappingEditor
             :mappings="settings?.jiraFieldMappings ?? []"
             @save="onSaveMappings"
+          />
+        </div>
+        <p
+          v-if="settingsError"
+          class="text-xs text-red-500"
+        >
+          {{ settingsError }}
+        </p>
+        <p
+          v-if="settingsSuccess"
+          class="text-xs text-green-600"
+        >
+          {{ settingsSuccess }}
+        </p>
+      </div>
+
+      <!-- n8n Connection tab -->
+      <div
+        v-if="activeTab === 'n8n'"
+        class="space-y-3"
+      >
+        <span class="text-sm font-medium text-(--ui-text-highlighted)">n8n Connection</span>
+        <p class="text-xs text-(--ui-text-muted)">
+          Connect Shop Planr to a self-hosted
+          <a
+            href="https://n8n.io"
+            target="_blank"
+            rel="noopener"
+            class="text-(--ui-primary) hover:underline"
+          >n8n</a>
+          instance to deploy webhook automations from the
+          <NuxtLink
+            to="/webhooks"
+            class="text-(--ui-primary) hover:underline"
+          >Webhooks page</NuxtLink>.
+        </p>
+        <div class="p-3 border border-(--ui-border) rounded-md bg-(--ui-bg-elevated)/50">
+          <N8nConnectionForm
+            :connection="settings?.n8nConnection ?? defaultN8nConnection"
+            @save="onSaveN8nConnection"
           />
         </div>
         <p

@@ -209,7 +209,7 @@ async function handleSaveNote() {
     noteText.value = ''
     toast.add({ title: 'Note created', color: 'success' })
   } catch (e) {
-    toast.add({ title: 'Failed to create note', description: e?.data?.message ?? e?.message ?? 'Failed to create note', color: 'error' })
+    toast.add({ title: 'Failed to create note', description: extractApiError(e, 'Failed to create note'), color: 'error' })
   } finally {
     noteSaving.value = false
   }

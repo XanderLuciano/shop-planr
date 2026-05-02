@@ -31,7 +31,7 @@ export function usePartDetail(partId: string) {
       path.value = pathData
       distribution.value = pathData.distribution
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to load part detail'
+      error.value = extractApiError(e, 'Failed to load part detail')
     } finally {
       loading.value = false
     }
@@ -62,7 +62,7 @@ export function usePartDetail(partId: string) {
       path.value = pathData
       distribution.value = pathData.distribution
     } catch (e) {
-      error.value = e?.data?.message ?? e?.message ?? 'Failed to refresh after advance'
+      error.value = extractApiError(e, 'Failed to refresh after advance')
     }
   }
 

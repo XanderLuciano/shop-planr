@@ -61,7 +61,7 @@ const { execute: submitNote, loading: submitting } = useGuardedAction(async () =
         jiraPushIsError.value = true
       }
     } catch (e) {
-      jiraPushResult.value = e?.data?.message ?? e?.message ?? 'Jira push failed'
+      jiraPushResult.value = extractApiError(e, 'Jira push failed')
       jiraPushIsError.value = true
     } finally {
       pushingToJira.value = false
@@ -77,7 +77,7 @@ async function onSubmit() {
   try {
     await submitNote()
   } catch (e) {
-    localError.value = e?.data?.message ?? e?.message ?? 'Failed to create note'
+    localError.value = extractApiError(e, 'Failed to create note')
   }
 }
 </script>

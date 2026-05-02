@@ -21,6 +21,8 @@ export default defineNuxtConfig({
     jiraProjectKey: process.env.JIRA_PROJECT_KEY || 'PI',
     jiraUsername: process.env.JIRA_USERNAME || '',
     jiraApiToken: process.env.JIRA_API_TOKEN || '',
+    n8nBaseUrl: process.env.N8N_BASE_URL || '',
+    n8nApiKey: process.env.N8N_API_KEY || '',
   },
 
   compatibilityDate: '2025-01-15',

@@ -10,6 +10,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import type { WorkQueueJob } from '~/server/types/computed'
 import type { BatchCreatePartsInput } from '~/server/types/api'
+import { extractApiError } from '~/app/utils/apiError'
 
 // ---- Pure logic functions extracted from PartCreationPanel.vue ----
 
@@ -137,23 +138,23 @@ describe('PartCreationPanel — pure logic', () => {
     })
   })
 
-  // 4. Test error message appears on creation failure (Req 2.5)
+  // 4. Test error message extraction (Req 2.5)
   describe('error message extraction', () => {
     it('extracts message from error with data.message', () => {
       const e = { data: { message: 'Path not found' } } as any
-      const msg = e?.data?.message ?? e?.message ?? 'Failed to create parts'
+      const msg = extractApiError(e, 'Failed to create parts')
       expect(msg).toBe('Path not found')
     })
 
     it('extracts message from error with message property', () => {
       const e = { message: 'Network error' } as any
-      const msg = e?.data?.message ?? e?.message ?? 'Failed to create parts'
+      const msg = extractApiError(e, 'Failed to create parts')
       expect(msg).toBe('Network error')
     })
 
     it('falls back to default message when error has no message', () => {
       const e = {} as any
-      const msg = e?.data?.message ?? e?.message ?? 'Failed to create parts'
+      const msg = extractApiError(e, 'Failed to create parts')
       expect(msg).toBe('Failed to create parts')
     })
   })
