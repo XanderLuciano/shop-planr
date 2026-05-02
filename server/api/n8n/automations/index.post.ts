@@ -16,8 +16,5 @@ defineRouteMeta({
 export default defineApiHandler(async (event) => {
   const userId = getAuthUserId(event)
   const body = await parseBody(event, createN8nAutomationSchema)
-  return getServices().n8nAutomationService.create({
-    ...body,
-    workflowJson: body.workflowJson as import('../../../../server/types/domain').N8nWorkflowDefinition,
-  }, userId)
+  return getServices().n8nAutomationService.create(body, userId)
 })

@@ -1,5 +1,4 @@
 import { updateN8nAutomationSchema } from '../../../schemas/n8nAutomationSchemas'
-import type { N8nWorkflowDefinition } from '../../../types/domain'
 
 defineRouteMeta({
   openAPI: {
@@ -20,8 +19,5 @@ export default defineApiHandler(async (event) => {
   if (!id) throw new ValidationError('Automation ID is required')
   const userId = getAuthUserId(event)
   const body = await parseBody(event, updateN8nAutomationSchema)
-  return getServices().n8nAutomationService.update(id, {
-    ...body,
-    workflowJson: body.workflowJson as N8nWorkflowDefinition | undefined,
-  }, userId)
+  return getServices().n8nAutomationService.update(id, body, userId)
 })

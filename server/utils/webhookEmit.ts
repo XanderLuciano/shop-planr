@@ -118,8 +118,8 @@ export function resolvePathInfo(partId: string): {
 }
 
 /**
- * Resolve just the path name/id for a partId. Lighter-weight than
- * resolvePathInfo when the caller doesn't also need job context.
+ * Resolve path + job info starting from a pathId. Lighter-weight than
+ * resolvePathInfo which starts from a partId (three lookups vs two).
  */
 export function resolvePathInfoByPath(pathId: string): {
   pathId: string
